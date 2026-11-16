@@ -4854,6 +4854,366 @@
       "value": "?"
     }
   ],
+  "web.admin.users.detail.access.card.conflict": [
+    {
+      "type": 0,
+      "value": "Otro administrador cambió esta cuenta después de que empezaras. Tus cambios se conservan."
+    }
+  ],
+  "web.admin.users.detail.access.card.reloadAndReview": [
+    {
+      "type": 0,
+      "value": "Volver a cargar y revisar"
+    }
+  ],
+  "web.admin.users.detail.access.card.saveFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo guardar esta cuenta."
+    }
+  ],
+  "web.admin.users.detail.access.card.saved": [
+    {
+      "type": 0,
+      "value": "Guardado"
+    }
+  ],
+  "web.admin.users.detail.access.card.saving": [
+    {
+      "type": 0,
+      "value": "Guardando..."
+    }
+  ],
+  "web.admin.users.detail.access.library.accessGroup": [
+    {
+      "type": 0,
+      "value": "Grupo de acceso"
+    }
+  ],
+  "web.admin.users.detail.access.library.adminDescription": [
+    {
+      "type": 0,
+      "value": "Los administradores no usan grupos de acceso. Los valores sin definir siguen el valor predeterminado del servidor."
+    }
+  ],
+  "web.admin.users.detail.access.library.chooseForAccount": [
+    {
+      "type": 0,
+      "value": "Elegir para esta cuenta"
+    }
+  ],
+  "web.admin.users.detail.access.library.libraries": [
+    {
+      "type": 0,
+      "value": "Bibliotecas"
+    }
+  ],
+  "web.admin.users.detail.access.library.markerEdit": [
+    {
+      "type": 0,
+      "value": "Edición de marcadores"
+    }
+  ],
+  "web.admin.users.detail.access.library.markerEditDescription": [
+    {
+      "type": 0,
+      "value": "Marcadores de intro, resumen, créditos y avance"
+    }
+  ],
+  "web.admin.users.detail.access.library.metadataCuration": [
+    {
+      "type": 0,
+      "value": "Gestión de metadatos"
+    }
+  ],
+  "web.admin.users.detail.access.library.metadataCurationDescription": [
+    {
+      "type": 0,
+      "value": "Editar, actualizar y volver a asociar metadatos"
+    }
+  ],
+  "web.admin.users.detail.access.library.noGroup": [
+    {
+      "type": 0,
+      "value": "Sin grupo"
+    }
+  ],
+  "web.admin.users.detail.access.library.noLibraryWarning": [
+    {
+      "type": 0,
+      "value": "Esta cuenta no verá ninguna biblioteca."
+    }
+  ],
+  "web.admin.users.detail.access.library.useGroupLibraries": [
+    {
+      "type": 0,
+      "value": "Usar las bibliotecas del grupo"
+    }
+  ],
+  "web.admin.users.detail.access.library.useServerDefault": [
+    {
+      "type": 0,
+      "value": "Usar el valor predeterminado del servidor"
+    }
+  ],
+  "web.admin.users.detail.access.role.admin": [
+    {
+      "type": 0,
+      "value": "Administrador"
+    }
+  ],
+  "web.admin.users.detail.access.role.user": [
+    {
+      "type": 0,
+      "value": "Usuario"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.adminLeavesGroup": [
+    {
+      "type": 0,
+      "value": "Los administradores no usan grupos de acceso. Al guardar, esta cuenta se quitará de "
+    },
+    {
+      "type": 1,
+      "value": "group"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.canSignIn": [
+    {
+      "type": 0,
+      "value": "Puede iniciar sesión"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.cannotDisableSelf": [
+    {
+      "type": 0,
+      "value": "No puedes desactivar tu propia cuenta."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.email": [
+    {
+      "type": 0,
+      "value": "Correo electrónico"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.enterUsername": [
+    {
+      "type": 0,
+      "value": "Escribe un nombre de usuario."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownRole": [
+    {
+      "type": 0,
+      "value": "No puedes cambiar tu propio rol."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerGrantsAdmin": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede conceder permisos de administrador"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerGrantsAdminRole": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede conceder el rol de administrador."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerStaysEnabled": [
+    {
+      "type": 0,
+      "value": "El propietario del servidor sigue siendo un administrador habilitado."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.role": [
+    {
+      "type": 0,
+      "value": "Rol"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.username": [
+    {
+      "type": 0,
+      "value": "Nombre de usuario"
+    }
+  ],
+  "web.admin.users.detail.access.tab.ownerOnlyNote": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede cambiar el acceso y los límites de un administrador."
+    }
+  ],
+  "web.admin.users.detail.common.cardTitle.library": [
+    {
+      "type": 0,
+      "value": "Acceso a bibliotecas"
+    }
+  ],
+  "web.admin.users.detail.common.cardTitle.signin": [
+    {
+      "type": 0,
+      "value": "Inicio de sesión y rol"
+    }
+  ],
+  "web.admin.users.detail.header.adminNotice": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede cambiar la cuenta de otro administrador. Tú puedes verla."
+    }
+  ],
+  "web.admin.users.detail.header.breadcrumb": [
+    {
+      "type": 0,
+      "value": "Ruta de navegación"
+    }
+  ],
+  "web.admin.users.detail.header.breadcrumbUsers": [
+    {
+      "type": 0,
+      "value": "Usuarios"
+    }
+  ],
+  "web.admin.users.detail.header.deleteAccount": [
+    {
+      "type": 0,
+      "value": "Eliminar cuenta…"
+    }
+  ],
+  "web.admin.users.detail.header.disableAccount": [
+    {
+      "type": 0,
+      "value": "Desactivar cuenta"
+    }
+  ],
+  "web.admin.users.detail.header.disabledNotice": [
+    {
+      "type": 0,
+      "value": "Esta cuenta no puede iniciar sesión. Se conservan sus perfiles y su historial."
+    }
+  ],
+  "web.admin.users.detail.header.enableAccount": [
+    {
+      "type": 0,
+      "value": "Activar cuenta"
+    }
+  ],
+  "web.admin.users.detail.header.externalSignIn": [
+    {
+      "type": 0,
+      "value": "Inicio de sesión externo"
+    }
+  ],
+  "web.admin.users.detail.header.group": [
+    {
+      "type": 0,
+      "value": "Grupo: "
+    },
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 1,
+          "value": "name"
+        }
+      ]
+    }
+  ],
+  "web.admin.users.detail.header.groupIdFallback": [
+    {
+      "type": 0,
+      "value": "#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.users.detail.header.joined": [
+    {
+      "type": 0,
+      "value": "Se unió el "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.admin.users.detail.header.lastActive": [
+    {
+      "type": 0,
+      "value": "Última actividad: "
+    },
+    {
+      "type": 1,
+      "value": "when"
+    }
+  ],
+  "web.admin.users.detail.header.makeOwner": [
+    {
+      "type": 0,
+      "value": "Transferir la propiedad"
+    }
+  ],
+  "web.admin.users.detail.header.moreActions": [
+    {
+      "type": 0,
+      "value": "Más acciones"
+    }
+  ],
+  "web.admin.users.detail.header.noActivity": [
+    {
+      "type": 0,
+      "value": "Sin actividad registrada"
+    }
+  ],
+  "web.admin.users.detail.header.ownerNotice": [
+    {
+      "type": 0,
+      "value": "Esta es la cuenta del propietario del servidor. Solo el propietario puede cambiarla."
+    }
+  ],
+  "web.admin.users.detail.header.passwordSignIn": [
+    {
+      "type": 0,
+      "value": "Inicio de sesión con contraseña"
+    }
+  ],
+  "web.admin.users.detail.header.resetPassword": [
+    {
+      "type": 0,
+      "value": "Restablecer contraseña"
+    }
+  ],
+  "web.admin.users.detail.header.setPassword": [
+    {
+      "type": 0,
+      "value": "Establecer contraseña"
+    }
+  ],
+  "web.admin.users.detail.header.status.active": [
+    {
+      "type": 0,
+      "value": "Activa"
+    }
+  ],
+  "web.admin.users.detail.header.status.disabled": [
+    {
+      "type": 0,
+      "value": "Desactivada"
+    }
+  ],
+  "web.admin.users.detail.header.temporaryPassword": [
+    {
+      "type": 0,
+      "value": "Contraseña temporal"
+    }
+  ],
   "web.admin.users.list.addUser": [
     {
       "type": 0,
@@ -5253,6 +5613,414 @@
     {
       "type": 0,
       "value": "No se pudo cargar el usuario."
+    }
+  ],
+  "web.admin.users.page.accountChanged": [
+    {
+      "type": 0,
+      "value": "La cuenta cambió. Vuelve a intentarlo."
+    }
+  ],
+  "web.admin.users.page.allUsers": [
+    {
+      "type": 0,
+      "value": "Todos los usuarios"
+    }
+  ],
+  "web.admin.users.page.changeFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo cambiar la cuenta."
+    }
+  ],
+  "web.admin.users.page.disableConfirm": [
+    {
+      "type": 0,
+      "value": "Desactivar cuenta"
+    }
+  ],
+  "web.admin.users.page.disableDescription": [
+    {
+      "type": 0,
+      "value": "No podrá iniciar sesión hasta que vuelvas a activar la cuenta. Se conservan sus perfiles, su historial y sus descargas."
+    }
+  ],
+  "web.admin.users.page.disableTitle": [
+    {
+      "type": 0,
+      "value": "¿Desactivar a "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "?"
+    }
+  ],
+  "web.admin.users.page.disabled": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " está desactivado"
+    }
+  ],
+  "web.admin.users.page.enabled": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " está activado"
+    }
+  ],
+  "web.admin.users.page.loadFailedDescription": [
+    {
+      "type": 0,
+      "value": "Algo salió mal al cargar la cuenta. Vuelve a intentarlo en un momento."
+    }
+  ],
+  "web.admin.users.page.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar este usuario"
+    }
+  ],
+  "web.admin.users.page.notFoundDescription": [
+    {
+      "type": 0,
+      "value": "Es posible que la cuenta se haya eliminado o que el enlace sea incorrecto."
+    }
+  ],
+  "web.admin.users.page.notFoundTitle": [
+    {
+      "type": 0,
+      "value": "Usuario no encontrado"
+    }
+  ],
+  "web.admin.users.page.ownerTransferred": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " es ahora el propietario del servidor"
+    }
+  ],
+  "web.admin.users.page.transferConfirm": [
+    {
+      "type": 0,
+      "value": "Hacer propietario"
+    }
+  ],
+  "web.admin.users.page.transferDescription": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " pasará a ser la única cuenta que puede gestionar administradores, y tú seguirás siendo administrador. Solo "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " podrá devolverte la propiedad."
+    }
+  ],
+  "web.admin.users.page.transferFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo transferir la propiedad."
+    }
+  ],
+  "web.admin.users.page.transferTitle": [
+    {
+      "type": 0,
+      "value": "¿Hacer a "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " propietario del servidor?"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.copyFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo copiar el enlace. Selecciónalo y cópialo manualmente."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.copyLink": [
+    {
+      "type": 0,
+      "value": "Copiar enlace"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.description": [
+    {
+      "type": 0,
+      "value": "Elige cómo recuperará el acceso. Todas las opciones cierran su sesión en todos los dispositivos."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailAction": [
+    {
+      "type": 0,
+      "value": "Enviar enlace"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHint": [
+    {
+      "type": 0,
+      "value": "Se envía a "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". Funciona una sola vez y caduca en 24 horas."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintDisabled": [
+    {
+      "type": 0,
+      "value": "Activa la cuenta para enviarle un enlace de restablecimiento."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintNoAddress": [
+    {
+      "type": 0,
+      "value": "Esta cuenta no tiene correo electrónico, así que comparte un enlace."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintNoMail": [
+    {
+      "type": 0,
+      "value": "Configura el correo electrónico en Configuración para enviar enlaces de restablecimiento."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailOption": [
+    {
+      "type": 0,
+      "value": "Enviar un enlace de restablecimiento por correo"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailSent": [
+    {
+      "type": 0,
+      "value": "Se envió un enlace de restablecimiento a "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". Caduca el "
+    },
+    {
+      "type": 1,
+      "value": "expires"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailUnconfirmed": [
+    {
+      "type": 0,
+      "value": "El servidor de correo no confirmó la entrega. Vuelve a enviarlo o crea un enlace para compartir."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.issueFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo crear un enlace de restablecimiento."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkAction": [
+    {
+      "type": 0,
+      "value": "Crear enlace"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkCopied": [
+    {
+      "type": 0,
+      "value": "Enlace copiado"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHint": [
+    {
+      "type": 0,
+      "value": "Cópialo y envíalo tú."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHintDisabled": [
+    {
+      "type": 0,
+      "value": "Activa la cuenta para crear un enlace de restablecimiento."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHintNoUrl": [
+    {
+      "type": 0,
+      "value": "Define la URL pública de Silo para crear enlaces de restablecimiento. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Configuración general"
+        }
+      ]
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkOption": [
+    {
+      "type": 0,
+      "value": "Crear un enlace para compartir"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkShare": [
+    {
+      "type": 0,
+      "value": "Comparte este enlace solo con "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": ". Cualquiera que lo tenga puede definir la contraseña de la cuenta hasta que caduque el "
+    },
+    {
+      "type": 1,
+      "value": "expires"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.methodGroup": [
+    {
+      "type": 0,
+      "value": "Cómo recupera el acceso"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.mustChange": [
+    {
+      "type": 0,
+      "value": "Debe elegir una nueva al iniciar sesión la próxima vez"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordAction": [
+    {
+      "type": 0,
+      "value": "Definir contraseña"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordLabel": [
+    {
+      "type": 0,
+      "value": "Contraseña temporal"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordOption": [
+    {
+      "type": 0,
+      "value": "Definir una contraseña temporal"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordOptionHint": [
+    {
+      "type": 0,
+      "value": "Escribe una ahora y comunícasela."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordRules": [
+    {
+      "type": 0,
+      "value": "Al menos "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": " caracteres y no más de "
+    },
+    {
+      "type": 1,
+      "value": "max"
+    },
+    {
+      "type": 0,
+      "value": " bytes UTF-8."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordSet": [
+    {
+      "type": 0,
+      "value": "Contraseña definida. Se cerró la sesión de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " en todas partes."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordSetMustChange": [
+    {
+      "type": 0,
+      "value": "Contraseña definida. Se cerró la sesión de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " en todas partes. Debe elegir una nueva al iniciar sesión la próxima vez."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.setFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo definir la contraseña."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.title": [
+    {
+      "type": 0,
+      "value": "Restablecer la contraseña de "
+    },
+    {
+      "type": 1,
+      "value": "username"
     }
   ],
   "web.audiobooks.duration.hours": [
@@ -18065,6 +18833,60 @@
       "value": "Restablecer"
     }
   ],
+  "web.settings.sessions.admin.empty": [
+    {
+      "type": 0,
+      "value": "Esta cuenta no tiene ningún inicio de sesión activo."
+    }
+  ],
+  "web.settings.sessions.admin.ownerOnly": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede cerrar sesión a otro administrador o al propietario."
+    }
+  ],
+  "web.settings.sessions.adminDescription": [
+    {
+      "type": 0,
+      "value": "Navegadores y apps que han iniciado sesión en la cuenta de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.settings.sessions.confirm.adminClientDescription": [
+    {
+      "type": 0,
+      "value": "Este cliente de la cuenta de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " perderá el acceso en su próxima solicitud autenticada. Sus otras sesiones y la contraseña no cambian."
+    }
+  ],
+  "web.settings.sessions.confirm.allTitle": [
+    {
+      "type": 0,
+      "value": "¿Cerrar sesión de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " en todas partes?"
+    }
+  ],
   "web.settings.sessions.confirm.clientDescription": [
     {
       "type": 0,
@@ -18089,6 +18911,12 @@
     {
       "type": 0,
       "value": "Un video que ya se esté reproduciendo puede continuar hasta su próxima solicitud. Se conserva la configuración guardada del dispositivo."
+    }
+  ],
+  "web.settings.sessions.confirm.sessionTitle": [
+    {
+      "type": 0,
+      "value": "¿Cerrar esta sesión?"
     }
   ],
   "web.settings.sessions.confirm.signingOut": [
@@ -18119,6 +18947,12 @@
     {
       "type": 0,
       "value": "Dispositivo desconocido"
+    }
+  ],
+  "web.settings.sessions.footnoteAdmin": [
+    {
+      "type": 0,
+      "value": "La última actividad registra la actividad autenticada y se actualiza como máximo una vez por minuto. Es posible que las sesiones más antiguas aún no tengan actividad registrada. Al cerrar sesión se conservan la contraseña y la configuración guardada del dispositivo. Las demás cuentas mantienen la sesión iniciada."
     }
   ],
   "web.settings.sessions.lastSeen.active": [
@@ -18449,6 +19283,12 @@
       "value": "User-Agent"
     }
   ],
+  "web.settings.sessions.signOutEverywhere": [
+    {
+      "type": 0,
+      "value": "Cerrar sesión en todas partes"
+    }
+  ],
   "web.settings.sessions.signOutFailed": [
     {
       "type": 0,
@@ -18459,6 +19299,20 @@
     {
       "type": 0,
       "value": "Sesión cerrada"
+    }
+  ],
+  "web.settings.sessions.signedOutEverywhere": [
+    {
+      "type": 0,
+      "value": "Se cerró la sesión de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " en todas partes"
     }
   ],
   "web.settings.sessions.title": [

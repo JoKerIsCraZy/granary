@@ -31,13 +31,13 @@
     <StackPanel MinWidth="380" MaxWidth="480" Spacing="14">
         <TextBlock Text="{x:Bind admin:AdminUserDeleteViewModel.Description}" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
         <Border Visibility="{x:Bind ViewModel.OffersDisable, Mode=OneWay}" Padding="12,10" CornerRadius="12" BorderThickness="1"
-                BorderBrush="#403B82F6" Background="#0D3B82F6">
+                BorderBrush="{StaticResource AdminInfoBorderBrush}" Background="{StaticResource AdminInfoBackgroundBrush}">
             <Grid ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="#FF3B82F6" VerticalAlignment="Top" Margin="0,2,0,0" />
+                <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource AdminInfoIconBrush}" VerticalAlignment="Top" Margin="0,2,0,0" />
                 <TextBlock x:Name="DisableHint" Grid.Column="1" FontSize="13" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
             </Grid>
         </Border>

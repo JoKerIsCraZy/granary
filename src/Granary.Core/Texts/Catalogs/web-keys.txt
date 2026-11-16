@@ -639,6 +639,65 @@ web.admin.users.deleteDialog.disableInstead
 web.admin.users.deleteDialog.reload
 web.admin.users.deleteDialog.reloadFailed
 web.admin.users.deleteDialog.title
+# An account in Admin → Users, in the words of the web's account page, its header and Access cards, its password reset
+# dialog and its sessions panel (pages/AdminUserDetail.tsx, pages/admin-users/detail, components/AdminUserPasswordResetDialog.tsx,
+# components/sessions/LoginSessionsPanel.tsx): src/Granary.App/Views/Admin/AdminUserDetailView*, AdminPasswordResetDialog and
+# src/Granary.Core/ViewModels/Admin (AdminUserDetailViewModel*, AdminPasswordResetViewModel, AdminUserSessionsViewModel).
+web.admin.users.detail.access.card.conflict
+web.admin.users.detail.access.card.reloadAndReview
+web.admin.users.detail.access.card.saveFailed
+web.admin.users.detail.access.card.saved
+web.admin.users.detail.access.card.saving
+web.admin.users.detail.access.library.accessGroup
+web.admin.users.detail.access.library.adminDescription
+web.admin.users.detail.access.library.chooseForAccount
+web.admin.users.detail.access.library.libraries
+web.admin.users.detail.access.library.markerEdit
+web.admin.users.detail.access.library.markerEditDescription
+web.admin.users.detail.access.library.metadataCuration
+web.admin.users.detail.access.library.metadataCurationDescription
+web.admin.users.detail.access.library.noGroup
+web.admin.users.detail.access.library.noLibraryWarning
+web.admin.users.detail.access.library.useGroupLibraries
+web.admin.users.detail.access.library.useServerDefault
+web.admin.users.detail.access.role.admin
+web.admin.users.detail.access.role.user
+web.admin.users.detail.access.signIn.adminLeavesGroup
+web.admin.users.detail.access.signIn.canSignIn
+web.admin.users.detail.access.signIn.cannotDisableSelf
+web.admin.users.detail.access.signIn.email
+web.admin.users.detail.access.signIn.enterUsername
+web.admin.users.detail.access.signIn.ownRole
+web.admin.users.detail.access.signIn.ownerGrantsAdmin
+web.admin.users.detail.access.signIn.ownerGrantsAdminRole
+web.admin.users.detail.access.signIn.ownerStaysEnabled
+web.admin.users.detail.access.signIn.role
+web.admin.users.detail.access.signIn.username
+web.admin.users.detail.access.tab.ownerOnlyNote
+web.admin.users.detail.common.cardTitle.library
+web.admin.users.detail.common.cardTitle.signin
+web.admin.users.detail.header.adminNotice
+web.admin.users.detail.header.breadcrumb
+web.admin.users.detail.header.breadcrumbUsers
+web.admin.users.detail.header.deleteAccount
+web.admin.users.detail.header.disableAccount
+web.admin.users.detail.header.disabledNotice
+web.admin.users.detail.header.enableAccount
+web.admin.users.detail.header.externalSignIn
+web.admin.users.detail.header.group
+web.admin.users.detail.header.groupIdFallback
+web.admin.users.detail.header.joined
+web.admin.users.detail.header.lastActive
+web.admin.users.detail.header.makeOwner
+web.admin.users.detail.header.moreActions
+web.admin.users.detail.header.noActivity
+web.admin.users.detail.header.ownerNotice
+web.admin.users.detail.header.passwordSignIn
+web.admin.users.detail.header.resetPassword
+web.admin.users.detail.header.setPassword
+web.admin.users.detail.header.status.active
+web.admin.users.detail.header.status.disabled
+web.admin.users.detail.header.temporaryPassword
 web.admin.users.list.addUser
 web.admin.users.list.adminGroupNone
 web.admin.users.list.column.actions
@@ -695,6 +754,54 @@ web.admin.users.list.title
 web.admin.users.list.unavailable
 web.admin.users.list.unknownGroup
 web.admin.users.list.userLoadFailed
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.admin.users.page.accountChanged
+web.admin.users.page.allUsers
+web.admin.users.page.changeFailed
+web.admin.users.page.disableConfirm
+web.admin.users.page.disableDescription
+web.admin.users.page.disableTitle
+web.admin.users.page.disabled
+web.admin.users.page.enabled
+web.admin.users.page.loadFailedDescription
+web.admin.users.page.loadFailedTitle
+web.admin.users.page.notFoundDescription
+web.admin.users.page.notFoundTitle
+web.admin.users.page.ownerTransferred
+web.admin.users.page.transferConfirm
+web.admin.users.page.transferDescription
+web.admin.users.page.transferFailed
+web.admin.users.page.transferTitle
+web.admin.users.passwordResetDialog.copyFailed
+web.admin.users.passwordResetDialog.copyLink
+web.admin.users.passwordResetDialog.description
+web.admin.users.passwordResetDialog.emailAction
+web.admin.users.passwordResetDialog.emailHint
+web.admin.users.passwordResetDialog.emailHintDisabled
+web.admin.users.passwordResetDialog.emailHintNoAddress
+web.admin.users.passwordResetDialog.emailHintNoMail
+web.admin.users.passwordResetDialog.emailOption
+web.admin.users.passwordResetDialog.emailSent
+web.admin.users.passwordResetDialog.emailUnconfirmed
+web.admin.users.passwordResetDialog.issueFailed
+web.admin.users.passwordResetDialog.linkAction
+web.admin.users.passwordResetDialog.linkCopied
+web.admin.users.passwordResetDialog.linkHint
+web.admin.users.passwordResetDialog.linkHintDisabled
+web.admin.users.passwordResetDialog.linkHintNoUrl
+web.admin.users.passwordResetDialog.linkOption
+web.admin.users.passwordResetDialog.linkShare
+web.admin.users.passwordResetDialog.methodGroup
+web.admin.users.passwordResetDialog.mustChange
+web.admin.users.passwordResetDialog.passwordAction
+web.admin.users.passwordResetDialog.passwordLabel
+web.admin.users.passwordResetDialog.passwordOption
+web.admin.users.passwordResetDialog.passwordOptionHint
+web.admin.users.passwordResetDialog.passwordRules
+web.admin.users.passwordResetDialog.passwordSet
+web.admin.users.passwordResetDialog.passwordSetMustChange
+web.admin.users.passwordResetDialog.setFailed
+web.admin.users.passwordResetDialog.title
 
 # More of the collection editor's words, as above under catalog.sort.author.
 # More of the Requests words, as above under requests.error.create.
@@ -708,9 +815,7 @@ web.audiobooks.duration.minutes
 web.auth.choosePassword.description
 web.auth.choosePassword.settleFailed
 web.auth.choosePassword.temporaryPassword
-# Admin → Users, in the words of the web's users page and its dialogs (pages/AdminUsers.tsx, components/admin/users,
-# components/AdminUserDeleteDialog.tsx, lib/email.ts): src/Granary.App/Views/Admin/AdminUsers*, AdminUserDeleteDialog and
-# src/Granary.Core/ViewModels/Admin (AdminAccountRow, AdminUsersViewModel*, AdminNewUserViewModel, AdminUserDeleteViewModel), EmailAddress.cs.
+# More of Admin → Users' words, as above under web.admin.users.deleteDialog.confirm.
 web.auth.invalidEmail
 
 # Signing in, in the words of the web's Login page: src/Granary.App/Views/SignInPage.xaml(.cs). A disabled account is
@@ -2521,9 +2626,17 @@ web.settings.playbackConnection.transport.ethernet
 web.settings.playbackConnection.transport.unknown
 web.settings.playbackConnection.transport.wifi
 web.settings.resetButton.label
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.settings.sessions.admin.empty
+web.settings.sessions.admin.ownerOnly
+web.settings.sessions.adminDescription
+web.settings.sessions.confirm.adminClientDescription
+web.settings.sessions.confirm.allTitle
 web.settings.sessions.confirm.clientDescription
 web.settings.sessions.confirm.deviceTitle
 web.settings.sessions.confirm.note
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.settings.sessions.confirm.sessionTitle
 
 # The shell's profile menu while it signs out (src/Granary.Core/ViewModels/SidebarViewModel.cs), in the words of the
 # web's own sign-out button (components/sessions/LoginSessionsPanel.tsx).
@@ -2534,6 +2647,8 @@ web.settings.sessions.confirm.thisBrowserDescription
 web.settings.sessions.current.description
 web.settings.sessions.description
 web.settings.sessions.device.unknown
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.settings.sessions.footnoteAdmin
 web.settings.sessions.lastSeen.active
 web.settings.sessions.lastSeen.days
 web.settings.sessions.lastSeen.hours
@@ -2559,8 +2674,12 @@ web.settings.sessions.row.signedIn
 web.settings.sessions.row.summary
 web.settings.sessions.row.unknown
 web.settings.sessions.row.userAgent
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.settings.sessions.signOutEverywhere
 web.settings.sessions.signOutFailed
 web.settings.sessions.signedOut
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.settings.sessions.signedOutEverywhere
 web.settings.sessions.title
 web.settings.sidebar.backToApp
 web.settings.sidebar.title

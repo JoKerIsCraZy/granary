@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization.Metadata;
+using Granary.Core.Api.Accounts;
 
 namespace Granary.Core.Api.Admin;
 
@@ -55,6 +56,21 @@ public sealed class AdminUsersApi(SiloHttp http)
     /// <summary>Makes another enabled admin the server's Owner; only the Owner may, and stays an admin.</summary>
     public Task TransferOwnershipAsync(Uri server, string id, CancellationToken cancellationToken = default) =>
         http.SendAsync(HttpMethod.Post, server, UserPath(id) + "/transfer-ownership", SiloAuth.Profile, cancellationToken);
+
+    /// <summary>A page of the account's live sign-ins (not its playback), newest first, as the web's admin sessions panel.</summary>
+    public Task<LoginSessionCollection> ListLoginSessionsAsync(Uri server, string id, string? cursor = null, CancellationToken cancellationToken = default) =>
+        http.GetAsync(server, UserPath(id) + "/login-sessions?limit=50" + (cursor is null ? "" : $"&cursor={Uri.EscapeDataString(cursor)}"),
+            SiloAuth.Profile, DevicesJsonContext.Default.LoginSessionCollection, cancellationToken);
+
+    /// <summary>Signs the account out of one sign-in.</summary>
+    public Task SignOutSessionAsync(Uri server, string id, string sessionId, CancellationToken cancellationToken = default) =>
+        http.SendAsync(HttpMethod.Delete, server, $"{UserPath(id)}/login-sessions/{SiloHttp.PathSegment(sessionId, nameof(sessionId))}",
+            SiloAuth.Profile, cancellationToken);
+
+    /// <summary>Signs the account out everywhere; its password and devices stay.</summary>
+    public Task<AdminSessionsRevoked> SignOutEverywhereAsync(Uri server, string id, CancellationToken cancellationToken = default) =>
+        http.SendAsync(HttpMethod.Delete, server, UserPath(id) + "/login-sessions", SiloAuth.Profile, AdminJsonContext.Default.AdminSessionsRevoked,
+            cancellationToken);
 
     internal static string UserPath(string id) => $"api/v2/admin/users/{SiloHttp.PathSegment(id, nameof(id))}";
 

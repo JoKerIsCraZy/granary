@@ -21,6 +21,7 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
     private AdminDashboardView? _dashboard;
     private AdminActivityView? _activity;
     private AdminUsersView? _users;
+    private AdminUserDetailView? _detail;
 
     public AdminPage()
     {
@@ -53,6 +54,7 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
         _dashboard?.Release();
         _activity?.Release();
         _users?.Release();
+        _detail?.Release();
         Bindings.StopTracking();
     }
 
@@ -97,7 +99,7 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
                     await _activity.ActivateAsync();
                     break;
                 case AdminPages.Users:
-                    _users ??= new AdminUsersView();
+                    _users ??= CreateUsers();
                     Show(_users);
                     await _users.ActivateAsync();
                     break;
@@ -128,6 +130,46 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
         _dashboard?.Deactivate();
         _activity?.Deactivate();
         _users?.Deactivate();
+        CloseDetail();
+    }
+
+    private AdminUsersView CreateUsers()
+    {
+        var users = new AdminUsersView();
+        users.UserRequested += (_, id) => OpenUser(users, id);
+        return users;
+    }
+
+    // An account opens in place of the list, under Users in the sidebar, as the web's /admin/users/{id}.
+    private async void OpenUser(AdminUsersView users, string id)
+    {
+        try
+        {
+            users.Deactivate();
+            CloseDetail();
+            var detail = _detail = new AdminUserDetailView();
+            detail.BackRequested += async (_, _) =>
+            {
+                CloseDetail();
+                Show(users);
+                await users.ActivateAsync();
+            };
+            Show(detail);
+            var list = users.ViewModel;
+            await detail.OpenAsync(id, list.Capabilities, list.Groups, list.ViewerIsOwner);
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape.
+            App.Services.GetRequiredService<ILogger<AdminPage>>().LogError(ex, "An account could not be opened");
+        }
+    }
+
+    private void CloseDetail()
+    {
+        _detail?.Deactivate();
+        _detail?.Release();
+        _detail = null;
     }
 
     private void Show(UIElement view)

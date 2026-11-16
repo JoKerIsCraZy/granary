@@ -227,3 +227,6 @@ public sealed record AdminPasswordReset
 
     public override string ToString() => $"AdminPasswordReset {{ Delivery = {Delivery}, DeliveryStatus = {DeliveryStatus} }}";
 }
+
+/// <summary>How many sign-ins Sign out everywhere ended.</summary>
+public sealed record AdminSessionsRevoked(int Revoked);

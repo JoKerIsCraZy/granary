@@ -1811,6 +1811,37 @@ stream's commands on Activity and what Users does to accounts.
   - **Delete** (`AdminUserDeleteDialog`, the web's): the account is read fresh first; "Delete ana?", what goes with it,
     and "Type ana to confirm" (the name in a fixed-width face) before Delete account does anything. A change by another
     administrator meanwhile says "The user changed. Reload before trying again." with Reload current user.
+  - **An account** (`AdminUserDetailView` on `AdminUserDetailViewModel`, the web's `pages/AdminUserDetail.tsx`), opened
+    from its name or Edit in place of the list, Users staying picked in the sidebar: "Users › ana" leads back. The
+    header: the initial in a 56 px circle, the name, the role badge, Active (green outline) or Disabled, "Temporary
+    password" in amber when it holds one, and the web's line of facts ("ana@example.com · Group: Family · Joined Mar 2,
+    2026 · Last active 2d ago · Password sign-in"). An account the viewer may not change says why in a blue notice
+    (the Owner's, another admin's for a viewer who is not the Owner); a disabled one says it can't sign in, with Enable
+    account. On the right Reset password (password sign-in) or Set password (a sign-in provider's account), and ⋯ with
+    what the viewer may do: Make owner (the Owner, to another enabled admin; asked first), Disable account (asked
+    first) or Enable account, and Delete account… (the delete dialog, with Disable instead). Below, two cards side by
+    side, as the web's Access & limits tab has them first; each change goes at the version the account was read at, and
+    Save and Cancel show once something changed:
+    - **Sign-in & role**: Username, Email, Role (User or Admin, with the web's line under it: only the Owner grants
+      admin, one's own role is fixed, and a user made admin leaves its group) and Can sign in (never the Owner's or
+      one's own).
+    - **Library access**: the access group (No group, or a group; "Admins don't use access groups" for an admin), the
+      libraries (the group's, or the server default without one, or chosen for the account from the server's libraries,
+      with "This account won't see any library." when none is ticked), Marker editing and Metadata curation. Until the
+      libraries are read the account's own stay as they are. Only the Owner changes an admin's, with the web's note.
+    A change by another administrator meanwhile keeps the edits and says so, with Reload and review; "Saved" after a
+    save. The web's other cards (playback, downloads, requests, the profile limit) and its Overview, Profiles,
+    Activity, Downloads and Preferences tabs stay on the web; so does View as.
+  - **Reset password** (`AdminPasswordResetDialog`, the web's): email a reset link (to the account's address, where
+    email is set up), create a link to share (where the server has its public URL), or set a temporary password ("They
+    must choose a new one at next sign-in" on by default); each signs the account out everywhere, and a disabled
+    account gets only the temporary password. A link shows once in a box with whom to share it and until when, and Copy
+    link (off the clipboard's history); it and the password are forgotten when the dialog closes. Set password opens the
+    same dialog with only the temporary password.
+  - **Signed-in sessions** (where the server offers them; `AdminUserSessionsViewModel`, the web's admin
+    LoginSessionsPanel): the browsers and apps signed in to the account, 50 at a time with Load more sessions, each with
+    its name, last seen, when it signed in and the address; Sign out on one, or Sign out everywhere, each asked first.
+    The Owner-only note for an account the viewer may not sign out.
 
 ### Activity indicator
 

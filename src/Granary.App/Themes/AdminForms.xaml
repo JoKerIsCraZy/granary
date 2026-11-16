@@ -12,6 +12,11 @@
         <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <!-- The web's info notice, in Silo's info blue (SiloInfoColor): its border at 25 %, its fill at 5 %. -->
+    <SolidColorBrush x:Key="AdminInfoBorderBrush" Color="#404BA3F7" />
+    <SolidColorBrush x:Key="AdminInfoBackgroundBrush" Color="#0D4BA3F7" />
+    <SolidColorBrush x:Key="AdminInfoIconBrush" Color="#FF4BA3F7" />
+
     <Style x:Key="AdminFormCardStyle" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource SiloSurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource SiloBorderBrush}" />

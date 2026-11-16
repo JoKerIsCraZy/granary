@@ -5947,6 +5947,366 @@
       "value": "؟"
     }
   ],
+  "web.admin.users.detail.access.card.conflict": [
+    {
+      "type": 0,
+      "value": "غيّر مسؤول آخر هذا الحساب بعد أن بدأت. تم الاحتفاظ بتعديلاتك."
+    }
+  ],
+  "web.admin.users.detail.access.card.reloadAndReview": [
+    {
+      "type": 0,
+      "value": "إعادة التحميل والمراجعة"
+    }
+  ],
+  "web.admin.users.detail.access.card.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ هذا الحساب."
+    }
+  ],
+  "web.admin.users.detail.access.card.saved": [
+    {
+      "type": 0,
+      "value": "تم الحفظ"
+    }
+  ],
+  "web.admin.users.detail.access.card.saving": [
+    {
+      "type": 0,
+      "value": "جارٍ الحفظ..."
+    }
+  ],
+  "web.admin.users.detail.access.library.accessGroup": [
+    {
+      "type": 0,
+      "value": "مجموعة الوصول"
+    }
+  ],
+  "web.admin.users.detail.access.library.adminDescription": [
+    {
+      "type": 0,
+      "value": "لا يستخدم المسؤولون مجموعات الوصول. القيم غير المعيّنة تتبع الإعداد الافتراضي للخادم."
+    }
+  ],
+  "web.admin.users.detail.access.library.chooseForAccount": [
+    {
+      "type": 0,
+      "value": "الاختيار لهذا الحساب"
+    }
+  ],
+  "web.admin.users.detail.access.library.libraries": [
+    {
+      "type": 0,
+      "value": "المكتبات"
+    }
+  ],
+  "web.admin.users.detail.access.library.markerEdit": [
+    {
+      "type": 0,
+      "value": "تعديل العلامات"
+    }
+  ],
+  "web.admin.users.detail.access.library.markerEditDescription": [
+    {
+      "type": 0,
+      "value": "علامات المقدمة والملخص وشارة النهاية والمعاينة"
+    }
+  ],
+  "web.admin.users.detail.access.library.metadataCuration": [
+    {
+      "type": 0,
+      "value": "تنظيم البيانات الوصفية"
+    }
+  ],
+  "web.admin.users.detail.access.library.metadataCurationDescription": [
+    {
+      "type": 0,
+      "value": "تعديل البيانات الوصفية وتحديثها وإعادة مطابقتها"
+    }
+  ],
+  "web.admin.users.detail.access.library.noGroup": [
+    {
+      "type": 0,
+      "value": "بلا مجموعة"
+    }
+  ],
+  "web.admin.users.detail.access.library.noLibraryWarning": [
+    {
+      "type": 0,
+      "value": "لن يرى هذا الحساب أي مكتبة."
+    }
+  ],
+  "web.admin.users.detail.access.library.useGroupLibraries": [
+    {
+      "type": 0,
+      "value": "استخدام مكتبات المجموعة"
+    }
+  ],
+  "web.admin.users.detail.access.library.useServerDefault": [
+    {
+      "type": 0,
+      "value": "استخدام الإعداد الافتراضي للخادم"
+    }
+  ],
+  "web.admin.users.detail.access.role.admin": [
+    {
+      "type": 0,
+      "value": "مسؤول"
+    }
+  ],
+  "web.admin.users.detail.access.role.user": [
+    {
+      "type": 0,
+      "value": "مستخدم"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.adminLeavesGroup": [
+    {
+      "type": 0,
+      "value": "لا يستخدم المسؤولون مجموعات الوصول. سيؤدي الحفظ إلى إزالة هذا الحساب من "
+    },
+    {
+      "type": 1,
+      "value": "group"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.canSignIn": [
+    {
+      "type": 0,
+      "value": "يمكنه تسجيل الدخول"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.cannotDisableSelf": [
+    {
+      "type": 0,
+      "value": "لا يمكنك تعطيل حسابك الخاص."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.email": [
+    {
+      "type": 0,
+      "value": "البريد الإلكتروني"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.enterUsername": [
+    {
+      "type": 0,
+      "value": "أدخل اسم مستخدم."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownRole": [
+    {
+      "type": 0,
+      "value": "لا يمكنك تغيير دورك الخاص."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerGrantsAdmin": [
+    {
+      "type": 0,
+      "value": "يمكن لمالك الخادم وحده منح صلاحية المسؤول"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerGrantsAdminRole": [
+    {
+      "type": 0,
+      "value": "يمكن لمالك الخادم وحده منح دور المسؤول."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerStaysEnabled": [
+    {
+      "type": 0,
+      "value": "يبقى مالك الخادم مسؤولًا مفعّلًا."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.role": [
+    {
+      "type": 0,
+      "value": "الدور"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.username": [
+    {
+      "type": 0,
+      "value": "اسم المستخدم"
+    }
+  ],
+  "web.admin.users.detail.access.tab.ownerOnlyNote": [
+    {
+      "type": 0,
+      "value": "يمكن لمالك الخادم وحده تغيير وصول المسؤول وحدوده."
+    }
+  ],
+  "web.admin.users.detail.common.cardTitle.library": [
+    {
+      "type": 0,
+      "value": "الوصول إلى المكتبات"
+    }
+  ],
+  "web.admin.users.detail.common.cardTitle.signin": [
+    {
+      "type": 0,
+      "value": "تسجيل الدخول والدور"
+    }
+  ],
+  "web.admin.users.detail.header.adminNotice": [
+    {
+      "type": 0,
+      "value": "لا يمكن تغيير حساب مسؤول آخر إلا لمالك الخادم. يمكنك عرضه."
+    }
+  ],
+  "web.admin.users.detail.header.breadcrumb": [
+    {
+      "type": 0,
+      "value": "مسار التنقل"
+    }
+  ],
+  "web.admin.users.detail.header.breadcrumbUsers": [
+    {
+      "type": 0,
+      "value": "المستخدمون"
+    }
+  ],
+  "web.admin.users.detail.header.deleteAccount": [
+    {
+      "type": 0,
+      "value": "حذف الحساب…"
+    }
+  ],
+  "web.admin.users.detail.header.disableAccount": [
+    {
+      "type": 0,
+      "value": "تعطيل الحساب"
+    }
+  ],
+  "web.admin.users.detail.header.disabledNotice": [
+    {
+      "type": 0,
+      "value": "لا يمكن لهذا الحساب تسجيل الدخول. يُحتفظ بملفاته الشخصية وسجلّه."
+    }
+  ],
+  "web.admin.users.detail.header.enableAccount": [
+    {
+      "type": 0,
+      "value": "تفعيل الحساب"
+    }
+  ],
+  "web.admin.users.detail.header.externalSignIn": [
+    {
+      "type": 0,
+      "value": "تسجيل الدخول الخارجي"
+    }
+  ],
+  "web.admin.users.detail.header.group": [
+    {
+      "type": 0,
+      "value": "المجموعة: "
+    },
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 1,
+          "value": "name"
+        }
+      ]
+    }
+  ],
+  "web.admin.users.detail.header.groupIdFallback": [
+    {
+      "type": 0,
+      "value": "#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.users.detail.header.joined": [
+    {
+      "type": 0,
+      "value": "انضم في "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.admin.users.detail.header.lastActive": [
+    {
+      "type": 0,
+      "value": "آخر نشاط: "
+    },
+    {
+      "type": 1,
+      "value": "when"
+    }
+  ],
+  "web.admin.users.detail.header.makeOwner": [
+    {
+      "type": 0,
+      "value": "تعيين كمالك"
+    }
+  ],
+  "web.admin.users.detail.header.moreActions": [
+    {
+      "type": 0,
+      "value": "مزيد من الإجراءات"
+    }
+  ],
+  "web.admin.users.detail.header.noActivity": [
+    {
+      "type": 0,
+      "value": "لا يوجد نشاط مسجّل"
+    }
+  ],
+  "web.admin.users.detail.header.ownerNotice": [
+    {
+      "type": 0,
+      "value": "هذا هو مالك الخادم. لا يستطيع تغيير هذا الحساب إلا المالك."
+    }
+  ],
+  "web.admin.users.detail.header.passwordSignIn": [
+    {
+      "type": 0,
+      "value": "تسجيل الدخول بكلمة المرور"
+    }
+  ],
+  "web.admin.users.detail.header.resetPassword": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين كلمة المرور"
+    }
+  ],
+  "web.admin.users.detail.header.setPassword": [
+    {
+      "type": 0,
+      "value": "تعيين كلمة المرور"
+    }
+  ],
+  "web.admin.users.detail.header.status.active": [
+    {
+      "type": 0,
+      "value": "نشط"
+    }
+  ],
+  "web.admin.users.detail.header.status.disabled": [
+    {
+      "type": 0,
+      "value": "معطّل"
+    }
+  ],
+  "web.admin.users.detail.header.temporaryPassword": [
+    {
+      "type": 0,
+      "value": "كلمة مرور مؤقتة"
+    }
+  ],
   "web.admin.users.list.addUser": [
     {
       "type": 0,
@@ -6373,6 +6733,422 @@
     {
       "type": 0,
       "value": "تعذّر تحميل المستخدم."
+    }
+  ],
+  "web.admin.users.page.accountChanged": [
+    {
+      "type": 0,
+      "value": "تغيّر الحساب. حاول مرة أخرى."
+    }
+  ],
+  "web.admin.users.page.allUsers": [
+    {
+      "type": 0,
+      "value": "كل المستخدمين"
+    }
+  ],
+  "web.admin.users.page.changeFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تغيير الحساب."
+    }
+  ],
+  "web.admin.users.page.disableConfirm": [
+    {
+      "type": 0,
+      "value": "تعطيل الحساب"
+    }
+  ],
+  "web.admin.users.page.disableDescription": [
+    {
+      "type": 0,
+      "value": "لن يتمكن من تسجيل الدخول حتى تعيد تفعيل الحساب. ستبقى ملفاته الشخصية وسجله وتنزيلاته محفوظة."
+    }
+  ],
+  "web.admin.users.page.disableTitle": [
+    {
+      "type": 0,
+      "value": "تعطيل "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "؟"
+    }
+  ],
+  "web.admin.users.page.disabled": [
+    {
+      "type": 0,
+      "value": "تم تعطيل "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    }
+  ],
+  "web.admin.users.page.enabled": [
+    {
+      "type": 0,
+      "value": "تم تفعيل "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    }
+  ],
+  "web.admin.users.page.loadFailedDescription": [
+    {
+      "type": 0,
+      "value": "حدث خطأ أثناء تحميل الحساب. حاول مرة أخرى بعد قليل."
+    }
+  ],
+  "web.admin.users.page.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل هذا المستخدم"
+    }
+  ],
+  "web.admin.users.page.notFoundDescription": [
+    {
+      "type": 0,
+      "value": "ربما حُذف الحساب، أو قد يكون الرابط خاطئًا."
+    }
+  ],
+  "web.admin.users.page.notFoundTitle": [
+    {
+      "type": 0,
+      "value": "لم يُعثر على المستخدم"
+    }
+  ],
+  "web.admin.users.page.ownerTransferred": [
+    {
+      "type": 0,
+      "value": "أصبح "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " الآن مالك الخادم"
+    }
+  ],
+  "web.admin.users.page.transferConfirm": [
+    {
+      "type": 0,
+      "value": "تعيينه مالكًا"
+    }
+  ],
+  "web.admin.users.page.transferDescription": [
+    {
+      "type": 0,
+      "value": "سيصبح "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " الحساب الوحيد الذي يمكنه إدارة المسؤولين، وستبقى أنت مسؤولًا. يمكن لـ"
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " وحده إعادة نقل الملكية."
+    }
+  ],
+  "web.admin.users.page.transferFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر نقل الملكية."
+    }
+  ],
+  "web.admin.users.page.transferTitle": [
+    {
+      "type": 0,
+      "value": "تعيين "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " مالكًا للخادم؟"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.copyFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر نسخ الرابط. حدّده وانسخه يدويًا."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.copyLink": [
+    {
+      "type": 0,
+      "value": "نسخ الرابط"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.description": [
+    {
+      "type": 0,
+      "value": "اختر طريقة عودته إلى الحساب. يؤدي كل خيار إلى تسجيل خروجه من جميع الأجهزة."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailAction": [
+    {
+      "type": 0,
+      "value": "إرسال الرابط بالبريد الإلكتروني"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHint": [
+    {
+      "type": 0,
+      "value": "يُرسل إلى "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". يعمل مرة واحدة وتنتهي صلاحيته خلال 24 ساعة."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintDisabled": [
+    {
+      "type": 0,
+      "value": "فعّل الحساب لإرسال رابط إعادة تعيين إليه."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintNoAddress": [
+    {
+      "type": 0,
+      "value": "لا يملك هذا الحساب عنوان بريد إلكتروني، لذا شارك رابطًا بدلًا من ذلك."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintNoMail": [
+    {
+      "type": 0,
+      "value": "اضبط البريد الإلكتروني في الإعدادات لإرسال روابط إعادة التعيين."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailOption": [
+    {
+      "type": 0,
+      "value": "إرسال رابط إعادة التعيين بالبريد الإلكتروني"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailSent": [
+    {
+      "type": 0,
+      "value": "أُرسل رابط إعادة التعيين إلى "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". تنتهي صلاحيته في "
+    },
+    {
+      "type": 1,
+      "value": "expires"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailUnconfirmed": [
+    {
+      "type": 0,
+      "value": "لم يؤكد خادم البريد التسليم. أعد الإرسال، أو أنشئ رابطًا للمشاركة."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.issueFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر إنشاء رابط إعادة التعيين."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkAction": [
+    {
+      "type": 0,
+      "value": "إنشاء الرابط"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkCopied": [
+    {
+      "type": 0,
+      "value": "تم نسخ الرابط"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHint": [
+    {
+      "type": 0,
+      "value": "انسخه وأرسله بنفسك."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHintDisabled": [
+    {
+      "type": 0,
+      "value": "فعّل الحساب لإنشاء رابط إعادة تعيين."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHintNoUrl": [
+    {
+      "type": 0,
+      "value": "اضبط عنوان URL العام لـSilo لإنشاء روابط إعادة التعيين. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "الإعدادات العامة"
+        }
+      ]
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkOption": [
+    {
+      "type": 0,
+      "value": "إنشاء رابط للمشاركة"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkShare": [
+    {
+      "type": 0,
+      "value": "شارك هذا الرابط مع "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " فقط. يمكن لأي شخص يملكه تعيين كلمة مرور الحساب حتى تنتهي صلاحيته في "
+    },
+    {
+      "type": 1,
+      "value": "expires"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.methodGroup": [
+    {
+      "type": 0,
+      "value": "طريقة عودته إلى الحساب"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.mustChange": [
+    {
+      "type": 0,
+      "value": "يجب عليه اختيار كلمة مرور جديدة عند تسجيل الدخول التالي"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordAction": [
+    {
+      "type": 0,
+      "value": "تعيين كلمة المرور"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordLabel": [
+    {
+      "type": 0,
+      "value": "كلمة المرور المؤقتة"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordOption": [
+    {
+      "type": 0,
+      "value": "تعيين كلمة مرور مؤقتة"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordOptionHint": [
+    {
+      "type": 0,
+      "value": "اكتب كلمة مرور الآن وأبلغه بها."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordRules": [
+    {
+      "type": 0,
+      "value": "عدد الأحرف "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": " على الأقل، ولا يتجاوز الحجم "
+    },
+    {
+      "type": 1,
+      "value": "max"
+    },
+    {
+      "type": 0,
+      "value": " بايت بترميز UTF-8."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordSet": [
+    {
+      "type": 0,
+      "value": "تم تعيين كلمة المرور. سُجّل خروج "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " من كل الأجهزة."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordSetMustChange": [
+    {
+      "type": 0,
+      "value": "تم تعيين كلمة المرور. سُجّل خروج "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " من كل الأجهزة. يجب عليه اختيار كلمة مرور جديدة عند تسجيل الدخول التالي."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.setFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تعيين كلمة المرور."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.title": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين كلمة المرور لـ"
+    },
+    {
+      "type": 1,
+      "value": "username"
     }
   ],
   "web.audiobooks.duration.hours": [
@@ -21200,6 +21976,60 @@
       "value": "إعادة تعيين"
     }
   ],
+  "web.settings.sessions.admin.empty": [
+    {
+      "type": 0,
+      "value": "لا توجد عمليات تسجيل دخول نشطة لهذا الحساب."
+    }
+  ],
+  "web.settings.sessions.admin.ownerOnly": [
+    {
+      "type": 0,
+      "value": "لا يمكن إلا لمالك الخادم تسجيل خروج مسؤول آخر أو المالك."
+    }
+  ],
+  "web.settings.sessions.adminDescription": [
+    {
+      "type": 0,
+      "value": "المتصفحات والتطبيقات المسجّل دخولها إلى حساب "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.settings.sessions.confirm.adminClientDescription": [
+    {
+      "type": 0,
+      "value": "سيفقد هذا العميل على حساب "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " إمكانية الوصول عند طلبه المصادق عليه التالي. تبقى جلساته الأخرى وكلمة المرور دون تغيير."
+    }
+  ],
+  "web.settings.sessions.confirm.allTitle": [
+    {
+      "type": 0,
+      "value": "تسجيل خروج "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " من كل مكان؟"
+    }
+  ],
   "web.settings.sessions.confirm.clientDescription": [
     {
       "type": 0,
@@ -21224,6 +22054,12 @@
     {
       "type": 0,
       "value": "قد يستمر تشغيل فيديو قيد التشغيل حتى طلبه التالي. تُحفظ إعدادات الجهاز المحفوظة."
+    }
+  ],
+  "web.settings.sessions.confirm.sessionTitle": [
+    {
+      "type": 0,
+      "value": "تسجيل الخروج من هذه الجلسة؟"
     }
   ],
   "web.settings.sessions.confirm.signingOut": [
@@ -21254,6 +22090,12 @@
     {
       "type": 0,
       "value": "جهاز غير معروف"
+    }
+  ],
+  "web.settings.sessions.footnoteAdmin": [
+    {
+      "type": 0,
+      "value": "يسجّل «آخر نشاط» النشاط المصادق عليه، ويُحدَّث مرة واحدة في الدقيقة على الأكثر. قد لا يكون للجلسات الأقدم نشاط مسجّل بعد. لا يغيّر تسجيل الخروج كلمة المرور ولا إعدادات الجهاز المحفوظة. تبقى الحسابات الأخرى مسجّلة الدخول."
     }
   ],
   "web.settings.sessions.lastSeen.active": [
@@ -21704,6 +22546,12 @@
       "value": "User-Agent"
     }
   ],
+  "web.settings.sessions.signOutEverywhere": [
+    {
+      "type": 0,
+      "value": "تسجيل الخروج من كل مكان"
+    }
+  ],
   "web.settings.sessions.signOutFailed": [
     {
       "type": 0,
@@ -21714,6 +22562,20 @@
     {
       "type": 0,
       "value": "تم تسجيل الخروج من الجلسة"
+    }
+  ],
+  "web.settings.sessions.signedOutEverywhere": [
+    {
+      "type": 0,
+      "value": "تم تسجيل خروج "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " من كل مكان"
     }
   ],
   "web.settings.sessions.title": [

@@ -80,6 +80,13 @@ public static class AdminText
         };
     }
 
+    /// <summary>
+    /// A web text without the part it links to a page Granary does not have ("… General settings"), so the sentence stands
+    /// alone, as Granary shows it.
+    /// </summary>
+    public static string WithoutLink(string key, params ReadOnlySpan<(string Name, object? Value)> values) =>
+        string.Concat(AppText.Runs(key, values).Where(run => !run.Tags.Contains("link")).Select(run => run.Text)).Trim();
+
     /// <summary>An administrator's role badge: "owner" for the server's Owner, else "admin", as the web's accountRoleLabel.</summary>
     public static string Role(string role, bool isOwner) =>
         AppText.Get("web.admin.common.accounts.role", ("role", isOwner ? "owner" : role));

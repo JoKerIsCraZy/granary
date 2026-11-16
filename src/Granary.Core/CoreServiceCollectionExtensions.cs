@@ -263,6 +263,9 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<AdminUsersViewModel>();
         services.AddTransient<AdminNewUserViewModel>();
         services.AddTransient<AdminUserDeleteViewModel>();
+        services.AddTransient<AdminUserDetailViewModel>();
+        services.AddTransient<AdminPasswordResetViewModel>();
+        services.AddTransient<AdminUserSessionsViewModel>();
         return services;
     }
 

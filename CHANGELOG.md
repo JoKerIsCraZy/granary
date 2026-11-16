@@ -12,7 +12,11 @@ release's section is what its update says it changes (docs/release.md).
   Silo server with its role, group, status, when it was created and when it was last active; search by name or email,
   filter by group, sort by any column and page through 25, 50 or 100 at a time. Add User creates an account with its
   password (temporary if you like), role, group, marker editing and metadata curation, and a first profile. Delete asks
-  you to type the account's name first, and stops if another administrator changed the account meanwhile.
+  you to type the account's name first, and stops if another administrator changed the account meanwhile. An
+  account's own page shows what it is and offers what you may do: change its name, email, role and whether it can
+  sign in; its access group, libraries, marker editing and metadata curation; reset its password by email, with a link
+  to share or with a temporary password; disable or enable it, make another admin the server's owner, delete it, and
+  see where it is signed in and sign it out there or everywhere.
 - **Granary in seven languages:** English, Spanish, German, French, Brazilian Portuguese, Japanese and Simplified
   Chinese, in the words and translations of Silo's web and apps where they have the text. Granary follows the language
   your profile chose in any Silo app, else Windows' languages, else English. Settings → Accessibility → Language

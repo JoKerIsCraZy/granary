@@ -1367,6 +1367,17 @@ shown, never logged. Source: `silo-server/internal/apiv2/admin_users.go`, `admin
   holds only what changes: a member left out stays, `null` on `access_group_id` or `library_ids` means no group and the
   group's libraries, and `null` on any other member is refused. Deleting, demoting or disabling the last usable
   break-glass admin while password sign-in is off is 409 `break_glass_required`.
+- `POST /api/v2/admin/users/{id}/password-reset` with `{ "delivery": "email" | "link" }` → `201 { "delivery",
+  "delivery_status" ("sent", "failed_or_unknown", "not_requested"), "reset_url"? (link only), "expires_at" }`. The
+  `reset_url` is a bearer credential with its token in the fragment: shown once to the administrator, never logged or
+  kept. 409 for a disabled account or one a sign-in provider manages; `capability_not_configured` without email or the
+  public URL (the capabilities `password_reset_email` and `password_reset_link` say so first). A temporary password
+  goes through the `PUT` above with `{ "password", "require_password_change"? }`.
+- `POST /api/v2/admin/users/{id}/transfer-ownership` → 204: only the Owner, to another enabled admin; it stays an admin.
+- `GET /api/v2/admin/users/{id}/login-sessions?limit=50[&cursor=]` → a page of the account's
+  live sign-ins in the shape of `GET /api/v2/auth/sessions` (above); `DELETE …/login-sessions/{session_id}` → 204; `DELETE …/login-sessions` → `{ "revoked" }`. Offered where
+  the capabilities say `login_sessions`. Source: `admin_login_sessions.go`.
+- `GET /api/v2/libraries` gives an account's page the libraries to choose from.
 - A failed action is worded by its status, as a load is (401/403 refused, 404 gone, 429/503 busy, no answer
   unreachable); anything else in the web's words for the action ("Could not save user.").
 
