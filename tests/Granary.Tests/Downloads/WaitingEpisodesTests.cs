@@ -138,14 +138,20 @@ public sealed class WaitingEpisodesTests : IAsyncDisposable
         Assert.Equal(["ep_21"], Waiting());
     }
 
+    // The server drops a device's deleted entry, which then counts toward neither limit: once its delete reached the server,
+    // not as it leaves this PC.
     [Fact]
-    public async Task ADownloadThatGoes_LetsTheNextOneTryAtOnce()
+    public async Task ADeleteThatReachedTheServer_LetsTheNextOneTryAtOnce()
     {
         await _h.AddAsync("dl_0", DownloadState.Completed, mediaItemId: "mv_9");
         var manager = await LimitedAsync();
         Creates(Created("dl_2", "ep_2"), Created("dl_21", "ep_21"));
 
-        await _h.Store.RemoveAsync(Scope7, "dl_0", queueServerDelete: false, Token);
+        await _h.Store.RemoveAsync(Scope7, "dl_0", queueServerDelete: true, Token);
+        await manager.WaitingRun;
+        Assert.Equal(2, CreatedEpisodes().Count);
+
+        await _h.Store.ForgetPendingDeleteAsync(_h.Store.PendingDeletes(Scope7).Single(), Token);
         await manager.WaitingRun;
 
         Assert.Empty(Waiting());

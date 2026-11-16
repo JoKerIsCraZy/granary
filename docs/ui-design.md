@@ -188,7 +188,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   (Home's rows, Continue Watching and Next Up, the libraries, search, collections, a title page's rows and episodes),
   with the title page's entries and rules (Detail pages, below): "Download" while your Silo server lets the profile
   download, or the download's status in the Downloads page's words, which opens the Downloads page, and "Delete download"
-  under it; a season's card "Download season"; a series' card "Download series" (`CardDownloads`). They come from what this PC
+  under it; a season's card "Download season"; a series' card "Download series" (`CardDownloads`), whose dialog offers the
+  episode the series plays next, its season and All episodes, as a series' page does (Detail pages, below); an episode
+  waiting for your Silo server's download limit says "Queued", which opens the Downloads page. They come from what this PC
   knows, so opening the menu asks the server nothing. Below a line come the entries of the list a card is in, from the
   nearest grid above it (`ICardMenuHost`; none in a `MediaRow`), asked as the menu opens: a collection's own.
   Right-click, Shift+F10, the menu key and a controller's Menu open the same menu. The web's admin entries (play
@@ -1729,7 +1731,7 @@ says why above the sections.
   take on this PC ("3.0 GB", as the queue counts them), and, while it has some, Remove all downloads ("Deletes this
   profile's downloads from this PC. Nothing is deleted from your Silo server.", Granary's words) with an outline Remove
   all in red, which asks the Apple app's "Remove all downloaded files?" with Remove all and Cancel, then deletes each as
-  Delete does.
+  Delete does; the episodes waiting for your Silo server's download limit go first, so none of them starts again.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you

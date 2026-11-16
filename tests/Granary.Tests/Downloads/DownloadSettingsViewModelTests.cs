@@ -1,5 +1,6 @@
 using System.Net;
 using Granary.Core.Abstractions;
+using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using Granary.Core.Texts;
@@ -81,6 +82,27 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
 
         Assert.Empty(_h.Store.In(Scope7));
         Assert.Equal(("0 B", false), (settings.UsedText, settings.CanRemoveAll));
+    }
+
+    // Remove All leaves nothing to come back: the episodes waiting for the server's limit of downloads go first.
+    [Fact]
+    public async Task RemoveAll_AlsoDropsTheEpisodesWaitingForTheServersLimit()
+    {
+        _h.List();
+        _h.Silo.On(HttpMethod.Post, "api/v2/downloads", ScriptedSilo.Problem(429, ProblemCodes.RateLimited));
+        await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "mv_1");
+        await _h.Store.AddWaitingUnlessClearedAsync([new WaitingEpisode(Scope7, "sr_1", "Example Series", 1, "ep_2", 2, "Chapter Two", null, "original")],
+            _h.Store.ClearGeneration, Token);
+        var manager = _h.NewManager();
+        await manager.WaitingRun;
+        var settings = new DownloadSettingsViewModel(_h.Preferences, _h.NewFeature(), _picker, _launcher, new ImmediateDispatcher(), _h.Time,
+            downloads: manager, confirmation: new FakeConfirmation()) { DriveList = () => [] };
+        await settings.LoadAsync(Token);
+
+        await settings.RemoveAllCommand.ExecuteAsync(null);
+
+        Assert.Empty(_h.Store.WaitingIn(Scope7));
+        Assert.Empty(_h.Store.In(Scope7));
     }
 
     [Fact]

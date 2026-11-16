@@ -231,8 +231,9 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         {
             return;
         }
-        await _downloads.DeleteAllAsync(scope, [.. episodes.Select(e => e.DownloadId)], CancellationToken.None);
+        // The line first: a delete that reaches the server frees a place, and would start one of them.
         await _downloads.DropWaitingAsync(scope, card.Id, CancellationToken.None);
+        await _downloads.DeleteAllAsync(scope, [.. episodes.Select(e => e.DownloadId)], CancellationToken.None);
     }
 
     // What the transfer entry does, whatever its words.

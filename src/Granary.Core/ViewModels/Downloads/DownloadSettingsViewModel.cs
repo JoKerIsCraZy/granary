@@ -541,6 +541,9 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         if (asked.Length > 0 && await _confirmation.AskAsync(RemoveAllTitle, AppText.Get("granary.settings.downloads.removeAllMessage"),
             RemoveAllAction))
         {
+            // The episodes waiting for the server's limit go first: a delete that reaches the server frees a place, and would
+            // start one of them on this PC again.
+            await _downloads.DropWaitingAsync(scope, null, CancellationToken.None);
             await _downloads.DeleteAllAsync(scope, asked, CancellationToken.None);
         }
         await _dispatcher.ResumeOnUi();

@@ -1,7 +1,10 @@
+using System.Net;
+using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Tests.Fakes;
+using Granary.Tests.Profiles;
 using static Granary.Tests.Downloads.DownloadHarness;
 
 namespace Granary.Tests.Downloads;
@@ -13,8 +16,18 @@ namespace Granary.Tests.Downloads;
 /// </summary>
 public sealed class WaitingEpisodesPageTests : IAsyncDisposable
 {
+    private const string CreatePath = "api/v2/downloads";
+
     private readonly DownloadHarness _h = new();
     private readonly FakeConfirmation _confirmation = new();
+    private DownloadManager? _manager;
+
+    // A manager asks for the waiting episodes once as it starts: the server's limit still holds, unless a test says otherwise.
+    public WaitingEpisodesPageTests()
+    {
+        _h.List();
+        _h.Silo.On(HttpMethod.Post, CreatePath, ScriptedSilo.Problem(429, ProblemCodes.RateLimited));
+    }
 
     public ValueTask DisposeAsync() => _h.DisposeAsync();
 
@@ -26,7 +39,9 @@ public sealed class WaitingEpisodesPageTests : IAsyncDisposable
 
     private async Task<DownloadsViewModel> PageAsync()
     {
-        var page = new DownloadsViewModel(_h.NewManager(), _h.Disk, _h.Preferences, new RecordingNavigation(), _confirmation, new ImmediateDispatcher(),
+        _manager = _h.NewManager();
+        await _manager.WaitingRun;
+        var page = new DownloadsViewModel(_manager, _h.Disk, _h.Preferences, new RecordingNavigation(), _confirmation, new ImmediateDispatcher(),
             _h.Time, _h.Logs.For<DownloadsViewModel>());
         page.Attach();
         await page.SpaceRead;
@@ -79,6 +94,24 @@ public sealed class WaitingEpisodesPageTests : IAsyncDisposable
         Assert.Null(_h.Find("dl_1"));
     }
 
+    // The line goes before the downloads: a delete that reaches the server frees a place, which must not start the series'
+    // waiting episode on this PC again.
+    [Fact]
+    public async Task DeletingASeriesDownloads_StartsNoneOfItsWaitingEpisodes_ThoughTheServerFreesAPlace()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_1", change: r => r with { SeriesId = "sr_1", SeriesTitle = "Example Series" });
+        await WaitAsync(Waiting("ep_2"));
+        var page = await PageAsync();
+        _h.Silo.On(HttpMethod.Post, CreatePath, ScriptedSilo.Json(HttpStatusCode.Accepted, DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_2", "ready", episodeId: "ep_2"))));
+
+        await page.Actions.DeleteSeriesCommand.ExecuteAsync(page.Series.Single().Card);
+        await _h.Store.ForgetPendingDeleteAsync(_h.Store.PendingDeletes(Scope7).Single(), Token);
+        await _manager!.WaitingRun;
+
+        Assert.Empty(_h.Store.WaitingIn(Scope7));
+        Assert.Null(_h.Find("dl_2"));
+    }
+
     // Its card and its season's Download count it as on its way: it is not offered again.
     [Fact]
     public async Task AWaitingEpisode_IsQueued_AndOpensTheDownloadsPage()
@@ -86,6 +119,7 @@ public sealed class WaitingEpisodesPageTests : IAsyncDisposable
         await WaitAsync(Waiting("ep_2"));
         var feature = _h.NewFeature();
         var manager = _h.NewManager(feature: feature);
+        await manager.WaitingRun;
         var actions = new DownloadActions(manager, feature, new FakeDownloadOptionsDialog(), _confirmation, new RecordingNavigation(), new ImmediateDispatcher(),
             () => throw new InvalidOperationException("No dialog opens for a waiting episode."), _h.Logs.For<DownloadActions>());
 
