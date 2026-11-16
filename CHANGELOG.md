@@ -80,7 +80,8 @@ release's section is what its update says it changes (docs/release.md).
   longer holds the others back. The download dialog says how many of the series' episodes wait, in words that name the
   limit, with Done; Cancel while it starts keeps nothing waiting. The Downloads page says so too, with Cancel to drop
   them, and a waiting episode's own Download says Queued. Deleting a series' downloads, or Remove all downloads in
-  Settings → Downloads, drops the waiting episodes as well, and the one that was just being asked for goes with them.
+  Settings → Downloads (offered also while episodes only wait), drops the waiting episodes as well, and the one that was
+  just being asked for goes with them.
 - **Phone remote:** Silo's phone app can control what plays in Granary: play and pause, seek, volume, audio and
   subtitles, speed, quality and the next episode. Switch it on under Settings → Playback → This PC, open Connect a Phone
   and scan the code with the phone's camera once. It works on your local network only, while Granary runs, and only for

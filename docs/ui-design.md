@@ -1763,7 +1763,8 @@ its top.
   take on this PC ("3.0 GB", as the queue counts them), and, while it has some, Remove all downloads ("Deletes this
   profile's downloads from this PC. Nothing is deleted from your Silo server.", Granary's words) with an outline Remove
   all in red, which asks the Apple app's "Remove all downloaded files?" with Remove all and Cancel, then deletes each as
-  Delete does; the episodes waiting for your Silo server's download limit go first, so none of them starts again.
+  Delete does; the episodes waiting for your Silo server's download limit go first, so none of them starts again. It is
+  offered also while only such episodes are there (the first of a season refused), and removes them.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you

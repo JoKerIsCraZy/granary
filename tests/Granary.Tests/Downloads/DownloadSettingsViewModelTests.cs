@@ -105,6 +105,31 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         Assert.Empty(_h.Store.In(Scope7));
     }
 
+    // CodeRabbit on #171: a profile whose first episode the limit refused has nothing downloaded yet, only a line: Remove all
+    // downloads is offered all the same, and drops it.
+    [Fact]
+    public async Task RemoveAll_IsOfferedForWaitingEpisodesAlone_AndDropsThem()
+    {
+        _h.List();
+        _h.Silo.On(HttpMethod.Post, "api/v2/downloads", ScriptedSilo.Problem(429, ProblemCodes.RateLimited));
+        await _h.Store.LoadAsync(Token);
+        await _h.Store.AddWaitingUnlessClearedAsync([new WaitingEpisode(Scope7, "sr_1", "Example Series", 1, "ep_2", 2, "Chapter Two", null, "original")],
+            _h.Store.ClearGeneration, Token);
+        var manager = _h.NewManager();
+        await manager.WaitingRun;
+        var confirmation = new FakeConfirmation();
+        var settings = new DownloadSettingsViewModel(_h.Preferences, _h.NewFeature(), _picker, _launcher, new ImmediateDispatcher(), _h.Time,
+            downloads: manager, confirmation: confirmation) { DriveList = () => [] };
+        await settings.LoadAsync(Token);
+        Assert.True(settings.CanRemoveAll);
+
+        await settings.RemoveAllCommand.ExecuteAsync(null);
+
+        Assert.Single(confirmation.Asked);
+        Assert.Empty(_h.Store.WaitingIn(Scope7));
+        Assert.False(settings.CanRemoveAll);
+    }
+
     [Fact]
     public async Task Storage_FollowsTheDownloadsWhileItShows_AndNoLongerOnceItIsLeft()
     {

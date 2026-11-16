@@ -538,7 +538,8 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
             return;
         }
         string[] asked = [.. _downloads.Items.Select(i => i.DownloadId)];
-        if (asked.Length > 0 && await _confirmation.AskAsync(RemoveAllTitle, AppText.Get("granary.settings.downloads.removeAllMessage"),
+        // Episodes waiting for the server's limit alone are something to remove too: a profile whose first episode was refused.
+        if ((asked.Length > 0 || _downloads.WaitingCount() > 0) && await _confirmation.AskAsync(RemoveAllTitle, AppText.Get("granary.settings.downloads.removeAllMessage"),
             RemoveAllAction))
         {
             // The episodes waiting for the server's limit go first: a delete that reaches the server frees a place, and would
@@ -603,7 +604,7 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         }
         long used = _downloads.BytesUsed();
         UsedText = used > 0 ? PrePlayText.FileSize(used) : AppText.Get("web.common.format.size.bytes", ("size", 0));
-        CanRemoveAll = _downloads.Items.Count > 0;
+        CanRemoveAll = _downloads.Items.Count > 0 || _downloads.WaitingCount() > 0;
     }
 
     // The Apple app's footer: Original, then the presets (with "at up to the resolution shown" when the labels name one), then
