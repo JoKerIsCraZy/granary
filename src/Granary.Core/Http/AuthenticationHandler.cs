@@ -161,11 +161,21 @@ public sealed class AuthenticationHandler(
         request.Headers.Remove(ProfileTokenHeader);
         if (auth == SiloAuth.Profile && session.ProfileId is { } profileId)
         {
-            request.Headers.TryAddWithoutValidation(ProfileIdHeader, profileId);
-            if (session.ProfileToken is { } profileToken)
-            {
-                request.Headers.TryAddWithoutValidation(ProfileTokenHeader, profileToken);
-            }
+            AddProfile(request, profileId, session.ProfileToken);
+        }
+        else if (auth == SiloAuth.Account && request.GetLent() is { } lent)
+        {
+            // A profile that does not act, for this request only (ManagingProfile.Lent): its own proof, never the session's.
+            AddProfile(request, lent.ProfileId, lent.Token);
+        }
+    }
+
+    private static void AddProfile(HttpRequestMessage request, string profileId, string? profileToken)
+    {
+        request.Headers.TryAddWithoutValidation(ProfileIdHeader, profileId);
+        if (profileToken is not null)
+        {
+            request.Headers.TryAddWithoutValidation(ProfileTokenHeader, profileToken);
         }
     }
 

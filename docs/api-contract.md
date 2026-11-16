@@ -725,6 +725,52 @@ acts as if it were `null`.
   (`SettingsApi.SetValueAsProfileAsync`, `ClearValueAsProfileAsync`). A stored tag Granary does not offer is shown, not
   rewritten.
 
+### 6.7 Managing the household's profiles
+
+Settings → Profiles, and Add profile on the picker and in the profile menu, create, change and delete profiles as the web's
+`ProfileEditorDialog` and `ProfilesSettings.tsx` do (silo-server `internal/apiv2/profiles.go`,
+`internal/api/handlers/profiles.go`).
+
+- **Who may.** After an account's first profile, only the household manager writes: the request's acting profile must be
+  the account's primary profile, verified with its token when it has a PIN (`handlers.householdManagerAs`). Anyone else
+  gets `403 forbidden`; an unverified PIN-locked primary gets `403 profile_verification_required`. The first profile is
+  created by anyone signed in, without access members, and becomes the primary. Granary shows Settings → Profiles only to
+  the acting primary profile, as the web's `RequirePrimaryOrAdmin`.
+- **As whom.** In Settings the writes go out as the acting profile, bound to it (`ManagingProfile.Acting`), so a write
+  made for it never goes out as another. The picker's and the menu's Add profile verify the primary profile's PIN first
+  (when it has one) and send its id and that proof with the write (`ManagingProfile.Lent`), as the web's picker creates a
+  profile through `captureProfileRequestContextAs` without picking the primary. The proof stays in memory for that Add
+  only; a refusal of a lent profile never clears the selected one.
+- `POST /api/v2/profiles` (`createProfile`, 201 → `Profile`): `name` (1..64, trimmed) required. Granary sends what the
+  web's `buildProfileRequestFromDraft` sends: `name`, `is_child`, `library_restrictions_enabled`, `allowed_library_ids`
+  (strings) always; `avatar` (`preset:<id>`), `pin`, `max_content_rating`, `max_playback_quality` (`1080p` | `2160p`),
+  `max_advisory_age` (1..21), `require_advisory_age` and `requests_allowed: false` only when set. No member takes `null`.
+- `PATCH /api/v2/profiles/{id}` (`updateProfile` → `Profile`): omitted is unchanged, `null` clears (`avatar`, `pin`,
+  `max_content_rating`, `max_advisory_age`, `max_playback_quality`). Granary sends every member the editor owns, a cleared
+  one as `null`; `pin` only to set (`"1234"`) or remove (`null`), never `""`; `avatar` not while an uploaded picture stays
+  or goes through its own call. The primary profile takes no library limit (`library_restrictions_enabled: true` or a
+  non-empty list is `422`).
+- `DELETE /api/v2/profiles/{id}` (`deleteProfile`, 204): the primary profile answers `409`, one already gone `404`.
+- `PUT /api/v2/profiles/{id}/avatar` (`uploadProfileAvatar` → `Profile`): multipart, part `avatar`, JPEG, PNG or WebP, at
+  most 10 MiB; the server resizes it. `503` when the server keeps no uploads (`avatar_upload_enabled: false`, when the web
+  shows "Custom uploads are unavailable"). `DELETE …/avatar` (204) removes an upload and leaves a preset.
+- The editor's libraries: `GET /api/v2/user/libraries?include_hidden=true` as the manager, so libraries the primary hid
+  for itself can still be given to another profile.
+- `listProfiles` reports what a write may carry: `max_advisory_age_supported`, `require_advisory_age_supported`,
+  `requests_allowed_supported` (send those members only when true; an older server rejects unknown members) and
+  `max_profiles` (absent: no known limit). A profile's `requests_allowed` is absent on an older server and means allowed.
+- **Errors.** `409` is `conflict` for a taken name, a full household and the primary's delete alike (`serviceProblem`
+  keeps no finer code), so Granary checks the name (case-insensitive, trimmed) and the limit itself first, as Android's
+  `hasProfileNamed` does; a `409` that still comes is the web's "Failed to save profile". `422 validation_failed` names the member in
+  `errors[].location` (`body.name`, `body.pin`, `body.allowed_library_ids`).
+- **No versions.** None of these operations takes `If-Match` or sends an `ETag`: the last write wins, as on the web.
+- **The acting profile's own PIN.** Setting, changing or removing a profile's PIN advances its PIN revision and ends its
+  tokens. When the acting profile's own PIN changes, Granary checks the new PIN once (`verify-pin`) and selects the same
+  profile with the new token, as the web's `onSaveSuccess` does for a newly set one; a removed PIN needs no token.
+- **DiceBear.** The presets the web offers are `dicebear:<style>:<seed>` (styles `identicon`, `initials`,
+  `bottts-neutral`, `fun-emoji`, `pixel-art-neutral`; seeds `[A-Za-z0-9-]`, at most 64), sent as `preset:dicebear:…`; the
+  server also takes its own `avatar-1` … `avatar-8`. Their pictures come from `https://api.dicebear.com/9.x/<style>/svg`.
+
 ## 7. Catalog
 
 Every operation in this section needs the bearer token and, unless noted, `X-Profile-Id` (plus

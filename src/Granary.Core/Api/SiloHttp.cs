@@ -160,6 +160,43 @@ public sealed class SiloHttp(HttpClient http)
         return await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A household write that takes a JSON body and answers JSON, sent as <paramref name="manager"/>: while it acts, bound to it
+    /// as <c>SendAsProfileAsync</c> binds a write, else with its own id and proof (docs/api-contract.md, 6.7).
+    /// </summary>
+    public async Task<TResponse> SendAsManagerAsync<TRequest, TResponse>(HttpMethod method, Uri server, string path, ManagingProfile manager,
+        TRequest body, JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsManager(method, server, path, manager);
+        request.Content = JsonContent.Create(body, requestType);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As the other <c>SendAsManagerAsync</c>, for a bodiless write that answers 204, as a delete.</summary>
+    public async Task SendAsManagerAsync(HttpMethod method, Uri server, string path, ManagingProfile manager, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsManager(method, server, path, manager);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>A read as <paramref name="manager"/>, as the libraries a profile can be limited to.</summary>
+    public async Task<TResponse> GetAsManagerAsync<TResponse>(Uri server, string path, ManagingProfile manager, JsonTypeInfo<TResponse> responseType,
+        CancellationToken cancellationToken)
+    {
+        using var request = CreateAsManager(HttpMethod.Get, server, path, manager);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>A form sent as <paramref name="manager"/>, as a profile's picture.</summary>
+    public async Task<TResponse> SendFormAsManagerAsync<TResponse>(HttpMethod method, Uri server, string path, ManagingProfile manager,
+        MultipartFormDataContent form, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsManager(method, server, path, manager);
+        request.Content = form;
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>For operations that answer 204 No Content.</summary>
     public async Task SendAsync<TRequest>(HttpMethod method, Uri server, string path, SiloAuth auth, TRequest body, JsonTypeInfo<TRequest> requestType, CancellationToken cancellationToken)
     {
@@ -337,6 +374,20 @@ public sealed class SiloHttp(HttpClient http)
             ArgumentException.ThrowIfNullOrWhiteSpace(accountId);
             request.SetAccount(accountId);
         }
+        return request;
+    }
+
+    // The acting profile binds the write as CreateAsProfile does; a lent one goes with the account's credentials and its own
+    // headers, which the authentication handler adds in place of the session's.
+    private static HttpRequestMessage CreateAsManager(HttpMethod method, Uri server, string path, ManagingProfile manager)
+    {
+        ArgumentNullException.ThrowIfNull(manager);
+        if (!manager.IsLent)
+        {
+            return CreateAsProfile(method, server, path, manager.ProfileId);
+        }
+        var request = Create(method, server, path, SiloAuth.Account);
+        request.SetLent(manager);
         return request;
     }
 
