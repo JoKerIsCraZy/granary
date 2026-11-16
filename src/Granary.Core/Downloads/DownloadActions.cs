@@ -69,6 +69,12 @@ public sealed class DownloadActions
         {
             return new TitleDownloadState(true, DownloadText.Status(download), OpensDownloads: true, CanDelete: true);
         }
+        // An episode waiting for the server's limit of downloads is on its way: the Downloads page says why, and nothing is
+        // there to delete yet.
+        if (_downloads.IsWaiting(mediaItemId))
+        {
+            return new TitleDownloadState(true, DownloadText.Queued, OpensDownloads: true, CanDelete: false);
+        }
         return CanDownload ? new TitleDownloadState(true, DownloadLabel, OpensDownloads: false, CanDelete: false) : TitleDownloadState.Hidden;
     }
 

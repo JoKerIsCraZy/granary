@@ -350,7 +350,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   (as the download stands when the menu opens), More Info (the title's page, as the web's hero names it) and Delete
   download, which asks first as the title page does. A series' card has More Info and the Apple app's Delete all
   episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted
-  from your Silo server." with "Delete 3 downloads" ("Delete download" for one). Cards change in place as their
+  from your Silo server." with "Delete 3 downloads" ("Delete download" for one); the series' episodes waiting for your
+  Silo server's download limit go with them. Cards change in place as their
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
   was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
   remote carries on through the grid; after the last film the first series takes it, after the last series the last
@@ -366,6 +367,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   goes to the server a moment later (docs/architecture.md, "Offline progress"); while it still can't be
   reached, the note stays. The note also goes with a sign-out and with another profile. Every other page keeps its own
   "Couldn't reach the server" error and Retry, and losing the server while Granary runs moves nobody.
+  While episodes of a season or a series wait for your Silo server's download limit (docs/architecture.md, "Waiting
+  episodes"), a second informational `InfoBar` under that one says "Your Silo server's download limit is reached. 6
+  episodes wait on this PC and start once the server allows more." with Cancel, which takes them out of line without
+  asking (nothing on this PC goes); the note follows the line as episodes start, and goes with the last of them. Such
+  episodes keep the page from saying "No downloads yet". A waiting episode's own Download, on its card or its season's
+  page, says "Queued" and opens this page, and its season's Download season leaves it out.
 - A series' downloads (`DownloadedSeriesPage`, `AppRoute.DownloadedSeries`, opened from its card on the Downloads page, as
   the Apple app opens a series' downloads on a screen of their own): the page's padding, the series' name in the display
   style and under it, muted, "3 episodes · 12.0 GB"; then each season under its row title ("Season 1", by number;

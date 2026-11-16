@@ -95,11 +95,13 @@ public sealed partial class DownloadOptionsViewModel
         if (series.Episode is { Request: var episode })
         {
             var here = _downloads.ForItem(episode.MediaItemId);
-            string detail = here is null ? AppText.Get("granary.downloadOptions.thisEpisodeOnly")
-                : here.State == DownloadState.Completed ? AppText.Get("granary.downloadOptions.onThisPc")
+            // One waiting for the server's limit of downloads is on its way, as one downloading is.
+            bool coming = here is not null || _downloads.IsWaiting(episode.MediaItemId);
+            string detail = !coming ? AppText.Get("granary.downloadOptions.thisEpisodeOnly")
+                : here?.State == DownloadState.Completed ? AppText.Get("granary.downloadOptions.onThisPc")
                 : AppText.Get("granary.downloads.status.downloading");
             rows.Add(new OneTimeRow(OneTimeChoice.Episode,
-                DetailText.EpisodeTitle(episode.SeasonNumber ?? 0, episode.EpisodeNumber ?? 0, episode.Title), detail, here is null));
+                DetailText.EpisodeTitle(episode.SeasonNumber ?? 0, episode.EpisodeNumber ?? 0, episode.Title), detail, !coming));
         }
         if (series.Season is { } season)
         {

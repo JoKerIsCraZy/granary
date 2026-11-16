@@ -4,6 +4,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Granary.Core.Abstractions;
+using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels;
@@ -267,6 +268,27 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         Assert.Equal([EpisodeId], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
         await Until(() => !page.ShowsDownload, "Download season went once every episode is on this PC");
         Assert.False(page.ShowsMoreMenu);
+    }
+
+    // An episode waiting for the server's limit of downloads is on its way: the season offers the others. The manager asks for
+    // it once as it starts, and the server still refuses.
+    [Fact]
+    public async Task ASeason_LeavesOutTheEpisodesWaitingForTheServersLimit()
+    {
+        Creates(ScriptedSilo.Problem(429, ProblemCodes.RateLimited), Created(DownloadPayloads.Entry("dl_5", "ready", episodeId: EpisodeId)));
+        _dialog.WhileShown = options => options.StartAsync();
+        await _h.Store.LoadAsync(TestContext.Current.CancellationToken);
+        await _h.Store.AddWaitingUnlessClearedAsync([new WaitingEpisode(Scope7, "sr_1", "Example Series", 1, "ep_1", 1, "Chapter One", "4570", "original")],
+            _h.Store.ClearGeneration, TestContext.Current.CancellationToken);
+        var page = await FollowedAsync(SeasonId);
+        await Manager.WaitingRun;
+        await Until(() => page.ShowsDownload, "Download season showed");
+
+        await page.OpenDownloadCommand.ExecuteAsync(null);
+
+        Assert.Equal("1 episode · 2.0 GB", Assert.Single(_dialog.Shown).SizeText);
+        Assert.Equal(["ep_1", EpisodeId], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
+        Assert.True(Manager.IsWaiting("ep_1"));
     }
 
     [Fact]

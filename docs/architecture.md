@@ -1689,7 +1689,11 @@ client guide.
   switch to the profile, the line is asked once, then waits. One run at a time: a store change only notes what it freed and
   starts one; a timer starts one when the wait is over. Its state sits under the manager's lock, which is never held while
   the store writes, a create runs or a timer fires; the store's handlers take only the store's own lock for their reads, as
-  the queue's do (the queue's lock before the store's, never the other way round).
+  the queue's do (the queue's lock before the store's, never the other way round). A waiting episode counts as on its way
+  wherever a download does: a season's or a series' offer leaves it out (`DownloadOfferReader`, the season page's
+  `DownloadActions.StateOf`, which says "Queued" and opens the Downloads page), and the series dialog's This Episode cannot
+  be chosen. The Downloads page says how many wait (`DownloadManager.WaitingCount`) with Cancel
+  (`DropWaitingAsync` for the profile), and a series' Delete all episodes drops that series' line too.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
   it, and has one that waited out a retry delay tried at once.

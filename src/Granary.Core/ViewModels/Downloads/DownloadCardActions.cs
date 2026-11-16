@@ -217,7 +217,7 @@ public sealed partial class DownloadCardActions : ICardMenuSource
 
     /// <summary>
     /// Deletes every download of the series after asking, in the Apple app's words ("Delete 3 Downloads"): the ones the question
-    /// counted, as a single delete goes.
+    /// counted, as a single delete goes, and its episodes waiting for the server's limit of downloads with them.
     /// </summary>
     [RelayCommand]
     private async Task DeleteSeriesAsync(MediaCard? card)
@@ -232,6 +232,7 @@ public sealed partial class DownloadCardActions : ICardMenuSource
             return;
         }
         await _downloads.DeleteAllAsync(scope, [.. episodes.Select(e => e.DownloadId)], CancellationToken.None);
+        await _downloads.DropWaitingAsync(scope, card.Id, CancellationToken.None);
     }
 
     // What the transfer entry does, whatever its words.

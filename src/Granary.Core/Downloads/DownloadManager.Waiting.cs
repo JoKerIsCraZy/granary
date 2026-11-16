@@ -61,6 +61,9 @@ public sealed partial class DownloadManager
     /// </summary>
     public int WaitingCount() => DownloadScope.Of(_session) is { } scope ? _store.WaitingIn(scope).Count : 0;
 
+    /// <summary>The active profile's episode <paramref name="mediaItemId"/> waits for the server's limit: it is on its way here.</summary>
+    public bool IsWaiting(string mediaItemId) => DownloadScope.Of(_session) is { } scope && _store.IsWaiting(scope, mediaItemId);
+
     /// <summary>
     /// Takes the waiting episodes of <paramref name="seriesId"/> (every series when null) out of <paramref name="scope"/>'s line:
     /// the viewer cancelled them, or deleted the series' downloads.
