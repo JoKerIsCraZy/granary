@@ -89,7 +89,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
 
     /// <summary>The acting profile; null until it is loaded, or when the list could not be read.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ProfileName), nameof(ProfileInitials), nameof(ProfileInitial), nameof(AvatarUrl), nameof(AccountName))]
+    [NotifyPropertyChangedFor(nameof(ProfileName), nameof(ProfileInitials), nameof(ProfileInitial), nameof(Avatar), nameof(AccountName))]
     public partial ProfileItemViewModel? Profile { get; private set; }
 
     /// <summary>The profile's name, or the account's while the profile is unknown.</summary>
@@ -104,10 +104,10 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     public string ProfileInitial => string.IsNullOrEmpty(ProfileName) ? "?" : StringInfo.GetNextTextElement(ProfileName).ToUpperInvariant();
 
     /// <summary>
-    /// The profile's picture (<c>avatar_url</c>, absolute and presigned); null without one, and at once while another profile
-    /// or none acts. Read again with the profile, so a picture changed elsewhere shows within <see cref="StaleAfter"/>.
+    /// The profile's picture (<c>avatar_url</c>); null without one, and at once while another profile or none acts. Read again
+    /// with the profile, so a picture changed elsewhere shows within <see cref="StaleAfter"/>.
     /// </summary>
-    public Uri? AvatarUrl => Profile?.AvatarUrl;
+    public AvatarImage? Avatar => Profile is { AvatarUrl: { } url } profile ? new AvatarImage(url, profile.AvatarIsServerPreset) : null;
 
     /// <summary>The account's name under the profile's in the profile menu, as the web's; empty when it is the same name.</summary>
     public string AccountName => Profile is { } profile && _session.Account?.Username is { Length: > 0 } username && username != profile.Name

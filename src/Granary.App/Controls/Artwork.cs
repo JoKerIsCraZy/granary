@@ -37,22 +37,28 @@ internal static class Artwork
 
     /// <summary>
     /// A picture of <paramref name="url"/> from the cache, decoded as wide as the view shows it, once it is decoded: for a view
-    /// that keeps what it shows until the next one is ready (a profile's avatar). An SVG (Silo's preset avatars) is drawn as
-    /// one, which the bitmap decoder cannot read. Null when the cache cannot get the image, it does not decode, or the wait
-    /// was cancelled.
+    /// that keeps what it shows until the next one is ready (a profile's avatar). With <paramref name="mayBeSvg"/>, for one of
+    /// the server's own preset avatars only, markup the server labels SVG is drawn as SVG at that size, whatever size it
+    /// declares, when <see cref="AvatarSvg"/> lets it; any other image is decoded as a bitmap. Null when the cache cannot get
+    /// the image, it does not decode, its markup is refused, or the wait was cancelled.
     /// </summary>
-    public static async Task<ImageSource?> PictureAsync(Uri url, int decodeWidth, CancellationToken cancellationToken)
+    public static async Task<ImageSource?> PictureAsync(Uri url, int decodeWidth, bool mayBeSvg, CancellationToken cancellationToken)
     {
         InMemoryRandomAccessStream? stream;
-        bool isSvg;
+        AvatarSvgCheck svg;
         try
         {
-            (stream, isSvg) = await CopyKnowingSvgAsync(url, cancellationToken);
+            (stream, svg) = await CopyCheckingSvgAsync(url, mayBeSvg, cancellationToken);
         }
         catch (Exception ex)
         {
             Loader.Invalidate(url);
             Logger.LogWarning("Artwork {Path} could not be copied for decoding: {Failure}", url.AbsolutePath, ex.Message);
+            return null;
+        }
+        if (svg == AvatarSvgCheck.Refused)
+        {
+            Logger.LogWarning("Artwork {Path} is SVG that is not drawn", url.AbsolutePath);
             return null;
         }
         if (stream is null || cancellationToken.IsCancellationRequested)
@@ -64,9 +70,9 @@ internal static class Artwork
         {
             try
             {
-                if (isSvg)
+                if (svg == AvatarSvgCheck.Drawable)
                 {
-                    return await SvgAsync(url, stream);
+                    return await SvgAsync(url, stream, decodeWidth);
                 }
                 var bitmap = new BitmapImage { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical };
                 await bitmap.SetSourceAsync(stream);
@@ -82,10 +88,11 @@ internal static class Artwork
     }
 
     // Drawn by Direct2D, which knows only part of SVG: a shape styled only through a <style> sheet is drawn black (AGENTS.md),
-    // and markup it cannot read fails here, so the letter shows.
-    private static async Task<ImageSource?> SvgAsync(Uri url, InMemoryRandomAccessStream stream)
+    // and markup it cannot read fails here, so the letter shows. Its surface is the view's size in logical pixels, set before
+    // the markup is read, so a drawing that declares itself huge takes no more memory than one that fits.
+    private static async Task<ImageSource?> SvgAsync(Uri url, InMemoryRandomAccessStream stream, int size)
     {
-        var svg = new SvgImageSource();
+        var svg = new SvgImageSource { RasterizePixelWidth = size, RasterizePixelHeight = size };
         var status = await svg.SetSourceAsync(stream);
         if (status == SvgImageSourceLoadStatus.Success)
         {
@@ -177,18 +184,22 @@ internal static class Artwork
         return await Task.Run(() => NativeStreamAsync(lease.Bytes));
     }
 
-    // As CopyAsync, also saying whether the image is SVG markup, read while the lease holds its bytes. Apart, so the cards'
-    // images take no extra step.
-    private static async Task<(InMemoryRandomAccessStream? Stream, bool IsSvg)> CopyKnowingSvgAsync(Uri url, CancellationToken cancellationToken)
+    // As CopyAsync, for a picture that may be one of the server's preset drawings: its markup is checked (AvatarSvg) while the
+    // lease holds its bytes, off the UI thread, and markup that is refused is not copied. Apart, so the cards' images take no
+    // extra step.
+    private static async Task<(InMemoryRandomAccessStream? Stream, AvatarSvgCheck Svg)> CopyCheckingSvgAsync(
+        Uri url, bool mayBeSvg, CancellationToken cancellationToken)
     {
         using var lease = await Loader.GetAsync(url, CancellationToken.None);
         if (lease is null || cancellationToken.IsCancellationRequested)
         {
-            return (null, false);
+            return (null, AvatarSvgCheck.NotSvg);
         }
-        bool isSvg = lease.Bytes.IsSvg;
-        // Off the UI thread: the stream is agile, and a write per chunk would each come back to it.
-        return (await Task.Run(() => NativeStreamAsync(lease.Bytes)), isSvg);
+        return await Task.Run<(InMemoryRandomAccessStream?, AvatarSvgCheck)>(async () =>
+        {
+            var svg = mayBeSvg ? AvatarSvg.Check(lease.Bytes) : AvatarSvgCheck.NotSvg;
+            return svg == AvatarSvgCheck.Refused ? (null, svg) : (await NativeStreamAsync(lease.Bytes), svg);
+        });
     }
 
     // One native buffer the size of the image, filled chunk by chunk, and one write: every WinRT object .NET holds adds to

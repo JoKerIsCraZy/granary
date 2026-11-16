@@ -1,3 +1,4 @@
+using Granary.Core.Api.Profiles;
 using Granary.Core.ViewModels;
 
 namespace Granary.Tests.Profiles;
@@ -27,6 +28,24 @@ public sealed class ProfileItemViewModelTests
     public void ResolveAvatarUrl_IsNull_WhenAbsentOrNotHttp(string? avatarUrl)
     {
         Assert.Null(ProfileItemViewModel.ResolveAvatarUrl(avatarUrl, PrefixedBase));
+    }
+
+    // Only the server's own preset drawings may be drawn as SVG: not an upload, and not a preset from another host (DiceBear).
+    [Theory]
+    [InlineData("preset", "/profile-avatars/avatar-1.svg", true)]
+    [InlineData("preset", "https://nas.example/silo/profile-avatars/avatar-2.svg", true)]
+    [InlineData("preset", "https://api.dicebear.com/9.x/thumbs/svg?seed=Elena&size=128", false)]
+    [InlineData("preset", "http://nas.example/silo/profile-avatars/avatar-1.svg", false)]
+    [InlineData("preset", "https://nas.example:8443/profile-avatars/avatar-1.svg", false)]
+    [InlineData("upload", "/api/v2/artwork/profile-avatars/1/7/w256.webp?exp=1&sig=a", false)]
+    [InlineData(null, "/profile-avatars/avatar-1.svg", false)]
+    public void OnlyTheServersOwnPresets_MayBeDrawnAsSvg(string? source, string avatarUrl, bool mayBeSvg)
+    {
+        var profile = new Profile("7", "Elena", true, false, false, "preset:avatar-1", source!, avatarUrl, "en", "en", "auto");
+
+        var item = ProfileItemViewModel.From(profile, PrefixedBase);
+
+        Assert.Equal(mayBeSvg, item.AvatarIsServerPreset);
     }
 
     [Theory]

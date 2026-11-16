@@ -252,7 +252,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <controls:ProfileAvatar Width="28" Height="28" FontSize="12" VerticalAlignment="Center"
-                                                Url="{x:Bind Sidebar.AvatarUrl, Mode=OneWay}" Initial="{x:Bind Sidebar.ProfileInitial, Mode=OneWay}" />
+                                                Image="{x:Bind Sidebar.Avatar, Mode=OneWay}" Initial="{x:Bind Sidebar.ProfileInitial, Mode=OneWay}" />
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="{x:Bind ProfileLabel(Sidebar.ProfileName, Sidebar.SignOutCommand.IsRunning), Mode=OneWay}"
                                        TextTrimming="CharacterEllipsis" />
@@ -284,7 +284,7 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <controls:ProfileAvatar Width="40" Height="40" FontSize="14"
-                                                                Url="{x:Bind Sidebar.AvatarUrl, Mode=OneWay}" Initial="{x:Bind Sidebar.ProfileInitial, Mode=OneWay}" />
+                                                                Image="{x:Bind Sidebar.Avatar, Mode=OneWay}" Initial="{x:Bind Sidebar.ProfileInitial, Mode=OneWay}" />
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="{x:Bind Sidebar.ProfileName, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}"
                                                        FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource SiloForegroundBrush}"

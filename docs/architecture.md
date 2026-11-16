@@ -529,9 +529,18 @@ minute (its renewed URL is), and the bitmap then tries the URL itself.
 - Avatars: the sidebar's profile avatar (`ProfileAvatar`) takes a picture once it is decoded (`Artwork.PictureAsync`, null
   when it cannot be had), never a bitmap still filling: an avatar's address is signed anew every 15 minutes and read
   again every 5, and the picture shown stays until the new one is ready, with only the newest load counting
-  (`AvatarPicture`). It shows its letter at once when there is no picture. Silo's preset avatars are SVG, which the
-  bitmap decoder cannot read: bytes that open with a tag (`ArtworkBytes.IsSvg`) are drawn as SVG (`SvgImageSource`), and
-  markup Direct2D cannot read leaves the letter.
+  (`AvatarPicture`). It shows its letter at once when there is no picture. The server's own preset avatars
+  (`/profile-avatars/<id>.svg`) are SVG, which the bitmap decoder cannot read. They alone are drawn as SVG, and only when
+  everything holds:
+  - the profile says `avatar_source: preset` and the address is on the active server's origin
+    (`ProfileItemViewModel.AvatarIsServerPreset`); DiceBear's presets, from another host, are not;
+  - the answer was labelled `image/svg+xml` (`ArtworkBytes.MediaType`, kept by the loader), never guessed from the bytes;
+  - `AvatarSvg` lets the markup through: at most 256 KB of UTF-8, `<svg>` as its root after an optional `<?xml?>`
+    declaration, no doctype or entity declarations, no script, foreign object or `@import`, and every `href` and `url()`
+    a `#` fragment, so nothing is fetched from elsewhere.
+
+  Refused markup leaves the letter, as does markup Direct2D cannot read. The drawing's surface is the avatar's size
+  (`RasterizePixelWidth`/`Height`), whatever size the markup declares. Every other picture goes to the bitmap decoder.
 - Disk: images the server marks `immutable`, in `cache\artwork` under the data directory, 512 MB, the
   least recently used deleted first, in the background. File names are hashes of the URL without its
   signature. Temporary files of writes that never finished are swept on the first write of a run.

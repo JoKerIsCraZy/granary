@@ -8,14 +8,15 @@ using Microsoft.UI.Xaml.Media;
 namespace Granary.App.Controls;
 
 /// <summary>
-/// A profile's avatar: its picture (<see cref="Url"/>) through the artwork cache, else its letter (<see cref="Initial"/>) on
+/// A profile's avatar: its picture (<see cref="Image"/>) through the artwork cache, else its letter (<see cref="Initial"/>) on
 /// the accent. When the picture shows and when the letter is <see cref="AvatarPicture"/>'s to say: a picture whose address
 /// was signed anew stays until the new one is decoded, so the sidebar's reads every few minutes do not make it blink.
 /// </summary>
 public sealed partial class ProfileAvatar : UserControl
 {
-    public static readonly DependencyProperty UrlProperty =
-        DependencyProperty.Register(nameof(Url), typeof(Uri), typeof(ProfileAvatar), new PropertyMetadata(null, (sender, _) => ((ProfileAvatar)sender).ShowUrl()));
+    public static readonly DependencyProperty ImageProperty =
+        DependencyProperty.Register(nameof(Image), typeof(AvatarImage), typeof(ProfileAvatar),
+            new PropertyMetadata(null, (sender, _) => ((ProfileAvatar)sender).ShowImage()));
 
     public static readonly DependencyProperty InitialProperty =
         DependencyProperty.Register(nameof(Initial), typeof(string), typeof(ProfileAvatar),
@@ -29,11 +30,11 @@ public sealed partial class ProfileAvatar : UserControl
 
     public ProfileAvatar() => InitializeComponent();
 
-    /// <summary>The picture, absolute and presigned; null shows the letter.</summary>
-    public Uri? Url
+    /// <summary>The picture, and whether it is one of the server's own presets; null shows the letter.</summary>
+    public AvatarImage? Image
     {
-        get => (Uri?)GetValue(UrlProperty);
-        set => SetValue(UrlProperty, value);
+        get => (AvatarImage?)GetValue(ImageProperty);
+        set => SetValue(ImageProperty, value);
     }
 
     /// <summary>The letter shown without a picture.</summary>
@@ -45,11 +46,11 @@ public sealed partial class ProfileAvatar : UserControl
 
     private int DecodeSize => double.IsNaN(Width) ? DefaultSize : (int)Math.Ceiling(Width);
 
-    private void ShowUrl()
+    private void ShowImage()
     {
-        var url = Url;
-        int? load = _picture.Show(url);
-        if (load is null && url is not null)
+        var image = Image;
+        int? load = _picture.Show(image?.Url);
+        if (load is null && image is not null)
         {
             // That picture shows or is on its way already.
             return;
@@ -57,21 +58,21 @@ public sealed partial class ProfileAvatar : UserControl
         _loading?.Cancel();
         _loading?.Dispose();
         _loading = null;
-        if (load is { } number && url is not null)
+        if (load is { } number && image is not null)
         {
             _loading = new CancellationTokenSource();
-            Load(number, url, _loading.Token);
+            Load(number, image, _loading.Token);
         }
         Show();
     }
 
     // async void: whatever escapes would end the app over one picture.
-    private async void Load(int load, Uri url, CancellationToken cancellationToken)
+    private async void Load(int load, AvatarImage image, CancellationToken cancellationToken)
     {
         ImageSource? source = null;
         try
         {
-            source = await Artwork.PictureAsync(url, DecodeSize, cancellationToken);
+            source = await Artwork.PictureAsync(image.Url, DecodeSize, mayBeSvg: image.IsServerPreset, cancellationToken);
         }
         catch (Exception ex)
         {

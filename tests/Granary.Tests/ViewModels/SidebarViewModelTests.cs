@@ -530,15 +530,29 @@ public sealed class SidebarViewModelTests
     {
         Ready();
         using var sidebar = Create();
-        Assert.Null(sidebar.AvatarUrl);
+        Assert.Null(sidebar.Avatar);
 
         await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(new Uri("https://silo.test/api/v2/artwork/a.webp?sig=x"), sidebar.AvatarUrl);
+        Assert.Equal(new AvatarImage(new Uri("https://silo.test/api/v2/artwork/a.webp?sig=x"), IsServerPreset: false), sidebar.Avatar);
 
         _profiles = OneProfile("Elena Moreau", null);
         _clock.Advance(SidebarViewModel.StaleAfter);
-        await Auth.AuthPipeline.Eventually(() => sidebar.AvatarUrl is null);
+        await Auth.AuthPipeline.Eventually(() => sidebar.Avatar is null);
         Assert.Equal("Elena Moreau", sidebar.ProfileName);
+    }
+
+    // The server's own preset drawing is the one picture that may be drawn as SVG (AvatarSvg).
+    [Fact]
+    public async Task TheServersOwnPreset_IsMarkedAsOne()
+    {
+        Ready();
+        _profiles = () => FakeSiloServer.Json(200,
+            """{"items":[{"id":"7","name":"Elena Moreau","is_primary":true,"has_pin":false,"is_child":false,"avatar":"preset:avatar-1","avatar_source":"preset","avatar_url":"/profile-avatars/avatar-1.svg"}],"avatar_upload_enabled":true}""");
+        using var sidebar = Create();
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(new AvatarImage(new Uri("https://silo.test/profile-avatars/avatar-1.svg"), IsServerPreset: true), sidebar.Avatar);
     }
 
     // The sidebar reads the profile again once it is stale: a picture changed elsewhere, or its address signed anew, shows.
@@ -554,8 +568,8 @@ public sealed class SidebarViewModelTests
         _profiles = OneProfile("Elena Moreau", "/avatars/presets/fox.svg");
         _clock.Advance(SidebarViewModel.StaleAfter);
 
-        await Auth.AuthPipeline.Eventually(() => sidebar.AvatarUrl == new Uri("https://silo.test/avatars/presets/fox.svg"));
-        Assert.Contains(nameof(SidebarViewModel.AvatarUrl), changed);
+        await Auth.AuthPipeline.Eventually(() => sidebar.Avatar?.Url == new Uri("https://silo.test/avatars/presets/fox.svg"));
+        Assert.Contains(nameof(SidebarViewModel.Avatar), changed);
     }
 
     // Another profile drops the last one's picture at once, before its own is read: no picture shows under another name.
@@ -568,9 +582,9 @@ public sealed class SidebarViewModelTests
         var shown = new List<Uri?>();
         sidebar.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(SidebarViewModel.AvatarUrl))
+            if (e.PropertyName == nameof(SidebarViewModel.Avatar))
             {
-                shown.Add(sidebar.AvatarUrl);
+                shown.Add(sidebar.Avatar?.Url);
             }
         };
 
@@ -595,7 +609,7 @@ public sealed class SidebarViewModelTests
         _session.ProfileId = null;
         _session.RaiseChanged();
 
-        await Auth.AuthPipeline.Eventually(() => sidebar.AvatarUrl is null);
+        await Auth.AuthPipeline.Eventually(() => sidebar.Avatar is null);
     }
 
     // As the web's profile menu: the account's name under the profile's, only when it is another.

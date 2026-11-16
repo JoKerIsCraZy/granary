@@ -92,9 +92,10 @@ release's section is what its update says it changes (docs/release.md).
 - A row's title on Home and in the libraries opens the same page as its Explore all, as on Silo's web: click "Recently
   Added Movies" itself.
 - A TMDB score shows TMDB's logo beside it, as on Silo's web; IMDb's and every other source's stay their names.
-- Your profile's picture, your own or one of Silo's, shows at the bottom of the sidebar, also when the sidebar is only
-  icons, and at the top of its menu with your name, as on Silo's web; without a picture, the first letter of your name
-  on the accent colour. A picture you change in another Silo app shows within five minutes.
+- Your profile's picture, an uploaded one or one of your Silo server's own presets, shows at the bottom of the
+  sidebar, also when the sidebar is only icons, and at the top of its menu with your name, as on Silo's web; otherwise
+  the first letter of your name on the accent colour. A picture you change in another Silo app shows within five
+  minutes.
 
 ### Fixed
 

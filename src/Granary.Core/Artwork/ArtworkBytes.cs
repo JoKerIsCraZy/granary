@@ -48,28 +48,10 @@ public sealed class ArtworkBytes
     }
 
     /// <summary>
-    /// The image is SVG markup, not a bitmap: its first sign, past a byte order mark and white space, opens a tag. Silo's preset
-    /// avatars are SVG (<c>/profile-avatars/&lt;id&gt;.svg</c>, DiceBear's <c>…/svg?seed=…</c>, without an extension); every
-    /// bitmap format starts with a byte of its own.
+    /// What the server said the image is (its <c>Content-Type</c>, as <c>image/webp</c>); null when it did not say, or for an
+    /// image read back from the disk cache. Set by the loader before the bytes are shared.
     /// </summary>
-    public bool IsSvg
-    {
-        get
-        {
-            var chunks = Held();
-            if (chunks.Length == 0)
-            {
-                return false;
-            }
-            var head = chunks[0].AsSpan(0, Math.Min(ChunkSize, Length));
-            if (head.StartsWith((ReadOnlySpan<byte>)[0xEF, 0xBB, 0xBF]))
-            {
-                head = head[3..];
-            }
-            head = head.TrimStart((ReadOnlySpan<byte>)" \t\r\n"u8);
-            return !head.IsEmpty && head[0] == (byte)'<';
-        }
-    }
+    public string? MediaType { get; internal set; }
 
     public Stream OpenRead() => new ChunkStream(this);
 
