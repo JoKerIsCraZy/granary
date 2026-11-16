@@ -37,4 +37,9 @@ namespace Granary.Core.Api.Admin;
 [JsonSerializable(typeof(AdminPasswordResetRequest))]
 [JsonSerializable(typeof(AdminPasswordReset))]
 [JsonSerializable(typeof(AdminSessionsRevoked))]
+[JsonSerializable(typeof(AdminInvitationCapabilities))]
+[JsonSerializable(typeof(AdminInvitationCollection))]
+[JsonSerializable(typeof(AdminInvitationDraft))]
+[JsonSerializable(typeof(AdminInvitationResend))]
+[JsonSerializable(typeof(InvitationDelivery))]
 internal sealed partial class AdminJsonContext : JsonSerializerContext;
