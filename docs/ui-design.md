@@ -887,8 +887,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     pressed again sends only the episodes not started yet. A series starts season by season, the specials last, so the
     first episode comes first; neither app caps or asks about a long series, and neither does Granary beyond this dialog,
     whose size and free space hold back one that does not fit. Once your Silo server refuses one for the account's limit of
-    downloads (429), the episodes after it are not asked for, and the error bar has the web's words for that refusal, "Too
-    many requests. Wait a moment and try again." (also for a film or an episode), until Download is pressed again. Cancel
+    downloads (429 `rate_limited`), that episode and the ones after it wait on this PC and start once the server allows
+    more, and the dialog stays to say so as information, not as an error: "Your Silo server's download limit is reached. 6
+    episodes wait on this PC and start once the server allows more." (Granary's own words; the server does not say when),
+    with Done in place of Cancel; Done closes it and they wait all the same, and Download pressed again sends nothing for
+    them. A film or an episode the limit refuses says "Your Silo server's download limit is reached. Try again later." in the
+    error bar. Cancel
     closes it; while a start runs, Cancel and Esc stop a season's or a series' episodes after the one under way, whose
     download is kept, and close the dialog once that one ended (a film's or an episode's start ends first), so a download
     never starts after the dialog was closed on it.

@@ -43,10 +43,16 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     public static string StartFailed => AppText.Get("web.downloads.versionPicker.startFailed");
 
     /// <summary>
-    /// The server refused for the account's limit of downloads (429): the web's words for that problem
-    /// (<c>error.rate_limited</c>).
+    /// The server refused a film or an episode for the account's limit of downloads (429 <c>rate_limited</c>): Granary's words,
+    /// which name that limit.
     /// </summary>
-    public static string RateLimited => AppText.Get("error.rate_limited");
+    public static string LimitReached => AppText.Get("granary.downloadOptions.limitReached");
+
+    /// <summary>
+    /// A season or a series past the server's limit of downloads: "Your Silo server's download limit is reached. 6 episodes wait
+    /// on this PC and start once the server allows more."
+    /// </summary>
+    public static string WaitingText(int count) => AppText.Get("granary.downloads.waitingForLimit", ("count", count));
 
     /// <summary>The web's words while a card's dialog reads its item (<c>web.item.menu.loadingDetails</c>).</summary>
     public static string LoadingDetails => AppText.Get("web.item.menu.loadingDetails");
@@ -214,6 +220,19 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
 
     public bool HasError => ErrorText.Length > 0;
 
+    /// <summary>
+    /// What the last press of Download left waiting, as information rather than an error (<see cref="WaitingText"/>); empty when
+    /// nothing waits, or before.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNotice), nameof(CloseText))]
+    public partial string NoticeText { get; private set; } = "";
+
+    public bool HasNotice => NoticeText.Length > 0;
+
+    /// <summary>The dialog's other button: the web's Cancel, or Done once a press left episodes waiting, which stay as they are.</summary>
+    public string CloseText => HasNotice ? AppText.Get("common.done") : AppText.Get("common.cancel");
+
     /// <summary>The read of the free space this dialog started; done once <see cref="SpaceText"/> shows it.</summary>
     public Task SpaceRead { get; private set; } = Task.CompletedTask;
 
@@ -313,6 +332,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         }
         IsStarting = true;
         ErrorText = "";
+        NoticeText = "";
         using var stopping = new CancellationTokenSource();
         _stopping = stopping;
         try
@@ -330,7 +350,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             {
                 return false;
             }
-            StartOutcome outcome;
+            (StartOutcome Kind, int Waiting) outcome;
             try
             {
                 outcome = await StartSelectionAsync(stopping.Token);
@@ -339,20 +359,22 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             {
                 // Whatever went wrong, the dialog says it did not start, and Download can be pressed again.
                 _logger.LogWarning("A download could not be started ({Failure})", DownloadLog.Failure(ex));
-                outcome = StartOutcome.Failed;
+                outcome = (StartOutcome.Failed, 0);
             }
             await _dispatcher.ResumeOnUi();
             if (stopping.IsCancellationRequested)
             {
                 return true;
             }
-            ErrorText = outcome switch
+            ErrorText = outcome.Kind switch
             {
                 StartOutcome.Failed => StartFailed,
-                StartOutcome.Limited => RateLimited,
+                StartOutcome.Limited => LimitReached,
                 _ => "",
             };
-            return outcome == StartOutcome.Started;
+            // The dialog stays to say what waits; Done closes it, and they wait all the same.
+            NoticeText = outcome.Waiting > 0 ? WaitingText(outcome.Waiting) : "";
+            return outcome.Kind == StartOutcome.Started;
         }
         finally
         {
@@ -632,17 +654,18 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             : AppText.Get("granary.downloadOptions.freeSpace", ("free", Size(free)));
     }
 
-    // What a press of Download came to.
+    // What a press of Download came to. Waiting: started as far as the server's limit of downloads let it, the rest waiting.
     private enum StartOutcome
     {
         Started,
         Failed,
         Limited,
+        Waiting,
     }
 
     // A season's or a series' run stops between two episodes once the viewer stops it; a film's or an episode's one create is
     // never cut off.
-    private async Task<StartOutcome> StartSelectionAsync(CancellationToken stopping)
+    private async Task<(StartOutcome Kind, int Waiting)> StartSelectionAsync(CancellationToken stopping)
     {
         string quality = SelectedQuality?.Preset ?? DownloadQualities.Original;
         if (_season is { } season)
@@ -657,18 +680,19 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             return OutcomeOf(result, series.EpisodeCount);
         }
         var request = _title! with { MediaFileId = SelectedVersion?.FileId ?? _title.MediaFileId, Quality = quality };
-        return await _downloads.StartAsync(request, CancellationToken.None).ConfigureAwait(false) switch
+        return (await _downloads.StartAsync(request, CancellationToken.None).ConfigureAwait(false) switch
         {
             DownloadStartResult.Started or DownloadStartResult.AlreadyDownloading => StartOutcome.Started,
             DownloadStartResult.Limited => StartOutcome.Limited,
             _ => StartOutcome.Failed,
-        };
+        }, 0);
     }
 
-    private static StartOutcome OutcomeOf(SeasonStartResult result, int episodes) =>
-        result.ReachedLimit ? StartOutcome.Limited
-        : result.Failed == 0 && result.Started + result.AlreadyThere == episodes ? StartOutcome.Started
-        : StartOutcome.Failed;
+    // A season or a series the server's limit stopped waits for the rest (the run kept them), unless another episode failed.
+    private static (StartOutcome Kind, int Waiting) OutcomeOf(SeasonStartResult result, int episodes) =>
+        result.ReachedLimit
+            ? (result.Waiting == 0 ? StartOutcome.Limited : result.Failed == 0 ? StartOutcome.Waiting : StartOutcome.Failed, result.Waiting)
+            : (result.Failed == 0 && result.Started + result.AlreadyThere == episodes ? StartOutcome.Started : StartOutcome.Failed, 0);
 
     // The web's "Download: {title}".
     private static string TitleWithName(string title) => AppText.Get("web.downloads.versionPicker.titleWithName", ("title", title));

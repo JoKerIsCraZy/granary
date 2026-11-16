@@ -213,6 +213,9 @@
             </StackPanel>
         </StackPanel>
 
+        <!-- What a season's or a series' start left waiting for your Silo server's download limit: information, not an error. -->
+        <InfoBar Severity="Informational" IsClosable="False" IsOpen="{x:Bind ViewModel.HasNotice, Mode=OneWay}"
+                 Message="{x:Bind ViewModel.NoticeText, Mode=OneWay}" />
         <InfoBar Severity="Error" IsClosable="False" IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
                  Message="{x:Bind ViewModel.ErrorText, Mode=OneWay}" />
     </StackPanel>

@@ -21,12 +21,17 @@ public sealed partial class DownloadManager
     /// that comes after a sign-out took the account's downloads off this PC is not kept (<see cref="DownloadStartResult.Failed"/>).
     /// While the account is being signed out, nothing is created (<see cref="DownloadStartResult.Unavailable"/>).
     /// </summary>
-    public async Task<DownloadStartResult> StartAsync(DownloadRequest request, CancellationToken cancellationToken)
+    public Task<DownloadStartResult> StartAsync(DownloadRequest request, CancellationToken cancellationToken) =>
+        StartAsync(request, null, cancellationToken);
+
+    // As the public StartAsync, for the active profile; with onlyFor, only while that one is the active profile (a waiting
+    // episode is its profile's), else Unavailable with nothing sent.
+    private async Task<DownloadStartResult> StartAsync(DownloadRequest request, DownloadScope? onlyFor, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         // Taken before the scope and the sign-out check: a sign-out from here on keeps whatever this create makes off this PC.
         long clears = _store.ClearGeneration;
-        if (DownloadScope.Of(_session) is not { } scope || _session.ActiveServer is not { } server)
+        if (DownloadScope.Of(_session) is not { } scope || _session.ActiveServer is not { } server || (onlyFor is not null && scope != onlyFor))
         {
             return DownloadStartResult.Unavailable;
         }
@@ -64,11 +69,13 @@ public sealed partial class DownloadManager
     }
 
     /// <summary>
-    /// A season's episodes one create each, in order, passing over the ones this PC has or is fetching. It stops, with what it
-    /// counted so far, when it is cancelled, the profile it started for is no longer the active one or the server's limit of
-    /// downloads was reached (<see cref="DownloadStartResult.Limited"/>, counted as failed): the episodes after that are in
-    /// none of the counts. A cancel stops it between two episodes: the create under way is not cut off, since one the server
-    /// made is kept (a create is never sent again).
+    /// A season's episodes one create each, in order, passing over the ones this PC has, is fetching or keeps waiting. It stops,
+    /// with what it counted so far, when it is cancelled or the profile it started for is no longer the active one: the episodes
+    /// after that are in none of the counts. Once the server's limit of downloads refuses one
+    /// (<see cref="DownloadStartResult.Limited"/>), that one and the ones after it wait on this PC (<see cref="WaitingEpisode"/>)
+    /// and are asked for again once the server allows more (DownloadManager.Waiting.cs); the result counts them as
+    /// <see cref="SeasonStartResult.Waiting"/>. A cancel stops it between two episodes: the create under way is not cut off,
+    /// since one the server made is kept (a create is never sent again).
     /// </summary>
     public Task<SeasonStartResult> StartSeasonAsync(SeasonDownloadRequest request, CancellationToken cancellationToken)
     {
@@ -92,16 +99,26 @@ public sealed partial class DownloadManager
     private async Task<SeasonStartResult> StartEpisodesAsync(string seriesId, string seriesTitle, string quality,
         IEnumerable<(int Season, SeasonEpisode Episode)> episodes, CancellationToken cancellationToken)
     {
+        // Taken before the first create: a sign-out from here on keeps nothing of this run waiting.
+        long clears = _store.ClearGeneration;
         var scope = DownloadScope.Of(_session);
+        var all = episodes.ToList();
         int started = 0;
         int there = 0;
         int failed = 0;
-        foreach (var (season, episode) in episodes)
+        for (int i = 0; i < all.Count; i++)
         {
+            var (season, episode) = all[i];
             if (cancellationToken.IsCancellationRequested || scope is null || DownloadScope.Of(_session) != scope)
             {
                 _logger.LogInformation("A season's or series' downloads stopped after {Count} episodes", started + there + failed);
                 break;
+            }
+            // One waiting for the server's limit already is on its way, as one on this PC is.
+            if (_store.IsWaiting(scope, episode.EpisodeId))
+            {
+                there++;
+                continue;
             }
             var result = await StartAsync(new DownloadRequest(episode.EpisodeId, seriesId, episode.MediaFileId, quality, episode.Title,
                 seriesTitle, season, episode.EpisodeNumber), CancellationToken.None).ConfigureAwait(false);
@@ -113,15 +130,14 @@ public sealed partial class DownloadManager
                 case DownloadStartResult.AlreadyDownloading:
                     there++;
                     break;
+                case DownloadStartResult.Limited:
+                    int waiting = await KeepWaitingAsync(scope, seriesId, seriesTitle, quality, all.Skip(i), clears).ConfigureAwait(false);
+                    _logger.LogInformation("The server's download limit stopped a season's or series' downloads after {Count} episodes; {Waiting} wait",
+                        started + there + failed, waiting);
+                    return new SeasonStartResult(started, there, waiting == 0 ? failed + 1 : failed, ReachedLimit: true, waiting);
                 default:
                     failed++;
                     break;
-            }
-            if (result == DownloadStartResult.Limited)
-            {
-                _logger.LogInformation("The server's download limit stopped a season's or series' downloads after {Count} episodes",
-                    started + there + failed);
-                return new SeasonStartResult(started, there, failed, ReachedLimit: true);
             }
         }
         return new SeasonStartResult(started, there, failed);
@@ -153,10 +169,11 @@ public sealed partial class DownloadManager
             _logger.LogInformation("The server does not let this profile download it ({Status})", ex.Status);
             return (null, DownloadStartResult.Unavailable);
         }
-        catch (SiloApiException ex) when (ex.Status == 429)
+        catch (SiloApiException ex) when (IsLimit(ex))
         {
             // Refused before anything was made: the account's limit of downloads, which holds for the next create too.
             _logger.LogInformation("The server's download limit for the account was reached");
+            NoteLimit(ex.RetryAfter);
             return (null, DownloadStartResult.Limited);
         }
         catch (Exception ex) when (IsUncertain(ex, cancellationToken))
@@ -215,9 +232,10 @@ public sealed partial class DownloadManager
             _logger.LogInformation("The server does not let this profile download it ({Status})", ex.Status);
             return (null, DownloadStartResult.Unavailable);
         }
-        catch (SiloApiException ex) when (ex.Status == 429)
+        catch (SiloApiException ex) when (IsLimit(ex))
         {
             _logger.LogInformation("The server's download limit for the account was reached");
+            NoteLimit(ex.RetryAfter);
             return (null, DownloadStartResult.Limited);
         }
         catch (Exception ex) when (ex is HttpRequestException or SiloApiException or ProfileChangedException or JsonException
@@ -228,6 +246,10 @@ public sealed partial class DownloadManager
             return (null, DownloadStartResult.Failed);
         }
     }
+
+    // The account's limit of downloads at once or in a period (silo-server internal/downloads/limiter.go), by its problem code:
+    // a 429 of another kind, as a proxy's, is no such limit.
+    private static bool IsLimit(SiloApiException ex) => ex is { Status: 429, Code: ProblemCodes.RateLimited };
 
     // No answer, a conflict (an entry is there already) or a server error: the server may have made the entry.
     private static bool IsUncertain(Exception ex, CancellationToken cancellationToken) =>

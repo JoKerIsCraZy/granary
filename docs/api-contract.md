@@ -3032,14 +3032,20 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   `revision` from the registry and `expected_download_id` to its `id`, which reuses, revives or replaces it; a second 409,
   or no clear answer, fails without a third. An answer whose item is another title is a failure. 403, 404, 501, or an
   episode in `skipped`, means the profile cannot download it.
-  A 429 or another client error fails it. A season is one single-item request per episode, in order, for the episodes the
-  PC does not have, and so is a whole series, season after season (the specials last), its episodes read through 7.7
+  A 429 or another client error fails it (for a film or an episode alone; a season's 429 `rate_limited`, below). A season
+  is one single-item request per episode, in order, for the episodes the PC does not have or keep waiting, and so is a whole series, season after season (the specials last), its episodes read through 7.7
   (`/series/{id}/seasons`, then each season's `/episodes`). Silo's apps send a series as the server's batch (`series:
   true` with a `batch_id`, followed by `page.next_cursor`); Granary does not send `series`, `season_number`, `batch_id` or
-  `expected_entries`, so every episode asks for the file the dialog counted and gets the guards above. A 429
-  (`rate_limited`: the account's limit of downloads at once or in a period, `silo-server/internal/downloads/limiter.go`),
-  to a create or its revival, stops a season or a series there: the creates after it would be refused alike. A 403, 404
-  or 501 for one episode does not: the server's batch skips such an episode and goes on.
+  `expected_entries`, so every episode asks for the file the dialog counted and gets the guards above. A 429 with the
+  problem code `rate_limited` (the account's limit of downloads at once or in a period, `QuantityLimiter` in
+  `silo-server/internal/downloads/limiter.go`), to a create or its revival, stops a season or a series there: the creates
+  after it would be refused alike, so that episode and the ones after it wait on this PC and are created later, one at a
+  time (docs/architecture.md, "Waiting episodes"). The problem says neither which limit nor when (its `detail` differs,
+  but is not branched on), carries no `Retry-After` and no extension, and the capability lists no limits. Of a device's
+  entries only a `preparing` one holds a place of the limit at once (`concurrentSlotPredicate` in `downloads/repo.go`): an
+  original, or a preset whose file is ready, registers `ready` and counts toward the period alone, which only time frees
+  (`CountByUserSince` leaves out `cancelled` and `failed` entries). A 429 with another code (a proxy's) fails the create.
+  A 403, 404 or 501 for one episode does not stop a season: the server's batch skips such an episode and goes on.
 
 ### 14.3 Registry and status events
 

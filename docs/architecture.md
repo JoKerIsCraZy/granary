@@ -1378,8 +1378,9 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   `download-settings.json`; `downloads` in the data folder by default). Choosing another applies to new downloads only:
   the ones there keep their folders. It is a full path below a drive's or a share's root, never the root itself.
 - **Index.** `downloads.json` in the data folder lists each download's scope, id and folder, with its row's description
-  (`media_item_id`, `title`, series, season and episode), the server deletes still to be sent (`pending_deletes`) and the
-  removed downloads' folders still to be deleted (`folder_deletes`). At every start the `download.json` files four folders
+  (`media_item_id`, `title`, series, season and episode), the server deletes still to be sent (`pending_deletes`), the
+  removed downloads' folders still to be deleted (`folder_deletes`) and the episodes waiting for the server's limit of
+  downloads (`waiting_episodes`, below under "Waiting episodes"). At every start the `download.json` files four folders
   under the downloads folder and the data folder's own `downloads` are looked for, and one the index lacks (a write that did
   not get through, an index that was lost) is taken in. An index that cannot be read is set aside and made again from them.
   The downloads folder can be any folder, a media library too, so that look goes only into names the layout makes (a
@@ -1664,13 +1665,31 @@ client guide.
   so the queue, which takes the oldest first, brings the first episode first. Both stop, with those counts, when they are
   cancelled (between two episodes: a create under way is not cut off, since one the server made is kept), the profile
   they started for is no longer the active one, or the server refused a create, or its revival, for the account's limit
-  of downloads (429, `DownloadStartResult.Limited`, counted as failed, `SeasonStartResult.ReachedLimit`): every create
-  after it would be refused alike. An episode the server will not let the profile have (403, 404, 501: a preset it
+  of downloads (429 `rate_limited`, `DownloadStartResult.Limited`, `SeasonStartResult.ReachedLimit`): every create after it
+  would be refused alike, so that episode and the ones after it wait (`SeasonStartResult.Waiting`, below). An episode
+  waiting already counts as there, so Download pressed again sends nothing for it. An episode the server will not let the
+  profile have (403, 404, 501: a preset it
   cannot prepare from that episode's source) does not stop them, as the server's own batch skips such episodes and goes
   on. Silo's apps send a series as the server's batch (`series: true`, a page of 50 episodes at a time); Granary asks per
   episode, as for a season, so each episode gets the file the dialog's size counted (its first) and the create's guards
   above. Neither app caps a series or asks about it; Granary's dialog says how many episodes and how much space, and its
   free space check holds back one that does not fit. However many there are, the queue runs them as many at a time as Simultaneous Downloads says.
+- **Waiting episodes.** The episodes a season's or a series' run could not register past the server's limit
+  (`WaitingEpisode`: the profile, the series, the numbers and title, the file and quality the dialog chose) wait in line in
+  the store, `waiting_episodes` in `downloads.json`, so they hold across starts. A sign-out takes its account's along, as
+  it takes its downloads (`RemoveWhereAsync`, by the clear generation the run began at), and an episode that gets
+  downloaded, however, leaves the line in the change that keeps its download. `DownloadManager.Waiting.cs` asks the active
+  profile's line again, the first first, one create each through `StartAsync` and its guards, bound to the profile the line
+  is for: a switch to another profile leaves it waiting for its own. The server's 429 says neither which limit it is nor
+  when to come back, so one rule serves both: the line is asked again once one of the profile's downloads leaves
+  Preparing or goes (an entry the server prepares holds a place of the limit at once; one that goes no longer counts), or
+  after a wait of 1, 2, 5, 10, then every 30 minutes while the server still refuses, or the server's `Retry-After` when it
+  names a longer one. Then it goes on as far as the server takes them. A create without a clear answer waits as a refusal
+  does; an episode the server no longer offers the profile (403, 404, 501, skipped) leaves the line. At a start, and at a
+  switch to the profile, the line is asked once, then waits. One run at a time: a store change only notes what it freed and
+  starts one; a timer starts one when the wait is over. Its state sits under the manager's lock, which is never held while
+  the store writes, a create runs or a timer fires; the store's handlers take only the store's own lock for their reads, as
+  the queue's do (the queue's lock before the store's, never the other way round).
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
   it, and has one that waited out a retry delay tried at once.

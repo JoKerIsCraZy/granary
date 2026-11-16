@@ -194,7 +194,8 @@ public sealed class DownloadManagerTests : IAsyncDisposable
         Assert.Equal((0, 1), (_h.Find("dl_s1")!.Record.SeasonNumber, _h.Find("dl_s1")!.Record.EpisodeNumber));
     }
 
-    // The server's limit of downloads for the account (429) refuses every create after it alike: the rest are not asked for.
+    // The server's limit of downloads for the account (429 rate_limited) refuses every create after it alike: the rest are not
+    // asked for now, and wait (WaitingEpisodesTests).
     [Fact]
     public async Task ASeries_StopsAtTheServersDownloadLimit()
     {
@@ -208,7 +209,7 @@ public sealed class DownloadManagerTests : IAsyncDisposable
 
         var result = await manager.StartSeriesAsync(series, Token);
 
-        Assert.Equal(new SeasonStartResult(Started: 1, AlreadyThere: 0, Failed: 1, ReachedLimit: true), result);
+        Assert.Equal(new SeasonStartResult(Started: 1, AlreadyThere: 0, Failed: 0, ReachedLimit: true, Waiting: 2), result);
         Assert.Equal(2, CreatesSent.Count);
         // The script repeats its last answer: one more create is refused for the limit alike.
         Assert.Equal(DownloadStartResult.Limited, await manager.StartAsync(Episode, Token));
