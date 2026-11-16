@@ -20,7 +20,7 @@
   "catalog.sort.imdbRating": [
     {
       "type": 0,
-      "value": "Avaliação IMDb"
+      "value": "Avaliação no IMDb"
     }
   ],
   "catalog.sort.narrator": [
