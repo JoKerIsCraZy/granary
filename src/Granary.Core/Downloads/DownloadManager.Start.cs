@@ -57,8 +57,14 @@ public sealed partial class DownloadManager
             {
                 return new(DownloadStartResult.AlreadyDownloading);
             }
+            // A waiting episode's create goes only while it is still in line: the viewer may have taken it out meanwhile.
+            bool waiting = onlyFor is not null;
+            if (waiting && !_store.IsWaiting(scope, request.MediaItemId))
+            {
+                return new(DownloadStartResult.Unavailable, Dropped: true);
+            }
             var (entry, outcome) = await CreateAsync(server.BaseUri, scope, BodyOf(request), cancellationToken).ConfigureAwait(false);
-            return entry is null ? outcome : new(await KeepAsync(scope, request, entry, clears).ConfigureAwait(false));
+            return entry is null ? outcome : await KeepAsync(scope, request, entry, clears, waiting).ConfigureAwait(false);
         }
         finally
         {
@@ -254,8 +260,9 @@ public sealed partial class DownloadManager
     }
 
     // What a create came to: its result; whether a failure is one the server would give again as the create stands, which takes a
-    // waiting episode out of line; and the wait a refusal for the limit names (Retry-After), if any.
-    private readonly record struct CreateOutcome(DownloadStartResult Result, bool IsFinal = false, TimeSpan? RetryAfter = null);
+    // waiting episode out of line; the wait a refusal for the limit names (Retry-After), if any; and whether a waiting episode
+    // was taken out of line while it was asked for (Dropped: nothing kept, and the server hears the delete of what it made).
+    private readonly record struct CreateOutcome(DownloadStartResult Result, bool IsFinal = false, TimeSpan? RetryAfter = null, bool Dropped = false);
 
     // The account's limit of downloads at once or in a period (silo-server internal/downloads/limiter.go), by its problem code:
     // a 429 of another kind, as a proxy's, is no such limit.
@@ -335,8 +342,9 @@ public sealed partial class DownloadManager
 
     // The entry kept with the request's title fields, and the queue told. Once the server made it, a cancel does not stop it
     // from being kept: a create is not sent again. A sign-out since the create began (clears) keeps it off this PC; the
-    // server's entry stays, as for any download whose account signed out.
-    private async Task<DownloadStartResult> KeepAsync(DownloadScope scope, DownloadRequest request, DownloadEntry entry, long clears)
+    // server's entry stays, as for any download whose account signed out. A waiting episode's (onlyWhileWaiting) is kept only
+    // while it is still in line: one the viewer took out meanwhile is not kept, and the server hears the delete of its entry.
+    private async Task<CreateOutcome> KeepAsync(DownloadScope scope, DownloadRequest request, DownloadEntry entry, long clears, bool onlyWhileWaiting)
     {
         var record = new DownloadRecord
         {
@@ -358,24 +366,31 @@ public sealed partial class DownloadManager
         };
         try
         {
-            if (await _store.AddUnlessClearedAsync(record, clears, CancellationToken.None).ConfigureAwait(false) is null)
+            if (await _store.AddUnlessClearedAsync(record, clears, onlyWhileWaiting, CancellationToken.None).ConfigureAwait(false) is null)
             {
-                return DownloadStartResult.Failed;
+                if (onlyWhileWaiting && !_store.IsClearedSince(scope, clears))
+                {
+                    _logger.LogInformation("Download {DownloadId} came for an episode taken out of line; it is not kept", entry.Id);
+                    await _store.QueueServerDeleteAsync(scope, entry.Id, CancellationToken.None).ConfigureAwait(false);
+                    _queue.Wake();
+                    return new(DownloadStartResult.Unavailable, Dropped: true);
+                }
+                return new(DownloadStartResult.Failed);
             }
         }
         catch (InvalidOperationException)
         {
-            return DownloadStartResult.AlreadyDownloading;
+            return new(DownloadStartResult.AlreadyDownloading);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // The server's entry stays: the next create finds it in the registry.
             _logger.LogWarning("Download {DownloadId} could not be kept on this PC ({Failure})", entry.Id, DownloadLog.Failure(ex));
-            return DownloadStartResult.Failed;
+            return new(DownloadStartResult.Failed);
         }
         _logger.LogInformation("Download {DownloadId} is kept, {State}", entry.Id, record.State);
         _queue.Wake();
-        return DownloadStartResult.Started;
+        return new(DownloadStartResult.Started);
     }
 
     private static string Describe(Exception ex) => ex switch

@@ -363,7 +363,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   download, which asks first as the title page does. A series' card has More Info and the Apple app's Delete all
   episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted
   from your Silo server." with "Delete 3 downloads" ("Delete download" for one); the series' episodes waiting for your
-  Silo server's download limit go with them, and the one that was just being asked for, once it is here. Cards change in place as their
+  Silo server's download limit go with them, at once: one that was just being asked for is not kept, and your Silo server
+  hears its delete. Cards change in place as their
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
   was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
   remote carries on through the grid; after the last film the first series takes it, after the last series the last

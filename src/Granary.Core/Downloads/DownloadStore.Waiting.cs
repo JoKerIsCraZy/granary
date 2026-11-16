@@ -83,6 +83,33 @@ public sealed partial class DownloadStore
         }
     }
 
+    /// <summary>
+    /// Has the server's entry <paramref name="downloadId"/> deleted, which this PC never kept: a waiting episode's create answered
+    /// after the viewer took it out of line. The queue sends it as any delete; one queued already, or of a download kept here, is
+    /// no change.
+    /// </summary>
+    public async Task QueueServerDeleteAsync(DownloadScope scope, string downloadId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        ArgumentException.ThrowIfNullOrEmpty(downloadId);
+        await LoadAsync(cancellationToken);
+        bool added = false;
+        Change(state =>
+        {
+            if (state.PendingDeletes.Any(d => d.Scope == scope && d.DownloadId == downloadId)
+                || state.Downloads.Any(d => d.Record.Scope == scope && d.Record.DownloadId == downloadId))
+            {
+                return state;
+            }
+            added = true;
+            return state with { PendingDeletes = [.. state.PendingDeletes, new PendingDelete(scope, downloadId) { ClearsSeen = _clearGeneration }] };
+        });
+        if (added)
+        {
+            await RaiseThenWriteIndexAsync();
+        }
+    }
+
     private static bool IsSame(WaitingEpisode first, WaitingEpisode second) => first.Scope == second.Scope && first.EpisodeId == second.EpisodeId;
 
     // A change of the line: the followers hear first, then the index is written. A handler that throws does not keep the change

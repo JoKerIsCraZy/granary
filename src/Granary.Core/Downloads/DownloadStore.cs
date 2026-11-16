@@ -179,7 +179,17 @@ public sealed partial class DownloadStore
     /// </summary>
     /// <exception cref="InvalidOperationException">The scope already has a download with this id.</exception>
     /// <exception cref="IOException">The folder or the record could not be written, or the index not before the folder was made.</exception>
-    public async Task<StoredDownload?> AddUnlessClearedAsync(DownloadRecord record, long clearGeneration, CancellationToken cancellationToken)
+    public Task<StoredDownload?> AddUnlessClearedAsync(DownloadRecord record, long clearGeneration, CancellationToken cancellationToken) =>
+        AddUnlessClearedAsync(record, clearGeneration, onlyWhileWaiting: false, cancellationToken);
+
+    /// <summary>
+    /// As the other <c>AddUnlessClearedAsync</c>; with <paramref name="onlyWhileWaiting"/>, also null, and nothing kept, when its
+    /// episode no longer waits in its scope's line (<see cref="WaitingEpisode"/>): the viewer took it out while its create was
+    /// under way. Asked in the same change that keeps it, which also takes it out of the line, so a removal of the line comes
+    /// either before (nothing kept) or after (the download is kept, and goes with the series' others).
+    /// </summary>
+    public async Task<StoredDownload?> AddUnlessClearedAsync(DownloadRecord record, long clearGeneration, bool onlyWhileWaiting,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(record);
         await LoadAsync(cancellationToken);
@@ -193,7 +203,7 @@ public sealed partial class DownloadStore
             {
                 throw new InvalidOperationException("This download is kept already.");
             }
-            kept = await Task.Run(() => AddToDisk(stored, clearGeneration), CancellationToken.None);
+            kept = await Task.Run(() => AddToDisk(stored, clearGeneration, onlyWhileWaiting), CancellationToken.None);
         }
         finally
         {

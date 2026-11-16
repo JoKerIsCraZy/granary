@@ -232,8 +232,8 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         {
             return;
         }
-        // The line first: a delete that reaches the server frees a place, and would start one of them. It answers once no create
-        // of the line is under way, so the download such a create brought is among the series' by then.
+        // The line first: a delete that reaches the server frees a place, and would start one of them. A create of the line under
+        // way then keeps nothing, unless its download was kept before: then it is among the series' as they are read here.
         await _downloads.DropWaitingAsync(scope, card.Id, CancellationToken.None);
         IEnumerable<DownloadItem> now = _downloads.ActiveScope == scope ? EpisodesOf(card.Id) : [];
         await _downloads.DeleteAllAsync(scope, [.. episodes.Concat(now).Select(e => e.DownloadId).Distinct(StringComparer.Ordinal)], CancellationToken.None);

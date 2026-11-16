@@ -19,12 +19,12 @@ public sealed partial class DownloadStore
     // first: a crash after the folder is made cannot delete it at the next start. A server delete not yet sent for this very
     // download goes with it: the entry is this download's again, and the next index write, this one's, no longer names it.
     // Null, and nothing kept, when the scope's downloads were cleared since clearGeneration: before the folder is made, none
-    // is made; while it is made, it goes again. The row kept carries the clears seen as it was added, and its episode no longer
-    // waits for the server's limit of downloads.
-    private StoredDownload? AddToDisk(StoredDownload download, long clearGeneration)
+    // is made; while it is made, it goes again. The same with onlyWhileWaiting once its episode no longer waits in line. The row
+    // kept carries the clears seen as it was added, and its episode no longer waits for the server's limit of downloads.
+    private StoredDownload? AddToDisk(StoredDownload download, long clearGeneration, bool onlyWhileWaiting)
     {
         var record = download.Record;
-        if (IsClearedSince(record.Scope, clearGeneration))
+        if (IsClearedSince(record.Scope, clearGeneration) || (onlyWhileWaiting && !IsWaiting(record.Scope, record.MediaItemId)))
         {
             return null;
         }
@@ -53,7 +53,8 @@ public sealed partial class DownloadStore
         StoredDownload? kept = null;
         Change(state =>
         {
-            if (IsClearedSinceLocked(record.Scope, clearGeneration))
+            if (IsClearedSinceLocked(record.Scope, clearGeneration)
+                || (onlyWhileWaiting && !state.Waiting.Any(w => w.Scope == record.Scope && w.EpisodeId == record.MediaItemId)))
             {
                 return state;
             }

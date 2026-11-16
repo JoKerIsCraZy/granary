@@ -1747,8 +1747,11 @@ client guide.
   says how many wait (`DownloadManager.WaitingCount`) with Cancel (`DropWaitingAsync` for the profile), and a series'
   Delete all episodes drops that series' line too, as Settings → Downloads → Remove all downloads drops the profile's:
   before the deletes, since a delete that reaches the server frees a place and would start one of them again.
-  `DropWaitingAsync` answers once no create of the line is under way, and the deletes then take the series' (or the
-  profile's) downloads as they are, so a download such a create brought goes with the others.
+  `DropWaitingAsync` never waits for a create of the line under way, which may hang on the network: such a create keeps
+  its download only while its episode is still in line, asked in the store change that keeps it (`AddUnlessClearedAsync`
+  with `onlyWhileWaiting`), so the download is either kept before the line went, and the deletes, which read the series'
+  (or the profile's) downloads after it, take it along, or never kept, the server hearing the delete of the entry it
+  made (`QueueServerDeleteAsync`). The head is looked at again right before its create, too.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
   it, and has one that waited out a retry delay tried at once.

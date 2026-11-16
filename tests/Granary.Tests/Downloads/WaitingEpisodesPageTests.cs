@@ -113,9 +113,10 @@ public sealed class WaitingEpisodesPageTests : IAsyncDisposable
         Assert.Null(_h.Find("dl_2"));
     }
 
-    // Review 7: the series' delete waits for the ask under way, so the download it brings goes with the others.
+    // Review 7 and the security review: the series' delete does not wait for an ask under way, which may hang on the network;
+    // that ask's download, answered after the episode left the line, is not kept, and the server hears its delete.
     [Fact]
-    public async Task DeletingASeries_WhileItsWaitingEpisodeIsAsked_DeletesThatOneToo()
+    public async Task DeletingASeries_WhileItsWaitingEpisodeIsAsked_DoesNotWait_AndKeepsNothingOfIt()
     {
         await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_1", change: r => r with { SeriesId = "sr_1", SeriesTitle = "Example Series" });
         await WaitAsync(Waiting("ep_2"));
@@ -125,13 +126,13 @@ public sealed class WaitingEpisodesPageTests : IAsyncDisposable
         _h.Time.Advance(TimeSpan.FromMinutes(1));
         await Until(() => _h.Silo.SentTo(HttpMethod.Post, CreatePath).Count == 2, "the waiting episode was asked again");
 
-        var deleting = page.Actions.DeleteSeriesCommand.ExecuteAsync(page.Series.Single().Card);
-        await Until(() => _h.Store.WaitingIn(Scope7).Count == 0, "the line was dropped");
+        await page.Actions.DeleteSeriesCommand.ExecuteAsync(page.Series.Single().Card).WaitAsync(TimeSpan.FromSeconds(5), Token);
+        Assert.Empty(_h.Store.WaitingIn(Scope7));
         gate.SetResult(await ScriptedSilo.Json(HttpStatusCode.Accepted, DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_2", "ready", episodeId: "ep_2")))());
-        await deleting;
         await _manager!.WaitingRun;
 
         Assert.Empty(_h.Store.In(Scope7));
+        Assert.Contains(_h.Store.PendingDeletes(Scope7), d => d.DownloadId == "dl_2");
     }
 
     // Its card and its season's Download count it as on its way: it is not offered again.

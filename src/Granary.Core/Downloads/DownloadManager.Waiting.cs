@@ -99,8 +99,10 @@ public sealed partial class DownloadManager
 
     /// <summary>
     /// Takes the waiting episodes of <paramref name="seriesId"/> (every series when null) out of <paramref name="scope"/>'s line:
-    /// the viewer cancelled them, or deletes the series' downloads. Answers once no create of the line is under way any more, so
-    /// a delete that follows finds the download such a create brought.
+    /// the viewer cancelled them, or deletes the series' downloads. It never waits for a create of the line under way, which may
+    /// hang on the network: that create keeps its download only while its episode is still in line, asked in the store's own
+    /// change, so its download is either here before this answers (and a delete that reads the downloads after it takes it
+    /// along) or never kept, the server hearing the delete of what it made.
     /// </summary>
     public async Task DropWaitingAsync(DownloadScope scope, string? seriesId, CancellationToken cancellationToken)
     {
@@ -110,7 +112,6 @@ public sealed partial class DownloadManager
         {
             _logger.LogInformation("{Count} waiting episodes were taken out of line", dropped);
         }
-        await WaitingRun.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     // The episodes from the one the limit refused on wait in line, after the wait the refusal starts: the line is not asked
@@ -343,6 +344,11 @@ public sealed partial class DownloadManager
     // What the head's create came to: true when the line goes on to the next one, false when it waits.
     private async Task<bool> TakeAsync(DownloadScope scope, WaitingEpisode next, CreateOutcome outcome, long freed)
     {
+        if (outcome.Dropped)
+        {
+            // Taken out of line while it was asked for: nothing of it is kept, and the line goes on as it is now.
+            return true;
+        }
         bool unclear = outcome is { Result: DownloadStartResult.Failed, IsFinal: false };
         int failures;
         lock (_gate)
