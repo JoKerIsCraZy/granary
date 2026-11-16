@@ -880,17 +880,19 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     item.", a season whose episodes are all on this PC "Every episode of this season is on this PC." (a series' "Every
     episode of this series is on this PC."), and Download stays
     off. Cancel stops the read. A season's or a series' episodes, one of those left watched to its end, have Granary's
-    "Only unwatched episodes" under the description, a switch as Monitor's Delete after watching, on as the dialog opens:
-    it leaves out the episodes watched (`user_data.played`) and keeps one in progress, so the viewer half-way through
-    the seventh gets the seventh to the end, and the episodes and size below follow it. With every episode left watched it
-    leaves "0 episodes" and Download off until it is turned off. Without a watched episode there is no switch. It is One
-    time's only: Monitor keeps its rules. A series' One time has Silo's Apple app's rows (its series sheet) above the switch,
+    "Only unwatched episodes" under the description, a switch as Monitor's Delete after watching: it leaves out the
+    episodes watched (`user_data.played`) and keeps one in progress, so the viewer half-way through the seventh gets the
+    seventh to the end, and the episodes and size below follow it. It starts on, unless every episode left is watched:
+    then it starts off, so the dialog never opens on "0 episodes" with Download off (turned on then, it does leave that).
+    Each row a series' dialog moves to starts it so, until the viewer sets it; from then on it stays as they set it.
+    Without a watched episode there is no switch. It is One time's only: Monitor keeps its rules. A series' One time has Silo's Apple app's rows (its series sheet) above the switch,
     in the version rows' style, a title and its line: the episode the series' page plays next (`play_content_id`; without
     one, the episode in progress, else the first unwatched, else the first, the specials last), "S01E07 · Pilot" with "This
     episode only", or "On this PC" or "Downloading" when it is here already, then dimmed and not to be chosen; its season
     (`play_season_number`, else that episode's), "Season 2" with its episodes not on this PC ("3 episodes"; "On this PC",
-    dimmed, when none); and "All episodes" with "Every season", which the dialog opens on, as the item that opened it says
-    Download series. The title, the size and the switch follow the row ("Download: Example Series · S1 · E7", "… · Season
+    dimmed, when none); and "All episodes" with "Every season". The dialog opens on This Episode, as the Apple app's sheet
+    does, else on the first row that can be chosen (its season, else All episodes). The title, the size and the switch
+    follow the row ("Download: Example Series · S1 · E7", "… · Season
     2"); the switch applies to the season and to every episode, not to the one episode, which downloads its first file as a
     season's episodes do. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
     Original, labelled as Settings → Downloads labels them, its Download quality chosen when offered, else Original; the

@@ -35,6 +35,9 @@ public sealed record SeasonDownloadOffer(SeasonDownloadRequest Request, string S
     /// <summary>One of the episodes is watched: "Only unwatched episodes" has something to leave out.</summary>
     public bool HasWatched => Request.Episodes.Any(Facts.IsWatched);
 
+    /// <summary>Every one of the episodes is watched: "Only unwatched episodes" would leave none.</summary>
+    public bool IsAllWatched => Request.Episodes.Count > 0 && Request.Episodes.All(Facts.IsWatched);
+
     /// <summary>The offer without the watched episodes; one in progress stays.</summary>
     public SeasonDownloadOffer Unwatched()
     {
@@ -68,6 +71,9 @@ public sealed record SeriesDownloadOffer(SeriesDownloadRequest Request, long Kno
 
     /// <summary>One of the episodes is watched: "Only unwatched episodes" has something to leave out.</summary>
     public bool HasWatched => Request.Seasons.Any(s => s.Episodes.Any(Facts.IsWatched));
+
+    /// <summary>Every one of the episodes is watched: "Only unwatched episodes" would leave none.</summary>
+    public bool IsAllWatched => Request.EpisodeCount > 0 && Request.Seasons.All(s => s.Episodes.All(Facts.IsWatched));
 
     /// <summary>The offer without the watched episodes, and without the seasons that had only those.</summary>
     public SeriesDownloadOffer Unwatched()

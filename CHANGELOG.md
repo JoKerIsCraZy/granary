@@ -65,12 +65,14 @@ release's section is what its update says it changes (docs/release.md).
   before it starts; Cancel stops a long season or series after the episode under way. A title on this PC shows how
   its download stands there instead, which opens the Downloads page, with Delete download beside it.
 - **Only unwatched episodes:** when you download a season or a whole series and you have watched some of its episodes,
-  the download dialog has Only unwatched episodes, already on: it leaves out the episodes you watched to the end and keeps
-  the one you are in the middle of, so at episode 7 you get 7 to the end. The episodes and the space the dialog shows
-  follow the switch; turn it off to download the watched ones too. Monitoring keeps its own rules.
+  the download dialog has Only unwatched episodes, on unless you watched every one of them: it leaves out the episodes
+  you watched to the end and keeps the one you are in the middle of, so at episode 7 you get 7 to the end. The episodes
+  and the space the dialog shows follow the switch; turn it off to download the watched ones too. Monitoring keeps its
+  own rules.
 - **One episode or one season from a series:** a series' download dialog offers, as Silo's iPhone and iPad app does, the
   episode you would watch next ("S01E07 · Pilot", "This episode only", or "On this PC" when it is here already), the
-  season it is in and All episodes, which it opens on. Only unwatched episodes works for the season and for all episodes.
+  season it is in and All episodes. It opens on that episode, or on the first of the others when it is here already.
+  Only unwatched episodes works for the season and for all episodes.
 - **Your Silo server's download limit:** when the limit your Silo server sets for an account stops a season or a whole
   series part-way, the rest of its episodes wait on this PC, also across restarts, and start in order once the server
   allows more: when one of your downloads is ready on the server, or your Silo server has heard that you deleted one, or

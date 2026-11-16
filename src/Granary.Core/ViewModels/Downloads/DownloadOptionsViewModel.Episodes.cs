@@ -24,10 +24,12 @@ public sealed record OneTimeRow(OneTimeChoice Choice, string Title, string Detai
 /// <summary>
 /// Which episodes a season's or a series' One time starts. A series' has the Apple app's rows (<c>SeriesDownloadSheet.swift</c>):
 /// This Episode, the one its page plays next ("S01E07 · Title", "This episode only", or "On this PC" and "Downloading" when it
-/// is here already, then not to be chosen); Season N, the season it is in ("10 episodes"); and All Episodes ("Every season"),
-/// which the dialog opens on, as the item that opens it says "Download series". "Only unwatched episodes" leaves out the ones
-/// the viewer watched from a season's or a series' episodes, so a viewer half-way through the seventh gets the seventh to the
-/// end: it shows only while one of the episodes left is watched, and then starts on. Monitor keeps its own rules.
+/// is here already, then not to be chosen); Season N, the season it is in ("10 episodes"); and All Episodes ("Every season").
+/// The dialog opens on This Episode, as the Apple app's sheet does, else on the first row that can be chosen. "Only unwatched
+/// episodes" leaves out the ones the viewer watched from a season's or a series' episodes, so a viewer half-way through the
+/// seventh gets the seventh to the end: it shows only while one of the episodes left is watched, and starts on, unless every
+/// one of them is watched, so the dialog never opens on nothing to start. Each row the viewer picks starts it so, until they set
+/// it; then it stays as they set it. Monitor keeps its own rules.
 /// </summary>
 public sealed partial class DownloadOptionsViewModel
 {
@@ -35,6 +37,10 @@ public sealed partial class DownloadOptionsViewModel
 
     // The row the dialog downloads; a list's choice written back as nothing while its rows change leaves it.
     private OneTimeChoice _choice = OneTimeChoice.AllEpisodes;
+
+    // The viewer set the switch: it stays as they set it. The dialog setting it itself (_settingSwitch) is not the viewer.
+    private bool _switchSet;
+    private bool _settingSwitch;
 
     /// <summary>"Only unwatched episodes" is on: the episodes the viewer watched are not started.</summary>
     [ObservableProperty]
@@ -58,10 +64,11 @@ public sealed partial class DownloadOptionsViewModel
     // The switch counts and starts again what the offer chooses; its last error says nothing about the new choice.
     partial void OnOnlyUnwatchedChanged(bool value)
     {
-        if (_offer is null)
+        if (_settingSwitch || _offer is null)
         {
             return;
         }
+        _switchSet = true;
         ErrorText = "";
         Choose();
         ShowSize();
@@ -79,13 +86,14 @@ public sealed partial class DownloadOptionsViewModel
         ShowSize();
     }
 
-    // A series' rows as its offer was read, All Episodes chosen. A row's own words are its offer's; what the switch leaves
-    // out shows in the size alone, so the rows stay as they are while it changes.
+    // A series' rows as its offer was read, the first that can be chosen chosen: This Episode, as the Apple app's sheet opens,
+    // unless it is here already. A row's own words are its offer's; what the switch leaves out shows in the size alone, so the
+    // rows stay as they are while it changes.
     private void ShowRows(DownloadOffer offer)
     {
-        _choice = OneTimeChoice.AllEpisodes;
         SelectedOneTimeRow = null;
         OneTimeRows = offer is SeriesDownloadOffer series ? RowsOf(series) : [];
+        _choice = OneTimeRows.FirstOrDefault(r => r.IsAvailable)?.Choice ?? OneTimeChoice.AllEpisodes;
         SelectedOneTimeRow = OneTimeRows.FirstOrDefault(r => r.Choice == _choice);
     }
 
@@ -125,6 +133,11 @@ public sealed partial class DownloadOptionsViewModel
             _ => series,
         } : _offer;
         ShowsOnlyUnwatched = offer is SeasonDownloadOffer { HasWatched: true } or SeriesDownloadOffer { HasWatched: true };
+        if (ShowsOnlyUnwatched && !_switchSet)
+        {
+            // On, unless it would leave nothing: then off, so no choice opens on "0 episodes" with Download off.
+            SetSwitch(offer is not (SeasonDownloadOffer { IsAllWatched: true } or SeriesDownloadOffer { IsAllWatched: true }));
+        }
         return offer switch
         {
             SeasonDownloadOffer { HasWatched: true } season when OnlyUnwatched => season.Unwatched(),
@@ -136,6 +149,19 @@ public sealed partial class DownloadOptionsViewModel
     // The chosen row has something to download: This Episode has not once it is on this PC. A film's or an episode's own
     // dialog has no rows.
     private bool ChosenRowIsAvailable() => OneTimeRows.FirstOrDefault(r => r.Choice == _choice) is not { IsAvailable: false };
+
+    private void SetSwitch(bool on)
+    {
+        _settingSwitch = true;
+        try
+        {
+            OnlyUnwatched = on;
+        }
+        finally
+        {
+            _settingSwitch = false;
+        }
+    }
 
     // A season by the name the server gives it, else "Season 3", or "Specials" for season 0.
     private static string SeasonName(int number, string? title) => string.IsNullOrWhiteSpace(title) ? DetailText.SeasonLabel(number) : title.Trim();

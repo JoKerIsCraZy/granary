@@ -329,6 +329,8 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         _dialog.WhileShown = async options =>
         {
             await options.Reading;
+            // The dialog opens on the episode the series plays next; every episode is its last row.
+            options.SelectedOneTimeRow = options.OneTimeRows.Single(r => r.Choice == OneTimeChoice.AllEpisodes);
             await options.StartAsync();
         };
         var page = await FollowedAsync("sr_1");
@@ -364,9 +366,12 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         Creates(Created(DownloadPayloads.Entry("dl_5", "ready", episodeId: EpisodeId)));
         (string Title, string Size, IReadOnlyList<(string, string)> Rows, bool Switch) all = default;
         string seasonTitle = "", seasonSize = "";
+        (OneTimeChoice? Row, string Title) opened = default;
         _dialog.WhileShown = async options =>
         {
             await options.Reading;
+            opened = (options.SelectedOneTimeRow?.Choice, options.Title);
+            options.SelectedOneTimeRow = options.OneTimeRows.Single(r => r.Choice == OneTimeChoice.AllEpisodes);
             all = (options.Title, options.SizeText, [.. options.OneTimeRows.Select(r => (r.Title, r.Detail))], options.ShowsOnlyUnwatched);
             options.SelectedOneTimeRow = options.OneTimeRows.Single(r => r.Choice == OneTimeChoice.Season);
             (seasonTitle, seasonSize) = (options.Title, options.SizeText);
@@ -377,6 +382,7 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
 
         await page.OpenDownloadCommand.ExecuteAsync(null);
 
+        Assert.Equal((OneTimeChoice.Episode, "Download: Example Series · S1 · E5"), opened);
         Assert.Equal([("S01E05 · Chapter Five", "This episode only"), ("Season 1", "2 episodes"), ("All episodes", "Every season")], all.Rows);
         Assert.Equal(("Download: Example Series · All episodes", "3 episodes · 6.0 GB", true), (all.Title, all.Size, all.Switch));
         Assert.Equal(("Download: Example Series · Season 1", "1 episode · 2.0 GB"), (seasonTitle, seasonSize));

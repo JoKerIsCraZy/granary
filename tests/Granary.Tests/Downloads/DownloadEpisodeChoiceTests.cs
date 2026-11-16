@@ -134,12 +134,17 @@ public sealed class DownloadEpisodeChoiceTests : IAsyncDisposable
         Assert.Equal(["ep_1_1", "ep_1_2"], CreatedEpisodes());
     }
 
-    // The switch starts on whenever it shows: a season watched to the end then has nothing to start until it is turned off.
+    // A season watched to the end opens with the switch off, never on "0 episodes" with Download off; turned on, it starts nothing.
     [Fact]
-    public async Task ASeasonWhoseEpisodesLeftAreAllWatched_StartsNothing_UntilOnlyUnwatchedIsTurnedOff()
+    public async Task ASeasonWhoseEpisodesLeftAreAllWatched_OpensWithOnlyUnwatchedOff()
     {
         Creates("ep_1_1", "ep_1_2");
         var options = await SeasonDialogAsync(Episode(1, 1, Watched), Episode(1, 2, Watched));
+
+        Assert.Equal((true, false), (options.ShowsOnlyUnwatched, options.OnlyUnwatched));
+        Assert.Equal(("2 episodes · 2.0 GB", true), (options.SizeText, options.CanStart));
+
+        options.OnlyUnwatched = true;
 
         Assert.Equal(("0 episodes", false), (options.SizeText, options.CanStart));
         Assert.False(await options.StartAsync());
@@ -147,9 +152,30 @@ public sealed class DownloadEpisodeChoiceTests : IAsyncDisposable
 
         options.OnlyUnwatched = false;
 
-        Assert.Equal(("2 episodes · 2.0 GB", true), (options.SizeText, options.CanStart));
         Assert.True(await options.StartAsync());
         Assert.Equal(["ep_1_1", "ep_1_2"], CreatedEpisodes());
+    }
+
+    // Each row the viewer picks starts the switch as a dialog would open on it, until the viewer sets it: then it stays.
+    [Fact]
+    public async Task ARowWhoseEpisodesAreAllWatched_StartsWithOnlyUnwatchedOff_UntilTheViewerSetsIt()
+    {
+        var options = await SeriesDialogAsync(
+        [
+            (new Season { SeasonNumber = 1, Title = "Season 1" }, [Episode(1, 1, Watched), Episode(1, 2, Watched)]),
+            (new Season { SeasonNumber = 2, Title = "Season 2" }, [Episode(2, 1)]),
+        ], new CatalogItemDetail { Title = "Example Series", PlayContentId = "ep_1_2", PlaySeasonNumber = 1 });
+
+        options.SelectedOneTimeRow = Row(options, OneTimeChoice.Season);
+        Assert.Equal((false, "2 episodes · 2.0 GB"), (options.OnlyUnwatched, options.SizeText));
+        options.SelectedOneTimeRow = Row(options, OneTimeChoice.AllEpisodes);
+        Assert.Equal((true, "1 episode · 1.0 GB"), (options.OnlyUnwatched, options.SizeText));
+
+        options.OnlyUnwatched = false;
+        options.SelectedOneTimeRow = Row(options, OneTimeChoice.Season);
+        options.SelectedOneTimeRow = Row(options, OneTimeChoice.AllEpisodes);
+
+        Assert.Equal((false, "3 episodes · 3.0 GB"), (options.OnlyUnwatched, options.SizeText));
     }
 
     [Fact]
@@ -162,6 +188,8 @@ public sealed class DownloadEpisodeChoiceTests : IAsyncDisposable
             (new Season { SeasonNumber = 2 }, [Episode(2, 1, InProgress), Episode(2, 2)]),
         ]);
 
+        options.SelectedOneTimeRow = Row(options, OneTimeChoice.AllEpisodes);
+
         Assert.True(options.ShowsOnlyUnwatched);
         Assert.Equal("2 episodes · 2.0 GB", options.SizeText);
         Assert.True(await options.StartAsync());
@@ -170,17 +198,31 @@ public sealed class DownloadEpisodeChoiceTests : IAsyncDisposable
 
     private static OneTimeRow Row(DownloadOptionsViewModel options, OneTimeChoice choice) => options.OneTimeRows.Single(r => r.Choice == choice);
 
-    // The Apple app's series sheet: This Episode, Season N and All Episodes, each with its line.
+    // The Apple app's series sheet: This Episode, Season N and All Episodes, each with its line, opening on This Episode.
     [Fact]
-    public async Task ASeriesDialog_OffersThisEpisode_ItsSeason_AndAllEpisodes_OpeningOnAllEpisodes()
+    public async Task ASeriesDialog_OffersThisEpisode_ItsSeason_AndAllEpisodes_OpeningOnThisEpisode()
     {
         var options = await SeriesDialogAsync(HalfWatched, PlaysThird);
 
         Assert.True(options.ShowsOneTimeRows);
         Assert.Equal([("S02E03 · Chapter 3", "This episode only", true), ("Season 2", "3 episodes", true), ("All episodes", "Every season", true)],
             options.OneTimeRows.Select(r => (r.Title, r.Detail, r.IsAvailable)));
-        Assert.Equal(OneTimeChoice.AllEpisodes, options.SelectedOneTimeRow?.Choice);
-        Assert.Equal(("Download: Example Series · All episodes", "3 episodes · 4.0 GB"), (options.Title, options.SizeText));
+        Assert.Equal(OneTimeChoice.Episode, options.SelectedOneTimeRow?.Choice);
+        Assert.Equal(("Download: Example Series · S2 · E3", "2.0 GB", true), (options.Title, options.SizeText, options.CanStart));
+    }
+
+    // As the Apple app's sheet: a row that cannot be chosen is passed over for the first that can.
+    [Fact]
+    public async Task ThisEpisodeOnThisPc_TheDialogOpensOnItsSeason_AndWithTheSeasonHereToo_OnAllEpisodes()
+    {
+        await _h.AddAsync("dl_9", DownloadState.Completed, mediaItemId: "ep_2_3");
+        var season = await SeriesDialogAsync(HalfWatched, PlaysThird);
+        await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_2_1");
+        await _h.AddAsync("dl_2", DownloadState.Completed, mediaItemId: "ep_2_2");
+        var all = await SeriesDialogAsync(HalfWatched, PlaysThird);
+
+        Assert.Equal((OneTimeChoice.Season, "Download: Example Series · Season 2"), (season.SelectedOneTimeRow?.Choice, season.Title));
+        Assert.Equal((OneTimeChoice.AllEpisodes, "Download: Example Series · All episodes"), (all.SelectedOneTimeRow?.Choice, all.Title));
     }
 
     [Fact]
