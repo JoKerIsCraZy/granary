@@ -1,10 +1,10 @@
 using System.ComponentModel;
-using System.Xml;
 using Granary.App.Controls;
 using Granary.Core.Settings.Search;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -31,8 +31,8 @@ public sealed partial class SettingsPage
     // The sidebar's entries as the page was made, list by list: the search takes them out and puts them back.
     private readonly Dictionary<ListView, ListViewItem[]> _entries = [];
 
-    // A page a press opened while searching, and the press's kind: focus goes to its setting once it shows.
-    private (string Page, FocusState State)? _focusOnShow;
+    // A press on an entry while searching, waiting for its page to open so focus goes to the page's setting.
+    private readonly SettingsSearchPress _press = new();
 
     /// <summary>The search box at the top of the sidebar.</summary>
     public SettingsSearchViewModel Search { get; }
@@ -42,6 +42,9 @@ public sealed partial class SettingsPage
 
     private void SetUpSearch()
     {
+        // Read off the UI thread while the page opens, not at the first key typed. Reading never fails: a markup that cannot be
+        // read leaves its page found by its name alone.
+        _ = Task.Run(() => Markup.Value);
         foreach (var list in Lists())
         {
             _entries[list] = [.. list.Items.OfType<ListViewItem>()];
@@ -88,8 +91,9 @@ public sealed partial class SettingsPage
                 }
                 list.SelectedItem = shown.FirstOrDefault(entry => entry.Tag as string == _shownPage);
             }
-            // A new query has its own matches, shown once a page opens.
+            // A new query has its own matches, shown once a page opens; a press made for the last one goes.
             LeadInto(null, null);
+            _press.Forget();
         }
         finally
         {
@@ -119,50 +123,50 @@ public sealed partial class SettingsPage
     // A page opened while searching shows the first of its settings that matched; focus goes there when a press opened it.
     private void ShowMatch(string page)
     {
-        FocusState? focus = _focusOnShow is { } press && press.Page == page ? press.State : null;
-        _focusOnShow = null;
+        FocusState? focus = _press.TryTake(page, out bool byKeyboard) ? StateOf(byKeyboard) : null;
         LeadInto(page, null);
         RevealWhenShown(page, focus);
     }
 
     // A press (a click, Enter, a remote's OK) on an entry while searching: focus goes to its page's setting, at once on the page
-    // already open, else once the choice the press makes has opened it.
-    private void Press(ListViewItem? entry, FocusState state)
+    // that shows, else once the choice the press makes has opened it (SettingsSearchPress).
+    private void Press(ListViewItem? entry, bool byKeyboard)
     {
         if (!Search.HasQuery || entry?.Tag is not string page)
         {
             return;
         }
-        if (page == _shownPage && _editor is null && _views.TryGetValue(page, out var view) && ReferenceEquals(PageHost.Content, view))
+        bool showsOpenPage = _editor is null && _views.TryGetValue(_shownPage, out var view) && ReferenceEquals(PageHost.Content, view);
+        if (_press.Press(page, _shownPage, showsOpenPage, entry.IsSelected, byKeyboard))
         {
-            RevealWhenShown(page, state);
-            return;
+            RevealWhenShown(page, StateOf(byKeyboard));
         }
-        _focusOnShow = (page, state);
     }
 
+    private static FocusState StateOf(bool byKeyboard) => byKeyboard ? FocusState.Keyboard : FocusState.Programmatic;
+
     private void OnEntryTapped(object sender, TappedRoutedEventArgs e) =>
-        Press(Ancestor<ListViewItem>(e.OriginalSource as DependencyObject), FocusState.Programmatic);
+        Press(Ancestor<ListViewItem>(e.OriginalSource as DependencyObject), byKeyboard: false);
 
     private void OnEntryKeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (e.Key == Windows.System.VirtualKey.Enter && !e.KeyStatus.WasKeyDown)
         {
-            Press(Ancestor<ListViewItem>(e.OriginalSource as DependencyObject), FocusState.Keyboard);
+            Press(Ancestor<ListViewItem>(e.OriginalSource as DependencyObject), byKeyboard: true);
         }
     }
 
     // The page's matches are looked for once it is laid out: a view shown for the first time has no texts before it loads.
     private void RevealWhenShown(string page, FocusState? focus)
     {
-        var matches = Search.MatchesOn(page);
-        if (matches.Count == 0 || !_views.TryGetValue(page, out var view) || view is not FrameworkElement shown)
+        if (Search.MatchesOn(page).Count == 0 || !_views.TryGetValue(page, out var view) || view is not FrameworkElement shown)
         {
             return;
         }
         void Reveal()
         {
-            if (ReferenceEquals(PageHost.Content, shown))
+            // Read again: the query may have changed while the page was laid out.
+            if (ReferenceEquals(PageHost.Content, shown) && Search.MatchesOn(page) is { Count: > 0 } matches)
             {
                 RevealMatch(shown, page, matches, focus);
             }
@@ -296,35 +300,6 @@ public sealed partial class SettingsPage
         }
     }
 
-    // The box draws its own clear button, shown whenever it holds text as the web's is; the field's own, shown only while it has
-    // focus, would stand beside it.
-    private void OnSearchBoxLoaded(object sender, RoutedEventArgs e)
-    {
-        if (Named(SearchBox, "DeleteButton") is Button own)
-        {
-            own.Width = 0;
-            own.Opacity = 0;
-            own.IsHitTestVisible = false;
-        }
-    }
-
-    private static FrameworkElement? Named(DependencyObject element, string name)
-    {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
-        {
-            var child = VisualTreeHelper.GetChild(element, i);
-            if (child is FrameworkElement { Name: var found } named && found == name)
-            {
-                return named;
-            }
-            if (Named(child, name) is { } inner)
-            {
-                return inner;
-            }
-        }
-        return null;
-    }
-
     private static T? Ancestor<T>(DependencyObject? element)
         where T : DependencyObject
     {
@@ -344,10 +319,11 @@ public sealed partial class SettingsPage
             markup.Pages.GetValueOrDefault);
     }
 
-    // A page whose markup cannot be read is still listed by its name: search then finds it by that alone.
+    // Never fails, as the result is kept for the run: a markup that cannot be read leaves its page found by its name alone, and
+    // without the sidebar's the search finds nothing.
     private static SearchMarkup ReadMarkup()
     {
-        var logger = App.Services.GetRequiredService<ILogger<SettingsPage>>();
+        var logger = App.Services.GetService<ILogger<SettingsPage>>() ?? (ILogger)NullLogger.Instance;
         var sidebar = Read(nameof(SettingsPage), SettingsMarkup.ReadSidebar) ?? new Dictionary<string, IReadOnlyList<SettingsSidebarPage>>();
         var pages = new Dictionary<string, SettingsMarkupPage>(StringComparer.Ordinal);
         foreach (var (tag, view) in PageViews)
@@ -373,9 +349,10 @@ public sealed partial class SettingsPage
                 using var reader = new StreamReader(stream);
                 return parse(reader.ReadToEnd());
             }
-            catch (Exception ex) when (ex is XmlException or FormatException or IOException)
+            catch (Exception ex)
             {
-                logger.LogWarning(ex, "The settings' search could not read the markup of {View}", name);
+                // By its kind only: a message may name a folder of the Windows user's.
+                logger.LogWarning("The settings' search could not read the markup of {View} ({Failure})", name, ex.GetType().Name);
                 return null;
             }
         }
