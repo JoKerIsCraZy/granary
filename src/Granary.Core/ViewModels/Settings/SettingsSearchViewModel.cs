@@ -2,24 +2,29 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Settings.Search;
 using Granary.Core.Texts;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Granary.Core.ViewModels.Settings;
 
 /// <summary>
 /// The search box at the top of the settings' sidebar, as the web's SettingsSearchInput and UserSettingsSidebar: typing
 /// narrows the sidebar to the pages that match (<see cref="SettingsSearch"/>), the line under the box counts them, and a page
-/// opened from it can show the first of its settings that matched. The pages are read when the first word is typed.
+/// opened from it can show the first of its settings that matched. The pages are read when the first word is typed; pages
+/// that cannot be read leave the search finding nothing, not failing at every key.
 /// </summary>
 public sealed partial class SettingsSearchViewModel : ObservableObject
 {
     private readonly Func<IReadOnlyList<SettingsSearchGroup>> _index;
+    private readonly ILogger _logger;
     private IReadOnlyList<SettingsSearchGroup>? _groups;
 
     /// <param name="index">The sidebar's groups with what each page shows (<see cref="SettingsSearchIndex"/>).</param>
-    public SettingsSearchViewModel(Func<IReadOnlyList<SettingsSearchGroup>> index)
+    public SettingsSearchViewModel(Func<IReadOnlyList<SettingsSearchGroup>> index, ILogger<SettingsSearchViewModel>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(index);
         _index = index;
+        _logger = logger ?? (ILogger)NullLogger.Instance;
     }
 
     /// <summary>"No matching settings", under the box and in place of the pages.</summary>
@@ -57,6 +62,21 @@ public sealed partial class SettingsSearchViewModel : ObservableObject
     [RelayCommand]
     private void Clear() => Query = "";
 
+    // Read once: a failure is kept as no pages, so the next key does not read them again.
+    private IReadOnlyList<SettingsSearchGroup> ReadIndex()
+    {
+        try
+        {
+            return _index();
+        }
+        catch (Exception ex)
+        {
+            // By its kind only: a message may name a folder of the Windows user's.
+            _logger.LogWarning("The settings' search could not read the pages ({Failure})", ex.GetType().Name);
+            return [];
+        }
+    }
+
     partial void OnQueryChanged(string value)
     {
         if (!HasQuery)
@@ -65,7 +85,7 @@ public sealed partial class SettingsSearchViewModel : ObservableObject
             Status = "";
             return;
         }
-        _groups ??= _index();
+        _groups ??= ReadIndex();
         var results = SettingsSearch.FilterGroups(_groups, value);
         int count = SettingsSearch.CountPages(results);
         Results = results;

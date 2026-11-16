@@ -118,6 +118,29 @@ public sealed class SettingsSearchTests
         Assert.Empty(SettingsSearch.FilterGroups(pages, "言語"));
     }
 
+    /// <summary>A half of an emoji, as an input method leaves it while it composes, is no letter and breaks nothing.</summary>
+    [Theory]
+    [InlineData("redis\uD83D", "database")]
+    [InlineData("\uDE00redis", "database")]
+    public void ALoneHalfOfACharacter_IsNoLetter(string query, string page)
+    {
+        Assert.Equal([page], Tags(SettingsSearch.FilterGroups(Groups, query)));
+    }
+
+    [Fact]
+    public void AQueryOfALoneHalfOfACharacter_KeepsEveryPage()
+    {
+        Assert.Equal(["general", "database", "subtitles"], Tags(SettingsSearch.FilterGroups(Groups, "\uD83D")));
+    }
+
+    [Fact]
+    public void APageTextWithALoneHalfOfACharacter_StillMatches()
+    {
+        SettingsSearchGroup[] pages = [new("playback", "Playback", [], [Page("quality", "Qualität \uD83D", null, [])])];
+
+        Assert.Equal(["quality"], Tags(SettingsSearch.FilterGroups(pages, "qualitat")));
+    }
+
     [Fact]
     public void ThePagesSettings_MatchOneByOne()
     {
