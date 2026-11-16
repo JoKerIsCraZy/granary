@@ -260,6 +260,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="48" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="140" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <Grid Width="48" Height="72" VerticalAlignment="Top" CornerRadius="6" Background="{StaticResource SiloBackgroundBrush}">
@@ -330,7 +331,23 @@
                                         </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
-                                <StackPanel Grid.Column="2" Spacing="6" HorizontalAlignment="Right" MinWidth="200">
+                                <!--
+                                    The web's BitrateCell, beside the stream's lines as its column is: the rate the viewer gets, what it is
+                                    measured against, and a bar of the delivered share of the source, in amber while a transcode encodes to
+                                    a limit, green otherwise.
+                                -->
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Bitrate, Mode=OneWay}" Visibility="{x:Bind HasBitrate, Mode=OneWay}" FontSize="12"
+                                               Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{x:Bind BitrateReference, Mode=OneWay}" Visibility="{x:Bind HasBitrateReference, Mode=OneWay}" FontSize="11"
+                                               LineHeight="15" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
+                                    <Border Visibility="{x:Bind HasBitrateShare, Mode=OneWay}" Width="128" Height="4" Margin="0,4,0,0" CornerRadius="2"
+                                            HorizontalAlignment="Left" Background="{StaticResource SiloBorderBrush}">
+                                        <Border Width="{x:Bind local:AdminActivityView.BitrateFill(BitrateShare), Mode=OneWay}" HorizontalAlignment="Left" CornerRadius="2"
+                                                Background="{x:Bind local:AdminActivityView.BitrateBarBrush(IsBitrateLimited), Mode=OneWay}" />
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Grid.Column="3" Spacing="6" HorizontalAlignment="Right" MinWidth="200">
                                     <!-- As the web's row: Terminate beside the menu (Granary asks first), the rest in the menu. -->
                                     <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
                                         <Button Style="{StaticResource ActivityTerminateStyle}" IsEnabled="{x:Bind IsIdle, Mode=OneWay}" Click="OnTerminateClick" Tag="{x:Bind}">
@@ -386,9 +403,14 @@
                                         <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.row.audio')}" Style="{StaticResource ActivityDetailLabelStyle}" />
                                         <TextBlock Text="{x:Bind Audio, Mode=OneWay}" Style="{StaticResource ActivityDetailValueStyle}" />
                                     </StackPanel>
+                                    <!-- As the web's details: the delivered rate, tagged with a transcode's limit. -->
                                     <StackPanel Orientation="Horizontal" Visibility="{x:Bind HasBitrate, Mode=OneWay}">
-                                        <TextBlock Text="{x:Bind t:AppText.Get('web.player.info.bitrate')}" Style="{StaticResource ActivityDetailLabelStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.column.bitrate')}" Style="{StaticResource ActivityDetailLabelStyle}" />
                                         <TextBlock Text="{x:Bind Bitrate, Mode=OneWay}" Style="{StaticResource ActivityDetailValueStyle}" />
+                                        <Border Visibility="{x:Bind HasBitrateLimit, Mode=OneWay}" Margin="6,0,0,0" Padding="4,0" CornerRadius="4" BorderThickness="1"
+                                                BorderBrush="{StaticResource SiloBorderBrush}" VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind BitrateLimit, Mode=OneWay}" FontSize="10" LineHeight="16" Foreground="{StaticResource SiloMutedBrush}" />
+                                        </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.column.route')}" Style="{StaticResource ActivityDetailLabelStyle}" />

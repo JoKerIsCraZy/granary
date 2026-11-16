@@ -22,6 +22,9 @@ public sealed partial class AdminActivityView : UserControl
 {
     private const int MessageMaxLength = 500;
 
+    // The width of the bitrate bar's track in the markup.
+    private const double BitrateBarWidth = 128;
+
     private readonly DispatcherQueueTimer _clock;
 
     public AdminActivityView()
@@ -110,6 +113,13 @@ public sealed partial class AdminActivityView : UserControl
     public static string VideoName(string line) => $"{AppText.Get("web.admin.activity.row.video")}: {line}";
 
     public static string AudioName(string line) => $"{AppText.Get("web.admin.activity.row.audio")}: {line}";
+
+    /// <summary>The bitrate bar's fill: the delivered share of the source, along the web's 128 px track (max-w-32).</summary>
+    public static double BitrateFill(double share) => Math.Clamp(share, 0, 1) * BitrateBarWidth;
+
+    /// <summary>The fill in the web's warning colour while a transcode encodes to a limit, in its success colour otherwise.</summary>
+    public static Brush BitrateBarBrush(bool isLimited) =>
+        (Brush)Application.Current.Resources[isLimited ? "SiloWarningBrush" : "SiloSuccessBrush"];
 
     public static string AddressLine(string ip, string location) => location.Length > 0 ? $"{ip} ({location})" : ip;
 

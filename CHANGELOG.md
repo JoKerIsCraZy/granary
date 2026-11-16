@@ -95,6 +95,9 @@ release's section is what its update says it changes (docs/release.md).
 - Admin → Activity shows a stream's video and audio on a line each, as Silo's web does: the source's format, and for a
   stream your Silo server converts what the viewer gets ("HEVC 2160p → H.264 1080p", "TrueHD 7.1 → AAC 5.1"), with the
   encoder of a video transcode ("HW QSV").
+- Admin → Activity shows each stream's bitrate as Silo's web does: the rate the viewer gets, the limit a transcode
+  encodes to and the source's rate ("limit 4.0 Mbps · source 20.0 Mbps"), and a bar of how much of the source's rate
+  arrives, amber while a limit squeezes the stream. A stream's details tag its Bitrate with the limit.
 
 ### Fixed
 

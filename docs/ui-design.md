@@ -1776,11 +1776,17 @@ stream's commands on Activity.
   and the audio's behind AudioLines: an untouched stream's source alone, muted ("HEVC 2160p", "TrueHD 7.1"), a converted
   one's "HEVC 2160p → H.264 1080p" in the text colour, and after a video transcode its encoder in a small outlined chip
   ("HW QSV", "SW"). As on the web, the row no longer names the container or "Audio Transcode" (the audio line shows the
-  conversion; the container is in Details). On the right Pause or
-  Resume (a player that takes live commands), Stop and More (Message…, Terminate, which asks first), "Session active
-  5:00" as the web's row says it, the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
+  conversion; the container is in Details). Beside them, in a column 140 px wide, the web's bitrate cell: the rate the
+  viewer gets ("8.0 Mbps", 12 px), a muted line of what it is measured against ("limit 4.0 Mbps · source 20.0 Mbps", or
+  either alone; 11 px, wrapping), and a bar 4 px high on a 128 px track of the delivered share of the source, shown while
+  both rates are known: amber (the web's warning) while a transcode encodes to a limit, green (success) otherwise. On the
+  right Terminate (which asks first) beside a menu of Pause or Resume and Message… (a player that takes live commands)
+  and Stop, "Session active 5:00" as the web's row says it, the position and its bar. Details (an expander that stays open across reads): container,
+  video, audio, Bitrate (the delivered rate, with the web's outlined "limit 4.0 Mbps" tag while a transcode has one),
   route, client with its build, and the address with Look up, which opens IP Lookup on that address and scrolls to it, as
-  the web's. "No active streams" or "No streams match your filters" when nothing shows.
+  the web's. "No active streams" or "No streams match your filters" when nothing shows. The page's subtitle stays
+  "2 active streams across 1 node": the web's summary line after it (video transcodes, the bandwidth out, remote and
+  paused streams) is not taken yet.
 
 ### Activity indicator
 

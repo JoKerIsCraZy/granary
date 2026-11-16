@@ -25,9 +25,10 @@ public sealed partial class AdminSessionRow : ObservableObject
         nameof(HasProfile), nameof(Client), nameof(ClientFull), nameof(HasClient), nameof(ClientIp), nameof(HasClientIp), nameof(PosterUrl),
         nameof(ContentId), nameof(CanOpen), nameof(IsPlain), nameof(Method), nameof(MethodLabel), nameof(Container), nameof(Video),
         nameof(Audio), nameof(VideoLine), nameof(IsVideoConverted), nameof(VideoEncoder), nameof(HasVideoEncoder), nameof(AudioLine),
-        nameof(IsAudioConverted), nameof(Bitrate), nameof(HasBitrate), nameof(Route), nameof(Position),
-        nameof(Progress), nameof(IsPaused), nameof(PauseLabel), nameof(CanControl), nameof(CannotControl), nameof(Location), nameof(MediaType),
-        nameof(Elapsed), nameof(ActiveText))]
+        nameof(IsAudioConverted), nameof(Bitrate), nameof(HasBitrate), nameof(BitrateReference), nameof(HasBitrateReference),
+        nameof(BitrateShare), nameof(HasBitrateShare), nameof(IsBitrateLimited), nameof(BitrateLimit), nameof(HasBitrateLimit),
+        nameof(Route), nameof(Position), nameof(Progress), nameof(IsPaused), nameof(PauseLabel), nameof(CanControl), nameof(CannotControl),
+        nameof(Location), nameof(MediaType), nameof(Elapsed), nameof(ActiveText))]
     public partial AdminPlaybackSession Session { get; private set; }
 
     [ObservableProperty]
@@ -100,10 +101,29 @@ public sealed partial class AdminSessionRow : ObservableObject
 
     public string Audio => AdminSessionText.Audio(Session);
 
-    /// <summary>The stream's bitrate, "8.0 Mbps"; empty when unknown.</summary>
+    /// <summary>The rate the viewer receives, "8.0 Mbps"; empty when unknown.</summary>
     public string Bitrate => AdminSessionText.Bitrate(Session.StreamBitrateKbps);
 
     public bool HasBitrate => Bitrate.Length > 0;
+
+    /// <summary>The muted line under the rate: "limit 4.0 Mbps · source 20.0 Mbps", either alone, or empty.</summary>
+    public string BitrateReference => AdminSessionText.SessionBitrate(Session).Reference;
+
+    public bool HasBitrateReference => BitrateReference.Length > 0;
+
+    /// <summary>How much of the source's bitrate reaches the viewer, 0 to 1, for the bar under the rate; 0 when unknown.</summary>
+    public double BitrateShare => AdminSessionText.SessionBitrate(Session).Share ?? 0;
+
+    /// <summary>The bar shows only while both the delivered and the source's rate are known.</summary>
+    public bool HasBitrateShare => AdminSessionText.SessionBitrate(Session).Share is not null;
+
+    /// <summary>A transcode encodes to a limit: the bar shows in the warning colour, else in success.</summary>
+    public bool IsBitrateLimited => AdminSessionText.SessionBitrate(Session).IsLimited;
+
+    /// <summary>"limit 4.0 Mbps", the tag of Bitrate in the details; empty without a limit.</summary>
+    public string BitrateLimit => AdminSessionText.SessionBitrate(Session).LimitTag;
+
+    public bool HasBitrateLimit => BitrateLimit.Length > 0;
 
     /// <summary>The video line, as the web's row: "HEVC 2160p", or "HEVC 2160p → H.264 1080p" while it is transcoded.</summary>
     public string VideoLine => AdminSessionText.VideoConversion(Session).Text;

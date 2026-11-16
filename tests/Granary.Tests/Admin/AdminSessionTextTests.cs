@@ -141,6 +141,42 @@ public sealed class AdminSessionTextTests
     public void Bitrate_InKbpsOrMbps(int? kbps, string expected) => Assert.Equal(expected, AdminSessionText.Bitrate(kbps));
 
     [Fact]
+    public void ALimitedTranscode_IsMeasuredAgainstItsLimit_AndItsSource()
+    {
+        var session = new AdminPlaybackSession { StreamBitrateKbps = 4000, TargetBitrateKbps = 4000, SourceBitrateKbps = 20_000 };
+
+        var bitrate = AdminSessionText.SessionBitrate(session);
+
+        Assert.Equal(new AdminSessionBitrate("4.0 Mbps", "20.0 Mbps", "4.0 Mbps", 0.2), bitrate);
+        Assert.Equal(("limit 4.0 Mbps · source 20.0 Mbps", true, "limit 4.0 Mbps"), (bitrate.Reference, bitrate.IsLimited, bitrate.LimitTag));
+    }
+
+    [Fact]
+    public void AnUnlimitedStream_IsMeasuredAgainstItsSource_AndFillsAtMostTheBar()
+    {
+        var bitrate = AdminSessionText.SessionBitrate(new AdminPlaybackSession { StreamBitrateKbps = 24_000, SourceBitrateKbps = 20_000 });
+
+        Assert.Equal(("source 20.0 Mbps", false, ""), (bitrate.Reference, bitrate.IsLimited, bitrate.LimitTag));
+        Assert.Equal(1, bitrate.Share);
+        // A target of nothing is no limit.
+        Assert.False(AdminSessionText.SessionBitrate(new AdminPlaybackSession { StreamBitrateKbps = 8000, TargetBitrateKbps = 0 }).IsLimited);
+    }
+
+    [Fact]
+    public void ABitrateWithoutTheSources_HasNoShare()
+    {
+        var limited = AdminSessionText.SessionBitrate(new AdminPlaybackSession { StreamBitrateKbps = 640, TargetBitrateKbps = 640 });
+        var unknown = AdminSessionText.SessionBitrate(new AdminPlaybackSession());
+
+        Assert.Equal(("640 kbps", "limit 640 kbps"), (limited.Live, limited.Reference));
+        Assert.Null(limited.Share);
+        Assert.Equal(new AdminSessionBitrate("", "", "", null), unknown);
+        Assert.Equal("", unknown.Reference);
+        // The source's rate says what the stream is measured against even while the delivered rate is unknown.
+        Assert.Equal("source 20.0 Mbps", AdminSessionText.SessionBitrate(new AdminPlaybackSession { SourceBitrateKbps = 20_000 }).Reference);
+    }
+
+    [Fact]
     public void Position_AndProgress_FollowTheFilesLength()
     {
         var session = new AdminPlaybackSession { PositionSeconds = 724.9, FileDuration = 2910 };
