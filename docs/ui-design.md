@@ -1772,7 +1772,11 @@ stream's commands on Activity.
   Load more. PLAYBACK METHOD: one bar of the methods' shares and their legend, each a toggle that filters (the others
   dim); BY ROUTING NODE with more than one node. The filter box ("Filter by user, media, client, or node..."), Movies,
   Series, Clear filters, "Showing 1 of 2 streams". A card a stream, newest first: poster, title, "S1E3 · Dark", the
-  account, profile, method tag, transcode mode and client; "MKV · HEVC · 2160p · TrueHD 7.1"; on the right Pause or
+  account, profile, method tag and client; then the web's two conversion lines (12 px), the video's behind lucide's Film
+  and the audio's behind AudioLines: an untouched stream's source alone, muted ("HEVC 2160p", "TrueHD 7.1"), a converted
+  one's "HEVC 2160p → H.264 1080p" in the text colour, and after a video transcode its encoder in a small outlined chip
+  ("HW QSV", "SW"). As on the web, the row no longer names the container or "Audio Transcode" (the audio line shows the
+  conversion; the container is in Details). On the right Pause or
   Resume (a player that takes live commands), Stop and More (Message…, Terminate, which asks first), "Session active
   5:00" as the web's row says it, the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
   route, client with its build, and the address with Look up, which opens IP Lookup on that address and scrolls to it, as

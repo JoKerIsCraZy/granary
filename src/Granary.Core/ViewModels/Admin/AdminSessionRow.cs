@@ -24,7 +24,8 @@ public sealed partial class AdminSessionRow : ObservableObject
     [NotifyPropertyChangedFor(nameof(Title), nameof(Subtitle), nameof(HasSubtitle), nameof(Username), nameof(Initial), nameof(Profile),
         nameof(HasProfile), nameof(Client), nameof(ClientFull), nameof(HasClient), nameof(ClientIp), nameof(HasClientIp), nameof(PosterUrl),
         nameof(ContentId), nameof(CanOpen), nameof(IsPlain), nameof(Method), nameof(MethodLabel), nameof(Container), nameof(Video),
-        nameof(Audio), nameof(Bitrate), nameof(HasBitrate), nameof(TranscodeMode), nameof(HasTranscodeMode), nameof(Route), nameof(Position),
+        nameof(Audio), nameof(VideoLine), nameof(IsVideoConverted), nameof(VideoEncoder), nameof(HasVideoEncoder), nameof(AudioLine),
+        nameof(IsAudioConverted), nameof(Bitrate), nameof(HasBitrate), nameof(Route), nameof(Position),
         nameof(Progress), nameof(IsPaused), nameof(PauseLabel), nameof(CanControl), nameof(CannotControl), nameof(Location), nameof(MediaType),
         nameof(Elapsed), nameof(ActiveText))]
     public partial AdminPlaybackSession Session { get; private set; }
@@ -104,9 +105,21 @@ public sealed partial class AdminSessionRow : ObservableObject
 
     public bool HasBitrate => Bitrate.Length > 0;
 
-    public string TranscodeMode => AdminSessionText.TranscodeMode(Session);
+    /// <summary>The video line, as the web's row: "HEVC 2160p", or "HEVC 2160p → H.264 1080p" while it is transcoded.</summary>
+    public string VideoLine => AdminSessionText.VideoConversion(Session).Text;
 
-    public bool HasTranscodeMode => TranscodeMode.Length > 0;
+    /// <summary>The server converts the video: its line shows in the text colour, an untouched one muted.</summary>
+    public bool IsVideoConverted => AdminSessionText.VideoConversion(Session).IsConverted;
+
+    /// <summary>"HW QSV", "SW": the encoder after a video transcode's line; empty otherwise.</summary>
+    public string VideoEncoder => AdminSessionText.VideoEncoder(Session);
+
+    public bool HasVideoEncoder => VideoEncoder.Length > 0;
+
+    /// <summary>The audio line: "TrueHD 7.1", or "TrueHD 7.1 → AAC 5.1" while it is re-encoded.</summary>
+    public string AudioLine => AdminSessionText.AudioConversion(Session).Text;
+
+    public bool IsAudioConverted => AdminSessionText.AudioConversion(Session).IsConverted;
 
     /// <summary>"Transcode gpu → Server Local server".</summary>
     public string Route => string.Join(" → ", AdminSessionText.Route(Session).Select(node => $"{node.Label} {node.Name}"));

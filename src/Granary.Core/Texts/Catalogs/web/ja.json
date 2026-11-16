@@ -1109,6 +1109,20 @@
       "value": "経路"
     }
   ],
+  "web.admin.activity.detail.conversion": [
+    {
+      "type": 1,
+      "value": "source"
+    },
+    {
+      "type": 0,
+      "value": " → "
+    },
+    {
+      "type": 1,
+      "value": "output"
+    }
+  ],
   "web.admin.activity.detail.transcoding": [
     {
       "type": 0,

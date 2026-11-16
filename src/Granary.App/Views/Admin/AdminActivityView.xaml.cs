@@ -102,8 +102,14 @@ public sealed partial class AdminActivityView : UserControl
 
     public static Visibility NotLoading(bool isLoading, bool hasError) => isLoading || hasError ? Visibility.Collapsed : Visibility.Visible;
 
-    /// <summary>"MKV · HEVC · 2160p · TrueHD 7.1": what reaches the viewer, in one line.</summary>
-    public static string StreamLine(string container, string video, string audio) => $"{container} · {video} · {audio}";
+    /// <summary>A converted stream's line in the text colour, an untouched one's muted, as the web's ConversionLine.</summary>
+    public static Brush ConversionBrush(bool isConverted) =>
+        (Brush)Application.Current.Resources[isConverted ? "SiloForegroundBrush" : "SiloMutedBrush"];
+
+    // The web says which line is which to a screen reader only (its sr-only Video and Audio): the icon is not read.
+    public static string VideoName(string line) => $"{AppText.Get("web.admin.activity.row.video")}: {line}";
+
+    public static string AudioName(string line) => $"{AppText.Get("web.admin.activity.row.audio")}: {line}";
 
     public static string AddressLine(string ip, string location) => location.Length > 0 ? $"{ip} ({location})" : ip;
 

@@ -84,6 +84,54 @@ public sealed class AdminSessionTextTests
         Assert.Equal("Transcoding", AdminSessionText.Video(session with { PlayMethod = "transcode" }));
     }
 
+    [Fact]
+    public void AnUntouchedStream_ShowsItsSourceFormat_Alone()
+    {
+        var video = AdminSessionText.VideoConversion(Direct);
+        var audio = AdminSessionText.AudioConversion(Direct);
+
+        Assert.Equal(new AdminStreamConversion("HEVC 2160p", null), video);
+        // Codec and layout only: the track's language is not part of the compact form.
+        Assert.Equal(new AdminStreamConversion("TrueHD 7.1", null), audio);
+        Assert.Equal(("HEVC 2160p", false), (video.Text, video.IsConverted));
+        Assert.Equal("", AdminSessionText.VideoEncoder(Direct));
+    }
+
+    [Fact]
+    public void AConvertedStream_ShowsItsSource_AndWhatItDelivers()
+    {
+        var video = AdminSessionText.VideoConversion(Transcode);
+        var audio = AdminSessionText.AudioConversion(Transcode);
+
+        Assert.Equal(("HEVC 2160p → H.264 1080p", true), (video.Text, video.IsConverted));
+        Assert.Equal("TrueHD 7.1 → AAC 5.1", audio.Text);
+        Assert.Equal("HW QSV", AdminSessionText.VideoEncoder(Transcode));
+        // A transcode that keeps the source's height is named as the source.
+        Assert.Equal("HEVC 2160p → H.264 2160p",
+            AdminSessionText.VideoConversion(Transcode with { SourceVideoHeight = 1600, TargetResolution = "1600p" }).Text);
+    }
+
+    [Fact]
+    public void AnAudioOnlyConversion_ConvertsTheAudioLine_WithoutAnEncoder()
+    {
+        var session = Direct with { PlayMethod = "remux", VideoDecision = "copy", TranscodeAudio = true };
+
+        Assert.Equal(new AdminStreamConversion("HEVC 2160p", null), AdminSessionText.VideoConversion(session));
+        Assert.Equal("TrueHD 7.1 → AAC", AdminSessionText.AudioConversion(session).Text);
+        Assert.Equal("", AdminSessionText.VideoEncoder(session));
+    }
+
+    [Fact]
+    public void AConversionTheServerSaysLittleAbout_FallsBackAsTheWebDoes()
+    {
+        var session = new AdminPlaybackSession { PlayMethod = "transcode" };
+
+        Assert.Equal("Unknown source → Transcoding", AdminSessionText.VideoConversion(session).Text);
+        Assert.Equal("Unknown source → AAC", AdminSessionText.AudioConversion(session).Text);
+        Assert.Equal("HW/SW unknown", AdminSessionText.VideoEncoder(session));
+        Assert.Equal("Unknown source", AdminSessionText.VideoConversion(new AdminPlaybackSession { PlayMethod = "direct" }).Text);
+    }
+
     [Theory]
     [InlineData(null, "")]
     [InlineData(0, "")]

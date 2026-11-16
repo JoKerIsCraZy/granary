@@ -277,6 +277,7 @@ watchParty.whoSeen.watched
 # AdminSessionText.cs in src/Granary.Core/ViewModels/Admin.
 web.admin.activity.client.heading
 web.admin.activity.column.route
+web.admin.activity.detail.conversion
 web.admin.activity.detail.transcoding
 web.admin.activity.empty.noMatches
 web.admin.activity.filter.clear

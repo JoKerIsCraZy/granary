@@ -11,9 +11,10 @@ public sealed record AdminRouteNode(string Key, string Label, string Name);
 
 /// <summary>
 /// How Activity words a session's stream, as the web's <c>adminActivityPresentation.ts</c>: what reaches the viewer
-/// (container, video, audio), its bitrate, where it is and how long it has played, and the nodes it passes.
+/// (container, video, audio), its bitrate, where it is and how long it has played, and the nodes it passes. A stream's
+/// source and what the server makes of it are in <c>AdminSessionText.Streams.cs</c>.
 /// </summary>
-public static class AdminSessionText
+public static partial class AdminSessionText
 {
     private static readonly Dictionary<string, string> CodecLabels = new(StringComparer.OrdinalIgnoreCase)
     {

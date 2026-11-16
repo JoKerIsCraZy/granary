@@ -92,6 +92,9 @@ release's section is what its update says it changes (docs/release.md).
 - A row's title on Home and in the libraries opens the same page as its Explore all, as on Silo's web: click "Recently
   Added Movies" itself.
 - A TMDB score shows TMDB's logo beside it, as on Silo's web; IMDb's and every other source's stay their names.
+- Admin → Activity shows a stream's video and audio on a line each, as Silo's web does: the source's format, and for a
+  stream your Silo server converts what the viewer gets ("HEVC 2160p → H.264 1080p", "TrueHD 7.1 → AAC 5.1"), with the
+  encoder of a video transcode ("HW QSV").
 
 ### Fixed
 
