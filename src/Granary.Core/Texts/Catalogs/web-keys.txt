@@ -274,9 +274,14 @@ watchParty.whoSeen.watched
 
 # Admin → Activity, in the words of the web's AdminActivity page (pages/AdminActivity.tsx, pages/adminActivityPresentation.ts):
 # src/Granary.App/Views/Admin/AdminActivityView.xaml(.cs) and AdminActivityViewModel*.cs, AdminSessionRow.cs and
-# AdminSessionText.cs in src/Granary.Core/ViewModels/Admin.
+# AdminSessionText*.cs in src/Granary.Core/ViewModels/Admin.
+web.admin.activity.bitrate.limit
+web.admin.activity.bitrate.limitAndSource
+web.admin.activity.bitrate.source
 web.admin.activity.client.heading
+web.admin.activity.column.bitrate
 web.admin.activity.column.route
+web.admin.activity.detail.conversion
 web.admin.activity.detail.transcoding
 web.admin.activity.empty.noMatches
 web.admin.activity.filter.clear
@@ -506,7 +511,7 @@ web.admin.downloads.preparation.worker.node
 web.admin.downloads.preparation.worker.nodeWithId
 
 # More of Admin → Activity's words: a stream's commands and their answers, as the web's AdminSessionActions
-# (components/AdminSessionActions.tsx), as above under web.admin.activity.client.heading.
+# (components/AdminSessionActions.tsx), as above under web.admin.activity.bitrate.limit.
 web.admin.sessions.playback.action.message
 web.admin.sessions.playback.action.pause
 web.admin.sessions.playback.action.resume
@@ -1175,7 +1180,7 @@ web.collections.types.kindSynced
 web.collections.whereItShows.heading
 
 # More of Admin's words: a play method, and a session's title and kind on Activity, as the web's
-# pages/adminActivityPresentation.ts, as above under web.admin.activity.client.heading.
+# pages/adminActivityPresentation.ts, as above under web.admin.activity.bitrate.limit.
 web.common.activity.method.direct.label
 web.common.activity.method.directStream.label
 web.common.activity.method.remux.label
@@ -1812,7 +1817,7 @@ web.player.audioMenu.trigger
 web.player.bar.pause
 web.player.bar.play
 
-# More of Admin → Activity's words: a stream's position bar, as above under web.admin.activity.client.heading.
+# More of Admin → Activity's words: a stream's position bar, as above under web.admin.activity.bitrate.limit.
 web.player.bar.positionLabel
 
 # More of the player's words, as above under bufferingQuality.autoLimited.
@@ -1909,7 +1914,7 @@ web.player.room.onlyHostCanSeek
 web.player.room.reconnecting
 
 # More of Admin → Activity's words: where a stream's viewer is, as the web's route badge (components/PlaybackRouteBadges.tsx),
-# as above under web.admin.activity.client.heading.
+# as above under web.admin.activity.bitrate.limit.
 web.player.routeBadge.local
 web.player.routeBadge.remote
 
@@ -2439,6 +2444,12 @@ web.settings.playbackConnection.transport.ethernet
 web.settings.playbackConnection.transport.unknown
 web.settings.playbackConnection.transport.wifi
 web.settings.resetButton.label
+# Settings' search box at the top of its sidebar (src/Granary.App/Views/SettingsPage.xaml(.cs) and
+# src/Granary.Core/ViewModels/Settings/SettingsSearchViewModel.cs), as the web's SettingsSearchInput.tsx and SettingsSidebar.tsx.
+web.settings.search.clear
+web.settings.search.matchCount
+web.settings.search.noMatches
+web.settings.search.placeholder
 web.settings.sessions.confirm.clientDescription
 web.settings.sessions.confirm.deviceTitle
 web.settings.sessions.confirm.note

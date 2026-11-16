@@ -453,6 +453,25 @@ differently; a text only Granary has keeps its English under a key of its own. A
 - **`Accept-Language`**: `ClientIdentityHandler` puts the language on screen on every request to a Silo server
   (docs/api-contract.md, 6.4).
 
+## Settings search
+
+The search box of the settings' sidebar (docs/ui-design.md, Settings) finds what the pages show without a list of its own,
+where Silo's web keeps one by hand (lib/userSettingsNav.ts):
+
+- **The markup is the index.** The App embeds `Views/SettingsPage.xaml` and every `Views/Settings/*SettingsView.xaml` as
+  resources. `SettingsMarkup` (Core) reads the sidebar's lists (each entry's tag and name) and each page's sections
+  (`SettingsGroup` title and description), rows (`SettingsRow` label and description), headings below the page's title,
+  controls named for screen readers, and the text under the title, all by the key of a text given as
+  `{x:Bind t:AppText.Get('…')}`. A text from a view model names a state, not a setting, and what a template or the
+  resources hold shows per item or not at all; both are left out, and `SettingsMarkupTests` says which rows are labelled
+  otherwise. English keywords sit next to a setting or a sidebar entry (`controls:SearchKeywords.Terms`). `SettingsPage`
+  names each page's view and markup in one table, and reads the markup once a run, at the first word typed.
+- **In the language on screen**: `SettingsSearchIndex` writes every key in the language shown, and in another language
+  adds the English text as a keyword, as the web's `englishTerms` does. `SettingsSearch` is the web's rule
+  (settingsSearch.ts) unchanged; `SettingsSearchViewModel` holds the query, the pages that match and the line under the box.
+- **Showing a match**: the page, once laid out, is searched for the element of the first setting that matched on its
+  own, by its kind and text, outside anything collapsed; it comes to the page's top, and a press focuses it.
+
 ## Networking and security
 
 - `HttpClient` instances come from `IHttpClientFactory`. The server probe uses a client without
@@ -526,6 +545,22 @@ minute (its renewed URL is), and the bitmap then tries the URL itself.
   decoder (`AsRandomAccessStream`) made a managed buffer as large as each of its reads, and every WinRT object .NET
   holds adds 1,000 bytes of memory pressure (CsWinRT's `IObjectReference`), enough of which starts blocking full
   collections: the remaining gen2 collections while scrolling are those.
+- Avatars: the sidebar's profile avatar (`ProfileAvatar`) takes a picture once it is decoded (`Artwork.PictureAsync`, null
+  when it cannot be had), never a bitmap still filling: an avatar's address is signed anew every 15 minutes and read
+  again every 5, and the picture shown stays until the new one is ready, with only the newest load counting
+  (`AvatarPicture`). It shows its letter at once when there is no picture. The presets the server offers are SVG, its
+  own (`/profile-avatars/<id>.svg`) and DiceBear's (`https://api.dicebear.com/9.x/<style>/svg?…`), which the bitmap decoder
+  cannot read. They alone are drawn as SVG, and only when everything holds:
+  - the profile says `avatar_source: preset` and the address is on the active server's origin or https on
+    api.dicebear.com (`ProfileItemViewModel.IsPresetHost`, the one place that names the hosts); any other host is not;
+  - the answer was labelled `image/svg+xml` (`ArtworkBytes.MediaType`, kept by the loader), never guessed from the bytes;
+  - `AvatarSvg` lets the markup through: at most 256 KB of UTF-8, `<svg>` as its root after an optional `<?xml?>`
+    declaration, no doctype or entity declarations, no script, foreign object or `@import`, and every `href` and `url()`
+    a `#` fragment, so nothing is fetched from elsewhere; and no text, which Direct2D does not draw (DiceBear's initials
+    style shows the avatar's own letter instead).
+
+  Refused markup leaves the letter, as does markup Direct2D cannot read. The drawing's surface is the avatar's size
+  (`RasterizePixelWidth`/`Height`), whatever size the markup declares. Every other picture goes to the bitmap decoder.
 - Disk: images the server marks `immutable`, in `cache\artwork` under the data directory, 512 MB, the
   least recently used deleted first, in the background. File names are hashes of the URL without its
   signature. Temporary files of writes that never finished are swept on the first write of a run.

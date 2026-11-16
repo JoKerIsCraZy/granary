@@ -22,11 +22,14 @@ public sealed partial class AdminDashboardView : UserControl
 {
     private const int PosterDecodeWidth = 140;
 
-    // The web's status colours: --success, --info, --warning and --destructive.
-    private static readonly Color Success = Color.FromArgb(0xFF, 0x5B, 0xC8, 0x70);
-    private static readonly Color Info = Color.FromArgb(0xFF, 0x58, 0xA0, 0xF0);
-    private static readonly Color Warning = Color.FromArgb(0xFF, 0xE9, 0xB4, 0x4C);
-    private static readonly Color Destructive = Color.FromArgb(0xFF, 0xEF, 0x44, 0x44);
+    // The web's status colours: --success, --info, --warning and --destructive, from Themes/Silo.xaml.
+    private static Color Success => ThemeColor("SiloSuccessColor");
+
+    private static Color Info => ThemeColor("SiloInfoColor");
+
+    private static Color Warning => ThemeColor("SiloWarningColor");
+
+    private static Color Destructive => ThemeColor("SiloDestructiveColor");
 
     private readonly DispatcherQueueTimer _clock;
 
@@ -193,4 +196,6 @@ public sealed partial class AdminDashboardView : UserControl
     private static Visibility Show(bool shown) => shown ? Visibility.Visible : Visibility.Collapsed;
 
     private static Brush Resource(string key) => (Brush)Application.Current.Resources[key];
+
+    private static Color ThemeColor(string key) => (Color)Application.Current.Resources[key];
 }

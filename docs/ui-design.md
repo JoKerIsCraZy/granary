@@ -235,11 +235,21 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   has downloads on this PC, with the count of its downloads coming or waiting in the accent as Notifications' count, and
   while one comes a 6 px dot in the accent before the count that slowly fades to a third and back every three seconds, and
   stands still while Windows' animation effects are off; the icon-only rail shows the count on the icon, without the
-  dot); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (Switch Profile and Logout,
-  in the web's words; the servers are in Settings → Servers). While a sign-out runs, which can take about 20 s when a drive
-  or the server does not answer, the profile's entry reads "Signing out…" with a 16 px ring at its right and takes no
-  clicks, as Granary's busy buttons do ("Signing in…"); one that failed says "Couldn't sign out. Try again." in red under
-  the name until the next Logout or another profile shows. The web's menu has neither. Favorites, Watchlist and History
+  dot); Admin (an administrator's only, a shield), Settings and the profile at the bottom. In the icon's place the
+  profile's 28 px avatar, as the web's (`components/AppSidebar.tsx`), in the rail too: its picture (`avatar_url`,
+  through the artwork cache; an upload, or a preset the server offers: its own SVG drawings or DiceBear's, as the web shows them; DiceBear's initials
+  style shows the letter) in a circle,
+  filling it; without one, while it loads and after it failed, the first letter of the profile's name (else of the
+  account's, else "?") in bold 12 px on the accent, in the colour labels have on it. The avatar's middle is on the other
+  icons' line and the name on the other labels'. Its menu starts with the web's label: the 40 px avatar (a 14 px
+  letter), the name in 14 px semibold and, when the account's name is another, that in 11 px muted under it; then Switch
+  Profile and Logout, in the web's words (the servers are in Settings → Servers). The label takes no focus or click and
+  is no menu item for a screen reader; the entry stays "Elena menu". Another profile shows its letter at once, then its
+  picture; a picture changed elsewhere shows when the sidebar reads the profile again, five minutes at most; a picture
+  whose address the server signed anew stays until the new one is decoded. While a sign-out runs, which can take about
+  20 s when a drive or the server does not answer, the profile's entry reads "Signing out…" with a 16 px ring at its
+  right and takes no clicks, as Granary's busy buttons do ("Signing in…"); one that failed says "Couldn't sign out. Try
+  again." in red under the name until the next Logout or another profile shows. The web's menu has neither. Favorites, Watchlist and History
   are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,
@@ -1380,8 +1390,8 @@ off the mark stands still.
 ## Settings
 
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
-darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
-the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages, Accessibility), ACCOUNT (Devices) and APP (Servers, Downloads, About). The page open is white 6 % with text and a
+darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), the
+search box (below), then the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages, Accessibility), ACCOUNT (Devices) and APP (Servers, Downloads, About). The page open is white 6 % with text and a
 mark in the accent. As on the web, the head stays and the groups scroll below it in a window too short for them all, so
 Downloads and About stay reachable; an arrow key or a controller's D-pad or bumper moves the focus from page to page
 across the groups and scrolls the one it reaches into view. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
@@ -1391,6 +1401,24 @@ description 13 px muted, the control on the right, hairlines between rows). Sele
 page background with a faint outline, in the accent when focused; switches are only their 40 px track, in the accent when on
 (Themes/SiloSettings.xaml). Every value is the profile's and saves at once; a refused save puts the control back and
 says why above the sections.
+
+**Search** (`SettingsSearchViewModel`, `SettingsPage.Search.cs`), as the web's settings sidebar (SettingsSearchInput.tsx,
+settingsSearch.ts): a 44 px box rounded 12 px, a 16 px muted magnifier at its start and "Search settings" as its hint and
+its name; while something is typed a ✕ at its end, "Clear settings search", empties it, as Escape in the box does (on
+an empty box Escape goes back, as anywhere). Ctrl+F puts focus in it with its text chosen. For the keyboard, a remote
+and a controller the box is one stop between Back to App and the pages. Typing narrows the sidebar to the pages that
+match under their groups' headings (a group with none goes; the first one left sits close under the box), and the page
+open stays chosen while it is listed. Under the box, in 12 px muted, "1 match" or "3 matches" counts the pages, or "No
+matching settings", which also stands where the pages were; nothing while the box is empty. A screen reader hears the
+line each time its words change. A page matches when every word typed starts a word of its name, of the text under its
+title, of its group's name, of the English keywords kept next to it, or of any of its settings (a section's title, a
+row's label and description, a heading, a control's name), or sits inside one from four letters on; case, accents and
+punctuation do not count, letters of any script do, and a group whose name matches keeps all its pages. The texts are
+those on screen, read from the pages' markup; in another language their English wording matches too. A page opened from
+the narrowed sidebar comes up at the first of its settings that matched on its own, 32 px under the top (one this
+profile or PC does not show is passed over); a click, Enter or a remote's OK on its entry also puts focus on that
+setting, and Right from the entry goes there. A page that matches only as a whole, by its name or its group's, opens at
+its top.
 
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
@@ -1798,11 +1826,22 @@ stream's commands on Activity.
   Load more. PLAYBACK METHOD: one bar of the methods' shares and their legend, each a toggle that filters (the others
   dim); BY ROUTING NODE with more than one node. The filter box ("Filter by user, media, client, or node..."), Movies,
   Series, Clear filters, "Showing 1 of 2 streams". A card a stream, newest first: poster, title, "S1E3 · Dark", the
-  account, profile, method tag, transcode mode and client; "MKV · HEVC · 2160p · TrueHD 7.1"; on the right Pause or
-  Resume (a player that takes live commands), Stop and More (Message…, Terminate, which asks first), "Session active
-  5:00" as the web's row says it, the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
+  account, profile, method tag and client; then the web's two conversion lines (12 px), the video's behind lucide's Film
+  and the audio's behind AudioLines: an untouched stream's source alone, muted ("HEVC 2160p", "TrueHD 7.1"), a converted
+  one's "HEVC 2160p → H.264 1080p" in the text colour, and after a video transcode its encoder in a small outlined chip
+  ("HW QSV", "SW"); a line too long for the column is cut with an ellipsis, the chip staying beside it. As on the web,
+  the row no longer names the container or "Audio Transcode" (the audio line shows the
+  conversion; the container is in Details). Beside them, in a column 140 px wide, the web's bitrate cell: the rate the
+  viewer gets ("8.0 Mbps", 12 px), a muted line of what it is measured against ("limit 4.0 Mbps · source 20.0 Mbps", or
+  either alone; 11 px, wrapping), and a bar 4 px high on a 128 px track of the delivered share of the source, shown while
+  both rates are known: amber (the web's warning) while a transcode encodes to a limit, green (success) otherwise. On the
+  right Terminate (which asks first) beside a menu of Pause or Resume and Message… (a player that takes live commands)
+  and Stop, "Session active 5:00" as the web's row says it, the position and its bar. Details (an expander that stays open across reads): container,
+  video, audio, Bitrate (the delivered rate, with the web's outlined "limit 4.0 Mbps" tag while a transcode has one),
   route, client with its build, and the address with Look up, which opens IP Lookup on that address and scrolls to it, as
-  the web's. "No active streams" or "No streams match your filters" when nothing shows.
+  the web's. "No active streams" or "No streams match your filters" when nothing shows. The page's subtitle stays
+  "2 active streams across 1 node": the web's summary line after it (video transcodes, the bandwidth out, remote and
+  paused streams) is not taken yet.
 
 ### Activity indicator
 

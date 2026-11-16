@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
@@ -50,6 +51,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     private readonly DownloadSignOut? _downloads;
     private (string? ServerId, string? ProfileId)? _loaded;
     private (string? ServerId, string? ProfileId)? _shown;
+    private string? _accountShown;
     private int _generation;
     private ITimer? _readAgain;
 
@@ -88,13 +90,30 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
 
     /// <summary>The acting profile; null until it is loaded, or when the list could not be read.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ProfileName), nameof(ProfileInitials))]
+    [NotifyPropertyChangedFor(nameof(ProfileName), nameof(ProfileInitials), nameof(ProfileInitial), nameof(Avatar), nameof(AccountName))]
     public partial ProfileItemViewModel? Profile { get; private set; }
 
     /// <summary>The profile's name, or the account's while the profile is unknown.</summary>
     public string ProfileName => Profile?.Name ?? _session.Account?.Username ?? "";
 
     public string ProfileInitials => Profile?.Initials ?? ProfileItemViewModel.InitialsOf(ProfileName);
+
+    /// <summary>
+    /// The letter the profile's entry and menu show without a picture, as the web's sidebar avatar: the first of the
+    /// profile's name, else of the account's, upper-case, else "?".
+    /// </summary>
+    public string ProfileInitial => string.IsNullOrEmpty(ProfileName) ? "?" : StringInfo.GetNextTextElement(ProfileName).ToUpperInvariant();
+
+    /// <summary>
+    /// The profile's picture (<c>avatar_url</c>); null without one, and at once while another profile or none acts. Read again
+    /// with the profile, so a picture changed elsewhere shows within <see cref="StaleAfter"/>.
+    /// </summary>
+    public AvatarImage? Avatar => Profile is { AvatarUrl: { } url } profile ? new AvatarImage(url, profile.AvatarIsServerPreset) : null;
+
+    /// <summary>The account's name under the profile's in the profile menu, as the web's; empty when it is the same name.</summary>
+    public string AccountName => Profile is { } profile && _session.Account?.Username is { Length: > 0 } username && username != profile.Name
+        ? username
+        : "";
 
     /// <summary>The libraries the profile browses: its hidden ones left out, in its order or else the server's.</summary>
     public ObservableCollection<SidebarLibrary> Libraries { get; } = [];
@@ -111,6 +130,13 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
         IsAdmin = _session is { State: SessionState.Ready, Account.IsAdmin: true };
+        if (_session.Account?.Username != _accountShown)
+        {
+            // The account renamed elsewhere, its server and profile the same (SessionManager.RefreshAccountAsync): its name
+            // stands in for a profile not loaded, and shows in the menu.
+            _accountShown = _session.Account?.Username;
+            AnnounceNames();
+        }
         var key = (_session.ActiveServer?.Id, _session.ProfileId);
         if (_loaded == key)
         {
@@ -127,8 +153,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
             Profile = null;
             Libraries.Clear();
             AreLibrariesLoaded = false;
-            OnPropertyChanged(nameof(ProfileName));
-            OnPropertyChanged(nameof(ProfileInitials));
+            AnnounceNames();
         }
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server, ProfileId: { } profileId })
         {
@@ -154,6 +179,15 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
                 ReadAgainIn(complete ? StaleAfter : RetryAfter);
             }
         }
+    }
+
+    // The names that read the account while the profile is unknown, and the menu's account line.
+    private void AnnounceNames()
+    {
+        OnPropertyChanged(nameof(ProfileName));
+        OnPropertyChanged(nameof(ProfileInitials));
+        OnPropertyChanged(nameof(ProfileInitial));
+        OnPropertyChanged(nameof(AccountName));
     }
 
     private async Task<bool> LoadProfileAsync(Uri server, string profileId, int generation, CancellationToken cancellationToken)

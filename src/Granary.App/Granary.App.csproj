@@ -74,6 +74,14 @@
     <Content Include="Assets\Logo\granary.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!--
+    The settings' sidebar and pages as written, for the settings' search to read what they show (SettingsMarkup), so it
+    needs no list of its own to keep in step with them.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="Views\SettingsPage.xaml;Views\Settings\*SettingsView.xaml" LogicalName="Granary.App.SettingsMarkup.%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <!-- The AGPL asks that every copy carry the license; the notices name what else ships and whose work it holds. -->
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
