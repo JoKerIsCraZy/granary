@@ -17560,6 +17560,70 @@
       "value": "Redefinir"
     }
   ],
+  "web.settings.search.clear": [
+    {
+      "type": 0,
+      "value": "Limpar pesquisa de configurações"
+    }
+  ],
+  "web.settings.search.matchCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " resultado"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de resultados"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " resultados"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.search.noMatches": [
+    {
+      "type": 0,
+      "value": "Nenhuma configuração encontrada"
+    }
+  ],
+  "web.settings.search.placeholder": [
+    {
+      "type": 0,
+      "value": "Buscar configurações"
+    }
+  ],
   "web.settings.sessions.confirm.clientDescription": [
     {
       "type": 0,

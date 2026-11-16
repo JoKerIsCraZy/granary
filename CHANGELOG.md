@@ -8,6 +8,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Search in Settings:** a search box at the top of the Settings sidebar, as on Silo's web. Typing narrows the sidebar
+  to the pages whose name, description or settings match, in the language on screen (English words work too), and says
+  how many match or "No matching settings". A page opened from it comes up at the setting that matched; a click, Enter
+  or a remote's OK puts the focus on it. Ctrl+F jumps to the box, and Escape empties it.
 - **Granary in seven languages:** English, Spanish, German, French, Brazilian Portuguese, Japanese and Simplified
   Chinese, in the words and translations of Silo's web and apps where they have the text. Granary follows the language
   your profile chose in any Silo app, else Windows' languages, else English. Settings → Accessibility → Language

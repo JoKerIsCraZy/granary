@@ -3,6 +3,7 @@ using Granary.App.Views.Settings;
 using Granary.Core.Abstractions;
 using Granary.Core.Texts;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -16,15 +17,31 @@ namespace Granary.App.Views;
 /// The settings (docs/ui-design.md, Settings): the profile's, the account's devices, and the app's own servers, downloads and
 /// About. The parameter names the page to open first (<c>playback</c>, <c>subtitles</c>, <c>interface</c>, <c>title-pages</c>,
 /// <c>accessibility</c>, <c>devices</c>, <c>servers</c>, <c>downloads</c>, <c>about</c>). The mpv.conf editor opens in Playback's
-/// place; leaving with unsaved edits in it asks first.
+/// place; leaving with unsaved edits in it asks first. The search at the top of the sidebar is in SettingsPage.Search.cs.
 /// </summary>
 public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSections
 {
     private const string PlaybackPage = "playback";
 
+    // Each page by its tag: its view, made when it is first opened, and the name of the view's markup, which the search reads.
+    private static readonly Dictionary<string, (string Markup, Func<UIElement> Make)> PageViews = new(StringComparer.Ordinal)
+    {
+        [PlaybackPage] = (nameof(PlaybackSettingsView), () => new PlaybackSettingsView()),
+        ["subtitles"] = (nameof(LanguageSettingsView), () => new LanguageSettingsView()),
+        ["interface"] = (nameof(InterfaceSettingsView), () => new InterfaceSettingsView()),
+        ["title-pages"] = (nameof(TitlePagesSettingsView), () => new TitlePagesSettingsView()),
+        ["accessibility"] = (nameof(AccessibilitySettingsView), () => new AccessibilitySettingsView()),
+        ["devices"] = (nameof(DevicesSettingsView), () => new DevicesSettingsView()),
+        ["servers"] = (nameof(ServersSettingsView), () => new ServersSettingsView()),
+        ["downloads"] = (nameof(DownloadsSettingsView), () => new DownloadsSettingsView()),
+        ["about"] = (nameof(AboutSettingsView), () => new AboutSettingsView()),
+    };
+
     private readonly Dictionary<string, UIElement> _views = [];
     // Set while one list clears the others' picks, so the clearing opens nothing.
     private bool _switchingLists;
+    // The page that shows, or that the mpv.conf editor stands in for.
+    private string _shownPage = PlaybackPage;
 
     // The mpv.conf editor while it is open, and whether the viewer let its unsaved edits go for a navigation.
     private MpvConfigEditorView? _editor;
@@ -33,13 +50,24 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
     public SettingsPage()
     {
         Sidebar = App.Services.GetRequiredService<SidebarViewModel>();
+        Search = new SettingsSearchViewModel(BuildSearchIndex);
         InitializeComponent();
         AutomationProperties.SetName(this, AppText.Get("web.settings.sidebar.title"));
-        NameGroup(PlaybackGroup, Pages, AppText.Get("web.settings.nav.group.playback"));
-        NameGroup(AppearanceGroup, AppearancePages, AppText.Get("web.settings.nav.group.appearance"));
-        NameGroup(AccountGroup, AccountPages, AppText.Get("web.settings.nav.group.account"));
-        NameGroup(AppGroup, AppPages, AppText.Get("granary.settings.nav.group.app"));
+        foreach (var (heading, pages, nameKey) in Groups())
+        {
+            NameGroup(heading, pages, AppText.Get(nameKey));
+        }
+        SetUpSearch();
     }
+
+    // The sidebar's groups: each list of pages under its heading, and the key of the group's name.
+    private (TextBlock Heading, ListView Pages, string NameKey)[] Groups() =>
+    [
+        (PlaybackGroup, Pages, "web.settings.nav.group.playback"),
+        (AppearanceGroup, AppearancePages, "web.settings.nav.group.appearance"),
+        (AccountGroup, AccountPages, "web.settings.nav.group.account"),
+        (AppGroup, AppPages, "granary.settings.nav.group.app"),
+    ];
 
     // A group's heading in capitals, as the web's CSS shows it, and its name as written for screen readers, which name its
     // list by it too.
@@ -97,6 +125,8 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
             // The editor stands in for Playback: another page closes it, asking first about unsaved edits.
             if (_editor is { } editor && !await editor.ViewModel.ConfirmDiscardAsync())
             {
+                // The press that chose the page goes with it.
+                _focusOnShow = null;
                 if (ReferenceEquals(_editor, editor))
                 {
                     Select(Pages, PlaybackPage);
@@ -106,6 +136,7 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
             CloseEditor();
             Select(list, page);
             Show(page);
+            ShowMatch(page);
         }
         catch (Exception ex)
         {
@@ -136,24 +167,14 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
     {
         if (!_views.TryGetValue(page, out var view))
         {
-            view = page switch
-            {
-                "subtitles" => new LanguageSettingsView(),
-                "interface" => new InterfaceSettingsView(),
-                "title-pages" => new TitlePagesSettingsView(),
-                "accessibility" => new AccessibilitySettingsView(),
-                "devices" => new DevicesSettingsView(),
-                "servers" => new ServersSettingsView(),
-                "downloads" => new DownloadsSettingsView(),
-                "about" => new AboutSettingsView(),
-                _ => new PlaybackSettingsView(),
-            };
+            view = (PageViews.TryGetValue(page, out var known) ? known : PageViews[PlaybackPage]).Make();
             if (view is PlaybackSettingsView playback)
             {
                 playback.EditMpvConfigRequested += OnEditMpvConfigRequested;
             }
             _views[page] = view;
         }
+        _shownPage = page;
         PageHost.Content = view;
         PageScroller.ChangeView(null, 0, null, disableAnimation: true);
     }
@@ -202,7 +223,7 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
 
     void ILeaveGuard.Rearm() => _released = false;
 
-    private ListView[] Lists() => [Pages, AppearancePages, AccountPages, AppPages];
+    private ListView[] Lists() => [.. Groups().Select(group => group.Pages)];
 
     // A game controller's bumpers go through the settings' pages, from one list on into the next.
     void IPadSections.StepSection(int by) => PadControls.StepRow(Lists(), by);

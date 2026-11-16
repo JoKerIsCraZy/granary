@@ -453,6 +453,25 @@ differently; a text only Granary has keeps its English under a key of its own. A
 - **`Accept-Language`**: `ClientIdentityHandler` puts the language on screen on every request to a Silo server
   (docs/api-contract.md, 6.4).
 
+## Settings search
+
+The search box of the settings' sidebar (docs/ui-design.md, Settings) finds what the pages show without a list of its own,
+where Silo's web keeps one by hand (lib/userSettingsNav.ts):
+
+- **The markup is the index.** The App embeds `Views/SettingsPage.xaml` and every `Views/Settings/*SettingsView.xaml` as
+  resources. `SettingsMarkup` (Core) reads the sidebar's lists (each entry's tag and name) and each page's sections
+  (`SettingsGroup` title and description), rows (`SettingsRow` label and description), headings below the page's title,
+  controls named for screen readers, and the text under the title, all by the key of a text given as
+  `{x:Bind t:AppText.Get('…')}`. A text from a view model names a state, not a setting, and what a template or the
+  resources hold shows per item or not at all; both are left out, and `SettingsMarkupTests` says which rows are labelled
+  otherwise. English keywords sit next to a setting or a sidebar entry (`controls:SearchKeywords.Terms`). `SettingsPage`
+  names each page's view and markup in one table, and reads the markup once a run, at the first word typed.
+- **In the language on screen**: `SettingsSearchIndex` writes every key in the language shown, and in another language
+  adds the English text as a keyword, as the web's `englishTerms` does. `SettingsSearch` is the web's rule
+  (settingsSearch.ts) unchanged; `SettingsSearchViewModel` holds the query, the pages that match and the line under the box.
+- **Showing a match**: the page, once laid out, is searched for the element of the first setting that matched on its
+  own, by its kind and text, outside anything collapsed; it comes to the page's top, and a press focuses it.
+
 ## Networking and security
 
 - `HttpClient` instances come from `IHttpClientFactory`. The server probe uses a client without

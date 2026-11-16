@@ -17544,6 +17544,70 @@
       "value": "Restablecer"
     }
   ],
+  "web.settings.search.clear": [
+    {
+      "type": 0,
+      "value": "Borrar la búsqueda de configuración"
+    }
+  ],
+  "web.settings.search.matchCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " coincidencia"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de coincidencias"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " coincidencias"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.search.noMatches": [
+    {
+      "type": 0,
+      "value": "No hay opciones de configuración que coincidan"
+    }
+  ],
+  "web.settings.search.placeholder": [
+    {
+      "type": 0,
+      "value": "Buscar configuración"
+    }
+  ],
   "web.settings.sessions.confirm.clientDescription": [
     {
       "type": 0,

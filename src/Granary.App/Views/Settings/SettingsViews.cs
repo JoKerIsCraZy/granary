@@ -41,8 +41,6 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
 
     public bool HasPhoneRemote => ViewModel.PhoneRemote is not null;
 
-    public string PhoneRemoteLabel => PhoneRemoteViewModel.SwitchLabel;
-
     public string PhoneRemoteDescription => PhoneRemoteViewModel.RowDescription;
 
     public string ConnectAPhoneText => PhoneRemoteViewModel.ConnectAPhoneText;

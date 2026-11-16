@@ -162,9 +162,9 @@
                     app's Connect a Phone (PhoneRemoteViewModel). Kept on this PC; hidden where the page has no row for it.
                 -->
                 <StackPanel Visibility="{x:Bind HasPhoneRemote}">
-                    <controls:SettingsRow Label="{x:Bind PhoneRemoteLabel}" Description="{x:Bind PhoneRemoteDescription}">
+                    <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.phoneRemote.label')}" Description="{x:Bind PhoneRemoteDescription}">
                         <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind PhoneRemote.IsOn, Mode=TwoWay, FallbackValue=False}"
-                                      AutomationProperties.Name="{x:Bind PhoneRemoteLabel}" />
+                                      AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.phoneRemote.label')}" />
                     </controls:SettingsRow>
                     <!-- What it does now: the phones that control, or that it cannot run and why; and while it listens, Connect a Phone. -->
                     <Grid Margin="0,12,0,0" ColumnSpacing="12" Visibility="{x:Bind controls:SettingsText.Shows(PhoneRemote.StatusText), Mode=OneWay, FallbackValue=Collapsed}">
@@ -264,7 +264,8 @@
         <controls:SettingsGroup Title="{x:Bind t:AppText.Get('web.settings.deviceGroups.sound.title')}" Description="{x:Bind t:AppText.Get('web.settings.deviceGroups.sound.description')}"
                                 Visibility="{x:Bind AudioDelay.IsSupported, Mode=OneWay}">
             <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('settingsManifest.player.audio_sync_ms.label')}"
-                                  Description="{x:Bind t:AppText.Get('settingsManifest.player.audio_sync_ms.description')}">
+                                  Description="{x:Bind t:AppText.Get('settingsManifest.player.audio_sync_ms.description')}"
+                                  controls:SearchKeywords.Terms="lip sync, sound delay, audio delay">
                 <Grid>
                     <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center" Visibility="{x:Bind AudioDelay.HasLoadMessage, Mode=OneWay}">
                         <TextBlock Text="{x:Bind AudioDelay.LoadMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
