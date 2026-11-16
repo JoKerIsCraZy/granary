@@ -1394,6 +1394,12 @@ profile or PC does not show is passed over); a click, Enter or a remote's OK on 
 setting, and Right from the entry goes there. A page that matches only as a whole, by its name or its group's, opens at
 its top.
 
+The search knows the pages as written, not what this profile or PC shows at the moment: a setting that is hidden here
+(Audio sync offset where the server lacks it, Control Granary from your phone where the page has no row for it, the
+activity indicator for someone who is not an administrator) still matches its page, which counts in "N matches" and then
+opens at its top, or at the next of its matches that shows. While the page that is open is not among those listed, no
+entry is chosen, and a controller's bumpers, which go from the chosen entry, do nothing until one is.
+
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
   hardware decoding, a switch, off by default, counting from the next title, its text saying a fixed Quality can still convert a file; Up and Down in the player, a select with

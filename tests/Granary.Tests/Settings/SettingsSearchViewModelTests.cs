@@ -179,6 +179,26 @@ public sealed class SettingsSearchViewModelTests
         Assert.Equal(1, reads);
     }
 
+    /// <summary>The pages could not be read: the box finds nothing, says so, and does not try again at every key.</summary>
+    [Fact]
+    public void AnIndexThatCannotBeRead_FindsNothing()
+    {
+        int reads = 0;
+        var search = new SettingsSearchViewModel(() =>
+        {
+            reads++;
+            throw new InvalidOperationException("The markup is broken.");
+        });
+
+        search.Query = "bit";
+        search.Query = "bitrate";
+
+        Assert.Equal(1, reads);
+        Assert.Equal([], Tags(search));
+        Assert.Equal("No matching settings", search.Status);
+        Assert.Empty(search.MatchesOn("playback"));
+    }
+
     [Fact]
     public void InAnotherLanguage_TheStatusIsInIt()
     {

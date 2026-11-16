@@ -465,7 +465,12 @@ where Silo's web keeps one by hand (lib/userSettingsNav.ts):
   `{x:Bind t:AppText.Get('…')}`. A text from a view model names a state, not a setting, and what a template or the
   resources hold shows per item or not at all; both are left out, and `SettingsMarkupTests` says which rows are labelled
   otherwise. English keywords sit next to a setting or a sidebar entry (`controls:SearchKeywords.Terms`). `SettingsPage`
-  names each page's view and markup in one table, and reads the markup once a run, at the first word typed.
+  names each page's view and markup in one table, and reads the markup once a run, on the thread pool as Settings first
+  opens. The reading never fails: a markup that cannot be read is logged by the kind of failure and leaves its page found
+  by its name alone, and an index that cannot be built leaves the search finding nothing rather than failing at every key.
+- **As written, not as shown**: the index does not know which settings this profile or PC hides at the moment, so a
+  hidden one still matches its page (docs/ui-design.md, Settings). Only the open page's elements are realized, so
+  checking every page's visibility would mean making every view, with its view models and their reads.
 - **In the language on screen**: `SettingsSearchIndex` writes every key in the language shown, and in another language
   adds the English text as a keyword, as the web's `englishTerms` does. `SettingsSearch` is the web's rule
   (settingsSearch.ts) unchanged; `SettingsSearchViewModel` holds the query, the pages that match and the line under the box.
