@@ -2997,7 +2997,9 @@ signup, invitations, setup wizard, audiobooks, ebooks, watch together, admin.
 Granary keeps films and episodes on the PC as the server's **managed downloads**: every request carries
 `X-Silo-Device-Id` and `X-Profile-Id` (6.4), so each entry belongs to one account, profile and PC. Every call goes through
 `Api/Downloads/DownloadsApi`, bound to the profile its download belongs to (`SiloRequestOptions.Profile`): while the server
-acts as another profile, the request is not sent (`ProfileChangedException`). Problems follow 2.2; the downloads ones Granary
+acts as another profile, the request is not sent (`ProfileChangedException`). A create is bound to its account as well
+(`SiloRequestOptions.Account`, `SendAsAccountProfileAsync`), so one made for an account never goes out under another
+signed in on the same server, also with a profile of the same id. Problems follow 2.2; the downloads ones Granary
 branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCodes`). Sources:
 `silo-server/docs/downloads-api.md` (sections 3 to 6, 9 and 12), `silo-server/internal/apiv2/download_*.go`.
 

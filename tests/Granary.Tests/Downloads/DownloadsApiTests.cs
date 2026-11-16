@@ -68,10 +68,10 @@ public sealed class DownloadsApiTests
             ExpectedRevision = 0,
         };
 
-        var created = await Api.CreateAsync(ScriptedSilo.Base, Profile, body, Token);
+        var created = await Api.CreateAsync(ScriptedSilo.Base, "1", Profile, body, Token);
 
         var sent = Assert.Single(_silo.Sent);
-        Assert.Equal(Profile, sent.AsProfile);
+        Assert.Equal((Profile, "1"), (sent.AsProfile, sent.AsAccount));
         Assert.Equal(SiloAuth.Profile, sent.Auth);
         Assert.StartsWith("""{"content_id":"sr_1","episode_id":"ep_5","media_file_id":"4567","quality":"original","caps":{"codecs_video":["h264","hevc"],""",
             sent.Body, StringComparison.Ordinal);
@@ -99,7 +99,7 @@ public sealed class DownloadsApiTests
         var server = ScriptedSilo.Base;
 
         await Api.GetCapabilityAsync(server, Profile, Token);
-        await Api.CreateAsync(server, Profile, new CreateDownloadBody { ContentId = "mv_1", Quality = DownloadQualities.Original, ExpectedRevision = 0 }, Token);
+        await Api.CreateAsync(server, "1", Profile, new CreateDownloadBody { ContentId = "mv_1", Quality = DownloadQualities.Original, ExpectedRevision = 0 }, Token);
         await Api.ListAsync(server, Profile, null, Token);
         await Api.ReportAsync(server, Profile, "dl_1", new DownloadStatusEvent(DownloadStatuses.Downloading, DateTimeOffset.UnixEpoch, 1), Token);
         await Api.PrepareAsync(server, Profile, "dl_1", Token);

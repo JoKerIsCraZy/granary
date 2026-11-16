@@ -1715,7 +1715,8 @@ client guide.
   it takes its downloads (`RemoveWhereAsync`, by the clear generation the run began at), and an episode that gets
   downloaded, however, leaves the line in the change that keeps its download. `DownloadManager.Waiting.cs` asks the active
   profile's line again, the first first, one create each through `StartAsync` and its guards, bound to the profile the line
-  is for: a switch to another profile leaves it waiting for its own, and the head is looked at again right before its
+  is for (and the create to its account and profile, as every create is; a season's run binds its creates to the profile
+  it started for the same way): a switch to another profile leaves it waiting for its own, and the head is looked at again right before its
   create, so one the viewer took out of line is not asked for. The server's 429 says neither which limit it is nor when to
   come back, so one rule serves both: the line is asked again once one of the profile's downloads leaves Preparing while it
   is kept here (its file is ready on the server: an entry the server prepares holds a place of the limit at once), or its

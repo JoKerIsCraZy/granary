@@ -327,7 +327,7 @@ public sealed partial class DownloadManager
                 continue;
             }
             var outcome = _store.FindByItem(scope, next.EpisodeId) is null
-                ? await StartAsync(next.Request, scope, CancellationToken.None).ConfigureAwait(false)
+                ? await StartAsync(next.Request, scope, onlyWhileWaiting: true, CancellationToken.None).ConfigureAwait(false)
                 : new CreateOutcome(DownloadStartResult.AlreadyDownloading);
             if (DownloadScope.Of(_session) != scope || _store.IsClearPending(scope))
             {

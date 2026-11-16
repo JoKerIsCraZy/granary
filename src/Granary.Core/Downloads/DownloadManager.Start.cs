@@ -22,12 +22,14 @@ public sealed partial class DownloadManager
     /// While the account is being signed out, nothing is created (<see cref="DownloadStartResult.Unavailable"/>).
     /// </summary>
     public async Task<DownloadStartResult> StartAsync(DownloadRequest request, CancellationToken cancellationToken) =>
-        (await StartAsync(request, null, cancellationToken).ConfigureAwait(false)).Result;
+        (await StartAsync(request, null, onlyWhileWaiting: false, cancellationToken).ConfigureAwait(false)).Result;
 
-    // As the public StartAsync, for the active profile; with onlyFor, only while that one is the active profile (a waiting
-    // episode is its profile's), else Unavailable with nothing sent. Answers also whether a failure is for good, and the wait a
-    // refusal for the limit names.
-    private async Task<CreateOutcome> StartAsync(DownloadRequest request, DownloadScope? onlyFor, CancellationToken cancellationToken)
+    // As the public StartAsync, for the active profile; with onlyFor, only while that one is the active profile (a season's run
+    // and the waiting line are their profile's), else Unavailable with nothing sent. With onlyWhileWaiting, a waiting episode's
+    // create, which goes, and keeps its download, only while the episode is still in line. Answers also whether a failure is
+    // for good, and the wait a refusal for the limit names.
+    private async Task<CreateOutcome> StartAsync(DownloadRequest request, DownloadScope? onlyFor, bool onlyWhileWaiting,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         // Taken before the scope and the sign-out check: a sign-out from here on keeps whatever this create makes off this PC.
@@ -58,13 +60,12 @@ public sealed partial class DownloadManager
                 return new(DownloadStartResult.AlreadyDownloading);
             }
             // A waiting episode's create goes only while it is still in line: the viewer may have taken it out meanwhile.
-            bool waiting = onlyFor is not null;
-            if (waiting && !_store.IsWaiting(scope, request.MediaItemId))
+            if (onlyWhileWaiting && !_store.IsWaiting(scope, request.MediaItemId))
             {
                 return new(DownloadStartResult.Unavailable, Dropped: true);
             }
             var (entry, outcome) = await CreateAsync(server.BaseUri, scope, BodyOf(request), cancellationToken).ConfigureAwait(false);
-            return entry is null ? outcome : await KeepAsync(scope, request, entry, clears, waiting).ConfigureAwait(false);
+            return entry is null ? outcome : await KeepAsync(scope, request, entry, clears, onlyWhileWaiting).ConfigureAwait(false);
         }
         finally
         {
@@ -129,8 +130,9 @@ public sealed partial class DownloadManager
             }
             // Taken before the create: a place the server frees while it is asked is not lost to the refusal (Waiting.cs).
             long freed = FreeGeneration;
+            // For the profile the run started for, which the check above looked at: another one active by the create sends nothing.
             var outcome = await StartAsync(new DownloadRequest(episode.EpisodeId, seriesId, episode.MediaFileId, quality, episode.Title,
-                seriesTitle, season, episode.EpisodeNumber), null, CancellationToken.None).ConfigureAwait(false);
+                seriesTitle, season, episode.EpisodeNumber), scope, onlyWhileWaiting: false, CancellationToken.None).ConfigureAwait(false);
             switch (outcome.Result)
             {
                 case DownloadStartResult.Started:
@@ -175,7 +177,7 @@ public sealed partial class DownloadManager
     {
         try
         {
-            var created = await _api.CreateAsync(server, scope.ProfileId, body, cancellationToken).ConfigureAwait(false);
+            var created = await _api.CreateAsync(server, scope.AccountId, scope.ProfileId, body, cancellationToken).ConfigureAwait(false);
             return EntryOf(created, body);
         }
         catch (SiloApiException ex) when (ex.Status is 403 or 404 or 501)
@@ -236,8 +238,8 @@ public sealed partial class DownloadManager
         _logger.LogInformation("Download {DownloadId} ended on the server ({Status}); it is asked for again", ended.Id, ended.Status);
         try
         {
-            var created = await _api.CreateAsync(server, scope.ProfileId, body with { ExpectedRevision = ended.Revision, ExpectedDownloadId = ended.Id },
-                cancellationToken).ConfigureAwait(false);
+            var created = await _api.CreateAsync(server, scope.AccountId, scope.ProfileId,
+                body with { ExpectedRevision = ended.Revision, ExpectedDownloadId = ended.Id }, cancellationToken).ConfigureAwait(false);
             return EntryOf(created, body);
         }
         catch (SiloApiException ex) when (ex.Status is 403 or 404 or 501)

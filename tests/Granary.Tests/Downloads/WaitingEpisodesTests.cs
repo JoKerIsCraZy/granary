@@ -338,7 +338,7 @@ public sealed class WaitingEpisodesTests : IAsyncDisposable
     public async Task AWaitTheServerNamesFarAhead_IsKeptToHalfAnHour(bool asDate)
     {
         _h.List();
-        Creates(Created("dl_1", "ep_1"), asDate ? LimitUntil(DateTimeOffset.UtcNow.AddYears(5)) : Limit(TimeSpan.FromSeconds(99_999_999)));
+        Creates(Created("dl_1", "ep_1"), asDate ? LimitUntil(_h.Time.GetUtcNow().AddYears(5)) : Limit(TimeSpan.FromSeconds(99_999_999)));
         var manager = _h.NewManager();
 
         var result = await manager.StartSeriesAsync(Series, Token);
@@ -426,6 +426,21 @@ public sealed class WaitingEpisodesTests : IAsyncDisposable
 
         Assert.Empty(Waiting());
         Assert.Null(_h.Find("dl_2"));
+    }
+
+    // CodeRabbit on #171: every create, a season's and the line's alike, goes out only as the account and the profile it was
+    // made for; another account signed in with a profile of the same id sends nothing of it.
+    [Fact]
+    public async Task EveryCreate_IsBoundToTheAccountAndProfileItIsFor()
+    {
+        var manager = await LimitedAsync();
+        Creates(Created("dl_2", "ep_2"), Created("dl_21", "ep_21"));
+
+        await AdvanceAsync(TimeSpan.FromMinutes(1), manager);
+
+        var sent = _h.Silo.SentTo(HttpMethod.Post, CreatePath);
+        Assert.Equal(4, sent.Count);
+        Assert.All(sent, r => Assert.Equal(("1", "7"), (r.AsAccount, r.AsProfile)));
     }
 
     // The dialog's count is the series' whole line: episodes that waited already are in it too.
