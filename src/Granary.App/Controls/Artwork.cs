@@ -37,15 +37,17 @@ internal static class Artwork
 
     /// <summary>
     /// A picture of <paramref name="url"/> from the cache, decoded as wide as the view shows it, once it is decoded: for a view
-    /// that keeps what it shows until the next one is ready (a profile's avatar). Null when the cache cannot get the image,
-    /// it does not decode, or the wait was cancelled.
+    /// that keeps what it shows until the next one is ready (a profile's avatar). An SVG (Silo's preset avatars) is drawn as
+    /// one, which the bitmap decoder cannot read. Null when the cache cannot get the image, it does not decode, or the wait
+    /// was cancelled.
     /// </summary>
     public static async Task<ImageSource?> PictureAsync(Uri url, int decodeWidth, CancellationToken cancellationToken)
     {
         InMemoryRandomAccessStream? stream;
+        bool isSvg;
         try
         {
-            stream = await CopyAsync(url, cancellationToken);
+            (stream, isSvg) = await CopyKnowingSvgAsync(url, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -60,9 +62,13 @@ internal static class Artwork
         }
         using (stream)
         {
-            var bitmap = new BitmapImage { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical };
             try
             {
+                if (isSvg)
+                {
+                    return await SvgAsync(url, stream);
+                }
+                var bitmap = new BitmapImage { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical };
                 await bitmap.SetSourceAsync(stream);
                 return bitmap;
             }
@@ -73,6 +79,21 @@ internal static class Artwork
                 return null;
             }
         }
+    }
+
+    // Drawn by Direct2D, which knows only part of SVG: a shape styled only through a <style> sheet is drawn black (AGENTS.md),
+    // and markup it cannot read fails here, so the letter shows.
+    private static async Task<ImageSource?> SvgAsync(Uri url, InMemoryRandomAccessStream stream)
+    {
+        var svg = new SvgImageSource();
+        var status = await svg.SetSourceAsync(stream);
+        if (status == SvgImageSourceLoadStatus.Success)
+        {
+            return svg;
+        }
+        Loader.Invalidate(url);
+        Logger.LogWarning("Artwork {Path} could not be drawn as SVG: {Status}", url.AbsolutePath, status);
+        return null;
     }
 
     /// <summary>
@@ -154,6 +175,20 @@ internal static class Artwork
         }
         // Off the UI thread: the stream is agile, and a write per chunk would each come back to it.
         return await Task.Run(() => NativeStreamAsync(lease.Bytes));
+    }
+
+    // As CopyAsync, also saying whether the image is SVG markup, read while the lease holds its bytes. Apart, so the cards'
+    // images take no extra step.
+    private static async Task<(InMemoryRandomAccessStream? Stream, bool IsSvg)> CopyKnowingSvgAsync(Uri url, CancellationToken cancellationToken)
+    {
+        using var lease = await Loader.GetAsync(url, CancellationToken.None);
+        if (lease is null || cancellationToken.IsCancellationRequested)
+        {
+            return (null, false);
+        }
+        bool isSvg = lease.Bytes.IsSvg;
+        // Off the UI thread: the stream is agile, and a write per chunk would each come back to it.
+        return (await Task.Run(() => NativeStreamAsync(lease.Bytes)), isSvg);
     }
 
     // One native buffer the size of the image, filled chunk by chunk, and one write: every WinRT object .NET holds adds to

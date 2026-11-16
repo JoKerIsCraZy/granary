@@ -114,6 +114,27 @@ public sealed class ArtworkBytesTests
         Assert.Equal(2, pool.FreeChunks);
     }
 
+    // Silo's preset avatars are SVG (/profile-avatars/<id>.svg, DiceBear's …/svg?seed=…), which the bitmap decoder cannot read.
+    [Theory]
+    [InlineData("<svg width=\"256\" height=\"256\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"256\" height=\"256\"/></svg>")]
+    [InlineData("<?xml version=\"1.0\" encoding=\"utf-8\"?><svg xmlns=\"http://www.w3.org/2000/svg\"/>")]
+    [InlineData("﻿ \r\n\t<svg xmlns=\"http://www.w3.org/2000/svg\"/>")]
+    public void AnSvg_IsKnownByItsMarkup(string svg)
+    {
+        Assert.True(ArtworkBytes.From(System.Text.Encoding.UTF8.GetBytes(svg)).IsSvg);
+    }
+
+    [Theory]
+    [InlineData(new byte[] { 0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A })]
+    [InlineData(new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 })]
+    [InlineData(new byte[] { (byte)'R', (byte)'I', (byte)'F', (byte)'F', 0x24, 0, 0, 0, (byte)'W', (byte)'E', (byte)'B', (byte)'P' })]
+    [InlineData(new byte[] { (byte)'G', (byte)'I', (byte)'F', (byte)'8', (byte)'9', (byte)'a' })]
+    [InlineData(new byte[] { (byte)' ', (byte)' ' })]
+    public void ABitmap_IsNoSvg(byte[] image)
+    {
+        Assert.False(ArtworkBytes.From(image).IsSvg);
+    }
+
     // Hands out a few bytes at a time, as a network stream does.
     private sealed class TrickleStream(byte[] data) : MemoryStream(data)
     {

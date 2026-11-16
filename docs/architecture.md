@@ -529,7 +529,9 @@ minute (its renewed URL is), and the bitmap then tries the URL itself.
 - Avatars: the sidebar's profile avatar (`ProfileAvatar`) takes a picture once it is decoded (`Artwork.PictureAsync`, null
   when it cannot be had), never a bitmap still filling: an avatar's address is signed anew every 15 minutes and read
   again every 5, and the picture shown stays until the new one is ready, with only the newest load counting
-  (`AvatarPicture`). It shows its letter at once when there is no picture.
+  (`AvatarPicture`). It shows its letter at once when there is no picture. Silo's preset avatars are SVG, which the
+  bitmap decoder cannot read: bytes that open with a tag (`ArtworkBytes.IsSvg`) are drawn as SVG (`SvgImageSource`), and
+  markup Direct2D cannot read leaves the letter.
 - Disk: images the server marks `immutable`, in `cache\artwork` under the data directory, 512 MB, the
   least recently used deleted first, in the background. File names are hashes of the URL without its
   signature. Temporary files of writes that never finished are swept on the first write of a run.
