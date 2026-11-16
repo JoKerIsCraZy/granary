@@ -20,6 +20,12 @@ public sealed class AvatarSvgTests
         </svg>
         """;
 
+    // As DiceBear draws the server's dicebear: presets (pixel-art-neutral, cut down): metadata naming its licence's web pages as
+    // text, a mask and a gradient referred to by #id.
+    private const string DiceBearPreset = """
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" fill="none" shape-rendering="crispEdges" width="128" height="128"><metadata xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/"><rdf:RDF><rdf:Description><dc:title>Pixel Art Neutral</dc:title><dc:source>https://www.figma.com/community/file/1</dc:source></rdf:Description></rdf:RDF></metadata><mask id="viewboxMask"><rect width="14" height="14" rx="3.36" ry="3.36" fill="#fff" /></mask><g mask="url(#viewboxMask)"><rect fill="url(#backgroundLinear)" width="14" height="14" /><defs><linearGradient id="backgroundLinear" gradientTransform="rotate(358 0.5 0.5)"><stop stop-color="#eac393"/><stop offset="1" stop-color="#f5cfa0"/></linearGradient></defs><path d="M5 6h1v2H4V7h1V6Z" fill="#5b7c8b"/></g></svg>
+        """;
+
     private static ArtworkBytes Image(string markup, string? mediaType = SvgType) => Image(Encoding.UTF8.GetBytes(markup), mediaType);
 
     private static ArtworkBytes Image(byte[] bytes, string? mediaType)
@@ -31,9 +37,11 @@ public sealed class AvatarSvgTests
 
     [Theory]
     [InlineData(Preset)]
+    [InlineData(DiceBearPreset)]
     [InlineData("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\"><circle r=\"4\"/></svg>")]
     [InlineData("\uFEFF \r\n\t<svg xmlns=\"http://www.w3.org/2000/svg\"/>")]
     [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g\"/></defs><rect fill=\"url(#g)\"/><use href=\"#g\"/><use xlink:href='#g'/></svg>")]
+    [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><use xlink:href = \"#g\"/><use href= '#g'/><rect fill=\"url( '#g')\"/><rect fill=\"url( #g )\"/></svg>")]
     public void APresetFromTheServer_IsDrawn(string markup)
     {
         Assert.Equal(AvatarSvgCheck.Drawable, AvatarSvg.Check(Image(markup)));
@@ -83,6 +91,16 @@ public sealed class AvatarSvgTests
     [InlineData("<svg><script>alert(1)</script></svg>")]
     [InlineData("<svg><foreignObject><div/></foreignObject></svg>")]
     public void AReferenceOutsideTheDrawing_IsRefused(string markup)
+    {
+        Assert.Equal(AvatarSvgCheck.Refused, AvatarSvg.Check(Image(markup)));
+    }
+
+    // Direct2D draws no text: DiceBear's initials style would show its gradient without the letters, so the avatar's own letter
+    // shows instead.
+    [Theory]
+    [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><rect fill=\"#5b7c8b\"/><text x=\"50%\" y=\"50%\" fill=\"#fff\">EM</text></svg>")]
+    [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><TEXT>E</TEXT></svg>")]
+    public void ADrawingWithText_IsRefused(string markup)
     {
         Assert.Equal(AvatarSvgCheck.Refused, AvatarSvg.Check(Image(markup)));
     }

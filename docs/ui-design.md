@@ -235,7 +235,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   stands still while Windows' animation effects are off; the icon-only rail shows the count on the icon, without the
   dot); Admin (an administrator's only, a shield), Settings and the profile at the bottom. In the icon's place the
   profile's 28 px avatar, as the web's (`components/AppSidebar.tsx`), in the rail too: its picture (`avatar_url`,
-  through the artwork cache; an upload, or one of the server's own SVG presets: DiceBear's show the letter) in a circle,
+  through the artwork cache; an upload, or a preset the server offers: its own SVG drawings or DiceBear's, as the web shows them; DiceBear's initials
+  style shows the letter) in a circle,
   filling it; without one, while it loads and after it failed, the first letter of the profile's name (else of the
   account's, else "?") in bold 12 px on the accent, in the colour labels have on it. The avatar's middle is on the other
   icons' line and the name on the other labels'. Its menu starts with the web's label: the 40 px avatar (a 14 px

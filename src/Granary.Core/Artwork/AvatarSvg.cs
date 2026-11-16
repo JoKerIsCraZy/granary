@@ -17,13 +17,17 @@ public enum AvatarSvgCheck
 }
 
 /// <summary>
-/// Whether one of the server's own preset avatars (<c>/profile-avatars/&lt;id&gt;.svg</c>) may be drawn as SVG. Only what the
-/// server labels <c>image/svg+xml</c> counts, never bytes that merely look like markup. Such markup is drawn only when it is
-/// small (<see cref="MaxBytes"/>), UTF-8, has <c>&lt;svg&gt;</c> as its root (after an optional <c>&lt;?xml?&gt;</c>
-/// declaration), declares no doctype or entities, and refers to nothing outside itself: every <c>href</c> and <c>url()</c>
-/// points at a <c>#</c> fragment, and there is no script, foreign object or <c>@import</c>. Anything else is refused.
+/// Whether one of the preset avatars the server offers (its own <c>/profile-avatars/&lt;id&gt;.svg</c>, or DiceBear's) may be
+/// drawn as SVG. Only what the server labels <c>image/svg+xml</c> counts, never bytes that merely look like markup. Such markup
+/// is drawn only when it is small (<see cref="MaxBytes"/>), UTF-8, has <c>&lt;svg&gt;</c> as its root (after an optional
+/// <c>&lt;?xml?&gt;</c> declaration), declares no doctype or entities, and refers to nothing outside itself: every
+/// <c>href</c> and <c>url()</c> points at a <c>#</c> fragment, and there is no script, foreign object or <c>@import</c>.
+/// Text is refused too, as Direct2D does not draw it. Anything else is refused.
 /// </summary>
-/// <remarks>The server's presets are a few shapes with attribute paint (web/public/profile-avatars), well inside this.</remarks>
+/// <remarks>
+/// The server's presets are a few shapes with attribute paint (web/public/profile-avatars); DiceBear's add metadata, a mask
+/// and a gradient. Both are well inside this.
+/// </remarks>
 public static partial class AvatarSvg
 {
     /// <summary>The largest avatar drawing taken; the presets are well under a kilobyte.</summary>
@@ -92,8 +96,10 @@ public static partial class AvatarSvg
         return text.StartsWith("<svg", StringComparison.Ordinal) && text.Length > 4 && (char.IsWhiteSpace(text[4]) || text[4] is '>' or '/');
     }
 
-    // A doctype or entity declaration, a reference that leaves the drawing, or a way to run or embed other content.
-    [GeneratedRegex("""<!DOCTYPE|<!ENTITY|<script|<foreignObject|@import|href\s*=\s*(?!["']#)|url\(\s*(?!["']?\s*#)""",
+    // A doctype or entity declaration, a reference that leaves the drawing, or a way to run or embed other content. And text,
+    // which Direct2D does not draw: DiceBear's initials would show their background alone, so the avatar's letter shows.
+    // The space a reference may have after its "=" or "(" is read inside the look ahead, so a "#" behind it still counts.
+    [GeneratedRegex("""<!DOCTYPE|<!ENTITY|<script|<foreignObject|<text\b|@import|href\s*=(?!\s*["']#)|url\((?!\s*["']?\s*#)""",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 500)]
     private static partial Regex Forbidden();
 }

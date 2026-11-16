@@ -529,15 +529,16 @@ minute (its renewed URL is), and the bitmap then tries the URL itself.
 - Avatars: the sidebar's profile avatar (`ProfileAvatar`) takes a picture once it is decoded (`Artwork.PictureAsync`, null
   when it cannot be had), never a bitmap still filling: an avatar's address is signed anew every 15 minutes and read
   again every 5, and the picture shown stays until the new one is ready, with only the newest load counting
-  (`AvatarPicture`). It shows its letter at once when there is no picture. The server's own preset avatars
-  (`/profile-avatars/<id>.svg`) are SVG, which the bitmap decoder cannot read. They alone are drawn as SVG, and only when
-  everything holds:
-  - the profile says `avatar_source: preset` and the address is on the active server's origin
-    (`ProfileItemViewModel.AvatarIsServerPreset`); DiceBear's presets, from another host, are not;
+  (`AvatarPicture`). It shows its letter at once when there is no picture. The presets the server offers are SVG, its
+  own (`/profile-avatars/<id>.svg`) and DiceBear's (`https://api.dicebear.com/9.x/<style>/svg?…`), which the bitmap decoder
+  cannot read. They alone are drawn as SVG, and only when everything holds:
+  - the profile says `avatar_source: preset` and the address is on the active server's origin or https on
+    api.dicebear.com (`ProfileItemViewModel.IsPresetHost`, the one place that names the hosts); any other host is not;
   - the answer was labelled `image/svg+xml` (`ArtworkBytes.MediaType`, kept by the loader), never guessed from the bytes;
   - `AvatarSvg` lets the markup through: at most 256 KB of UTF-8, `<svg>` as its root after an optional `<?xml?>`
     declaration, no doctype or entity declarations, no script, foreign object or `@import`, and every `href` and `url()`
-    a `#` fragment, so nothing is fetched from elsewhere.
+    a `#` fragment, so nothing is fetched from elsewhere; and no text, which Direct2D does not draw (DiceBear's initials
+    style shows the avatar's own letter instead).
 
   Refused markup leaves the letter, as does markup Direct2D cannot read. The drawing's surface is the avatar's size
   (`RasterizePixelWidth`/`Height`), whatever size the markup declares. Every other picture goes to the bitmap decoder.
