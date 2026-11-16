@@ -38,6 +38,7 @@
   "granary.admin.dashboard.forbidden": "Dieses Konto kann das Dashboard des Servers nicht öffnen. Das können nur Admins.",
   "granary.admin.dashboard.user": "{username}, zuletzt aktiv {last_active}, {status}",
   "granary.admin.dashboard.userWithRole": "{username} ({role}), zuletzt aktiv {last_active}, {status}",
+  "granary.admin.users.nameTaken": "Benutzername oder E-Mail wird bereits verwendet",
   "granary.apiFailure.busy": "Der Server ist ausgelastet, versuche es erneut.",
   "granary.apiFailure.tooManyRequests": "{count, plural, one {Der Server erhält zu viele Anfragen. Versuche es in # Minute erneut.} other {Der Server erhält zu viele Anfragen. Versuche es in # Minuten erneut.}}",
   "granary.apiFailure.tooManyRequestsLater": "Zu viele Anfragen. Warte einen Moment und versuche es erneut.",

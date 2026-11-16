@@ -38,6 +38,7 @@
   "granary.admin.dashboard.forbidden": "Esta conta não pode abrir o painel do servidor. Somente administradores podem.",
   "granary.admin.dashboard.user": "{username}, última atividade {last_active}, {status}",
   "granary.admin.dashboard.userWithRole": "{username} ({role}), última atividade {last_active}, {status}",
+  "granary.admin.users.nameTaken": "Nome de usuário ou e-mail já em uso",
   "granary.apiFailure.busy": "O servidor está ocupado. Tente novamente.",
   "granary.apiFailure.tooManyRequests": "{count, plural, one {O servidor está recebendo muitas solicitações. Tente novamente em # minuto.} other {O servidor está recebendo muitas solicitações. Tente novamente em # minutos.}}",
   "granary.apiFailure.tooManyRequestsLater": "Muitas solicitações. Aguarde um momento e tente novamente.",

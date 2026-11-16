@@ -8,6 +8,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Admin → Users:** a new page under MANAGE in the admin sidebar, as on Silo's web. It lists every account on your
+  Silo server with its role, group, status, when it was created and when it was last active; search by name or email,
+  filter by group, sort by any column and page through 25, 50 or 100 at a time. Add User creates an account with its
+  password (temporary if you like), role, group, marker editing and metadata curation, and a first profile. Delete asks
+  you to type the account's name first, and stops if another administrator changed the account meanwhile.
 - **Granary in seven languages:** English, Spanish, German, French, Brazilian Portuguese, Japanese and Simplified
   Chinese, in the words and translations of Silo's web and apps where they have the text. Granary follows the language
   your profile chose in any Silo app, else Windows' languages, else English. Settings → Accessibility → Language

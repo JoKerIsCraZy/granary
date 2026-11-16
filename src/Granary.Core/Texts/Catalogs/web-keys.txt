@@ -543,6 +543,9 @@ web.admin.sessions.playback.unsupportedControl
 web.admin.shell.mobileHeader.eyebrow
 web.admin.shell.nav.page.activity.label
 web.admin.shell.nav.page.dashboard.label
+# The admin sidebar's Manage section and its Users page (lib/adminNavigation.ts): src/Granary.App/Views/AdminPage.xaml(.cs).
+web.admin.shell.nav.page.users.label
+web.admin.shell.nav.section.manage
 web.admin.shell.nav.section.monitor
 web.admin.shell.sidebar.backToApp
 web.admin.shell.sidebar.build.dev
@@ -622,6 +625,76 @@ web.admin.tasks.task.sync_movie_box_sets.name
 web.admin.tasks.task.sync_podcast_feeds.name
 web.admin.tasks.task.sync_user_collections.name
 web.admin.tasks.task.sync_watch_providers.name
+# Admin → Users, in the words of the web's users page and its dialogs (pages/AdminUsers.tsx, components/admin/users,
+# components/AdminUserDeleteDialog.tsx, lib/email.ts): src/Granary.App/Views/Admin/AdminUsers*, AdminUserDeleteDialog and
+# src/Granary.Core/ViewModels/Admin (AdminAccountRow, AdminUsersViewModel*, AdminNewUserViewModel, AdminUserDeleteViewModel), EmailAddress.cs.
+web.admin.users.deleteDialog.confirm
+web.admin.users.deleteDialog.confirmLabel
+web.admin.users.deleteDialog.conflict
+web.admin.users.deleteDialog.deleteFailed
+web.admin.users.deleteDialog.description
+web.admin.users.deleteDialog.disableFailed
+web.admin.users.deleteDialog.disableHint
+web.admin.users.deleteDialog.disableInstead
+web.admin.users.deleteDialog.reload
+web.admin.users.deleteDialog.reloadFailed
+web.admin.users.deleteDialog.title
+web.admin.users.list.addUser
+web.admin.users.list.adminGroupNone
+web.admin.users.list.column.actions
+web.admin.users.list.column.created
+web.admin.users.list.column.email
+web.admin.users.list.column.group
+web.admin.users.list.column.lastActive
+web.admin.users.list.column.role
+web.admin.users.list.column.status
+web.admin.users.list.column.username
+web.admin.users.list.create.adminNoGroups
+web.admin.users.list.create.adminOwnerOnly
+web.admin.users.list.create.defaultGroup
+web.admin.users.list.create.defaultProfile
+web.admin.users.list.create.defaultProfileUnavailable
+web.admin.users.list.create.email
+web.admin.users.list.create.group
+web.admin.users.list.create.markerEdit
+web.admin.users.list.create.markerEditHelp
+web.admin.users.list.create.metadataCuration
+web.admin.users.list.create.metadataCurationHelp
+web.admin.users.list.create.password
+web.admin.users.list.create.requirePasswordChange
+web.admin.users.list.create.role
+web.admin.users.list.create.role.admin
+web.admin.users.list.create.role.user
+web.admin.users.list.create.saveFailed
+web.admin.users.list.create.saving
+web.admin.users.list.create.tab.access
+web.admin.users.list.create.tab.account
+web.admin.users.list.create.username
+web.admin.users.list.createDialogTitle
+web.admin.users.list.deleteAria
+web.admin.users.list.deleteTooltip
+web.admin.users.list.editAria
+web.admin.users.list.editTooltip
+web.admin.users.list.groupFilterAll
+web.admin.users.list.groupFilterLabel
+web.admin.users.list.groupsLoadFailed
+web.admin.users.list.lastActiveNever
+web.admin.users.list.loadFailed
+web.admin.users.list.nextPage
+web.admin.users.list.noGroup
+web.admin.users.list.noMatches
+web.admin.users.list.pageRange
+web.admin.users.list.pageSizeOption
+web.admin.users.list.previousPage
+web.admin.users.list.reload
+web.admin.users.list.searchPlaceholder
+web.admin.users.list.status.active
+web.admin.users.list.status.disabled
+web.admin.users.list.subtitle
+web.admin.users.list.title
+web.admin.users.list.unavailable
+web.admin.users.list.unknownGroup
+web.admin.users.list.userLoadFailed
 
 # More of the collection editor's words, as above under catalog.sort.author.
 # More of the Requests words, as above under requests.error.create.
@@ -635,6 +708,10 @@ web.audiobooks.duration.minutes
 web.auth.choosePassword.description
 web.auth.choosePassword.settleFailed
 web.auth.choosePassword.temporaryPassword
+# Admin → Users, in the words of the web's users page and its dialogs (pages/AdminUsers.tsx, components/admin/users,
+# components/AdminUserDeleteDialog.tsx, lib/email.ts): src/Granary.App/Views/Admin/AdminUsers*, AdminUserDeleteDialog and
+# src/Granary.Core/ViewModels/Admin (AdminAccountRow, AdminUsersViewModel*, AdminNewUserViewModel, AdminUserDeleteViewModel), EmailAddress.cs.
+web.auth.invalidEmail
 
 # Signing in, in the words of the web's Login page: src/Granary.App/Views/SignInPage.xaml(.cs). A disabled account is
 # the web's oauthFailure text, as its sign-in words permission_denied (lib/externalSignIn.ts): Describe in

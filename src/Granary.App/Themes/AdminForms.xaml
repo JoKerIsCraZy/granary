@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The look Admin → Users shares across its tabs, an account's page and their dialogs, as the web's admin tables and
+    cards: a surface card, column headings, a cell, a small icon action, a badge, and the error and hint lines. It brings
+    the settings' styles with it, so a view made in code gets both by merging this one.
+-->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <Style x:Key="AdminFormCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource SiloSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource SiloBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="16" />
+    </Style>
+
+    <Style x:Key="AdminColumnHeadingStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <!-- A sortable heading: the web's button in the table head, its text and its chevron. -->
+    <Style x:Key="AdminSortHeadingStyle" TargetType="Button" BasedOn="{StaticResource SiloSettingsGhostButtonStyle}">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+    </Style>
+
+    <Style x:Key="AdminCellStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="AdminMutedCellStyle" TargetType="TextBlock" BasedOn="{StaticResource AdminCellStyle}">
+        <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+    </Style>
+
+    <Style x:Key="AdminRowIconButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSettingsGhostButtonStyle}">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <Style x:Key="AdminBadgeStyle" TargetType="Border">
+        <Setter Property="Padding" Value="8,2" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="AdminBadgeTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <Style x:Key="AdminErrorTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{StaticResource SiloDestructiveBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="AdminHintTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- The web's amber notice: a server setting that blocks or limits what the tab offers. -->
+    <Style x:Key="AdminWarningCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="#0DF59E0B" />
+        <Setter Property="BorderBrush" Value="#33F59E0B" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+
+    <!-- A bearer link shown once: the web's muted box around its code line. -->
+    <Style x:Key="AdminSecretBoxStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource SiloSurfaceRaisedBrush}" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="10" />
+    </Style>
+</ResourceDictionary>

@@ -1278,8 +1278,8 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 
 Every call needs an administrator account (`role` `admin`, `Account.IsAdmin`); anyone else gets 403, and so does an
 administrator account on a profile that is not its primary one (the server's "acting administrator"). Granary reads the
-web's Dashboard and Activity, sends Activity's commands and reads what the activity indicator shows (12.3); nothing
-else of the admin API is used.
+web's Dashboard and Activity, sends Activity's commands and reads what the activity indicator shows (12.3), and manages
+accounts in Users (7.16a); nothing else of the admin API is used.
 
 - `GET /api/v2/admin/stats` → `{ "active_streams", "total_movies", "total_movie_files", "total_shows", "total_show_files",
   "total_files", "total_storage_bytes", "total_users", "advisory_titles", "watch_providers" }`.
@@ -1340,6 +1340,35 @@ else of the admin API is used.
   items, the id, state, format, titles and numbers, `output.video_codec` and `output.resolution`, the worker and the
   progress; its pause, resume and cancel are not used. Source:
   `silo-server/internal/apiv2/admin_download_preparations.go`.
+
+### 7.16a Accounts
+
+Admin → Users, as the web's `api/v2/adminUsers.ts` and `accessGroups.ts`. An account's name and address are personal data:
+shown, never logged. Source: `silo-server/internal/apiv2/admin_users.go`, `admin_accounts.go`, `admin_access_groups.go`.
+
+- `GET /api/v2/admin/users?limit=200[&cursor=]` → `{ "items": AdminUser[], "page": { "has_more", "next_cursor" } }`, in
+  account id order. Granary reads every page, as the web does, and fails the read on a page that does not continue or a
+  cursor that repeats; it never uses the `identity` filter, which would put a name or address in the URL. An
+  `AdminUser`: `id`, `username`, `email` (empty for none), `role` (`admin`, `user`), `permissions` (given to the account
+  itself, such as `marker_edit`, `metadata_curation`), `enabled`, `library_ids` (null takes the group's, `[]` is none),
+  `access_group_id` (null for none, always for an admin), the limit overrides (null inherits), `password_login`,
+  `password_change_required`, `is_owner`, `break_glass`, `effective_policy`, `created_at`, `updated_at`,
+  `last_active_at` (null when never). The viewer is the Owner when its own account in the list says `is_owner`.
+- `GET /api/v2/admin/users/capabilities` → `{ "available", "default_profile", "access_groups", "password_reset_link",
+  "password_reset_email", "ownership_transfer", "login_sessions", … }`. Not available: Users says so and offers nothing.
+- `GET /api/v2/admin/access-groups?limit=200[&cursor=]` → `{ "items": [{ "id", "name", "is_default", … }], "page" }`, every
+  page read: the group names, the filter, and the group a new account starts in.
+- `POST /api/v2/admin/users` with `{ "username", "email", "password", "require_password_change"?, "role",
+  "permissions", "create_default_profile", "access_group_id"? }` → `201 { "id" }`. Left out, the group is the server's
+  default one; an admin stays ungrouped. 409 `conflict`: the username or email is taken; 501 `capability_unsupported`:
+  the server cannot make the profile with the account. Only the Owner may create an admin (403 otherwise).
+- `GET /api/v2/admin/users/{id}` → `AdminUser` with its `ETag`. `PUT` and `DELETE` on it take that `If-Match` and answer
+  204; 412 means another administrator changed it since, and Granary reads it again (never overwrites). The `PUT` body
+  holds only what changes: a member left out stays, `null` on `access_group_id` or `library_ids` means no group and the
+  group's libraries, and `null` on any other member is refused. Deleting, demoting or disabling the last usable
+  break-glass admin while password sign-in is off is 409 `break_glass_required`.
+- A failed action is worded by its status, as a load is (401/403 refused, 404 gone, 429/503 busy, no answer
+  unreachable); anything else in the web's words for the action ("Could not save user.").
 
 ### 7.17 A profile's own collections, made and changed
 

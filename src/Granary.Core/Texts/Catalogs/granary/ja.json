@@ -38,6 +38,7 @@
   "granary.admin.dashboard.forbidden": "このアカウントではサーバーのダッシュボードを開けません。開けるのは管理者のみです。",
   "granary.admin.dashboard.user": "{username}、最終アクティブ{last_active}、{status}",
   "granary.admin.dashboard.userWithRole": "{username}（{role}）、最終アクティブ{last_active}、{status}",
+  "granary.admin.users.nameTaken": "このユーザー名またはメールアドレスはすでに使用されています",
   "granary.apiFailure.busy": "サーバーが混み合っています。もう一度お試しください。",
   "granary.apiFailure.tooManyRequests": "{count, plural, other {サーバーへのリクエストが多すぎます。#分後にもう一度お試しください。}}",
   "granary.apiFailure.tooManyRequestsLater": "リクエストが多すぎます。しばらく待ってからもう一度お試しください。",

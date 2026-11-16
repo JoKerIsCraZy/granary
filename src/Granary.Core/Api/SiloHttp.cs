@@ -248,6 +248,17 @@ public sealed class SiloHttp(HttpClient http)
         return await SendVersionedAsync(request, responseType, requireVersion: false, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>As the other <c>SendIfMatchAsync</c>, for a write with a body that answers 204, as an account's change.</summary>
+    public async Task SendIfMatchAsync<TRequest>(HttpMethod method, Uri server, string path, SiloAuth auth, string version, TRequest body,
+        JsonTypeInfo<TRequest> requestType, CancellationToken cancellationToken)
+    {
+        using var request = Create(method, server, path, auth);
+        IfMatch(request, version);
+        request.Content = JsonContent.Create(body, requestType);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>As the other <c>SendIfMatchAsync</c>, for a bodiless write that answers 204, as a delete.</summary>
     public async Task SendIfMatchAsync(HttpMethod method, Uri server, string path, SiloAuth auth, string version, CancellationToken cancellationToken)
     {

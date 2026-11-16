@@ -7,4 +7,7 @@ public static class AdminPages
 
     /// <summary>The playback sessions running now.</summary>
     public const string Activity = "activity";
+
+    /// <summary>The accounts, their invitations and invite codes.</summary>
+    public const string Users = "users";
 }

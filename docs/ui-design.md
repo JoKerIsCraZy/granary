@@ -1731,12 +1731,13 @@ says why above the sections.
 
 For an administrator (`Account.IsAdmin`) the sidebar offers Admin above Settings, as the web's does. As Settings, the app's
 sidebar gives way to the area's own (`AdminPage`, 260 px): "← Back to App", "Admin", MONITOR with Dashboard and
-Activity (the web's "2 live" in red beside it while streams run), and BUILD at its foot ("1715 · 13ad7a74", "dev build",
-"load failed"); as in Settings, the head and BUILD stay and the pages between them scroll in a window too short for
-them. Granary has these two pages only; the rest of the web's admin stays on the web. The pages switch inside
+Activity (the web's "2 live" in red beside it while streams run), MANAGE with Users (the one page of the web's Users
+topic Granary has), and BUILD at its foot ("1715 · 13ad7a74", "dev build", "load failed"); as in Settings, the head and
+BUILD stay and the pages between them scroll in a window too short for them. Granary has these three pages only; the
+rest of the web's admin stays on the web. The pages switch inside
 the area, not in the app's history, so Back to App leaves it in one step. Pages scroll in a centred column of at most
 1400 px, padded 40 px; cards are the surface with a hairline and 16 px corners. Nothing here changes the server except a
-stream's commands on Activity.
+stream's commands on Activity and what Users does to accounts.
 
 - **Words**: the web's admin pages', by their keys, so they come in the language on screen: the area's sidebar, the
   Dashboard's widgets, Activity with its IP lookup and a stream's commands and answers, and the activity indicator
@@ -1787,6 +1788,28 @@ stream's commands on Activity.
   the web's. "No active streams" or "No streams match your filters" when nothing shows. The page's subtitle stays
   "2 active streams across 1 node": the web's summary line after it (video transcodes, the bandwidth out, remote and
   paused streams) is not taken yet.
+- **Users** (`AdminUsersView` on `AdminUsersViewModel`, the web's `pages/AdminUsers.tsx`): "Users", its line, and Add
+  User; "User administration is unavailable." (and every action off) on a server without it, "Could not load users."
+  with Reload users when the read fails (a list read before stays up). Every account is read, 200 a page, as the web
+  reads them; the search ("Search by username or email..."), the group filter (All groups, each group, No group; admins
+  only under All groups) and the sort happen here. The table, in a card: Username (opens the account), Email, Role (the
+  web's lowercase "owner", "admin" or "user" badge, filled for an admin), Group (muted "No group", a dash for an admin),
+  Status (Active, or a red Disabled), Created and Last Active ("2d ago", "Never"; the full time in a tooltip), and the
+  row's Edit and Delete where the viewer may (`AdminAccountRules`, the web's `lib/accountOwner.ts`: never the Owner's or
+  one's own Delete). Each heading but Group sorts, and again turns its order round; dates start newest first, the never
+  seen last. Below, 25, 50 or 100 rows a page: "Showing 1-25 of 140", the page size, Previous and Next. "No users match
+  your search or filter." when nothing is left. Not taken: the web's View as, an account's playback history, the link
+  to Access Groups and the "Public signups on" badge, which lead to pages Granary does not have.
+  - **Add User** (a dialog, the web's Create User): "Create a default profile" (with "(unavailable; ...)" where the
+    server cannot), then Account (Username, Email, Password with "Require change at first sign-in", Role: User, or Admin
+    for the Owner only, else the web's note) and Access (Group, starting on the default group, off for an admin with
+    "Admin accounts can't join groups."; Marker Editing on and Metadata Curation off, each with its line). The web's
+    Limits tab and its per-account library choice are not offered: a new account takes its group's. Save says
+    "Saving..." and stays open with the failure: the web's email check, "Username or email already in use" (409), or the
+    words of docs/api-contract.md 7.16a.
+  - **Delete** (`AdminUserDeleteDialog`, the web's): the account is read fresh first; "Delete ana?", what goes with it,
+    and "Type ana to confirm" (the name in a fixed-width face) before Delete account does anything. A change by another
+    administrator meanwhile says "The user changed. Reload before trying again." with Reload current user.
 
 ### Activity indicator
 

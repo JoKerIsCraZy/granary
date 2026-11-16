@@ -20,6 +20,7 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
 {
     private AdminDashboardView? _dashboard;
     private AdminActivityView? _activity;
+    private AdminUsersView? _users;
 
     public AdminPage()
     {
@@ -32,6 +33,8 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
 
     // The web's section and build headings, which its CSS shows in capitals: by the rules of the language on screen.
     public string MonitorHeading => AppText.Upper(AppText.Get("web.admin.shell.nav.section.monitor"));
+
+    public string ManageHeading => AppText.Upper(AppText.Get("web.admin.shell.nav.section.manage"));
 
     public string BuildHeading => AppText.Upper(AppText.Get("web.admin.shell.sidebar.build.heading"));
 
@@ -46,32 +49,43 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
-        _dashboard?.Deactivate();
-        _activity?.Deactivate();
+        DeactivateAll();
         _dashboard?.Release();
         _activity?.Release();
+        _users?.Release();
         Bindings.StopTracking();
     }
 
     /// <summary>Shows one of the area's pages (<see cref="AdminPages"/>), as picking it in the sidebar does.</summary>
     public void Open(string page)
     {
-        var item = Pages.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page) ?? (ListViewItem)Pages.Items[0];
-        if (ReferenceEquals(Pages.SelectedItem, item))
+        var (list, item) = Lists.SelectMany(list => list.Items.OfType<ListViewItem>().Select(item => (list, item)))
+            .FirstOrDefault(entry => entry.item.Tag as string == page);
+        if (item is null)
+        {
+            (list, item) = (Pages, (ListViewItem)Pages.Items[0]);
+        }
+        if (ReferenceEquals(list.SelectedItem, item))
         {
             return;
         }
-        Pages.SelectedItem = item;
+        list.SelectedItem = item;
     }
+
+    // The sidebar's sections are lists of their own that share one pick.
+    private ListView[] Lists => [Pages, ManagePages];
 
     private async void OnPageSelected(object sender, SelectionChangedEventArgs e)
     {
-        if (Pages.SelectedItem is not ListViewItem { Tag: string page })
+        if (sender is not ListView { SelectedItem: ListViewItem { Tag: string page } } picked)
         {
             return;
         }
-        _dashboard?.Deactivate();
-        _activity?.Deactivate();
+        foreach (var list in Lists.Where(list => !ReferenceEquals(list, picked)))
+        {
+            list.SelectedItem = null;
+        }
+        DeactivateAll();
         Sidebar.LastPage = page;
         try
         {
@@ -81,6 +95,11 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
                     _activity ??= new AdminActivityView();
                     Show(_activity);
                     await _activity.ActivateAsync();
+                    break;
+                case AdminPages.Users:
+                    _users ??= new AdminUsersView();
+                    Show(_users);
+                    await _users.ActivateAsync();
                     break;
                 default:
                     _dashboard ??= CreateDashboard();
@@ -102,7 +121,14 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
     void IDockSpace.ReserveBottom(double height) => PageScroller.Margin = new Thickness(0, 0, 0, height);
 
     // A game controller's bumpers go through the area's pages.
-    void IPadSections.StepSection(int by) => PadControls.StepRow([Pages], by);
+    void IPadSections.StepSection(int by) => PadControls.StepRow(Lists, by);
+
+    private void DeactivateAll()
+    {
+        _dashboard?.Deactivate();
+        _activity?.Deactivate();
+        _users?.Deactivate();
+    }
 
     private void Show(UIElement view)
     {

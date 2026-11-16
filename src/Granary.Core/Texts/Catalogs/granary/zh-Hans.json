@@ -38,6 +38,7 @@
   "granary.admin.dashboard.forbidden": "此账户无法打开服务器的仪表板。只有管理员可以打开。",
   "granary.admin.dashboard.user": "{username}，上次活动：{last_active}，{status}",
   "granary.admin.dashboard.userWithRole": "{username}（{role}），上次活动：{last_active}，{status}",
+  "granary.admin.users.nameTaken": "用户名或电子邮件已被使用",
   "granary.apiFailure.busy": "服务器繁忙，请重试。",
   "granary.apiFailure.tooManyRequests": "{count, plural, other {服务器收到的请求过多。请在#分钟后重试。}}",
   "granary.apiFailure.tooManyRequestsLater": "请求过多。请稍等片刻再重试。",

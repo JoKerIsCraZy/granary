@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Granary.Core.Api.Admin;
@@ -27,4 +28,12 @@ namespace Granary.Core.Api.Admin;
 [JsonSerializable(typeof(List<AdminScanRun>))]
 [JsonSerializable(typeof(AdminDownloadPreparationList))]
 [JsonSerializable(typeof(AdminDownloadPreparationReading))]
+[JsonSerializable(typeof(AdminUser))]
+[JsonSerializable(typeof(AdminUserCapabilities))]
+[JsonSerializable(typeof(AdminAccessGroupCollection))]
+[JsonSerializable(typeof(AdminUserDraft))]
+[JsonSerializable(typeof(AdminUserCreated))]
+[JsonSerializable(typeof(JsonObject))]
+[JsonSerializable(typeof(AdminPasswordResetRequest))]
+[JsonSerializable(typeof(AdminPasswordReset))]
 internal sealed partial class AdminJsonContext : JsonSerializerContext;
