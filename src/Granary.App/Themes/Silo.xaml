@@ -123,11 +123,11 @@
     <Color x:Key="SiloDestructiveColor">#FFEF4444</Color>
     <!--
         The web's other status tokens (app.css: success, info, warning), written there in OKLCH: success
-        oklch(0.75 0.18 145) and warning oklch(0.8 0.15 85) exactly (StatusColourTests). Admin draws a play method, a
-        limited bitrate and a warning in them, with the destructive red above.
+        oklch(0.75 0.18 145), info oklch(0.7 0.15 250) and warning oklch(0.8 0.15 85) exactly (StatusColourTests). Admin
+        draws a play method, a limited bitrate and a warning in them, with the destructive red above.
     -->
     <Color x:Key="SiloSuccessColor">#FF57CB60</Color>
-    <Color x:Key="SiloInfoColor">#FF58A0F0</Color>
+    <Color x:Key="SiloInfoColor">#FF4BA3F7</Color>
     <Color x:Key="SiloWarningColor">#FFEAB532</Color>
     <!--
         A favourite's heart, red whatever the accent, as the web draws it: Tailwind's red-500 on cards (MediaItemMenu.tsx),

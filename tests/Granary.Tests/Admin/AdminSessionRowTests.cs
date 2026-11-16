@@ -42,11 +42,14 @@ public sealed class AdminSessionRowTests
 
         Assert.Equal(("HEVC 2160p → H.264 1080p", true, "HW QSV", true), (row.VideoLine, row.IsVideoConverted, row.VideoEncoder, row.HasVideoEncoder));
         Assert.Equal(("TrueHD 7.1 → AAC 5.1", true), (row.AudioLine, row.IsAudioConverted));
-        // The row stays while its session plays: what it shows changes only when it says so.
-        Assert.Subset(changed.ToHashSet(), new HashSet<string?>
+        // The row stays while its session plays: the view hears of each line that changed.
+        foreach (string name in new[]
         {
             nameof(row.VideoLine), nameof(row.IsVideoConverted), nameof(row.VideoEncoder), nameof(row.HasVideoEncoder), nameof(row.AudioLine),
             nameof(row.IsAudioConverted),
-        });
+        })
+        {
+            Assert.Contains(name, changed);
+        }
     }
 }
