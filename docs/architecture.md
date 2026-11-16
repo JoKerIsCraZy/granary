@@ -545,6 +545,22 @@ minute (its renewed URL is), and the bitmap then tries the URL itself.
   decoder (`AsRandomAccessStream`) made a managed buffer as large as each of its reads, and every WinRT object .NET
   holds adds 1,000 bytes of memory pressure (CsWinRT's `IObjectReference`), enough of which starts blocking full
   collections: the remaining gen2 collections while scrolling are those.
+- Avatars: the sidebar's profile avatar (`ProfileAvatar`) takes a picture once it is decoded (`Artwork.PictureAsync`, null
+  when it cannot be had), never a bitmap still filling: an avatar's address is signed anew every 15 minutes and read
+  again every 5, and the picture shown stays until the new one is ready, with only the newest load counting
+  (`AvatarPicture`). It shows its letter at once when there is no picture. The presets the server offers are SVG, its
+  own (`/profile-avatars/<id>.svg`) and DiceBear's (`https://api.dicebear.com/9.x/<style>/svg?…`), which the bitmap decoder
+  cannot read. They alone are drawn as SVG, and only when everything holds:
+  - the profile says `avatar_source: preset` and the address is on the active server's origin or https on
+    api.dicebear.com (`ProfileItemViewModel.IsPresetHost`, the one place that names the hosts); any other host is not;
+  - the answer was labelled `image/svg+xml` (`ArtworkBytes.MediaType`, kept by the loader), never guessed from the bytes;
+  - `AvatarSvg` lets the markup through: at most 256 KB of UTF-8, `<svg>` as its root after an optional `<?xml?>`
+    declaration, no doctype or entity declarations, no script, foreign object or `@import`, and every `href` and `url()`
+    a `#` fragment, so nothing is fetched from elsewhere; and no text, which Direct2D does not draw (DiceBear's initials
+    style shows the avatar's own letter instead).
+
+  Refused markup leaves the letter, as does markup Direct2D cannot read. The drawing's surface is the avatar's size
+  (`RasterizePixelWidth`/`Height`), whatever size the markup declares. Every other picture goes to the bitmap decoder.
 - Disk: images the server marks `immutable`, in `cache\artwork` under the data directory, 512 MB, the
   least recently used deleted first, in the background. File names are hashes of the URL without its
   signature. Temporary files of writes that never finished are swept on the first write of a run.

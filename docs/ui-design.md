@@ -233,11 +233,21 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   has downloads on this PC, with the count of its downloads coming or waiting in the accent as Notifications' count, and
   while one comes a 6 px dot in the accent before the count that slowly fades to a third and back every three seconds, and
   stands still while Windows' animation effects are off; the icon-only rail shows the count on the icon, without the
-  dot); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (Switch Profile and Logout,
-  in the web's words; the servers are in Settings → Servers). While a sign-out runs, which can take about 20 s when a drive
-  or the server does not answer, the profile's entry reads "Signing out…" with a 16 px ring at its right and takes no
-  clicks, as Granary's busy buttons do ("Signing in…"); one that failed says "Couldn't sign out. Try again." in red under
-  the name until the next Logout or another profile shows. The web's menu has neither. Favorites, Watchlist and History
+  dot); Admin (an administrator's only, a shield), Settings and the profile at the bottom. In the icon's place the
+  profile's 28 px avatar, as the web's (`components/AppSidebar.tsx`), in the rail too: its picture (`avatar_url`,
+  through the artwork cache; an upload, or a preset the server offers: its own SVG drawings or DiceBear's, as the web shows them; DiceBear's initials
+  style shows the letter) in a circle,
+  filling it; without one, while it loads and after it failed, the first letter of the profile's name (else of the
+  account's, else "?") in bold 12 px on the accent, in the colour labels have on it. The avatar's middle is on the other
+  icons' line and the name on the other labels'. Its menu starts with the web's label: the 40 px avatar (a 14 px
+  letter), the name in 14 px semibold and, when the account's name is another, that in 11 px muted under it; then Switch
+  Profile and Logout, in the web's words (the servers are in Settings → Servers). The label takes no focus or click and
+  is no menu item for a screen reader; the entry stays "Elena menu". Another profile shows its letter at once, then its
+  picture; a picture changed elsewhere shows when the sidebar reads the profile again, five minutes at most; a picture
+  whose address the server signed anew stays until the new one is decoded. While a sign-out runs, which can take about
+  20 s when a drive or the server does not answer, the profile's entry reads "Signing out…" with a 16 px ring at its
+  right and takes no clicks, as Granary's busy buttons do ("Signing in…"); one that failed says "Couldn't sign out. Try
+  again." in red under the name until the next Logout or another profile shows. The web's menu has neither. Favorites, Watchlist and History
   are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,

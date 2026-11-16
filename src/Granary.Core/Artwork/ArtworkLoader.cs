@@ -302,6 +302,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
             _logger.LogDebug("Artwork {Path} was refused: {Reason}", url.AbsolutePath, refusal ?? "the image is too large");
             return null;
         }
+        data.MediaType = response.Content.Headers.ContentType?.MediaType;
         bool immutable = response.Headers.CacheControl?.Extensions.Any(e => string.Equals(e.Name, "immutable", StringComparison.OrdinalIgnoreCase)) == true;
         return new Download(data, immutable);
     }

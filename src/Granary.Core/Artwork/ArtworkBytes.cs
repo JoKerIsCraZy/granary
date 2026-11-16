@@ -47,6 +47,12 @@ public sealed class ArtworkBytes
         }
     }
 
+    /// <summary>
+    /// What the server said the image is (its <c>Content-Type</c>, as <c>image/webp</c>); null when it did not say, or for an
+    /// image read back from the disk cache. Set by the loader before the bytes are shared.
+    /// </summary>
+    public string? MediaType { get; internal set; }
+
     public Stream OpenRead() => new ChunkStream(this);
 
     /// <summary>A copy of <paramref name="data"/>, held by its caller.</summary>

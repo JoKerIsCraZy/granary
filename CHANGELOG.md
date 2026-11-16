@@ -102,6 +102,10 @@ release's section is what its update says it changes (docs/release.md).
 - Admin → Activity shows each stream's bitrate as Silo's web does: the rate the viewer gets, the limit a transcode
   encodes to and the source's rate ("limit 4.0 Mbps · source 20.0 Mbps"), and a bar of how much of the source's rate
   arrives, amber while a limit squeezes the stream. A stream's details tag its Bitrate with the limit.
+- Your profile's picture, an uploaded one or one of the pictures your Silo server offers to pick, shows at the bottom of
+  the sidebar, also when the sidebar is only icons, and at the top of its menu with your name, as on Silo's web; otherwise
+  the first letter of your name on the accent colour. A picture you change in another Silo app shows within five
+  minutes.
 
 ### Fixed
 

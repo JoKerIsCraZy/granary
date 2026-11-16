@@ -456,7 +456,9 @@ profiles share one account; `is_primary` marks the household parent, which is no
 `GET /api/v2/profiles` (`listProfiles`): bearer required, profile headers optional (the picker runs
 before a profile is chosen). Envelope `{ items[], avatar_upload_enabled, ... }`. Item fields the
 picker needs: `id` (string), `name`, `is_primary`, `has_pin`, `is_child`, `avatar`,
-`avatar_source` (`none` | `preset` | `upload`), `avatar_url?`. Further fields carry preferences
+`avatar_source` (`none` | `preset` | `upload`), `avatar_url?`. A `preset` is an SVG (`image/svg+xml`), the only picture Granary draws
+as SVG: the server's own (`/profile-avatars/<id>.svg`, on its origin) or DiceBear's (`dicebear:<style>:<seed>`, at
+`https://api.dicebear.com/9.x/<style>/svg?…`), as the web and the Apple app draw them. Artwork requests carry no credentials. Further fields carry preferences
 (`language`, `subtitle_language`, `subtitle_mode`, `quality_preference`, `max_playback_quality`,
 `auto_skip_intro`, …) and restrictions (`max_content_rating`, `allowed_library_ids[]`, …).
 
