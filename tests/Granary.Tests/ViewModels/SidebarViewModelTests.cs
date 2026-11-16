@@ -86,6 +86,30 @@ public sealed class SidebarViewModelTests
     }
 
     [Fact]
+    public async Task ReadAgain_ShowsAProfileChangedInSettingsAtOnce()
+    {
+        Ready();
+        using var sidebar = Create();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        _profiles = () => FakeSiloServer.Json(200,
+            """{"items":[{"id":"7","name":"Elena","is_primary":true,"has_pin":false,"is_child":false}],"avatar_upload_enabled":false}""");
+
+        sidebar.ReadAgain();
+
+        await WaitUntil(() => sidebar.ProfileName == "Elena");
+        Assert.Null(sidebar.Profile!.AvatarUrl);
+    }
+
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        for (int i = 0; i < 200 && !condition(); i++)
+        {
+            await Task.Yield();
+        }
+        Assert.True(condition());
+    }
+
+    [Fact]
     public async Task TheProfilesHiddenLibraries_AreLeftOut_AndItsOrderKept()
     {
         Ready();
