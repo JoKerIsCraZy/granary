@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Granary.Core.Downloads;
 
 /// <summary>
@@ -12,8 +14,10 @@ public sealed record WaitingEpisode(DownloadScope Scope, string SeriesId, string
     /// The store's <see cref="DownloadStore.ClearGeneration"/> when this run kept it; 0 for one read from the disk. A sign-out's
     /// removal takes only the episodes kept before its clear, as it takes downloads.
     /// </summary>
+    [JsonIgnore]
     internal long ClearsSeen { get; init; }
 
-    /// <summary>The create it waits for, as the season's or the series' run would have sent it.</summary>
+    /// <summary>The create it waits for, as the season's or the series' run would have sent it; worked out, never kept.</summary>
+    [JsonIgnore]
     public DownloadRequest Request => new(EpisodeId, SeriesId, MediaFileId, Quality, Title, SeriesTitle, SeasonNumber, EpisodeNumber);
 }

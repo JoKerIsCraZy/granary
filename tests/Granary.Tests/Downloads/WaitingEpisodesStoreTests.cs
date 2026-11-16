@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using static Granary.Tests.Downloads.DownloadHarness;
@@ -85,6 +87,34 @@ public sealed class WaitingEpisodesStoreTests : IAsyncDisposable
         Assert.Empty(_h.Store.WaitingIn(Scope7));
         Assert.Equal(["ep_8"], Ids(_h.Store.WaitingIn(other)));
         await _h.RestartAsync();
+        Assert.Empty(_h.Store.WaitingIn(Scope7));
+    }
+
+    // Review 6: the index keeps what a waiting episode is, nothing worked out from it.
+    [Fact]
+    public async Task TheIndex_KeepsAWaitingEpisodesOwnMembers_AndNothingWorkedOut()
+    {
+        await _h.Store.LoadAsync(Token);
+        await _h.Store.AddWaitingUnlessClearedAsync([Waiting(7)], _h.Store.ClearGeneration, Token);
+
+        using var index = JsonDocument.Parse(File.ReadAllBytes(_h.IndexPath));
+
+        Assert.Equal(["scope", "series_id", "series_title", "season_number", "episode_id", "episode_number", "title", "media_file_id", "quality"],
+            index.RootElement.GetProperty("waiting_episodes")[0].EnumerateObject().Select(p => p.Name));
+    }
+
+    // An index written before episodes could wait has no line: it loads as one without any.
+    [Fact]
+    public async Task AnIndexWithoutALine_LoadsAsOneWithoutWaitingEpisodes()
+    {
+        await _h.AddAsync("dl_1", mediaItemId: "ep_1");
+        var json = JsonNode.Parse(File.ReadAllText(_h.IndexPath))!.AsObject();
+        Assert.True(json.Remove("waiting_episodes"));
+        File.WriteAllText(_h.IndexPath, json.ToJsonString());
+
+        await _h.RestartAsync();
+
+        Assert.NotNull(_h.Find("dl_1"));
         Assert.Empty(_h.Store.WaitingIn(Scope7));
     }
 
