@@ -1715,24 +1715,40 @@ client guide.
   it takes its downloads (`RemoveWhereAsync`, by the clear generation the run began at), and an episode that gets
   downloaded, however, leaves the line in the change that keeps its download. `DownloadManager.Waiting.cs` asks the active
   profile's line again, the first first, one create each through `StartAsync` and its guards, bound to the profile the line
-  is for: a switch to another profile leaves it waiting for its own. The server's 429 says neither which limit it is nor
-  when to come back, so one rule serves both: the line is asked again once one of the profile's downloads leaves
-  Preparing while it is kept here (its file is ready on the server: an entry the server prepares holds a place of the
-  limit at once), or its delete reached the server (the queue sent the pending delete: the server drops a device's deleted
-  entry, which then counts toward neither limit; a download deleted here holds its place until then), or after a wait of
-  1, 2, 5, 10, then every 30 minutes while the server still refuses, or the server's `Retry-After` when it names a longer
-  one. A run that fails unexpectedly waits as a refusal does, so it is not tried again at every store change. Then it goes on as far as the server takes them. A create without a clear answer waits as a refusal
-  does; an episode the server no longer offers the profile (403, 404, 501, skipped) leaves the line. At a start, and at a
-  switch to the profile, the line is asked once, then waits. One run at a time: a store change only notes what it freed and
-  starts one; a timer starts one when the wait is over. Its state sits under the manager's lock, which is never held while
-  the store writes, a create runs or a timer fires; the store's handlers take only the store's own lock for their reads, as
-  the queue's do (the queue's lock before the store's, never the other way round). A waiting episode counts as on its way
-  wherever a download does: a season's or a series' offer leaves it out (`DownloadOfferReader`, the season page's
-  `DownloadActions.StateOf`, which says "Queued" and opens the Downloads page), and the series dialog's This Episode cannot
-  be chosen. The Downloads page says how many wait (`DownloadManager.WaitingCount`) with Cancel
-  (`DropWaitingAsync` for the profile), and a series' Delete all episodes drops that series' line too, as Settings →
-  Downloads → Remove all downloads drops the profile's: before the deletes, since a delete that reaches the server frees a
-  place and would start one of them again.
+  is for: a switch to another profile leaves it waiting for its own, and the head is looked at again right before its
+  create, so one the viewer took out of line is not asked for. The server's 429 says neither which limit it is nor when to
+  come back, so one rule serves both: the line is asked again once one of the profile's downloads leaves Preparing while it
+  is kept here (its file is ready on the server: an entry the server prepares holds a place of the limit at once), or its
+  delete reached the server (the queue sent the pending delete: the server drops a device's deleted entry, which then
+  counts toward neither limit; a download deleted here holds its place until then), or after a wait of 1, 2, 5, 10, then
+  every 30 minutes while the server still refuses, or the server's `Retry-After` when it names a longer one, kept to 30
+  minutes (a date years ahead included), as the sign-in's and the token refresh's are. A place freed while the head's
+  create is under way is not lost to that create's refusal: a free count is taken before the create and compared after
+  (`_freeGeneration`). A timer that fires before the wait is over (the clock stepped back) is set again for the rest of it.
+  Then it goes on as far as the server takes them. Its outcomes:
+  - taken, or the download is here already (found in the store): the episode leaves the line;
+  - another start of it under way (the viewer's own Download, `AlreadyDownloading` from the create guard): it stays until
+    that download is here, since that start can still fail or meet the limit, and the line waits;
+  - an episode the server no longer offers the profile (403, 404, 501, skipped), or a refusal it would give again (another
+    4xx but 401, 408, 409, 425 and 429; an answer for another title): it leaves the line, logged without its title or id;
+  - no clear answer (none, a 5xx, a conflict the registry does not explain, an answer that is no Silo answer, which
+    `SiloHttp` reports as unreachable): the line waits as after a refusal, and after 3 such tries in a row the head goes to
+    the back of the line, since it may have reached the server but must not hold the others back;
+  - a run that fails unexpectedly waits as a refusal does, so it is not tried again at every store change.
+  At a start, and at a switch to the profile, the line is asked once, then waits. One run at a time: a store change only
+  notes what it freed and starts one (and with nothing waiting, compares nothing); a timer starts one when the wait is over.
+  Its state sits under the manager's lock, which is never held while the store writes, a create runs or a timer fires; the
+  store's handlers take only the store's own lock for their reads, as the queue's do (the queue's lock before the store's,
+  never the other way round). The creates take no token of their own: `SiloHttp`'s client bounds each at 100 s. A season's
+  or a series' run that the viewer cancels while its create is under way keeps nothing waiting when that create meets the
+  limit. A waiting episode counts as on its way wherever a download does: a season's or a series' offer leaves it out
+  (`DownloadOfferReader`, the season page's `DownloadActions.StateOf`, which says "Queued" and opens the Downloads page),
+  and the series dialog's This Episode cannot be chosen. The dialog's count is the series' whole line. The Downloads page
+  says how many wait (`DownloadManager.WaitingCount`) with Cancel (`DropWaitingAsync` for the profile), and a series'
+  Delete all episodes drops that series' line too, as Settings → Downloads → Remove all downloads drops the profile's:
+  before the deletes, since a delete that reaches the server frees a place and would start one of them again.
+  `DropWaitingAsync` answers once no create of the line is under way, and the deletes then take the series' (or the
+  profile's) downloads as they are, so a download such a create brought goes with the others.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
   it, and has one that waited out a retry delay tried at once.

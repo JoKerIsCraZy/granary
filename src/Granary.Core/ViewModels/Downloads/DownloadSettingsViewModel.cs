@@ -542,9 +542,10 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
             RemoveAllAction))
         {
             // The episodes waiting for the server's limit go first: a delete that reaches the server frees a place, and would
-            // start one of them on this PC again.
+            // start one of them on this PC again. The one a create was asking for as they went is here by then, and goes too.
             await _downloads.DropWaitingAsync(scope, null, CancellationToken.None);
-            await _downloads.DeleteAllAsync(scope, asked, CancellationToken.None);
+            string[] now = _downloads.ActiveScope == scope ? [.. _downloads.Items.Select(i => i.DownloadId)] : [];
+            await _downloads.DeleteAllAsync(scope, [.. asked.Union(now, StringComparer.Ordinal)], CancellationToken.None);
         }
         await _dispatcher.ResumeOnUi();
         ShowStorage();

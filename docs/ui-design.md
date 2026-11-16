@@ -363,7 +363,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   download, which asks first as the title page does. A series' card has More Info and the Apple app's Delete all
   episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted
   from your Silo server." with "Delete 3 downloads" ("Delete download" for one); the series' episodes waiting for your
-  Silo server's download limit go with them. Cards change in place as their
+  Silo server's download limit go with them, and the one that was just being asked for, once it is here. Cards change in place as their
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
   was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
   remote carries on through the grid; after the last film the first series takes it, after the last series the last
@@ -910,7 +910,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     whose size and free space hold back one that does not fit. Once your Silo server refuses one for the account's limit of
     downloads (429 `rate_limited`), that episode and the ones after it wait on this PC and start once the server allows
     more, and the dialog stays to say so as information, not as an error: "Your Silo server's download limit is reached. 6
-    episodes wait on this PC and start once the server allows more." (Granary's own words; the server does not say when),
+    episodes wait on this PC and start once the server allows more." (Granary's own words; the server does not say when;
+    the count is the series' whole line, episodes that waited from before included),
     with Done in place of Cancel; Done closes it and they wait all the same, and Download pressed again sends nothing for
     them. A film or an episode the limit refuses says "Your Silo server's download limit is reached. Try again later." in the
     error bar. Cancel

@@ -1,7 +1,12 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Granary.Core.Api;
 using Granary.Core.Downloads;
+using Granary.Tests.Browse;
+using Granary.Tests.Fakes;
+using Granary.Tests.Playback;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Downloads.DownloadHarness;
 
@@ -251,5 +256,216 @@ public sealed class WaitingEpisodesTests : IAsyncDisposable
 
         Assert.Empty(Waiting());
         Assert.Equal(2, CreatedEpisodes().Count);
+    }
+
+    // Review 1: a refusal the server will give again (a 4xx it means) drops the head, logged without its title or id; the next
+    // episode goes.
+    [Fact]
+    public async Task AHeadTheServerRefusesForGood_LeavesTheLine_AndTheNextGoes()
+    {
+        var manager = await LimitedAsync();
+        Creates(ScriptedSilo.Problem(422, "validation_failed"), Created("dl_21", "ep_21"));
+
+        await AdvanceAsync(TimeSpan.FromMinutes(1), manager);
+
+        Assert.Empty(Waiting());
+        Assert.NotNull(_h.Find("dl_21"));
+        Assert.DoesNotContain(_h.Logs.Lines, line => line.Contains("Chapter Two", StringComparison.Ordinal) || Regex.IsMatch(line, @"\bep_2\b"));
+    }
+
+    // Review 1: an answer that cannot be read is no Silo answer (a proxy's or a sign-in page's, SiloHttp), so the head is not
+    // dropped for it; after three such tries in a row it goes to the back of the line, and the others are not held back.
+    [Fact]
+    public async Task AHeadThatKeepsFailing_GoesToTheBackOfTheLine_AfterThreeTries()
+    {
+        var manager = await LimitedAsync();
+        var unreadable = ScriptedSilo.Json(HttpStatusCode.Accepted, "{ not json");
+        Creates(unreadable, unreadable, unreadable, Created("dl_21", "ep_21"), Created("dl_2", "ep_2"));
+
+        await AdvanceAsync(TimeSpan.FromMinutes(1), manager);
+        await AdvanceAsync(TimeSpan.FromMinutes(2), manager);
+        Assert.Equal(["ep_2", "ep_21"], Waiting());
+        await AdvanceAsync(TimeSpan.FromMinutes(5), manager);
+        Assert.Equal(["ep_21", "ep_2"], Waiting());
+        await AdvanceAsync(TimeSpan.FromMinutes(10), manager);
+
+        Assert.Empty(Waiting());
+        Assert.Equal(["ep_1", "ep_2", "ep_2", "ep_2", "ep_2", "ep_21", "ep_2"], CreatedEpisodes());
+        Assert.DoesNotContain(_h.Logs.Lines, line => line.Contains("Chapter Two", StringComparison.Ordinal) || Regex.IsMatch(line, @"\bep_2\b"));
+    }
+
+    // A create without an answer may have reached the server: the head stays, and the line waits.
+    [Fact]
+    public async Task AHeadWithoutAnAnswer_StaysAtTheHead_AndTheLineWaits()
+    {
+        var manager = await LimitedAsync();
+        Creates(ScriptedSilo.NetworkError());
+
+        await AdvanceAsync(TimeSpan.FromMinutes(1), manager);
+        Assert.Equal(["ep_2", "ep_21"], Waiting());
+        Assert.Equal(3, CreatedEpisodes().Count);
+        await AdvanceAsync(TimeSpan.FromSeconds(119), manager);
+
+        Assert.Equal(3, CreatedEpisodes().Count);
+    }
+
+    // Review 2: Cancel while a create is under way, answered with the limit: nothing is kept waiting to download later.
+    [Fact]
+    public async Task ACancelBeforeTheLimitsAnswer_KeepsNothingWaiting()
+    {
+        _h.List();
+        var (held, gate) = ItemDetailFixture.Held();
+        Creates(Created("dl_1", "ep_1"), held);
+        var manager = _h.NewManager();
+        using var cancel = new CancellationTokenSource();
+
+        var run = manager.StartSeriesAsync(Series, cancel.Token);
+        await Until(() => CreatedEpisodes().Count == 2, "the second episode's create was sent");
+        cancel.Cancel();
+        gate.SetResult(await Limit()());
+        var result = await run;
+
+        Assert.Equal(0, result.Waiting);
+        Assert.Empty(Waiting());
+        await AdvanceAsync(TimeSpan.FromHours(1), manager);
+        Assert.Equal(2, CreatedEpisodes().Count);
+    }
+
+    // Review 3: a wait the server names is kept to half an hour, a delay or a date alike, and the episodes wait all the same.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AWaitTheServerNamesFarAhead_IsKeptToHalfAnHour(bool asDate)
+    {
+        _h.List();
+        Creates(Created("dl_1", "ep_1"), asDate ? LimitUntil(DateTimeOffset.UtcNow.AddYears(5)) : Limit(TimeSpan.FromSeconds(99_999_999)));
+        var manager = _h.NewManager();
+
+        var result = await manager.StartSeriesAsync(Series, Token);
+        Assert.Equal(2, result.Waiting);
+        Assert.Equal(["ep_2", "ep_21"], Waiting());
+        Creates(Created("dl_2", "ep_2"), Created("dl_21", "ep_21"));
+
+        await AdvanceAsync(TimeSpan.FromMinutes(29), manager);
+        Assert.Equal(2, CreatedEpisodes().Count);
+        await AdvanceAsync(TimeSpan.FromMinutes(1), manager);
+
+        Assert.Empty(Waiting());
+    }
+
+    // Review 4: a place that frees while the head is asked is not lost when that ask is refused: the line is asked again.
+    [Fact]
+    public async Task APlaceFreedWhileTheHeadIsAsked_IsNotLost()
+    {
+        await _h.AddAsync("dl_0", DownloadState.Preparing, mediaItemId: "mv_9");
+        var manager = await LimitedAsync();
+        var (held, gate) = ItemDetailFixture.Held();
+        Creates(held, Created("dl_2", "ep_2"), Created("dl_21", "ep_21"));
+
+        _h.Time.Advance(TimeSpan.FromMinutes(1));
+        await Until(() => CreatedEpisodes().Count == 3, "the head was asked again");
+        await _h.Store.UpdateAsync(Scope7, "dl_0", r => r with { State = DownloadState.Queued }, Token);
+        gate.SetResult(await Limit()());
+        await manager.WaitingRun;
+
+        Assert.Empty(Waiting());
+        Assert.Equal(["ep_1", "ep_2", "ep_2", "ep_2", "ep_21"], CreatedEpisodes());
+    }
+
+    // Review 5: a timer that comes before the wait is over (the clock stepped back) is set again for the rest of it.
+    [Fact]
+    public async Task ATimerThatComesEarly_IsSetAgainForTheRestOfTheWait()
+    {
+        var time = new EarlyOnceTimeProvider(_h.Time, TimeSpan.FromSeconds(10));
+        _h.List();
+        Creates(Created("dl_1", "ep_1"), Limit());
+        var manager = new DownloadManager(_h.Store, _h.NewQueue(), _h.Api, _h.NewFeature(), _h.Session, new FakeDeviceProbe(),
+            new InMemoryPlaybackDevicePreferences(), time, _h.Logs.For<DownloadManager>(), _h.Playing);
+        await manager.StartSeriesAsync(Series, Token);
+        Creates(Created("dl_2", "ep_2"), Created("dl_21", "ep_21"));
+
+        await AdvanceAsync(TimeSpan.FromSeconds(50), manager);
+        Assert.Equal(2, CreatedEpisodes().Count);
+        await AdvanceAsync(TimeSpan.FromSeconds(10), manager);
+
+        Assert.Empty(Waiting());
+    }
+
+    // Review 8: an episode the viewer starts by hand while it waits stays in line until its download is here: that start
+    // can still fail or meet the limit.
+    [Fact]
+    public async Task AnEpisodeStartedByHandWhileItWaits_StaysInLine_UntilItsDownloadIsHere()
+    {
+        var manager = await LimitedAsync();
+        var (held, gate) = ItemDetailFixture.Held();
+        Creates(held);
+
+        var byHand = manager.StartAsync(new DownloadRequest("ep_2", "sr_1", "4572", "original", "Chapter Two", "Example Series", 1, 2), Token);
+        await Until(() => CreatedEpisodes().Count == 3, "the start by hand was sent");
+        _h.Time.Advance(TimeSpan.FromMinutes(1));
+        await manager.WaitingRun.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        gate.SetResult(await Limit()());
+
+        Assert.Equal(DownloadStartResult.Limited, await byHand);
+        Assert.Equal(["ep_2", "ep_21"], Waiting());
+    }
+
+    // A sign-out while the line's head is asked: the server's answer keeps nothing, and nothing waits for the account.
+    [Fact]
+    public async Task ASignOutWhileTheHeadIsAsked_KeepsNothing()
+    {
+        var manager = await LimitedAsync();
+        var (held, gate) = ItemDetailFixture.Held();
+        Creates(held);
+
+        _h.Time.Advance(TimeSpan.FromMinutes(1));
+        await Until(() => CreatedEpisodes().Count == 3, "the head was asked again");
+        await _h.Store.RemoveWhereAsync(scope => scope.AccountId == "1", _h.Store.MarkCleared("srv1", "1"), Token);
+        gate.SetResult(await Created("dl_2", "ep_2")());
+        await manager.WaitingRun;
+
+        Assert.Empty(Waiting());
+        Assert.Null(_h.Find("dl_2"));
+    }
+
+    // The dialog's count is the series' whole line: episodes that waited already are in it too.
+    [Fact]
+    public async Task TheWaitingCount_IsTheSeriesWholeLine()
+    {
+        await _h.Store.LoadAsync(Token);
+        await _h.Store.AddWaitingUnlessClearedAsync([new WaitingEpisode(Scope7, "sr_1", "Example Series", 2, "ep_21", 1, "Chapter Eleven", null, "original")],
+            _h.Store.ClearGeneration, Token);
+        _h.List();
+        Creates(Limit(), Created("dl_1", "ep_1"), Limit());
+        var manager = _h.NewManager();
+        await manager.WaitingRun;
+
+        var result = await manager.StartSeriesAsync(Series, Token);
+
+        Assert.Equal(new SeasonStartResult(Started: 1, AlreadyThere: 0, Failed: 0, ReachedLimit: true, Waiting: 2), result);
+    }
+
+    private static Func<Task<HttpResponseMessage>> LimitUntil(DateTimeOffset date) => async () =>
+    {
+        var response = await Limit()();
+        response.Headers.RetryAfter = new RetryConditionHeaderValue(date);
+        return response;
+    };
+
+    // The clock of the harness, whose first timer fires a little before it is due, as after the wall clock stepped back.
+    private sealed class EarlyOnceTimeProvider(ManualTimeProvider time, TimeSpan early) : TimeProvider
+    {
+        private int _timers;
+
+        public override DateTimeOffset GetUtcNow() => time.GetUtcNow();
+
+        public override long GetTimestamp() => time.GetTimestamp();
+
+        public override long TimestampFrequency => time.TimestampFrequency;
+
+        public override TimeZoneInfo LocalTimeZone => time.LocalTimeZone;
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
+            time.CreateTimer(callback, state, Interlocked.Increment(ref _timers) == 1 && dueTime > early ? dueTime - early : dueTime, period);
     }
 }

@@ -3050,7 +3050,9 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   entries only a `preparing` one holds a place of the limit at once (`concurrentSlotPredicate` in `downloads/repo.go`): an
   original, or a preset whose file is ready, registers `ready` and counts toward the period alone, which only time frees
   (`CountByUserSince` leaves out `cancelled` and `failed` entries). A device's `DELETE` drops its entry
-  (`deleteManagedSQL`), which then counts toward neither limit. A 429 with another code (a proxy's) fails the create.
+  (`deleteManagedSQL`), which then counts toward neither limit. A 429 with another code (a proxy's) fails the create. A
+  waiting episode's create refused with a 4xx the server would give again (all but 401, 408, 409, 425 and 429; 403, 404 and
+  501 as above) leaves the line; a `Retry-After` is kept to 30 minutes.
   A 403, 404 or 501 for one episode does not stop a season: the server's batch skips such an episode and goes on.
 
 ### 14.3 Registry and status events

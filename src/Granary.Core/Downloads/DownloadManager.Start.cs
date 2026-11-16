@@ -21,32 +21,33 @@ public sealed partial class DownloadManager
     /// that comes after a sign-out took the account's downloads off this PC is not kept (<see cref="DownloadStartResult.Failed"/>).
     /// While the account is being signed out, nothing is created (<see cref="DownloadStartResult.Unavailable"/>).
     /// </summary>
-    public Task<DownloadStartResult> StartAsync(DownloadRequest request, CancellationToken cancellationToken) =>
-        StartAsync(request, null, cancellationToken);
+    public async Task<DownloadStartResult> StartAsync(DownloadRequest request, CancellationToken cancellationToken) =>
+        (await StartAsync(request, null, cancellationToken).ConfigureAwait(false)).Result;
 
     // As the public StartAsync, for the active profile; with onlyFor, only while that one is the active profile (a waiting
-    // episode is its profile's), else Unavailable with nothing sent.
-    private async Task<DownloadStartResult> StartAsync(DownloadRequest request, DownloadScope? onlyFor, CancellationToken cancellationToken)
+    // episode is its profile's), else Unavailable with nothing sent. Answers also whether a failure is for good, and the wait a
+    // refusal for the limit names.
+    private async Task<CreateOutcome> StartAsync(DownloadRequest request, DownloadScope? onlyFor, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         // Taken before the scope and the sign-out check: a sign-out from here on keeps whatever this create makes off this PC.
         long clears = _store.ClearGeneration;
         if (DownloadScope.Of(_session) is not { } scope || _session.ActiveServer is not { } server || (onlyFor is not null && scope != onlyFor))
         {
-            return DownloadStartResult.Unavailable;
+            return new(DownloadStartResult.Unavailable);
         }
         if (_store.IsClearPending(scope))
         {
             // Its download would be kept after the sign-out took the account's along, and stay behind it.
             _logger.LogInformation("A download is not started while its account is being signed out");
-            return DownloadStartResult.Unavailable;
+            return new(DownloadStartResult.Unavailable);
         }
         var key = (scope, request.MediaItemId);
         lock (_gate)
         {
             if (!_starting.Add(key))
             {
-                return DownloadStartResult.AlreadyDownloading;
+                return new(DownloadStartResult.AlreadyDownloading);
             }
         }
         try
@@ -54,10 +55,10 @@ public sealed partial class DownloadManager
             await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
             if (_store.FindByItem(scope, request.MediaItemId) is not null)
             {
-                return DownloadStartResult.AlreadyDownloading;
+                return new(DownloadStartResult.AlreadyDownloading);
             }
-            var (entry, result) = await CreateAsync(server.BaseUri, scope, BodyOf(request), cancellationToken).ConfigureAwait(false);
-            return entry is null ? result : await KeepAsync(scope, request, entry, clears).ConfigureAwait(false);
+            var (entry, outcome) = await CreateAsync(server.BaseUri, scope, BodyOf(request), cancellationToken).ConfigureAwait(false);
+            return entry is null ? outcome : new(await KeepAsync(scope, request, entry, clears).ConfigureAwait(false));
         }
         finally
         {
@@ -120,9 +121,11 @@ public sealed partial class DownloadManager
                 there++;
                 continue;
             }
-            var result = await StartAsync(new DownloadRequest(episode.EpisodeId, seriesId, episode.MediaFileId, quality, episode.Title,
-                seriesTitle, season, episode.EpisodeNumber), CancellationToken.None).ConfigureAwait(false);
-            switch (result)
+            // Taken before the create: a place the server frees while it is asked is not lost to the refusal (Waiting.cs).
+            long freed = FreeGeneration;
+            var outcome = await StartAsync(new DownloadRequest(episode.EpisodeId, seriesId, episode.MediaFileId, quality, episode.Title,
+                seriesTitle, season, episode.EpisodeNumber), null, CancellationToken.None).ConfigureAwait(false);
+            switch (outcome.Result)
             {
                 case DownloadStartResult.Started:
                     started++;
@@ -130,8 +133,13 @@ public sealed partial class DownloadManager
                 case DownloadStartResult.AlreadyDownloading:
                     there++;
                     break;
+                case DownloadStartResult.Limited when cancellationToken.IsCancellationRequested:
+                    // The viewer stopped the run while that create was under way: nothing of it waits to download later.
+                    _logger.LogInformation("A season's or series' downloads stopped after {Count} episodes", started + there + failed + 1);
+                    return new SeasonStartResult(started, there, failed + 1, ReachedLimit: true);
                 case DownloadStartResult.Limited:
-                    int waiting = await KeepWaitingAsync(scope, seriesId, seriesTitle, quality, all.Skip(i), clears).ConfigureAwait(false);
+                    int waiting = await KeepWaitingAsync(scope, seriesId, seriesTitle, quality, all.Skip(i), clears, outcome.RetryAfter, freed)
+                        .ConfigureAwait(false);
                     _logger.LogInformation("The server's download limit stopped a season's or series' downloads after {Count} episodes; {Waiting} wait",
                         started + there + failed, waiting);
                     return new SeasonStartResult(started, there, waiting == 0 ? failed + 1 : failed, ReachedLimit: true, waiting);
@@ -156,7 +164,7 @@ public sealed partial class DownloadManager
     // The entry the server made, or why there is none. A refusal is final; an answer that did not come, a conflict or a server
     // error may have made one, so the registry tells. A conflict over an entry that ended (revoked, failed, cancelled) revives it
     // with one explicit second create, never more.
-    private async Task<(DownloadEntry? Entry, DownloadStartResult Result)> CreateAsync(Uri server, DownloadScope scope, CreateDownloadBody body,
+    private async Task<(DownloadEntry? Entry, CreateOutcome Outcome)> CreateAsync(Uri server, DownloadScope scope, CreateDownloadBody body,
         CancellationToken cancellationToken)
     {
         try
@@ -167,14 +175,13 @@ public sealed partial class DownloadManager
         catch (SiloApiException ex) when (ex.Status is 403 or 404 or 501)
         {
             _logger.LogInformation("The server does not let this profile download it ({Status})", ex.Status);
-            return (null, DownloadStartResult.Unavailable);
+            return (null, new(DownloadStartResult.Unavailable));
         }
         catch (SiloApiException ex) when (IsLimit(ex))
         {
             // Refused before anything was made: the account's limit of downloads, which holds for the next create too.
             _logger.LogInformation("The server's download limit for the account was reached");
-            NoteLimit(ex.RetryAfter);
-            return (null, DownloadStartResult.Limited);
+            return (null, new(DownloadStartResult.Limited, RetryAfter: ex.RetryAfter));
         }
         catch (Exception ex) when (IsUncertain(ex, cancellationToken))
         {
@@ -182,42 +189,42 @@ public sealed partial class DownloadManager
             var (live, ended) = await FindInRegistryAsync(server, scope, body, cancellationToken).ConfigureAwait(false);
             if (live is not null)
             {
-                return (live, DownloadStartResult.Started);
+                return (live, new(DownloadStartResult.Started));
             }
             // Only a conflict says the server refused because of that entry; after no answer, the next press asks anew.
             if (ended is not null && ex is SiloApiException { Status: 409 })
             {
                 return await ReviveAsync(server, scope, body, ended, cancellationToken).ConfigureAwait(false);
             }
-            return (null, DownloadStartResult.Failed);
+            return (null, new(DownloadStartResult.Failed));
         }
         catch (Exception ex) when (ex is SiloApiException or ProfileChangedException or JsonException
             || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))
         {
             _logger.LogInformation("A download could not be created ({Failure})", Describe(ex));
-            return (null, DownloadStartResult.Failed);
+            return (null, new(DownloadStartResult.Failed, IsFinal(ex)));
         }
     }
 
     // The title's entry in a create's answer; an answer for another title keeps nothing, an empty one passed the title over.
-    private (DownloadEntry? Entry, DownloadStartResult Result) EntryOf(DownloadCreated created, CreateDownloadBody body)
+    private (DownloadEntry? Entry, CreateOutcome Outcome) EntryOf(DownloadCreated created, CreateDownloadBody body)
     {
         if (created.Items.FirstOrDefault(e => IsFor(e, body)) is { } entry)
         {
-            return (entry, DownloadStartResult.Started);
+            return (entry, new(DownloadStartResult.Started));
         }
         if (created.Items.Count > 0)
         {
             _logger.LogWarning("The server answered a download's create for another title");
-            return (null, DownloadStartResult.Failed);
+            return (null, new(DownloadStartResult.Failed, IsFinal: true));
         }
         _logger.LogInformation("The server passed the download over ({Reason})", created.Skipped.FirstOrDefault()?.Reason ?? "no reason");
-        return (null, DownloadStartResult.Unavailable);
+        return (null, new(DownloadStartResult.Unavailable));
     }
 
     // The second and last create for a title whose entry ended: it names that entry and the revision the registry gave it, so
     // the server reuses, revives or replaces exactly that one (the guide's 4.1). Whatever it answers, nothing is sent again.
-    private async Task<(DownloadEntry? Entry, DownloadStartResult Result)> ReviveAsync(Uri server, DownloadScope scope, CreateDownloadBody body,
+    private async Task<(DownloadEntry? Entry, CreateOutcome Outcome)> ReviveAsync(Uri server, DownloadScope scope, CreateDownloadBody body,
         DownloadEntry ended, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Download {DownloadId} ended on the server ({Status}); it is asked for again", ended.Id, ended.Status);
@@ -230,26 +237,34 @@ public sealed partial class DownloadManager
         catch (SiloApiException ex) when (ex.Status is 403 or 404 or 501)
         {
             _logger.LogInformation("The server does not let this profile download it ({Status})", ex.Status);
-            return (null, DownloadStartResult.Unavailable);
+            return (null, new(DownloadStartResult.Unavailable));
         }
         catch (SiloApiException ex) when (IsLimit(ex))
         {
             _logger.LogInformation("The server's download limit for the account was reached");
-            NoteLimit(ex.RetryAfter);
-            return (null, DownloadStartResult.Limited);
+            return (null, new(DownloadStartResult.Limited, RetryAfter: ex.RetryAfter));
         }
         catch (Exception ex) when (ex is HttpRequestException or SiloApiException or ProfileChangedException or JsonException
             || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))
         {
             // Another conflict (the entry changed meanwhile) or no clear answer: the next press finds what the server has.
             _logger.LogInformation("Download {DownloadId} could not be asked for again ({Failure})", ended.Id, Describe(ex));
-            return (null, DownloadStartResult.Failed);
+            return (null, new(DownloadStartResult.Failed, IsFinal(ex)));
         }
     }
+
+    // What a create came to: its result; whether a failure is one the server would give again as the create stands, which takes a
+    // waiting episode out of line; and the wait a refusal for the limit names (Retry-After), if any.
+    private readonly record struct CreateOutcome(DownloadStartResult Result, bool IsFinal = false, TimeSpan? RetryAfter = null);
 
     // The account's limit of downloads at once or in a period (silo-server internal/downloads/limiter.go), by its problem code:
     // a 429 of another kind, as a proxy's, is no such limit.
     private static bool IsLimit(SiloApiException ex) => ex is { Status: 429, Code: ProblemCodes.RateLimited };
+
+    // A refusal the server would give again as the create stands: a request it does not take (a 4xx other than the ones that
+    // pass: 401, 408, 409, 425, 429), or an answer that cannot be read. No answer, a 5xx or another profile is not one.
+    private static bool IsFinal(Exception ex) =>
+        ex is JsonException || ex is SiloApiException { Status: >= 400 and < 500 and not (401 or 408 or 409 or 425 or 429) };
 
     // No answer, a conflict (an entry is there already) or a server error: the server may have made the entry.
     private static bool IsUncertain(Exception ex, CancellationToken cancellationToken) =>

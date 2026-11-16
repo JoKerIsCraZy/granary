@@ -3,6 +3,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels.Downloads;
+using Granary.Tests.Browse;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Downloads.DownloadHarness;
@@ -110,6 +111,27 @@ public sealed class WaitingEpisodesPageTests : IAsyncDisposable
 
         Assert.Empty(_h.Store.WaitingIn(Scope7));
         Assert.Null(_h.Find("dl_2"));
+    }
+
+    // Review 7: the series' delete waits for the ask under way, so the download it brings goes with the others.
+    [Fact]
+    public async Task DeletingASeries_WhileItsWaitingEpisodeIsAsked_DeletesThatOneToo()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_1", change: r => r with { SeriesId = "sr_1", SeriesTitle = "Example Series" });
+        await WaitAsync(Waiting("ep_2"));
+        var page = await PageAsync();
+        var (held, gate) = ItemDetailFixture.Held();
+        _h.Silo.On(HttpMethod.Post, CreatePath, held);
+        _h.Time.Advance(TimeSpan.FromMinutes(1));
+        await Until(() => _h.Silo.SentTo(HttpMethod.Post, CreatePath).Count == 2, "the waiting episode was asked again");
+
+        var deleting = page.Actions.DeleteSeriesCommand.ExecuteAsync(page.Series.Single().Card);
+        await Until(() => _h.Store.WaitingIn(Scope7).Count == 0, "the line was dropped");
+        gate.SetResult(await ScriptedSilo.Json(HttpStatusCode.Accepted, DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_2", "ready", episodeId: "ep_2")))());
+        await deleting;
+        await _manager!.WaitingRun;
+
+        Assert.Empty(_h.Store.In(Scope7));
     }
 
     // Its card and its season's Download count it as on its way: it is not offered again.

@@ -76,9 +76,11 @@ release's section is what its update says it changes (docs/release.md).
 - **Your Silo server's download limit:** when the limit your Silo server sets for an account stops a season or a whole
   series part-way, the rest of its episodes wait on this PC, also across restarts, and start in order once the server
   allows more: when one of your downloads is ready on the server, or your Silo server has heard that you deleted one, or
-  after a wait that grows while the server still says no. The download dialog says how many wait, in words that name the limit, with Done. The Downloads page says
-  so too, with Cancel to drop them, and a waiting episode's own Download says Queued. Deleting a series' downloads, or
-  Remove all downloads in Settings → Downloads, drops the waiting episodes as well.
+  after a wait that grows while the server still says no (half an hour at most). An episode the server keeps refusing no
+  longer holds the others back. The download dialog says how many of the series' episodes wait, in words that name the
+  limit, with Done; Cancel while it starts keeps nothing waiting. The Downloads page says so too, with Cancel to drop
+  them, and a waiting episode's own Download says Queued. Deleting a series' downloads, or Remove all downloads in
+  Settings → Downloads, drops the waiting episodes as well, and the one that was just being asked for goes with them.
 - **Phone remote:** Silo's phone app can control what plays in Granary: play and pause, seek, volume, audio and
   subtitles, speed, quality and the next episode. Switch it on under Settings → Playback → This PC, open Connect a Phone
   and scan the code with the phone's camera once. It works on your local network only, while Granary runs, and only for

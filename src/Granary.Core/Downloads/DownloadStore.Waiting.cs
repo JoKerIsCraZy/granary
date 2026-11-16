@@ -65,6 +65,24 @@ public sealed partial class DownloadStore
         return removed;
     }
 
+    /// <summary>Puts the scope's waiting episode <paramref name="episodeId"/> at the end of the line; none there is no change.</summary>
+    public async Task MoveWaitingToEndAsync(DownloadScope scope, string episodeId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        await LoadAsync(cancellationToken);
+        bool moved = false;
+        Change(state =>
+        {
+            var episode = state.Waiting.FirstOrDefault(w => w.Scope == scope && w.EpisodeId == episodeId);
+            moved = episode is not null;
+            return moved ? state with { Waiting = [.. state.Waiting.Where(w => w != episode), episode!] } : state;
+        });
+        if (moved)
+        {
+            await RaiseThenWriteIndexAsync();
+        }
+    }
+
     private static bool IsSame(WaitingEpisode first, WaitingEpisode second) => first.Scope == second.Scope && first.EpisodeId == second.EpisodeId;
 
     // A change of the line: the followers hear first, then the index is written. A handler that throws does not keep the change

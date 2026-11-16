@@ -217,7 +217,8 @@ public sealed partial class DownloadCardActions : ICardMenuSource
 
     /// <summary>
     /// Deletes every download of the series after asking, in the Apple app's words ("Delete 3 Downloads"): the ones the question
-    /// counted, as a single delete goes, and its episodes waiting for the server's limit of downloads with them.
+    /// counted, as a single delete goes, and its episodes waiting for the server's limit of downloads with them, with the
+    /// download a create of the line was bringing as they went.
     /// </summary>
     [RelayCommand]
     private async Task DeleteSeriesAsync(MediaCard? card)
@@ -231,9 +232,11 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         {
             return;
         }
-        // The line first: a delete that reaches the server frees a place, and would start one of them.
+        // The line first: a delete that reaches the server frees a place, and would start one of them. It answers once no create
+        // of the line is under way, so the download such a create brought is among the series' by then.
         await _downloads.DropWaitingAsync(scope, card.Id, CancellationToken.None);
-        await _downloads.DeleteAllAsync(scope, [.. episodes.Select(e => e.DownloadId)], CancellationToken.None);
+        IEnumerable<DownloadItem> now = _downloads.ActiveScope == scope ? EpisodesOf(card.Id) : [];
+        await _downloads.DeleteAllAsync(scope, [.. episodes.Concat(now).Select(e => e.DownloadId).Distinct(StringComparer.Ordinal)], CancellationToken.None);
     }
 
     // What the transfer entry does, whatever its words.

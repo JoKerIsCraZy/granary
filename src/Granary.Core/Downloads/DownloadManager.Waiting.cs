@@ -11,8 +11,10 @@ namespace Granary.Core.Downloads;
 /// time frees) nor when to come back, so the line is asked again once one of the profile's downloads leaves its preparation
 /// (the server's file is ready) or its delete reached the server (the server drops a device's entry, which then counts toward
 /// neither limit), or after a wait (<see cref="WaitingRetryDelays"/>, or the server's <c>Retry-After</c> when it names a longer
-/// one), and then as far as the server takes them. A refusal waits longer each time; a create that got no clear answer, or a
-/// run that failed, waits as one. At a start, or a switch to the profile, the line is asked once, then waits.
+/// one, kept to <see cref="MaxNamedWait"/>), and then as far as the server takes them. A refusal waits longer each time; a create
+/// that got no clear answer, or a run that failed, waits as one. One the server refuses for good (a 4xx it means, an answer
+/// that cannot be read) leaves the line, so it never holds the others back. At a start, or a switch to the profile, the line is
+/// asked once, then waits.
 /// </summary>
 /// <remarks>
 /// One run at a time (<see cref="WaitingRun"/>); a trigger while one runs has it look once more. The state below is guarded by
@@ -25,26 +27,43 @@ public sealed partial class DownloadManager
     public static readonly IReadOnlyList<TimeSpan> WaitingRetryDelays =
         [.. new[] { 1, 2, 5, 10, 30 }.Select(minutes => TimeSpan.FromMinutes(minutes))];
 
+    /// <summary>
+    /// How often in a row the line's head may fail without a clear answer (no answer, a 5xx, an answer that is no Silo answer)
+    /// before it goes to the back of the line: it may have reached the server, so it is not dropped, but it holds the others
+    /// back no longer.
+    /// </summary>
+    public const int HeadTries = 3;
+
+    /// <summary>
+    /// The longest wait a server's <c>Retry-After</c> sets: one far ahead, as a date years away, is asked again after this, as
+    /// the sign-in's and the token refresh's waits are kept.
+    /// </summary>
+    public static readonly TimeSpan MaxNamedWait = TimeSpan.FromMinutes(30);
+
     private bool _draining;
     private bool _drainAgain;
     private Task _drain = Task.CompletedTask;
 
-    // The profile whose create the limit refused last, how often in a row, the earliest the line is asked again, and whether one
-    // of its downloads left its preparation, or had its delete reach the server, since.
+    // The profile whose create the limit refused last, how often in a row, the earliest the line is asked again, and how many
+    // places had freed (_freeGeneration) as that create was sent: a place freed after it lets the line be asked at once.
     private DownloadScope? _refusedScope;
     private int _refusals;
     private DateTimeOffset _notBefore;
-    private bool _freed;
-    private ITimer? _retryTimer;
+    private long _refusedAtFree;
+    private long _freeGeneration;
 
-    // The active profile's downloads as the last store change left them: the ones the server prepares, and the deletes still to
-    // reach it.
+    // The head that failed without a clear answer, and how often in a row.
+    private (string? EpisodeId, int Count) _headFailures;
+
+    // The timer that ends the wait, and when it is due; null once it fired or while none is set.
+    private ITimer? _retryTimer;
+    private DateTimeOffset? _timerDue;
+
+    // The active profile's downloads as the last store change left them while episodes waited: the ones the server prepares,
+    // and the deletes still to reach it.
     private DownloadScope? _seenScope;
     private HashSet<string> _seenPreparing = [];
     private HashSet<string> _seenDeletes = [];
-
-    // The Retry-After of the last refusal for the limit, if the server named one.
-    private TimeSpan? _limitRetryAfter;
 
     /// <summary>For tests: the run asking the waiting episodes again, done once it looked at the line and stopped.</summary>
     internal Task WaitingRun
@@ -54,6 +73,18 @@ public sealed partial class DownloadManager
             lock (_gate)
             {
                 return _drain;
+            }
+        }
+    }
+
+    // How many places the server freed for the active profile so far; taken before a create, compared after a refusal.
+    private long FreeGeneration
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _freeGeneration;
             }
         }
     }
@@ -68,7 +99,8 @@ public sealed partial class DownloadManager
 
     /// <summary>
     /// Takes the waiting episodes of <paramref name="seriesId"/> (every series when null) out of <paramref name="scope"/>'s line:
-    /// the viewer cancelled them, or deleted the series' downloads.
+    /// the viewer cancelled them, or deletes the series' downloads. Answers once no create of the line is under way any more, so
+    /// a delete that follows finds the download such a create brought.
     /// </summary>
     public async Task DropWaitingAsync(DownloadScope scope, string? seriesId, CancellationToken cancellationToken)
     {
@@ -78,30 +110,37 @@ public sealed partial class DownloadManager
         {
             _logger.LogInformation("{Count} waiting episodes were taken out of line", dropped);
         }
+        await WaitingRun.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     // The episodes from the one the limit refused on wait in line, after the wait the refusal starts: the line is not asked
-    // again before it, unless a download leaves its preparation or its delete reaches the server. Answers how many wait.
+    // again before it, unless a place frees. The wait is noted before the episodes go in line, so the store's change does not
+    // ask at once, and its timer is set once they are in it. Answers how many of the series' episodes wait now.
     private async Task<int> KeepWaitingAsync(DownloadScope scope, string seriesId, string seriesTitle, string quality,
-        IEnumerable<(int Season, SeasonEpisode Episode)> episodes, long clears)
+        IEnumerable<(int Season, SeasonEpisode Episode)> episodes, long clears, TimeSpan? retryAfter, long freed)
     {
-        NoteRefusal(scope, false);
+        var wait = BeginRefusal(scope, retryAfter, freed);
         List<WaitingEpisode> line = [.. episodes.Select(e => new WaitingEpisode(scope, seriesId, seriesTitle, e.Season, e.Episode.EpisodeId,
             e.Episode.EpisodeNumber, e.Episode.Title, e.Episode.MediaFileId, quality))];
         try
         {
-            return await _store.AddWaitingUnlessClearedAsync(line, clears, CancellationToken.None).ConfigureAwait(false);
+            await _store.AddWaitingUnlessClearedAsync(line, clears, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning("The episodes past the server's download limit could not be kept waiting ({Failure})", DownloadLog.Failure(ex));
-            return 0;
         }
+        finally
+        {
+            ArmRetry(wait);
+        }
+        return _store.WaitingIn(scope).Count(w => w.SeriesId == seriesId);
     }
 
-    // A refusal for the limit, or a create without a clear answer: the next ask waits, longer each time in a row, and at least as
-    // long as the server's Retry-After.
-    private void NoteRefusal(DownloadScope scope, bool uncertain)
+    // A refusal for the limit (with the wait the server named), or a create without a clear answer: the next ask waits, longer
+    // each time in a row, and at least as long as the server's Retry-After, kept to MaxNamedWait. Answers the wait; the timer is
+    // set apart (ArmRetry).
+    private TimeSpan BeginRefusal(DownloadScope scope, TimeSpan? retryAfter, long freed)
     {
         lock (_gate)
         {
@@ -112,24 +151,41 @@ public sealed partial class DownloadManager
             _refusedScope = scope;
             var wait = WaitingRetryDelays[Math.Min(_refusals, WaitingRetryDelays.Count - 1)];
             _refusals++;
-            if (!uncertain && _limitRetryAfter is { } named && named > wait)
+            if (retryAfter is { } named && named > wait)
             {
-                wait = named;
+                wait = named < MaxNamedWait ? named : MaxNamedWait;
             }
-            _limitRetryAfter = null;
             _notBefore = _time.GetUtcNow() + wait;
-            _freed = false;
-            _retryTimer?.Dispose();
-            _retryTimer = _time.CreateTimer(static state => ((DownloadManager)state!).DrainSoon(), this, wait, Timeout.InfiniteTimeSpan);
+            _refusedAtFree = freed;
+            return wait;
         }
     }
 
-    private void NoteLimit(TimeSpan? retryAfter)
+    private void NoteRefusal(DownloadScope scope, TimeSpan? retryAfter, long freed) => ArmRetry(BeginRefusal(scope, retryAfter, freed));
+
+    // The timer that ends a wait of this length from now; the one before it goes.
+    private void ArmRetry(TimeSpan wait)
     {
         lock (_gate)
         {
-            _limitRetryAfter = retryAfter;
+            ArmRetryLocked(wait);
         }
+    }
+
+    private void ArmRetryLocked(TimeSpan wait)
+    {
+        _retryTimer?.Dispose();
+        _timerDue = _time.GetUtcNow() + wait;
+        _retryTimer = _time.CreateTimer(static state => ((DownloadManager)state!).OnRetryDue(), this, wait, Timeout.InfiniteTimeSpan);
+    }
+
+    private void OnRetryDue()
+    {
+        lock (_gate)
+        {
+            _timerDue = null;
+        }
+        DrainSoon();
     }
 
     // The line of the profile is empty, or the server took one: no wait holds any more.
@@ -145,19 +201,26 @@ public sealed partial class DownloadManager
             _refusals = 0;
             _retryTimer?.Dispose();
             _retryTimer = null;
+            _timerDue = null;
         }
     }
 
-    // The line may be asked now: no refusal holds for the profile, or its wait is over, or a download left its preparation or
-    // had its delete reach the server since.
-    private bool MayAsk(DownloadScope scope)
+    // The line may be asked now: no refusal holds for the profile, or its wait is over, or a place freed since the refused create
+    // was sent. Answers also how many places had freed, to note with the next refusal. While the wait holds, a timer is there for
+    // the rest of it: set again when it fired early, as when the clock stepped back.
+    private bool MayAsk(DownloadScope scope, out long freed)
     {
         lock (_gate)
         {
-            if (_refusedScope != scope || _freed || _time.GetUtcNow() >= _notBefore)
+            freed = _freeGeneration;
+            var now = _time.GetUtcNow();
+            if (_refusedScope != scope || _freeGeneration > _refusedAtFree || now >= _notBefore)
             {
-                _freed = false;
                 return true;
+            }
+            if (_timerDue is null)
+            {
+                ArmRetryLocked(_notBefore - now);
             }
             return false;
         }
@@ -165,12 +228,16 @@ public sealed partial class DownloadManager
 
     // A store change only notes whether it freed a place for the active profile, and starts a run when episodes wait. A place
     // frees on the server, not on this PC: a download still kept here that is no longer preparing, or a delete no longer to
-    // send. One deleted here holds its place until its delete is sent.
+    // send. One deleted here holds its place until its delete is sent. Without waiting episodes there is nothing to compare.
     private void OnStoreChangedForWaiting(object? sender, EventArgs e)
     {
         var scope = DownloadScope.Of(_session);
-        if (scope is null)
+        if (scope is null || _store.WaitingIn(scope).Count == 0)
         {
+            lock (_gate)
+            {
+                _seenScope = null;
+            }
             return;
         }
         var downloads = _store.In(scope).ToDictionary(d => d.Record.DownloadId, d => d.Record.State, StringComparer.Ordinal);
@@ -181,14 +248,11 @@ public sealed partial class DownloadManager
             if (_seenScope == scope && (_seenPreparing.Any(id => downloads.TryGetValue(id, out var state) && state != DownloadState.Preparing)
                 || _seenDeletes.Any(id => !deletes.Contains(id) && !downloads.ContainsKey(id))))
             {
-                _freed = true;
+                _freeGeneration++;
             }
             (_seenScope, _seenPreparing, _seenDeletes) = (scope, preparing, deletes);
         }
-        if (_store.WaitingIn(scope).Count > 0)
-        {
-            DrainSoon();
-        }
+        DrainSoon();
     }
 
     private void OnSessionChangedForWaiting(object? sender, EventArgs e) => DrainSoon();
@@ -226,7 +290,7 @@ public sealed partial class DownloadManager
                 _logger.LogError("Asking for the waiting episodes again failed unexpectedly ({Failure})", DownloadLog.Failure(ex));
                 if (DownloadScope.Of(_session) is { } scope)
                 {
-                    NoteRefusal(scope, true);
+                    NoteRefusal(scope, null, FreeGeneration);
                 }
             }
             lock (_gate)
@@ -251,37 +315,83 @@ public sealed partial class DownloadManager
                 ForgetRefusals(scope);
                 return;
             }
-            if (!MayAsk(scope))
+            if (!MayAsk(scope, out long freed))
             {
                 return;
             }
             var next = line[0];
-            var result = _store.FindByItem(scope, next.EpisodeId) is null
+            // Looked at again right before the create: the viewer may have taken it out of line meanwhile.
+            if (!_store.IsWaiting(scope, next.EpisodeId))
+            {
+                continue;
+            }
+            var outcome = _store.FindByItem(scope, next.EpisodeId) is null
                 ? await StartAsync(next.Request, scope, CancellationToken.None).ConfigureAwait(false)
-                : DownloadStartResult.AlreadyDownloading;
+                : new CreateOutcome(DownloadStartResult.AlreadyDownloading);
             if (DownloadScope.Of(_session) != scope || _store.IsClearPending(scope))
             {
                 // Another profile, or a sign-out of this one: the line waits for it, or goes with it.
                 return;
             }
-            switch (result)
+            if (!await TakeAsync(scope, next, outcome, freed).ConfigureAwait(false))
             {
-                case DownloadStartResult.Started or DownloadStartResult.AlreadyDownloading:
-                    ForgetRefusals(scope);
-                    await _store.RemoveWaitingAsync(scope, w => w.EpisodeId == next.EpisodeId, CancellationToken.None).ConfigureAwait(false);
-                    break;
-                case DownloadStartResult.Unavailable:
-                    _logger.LogInformation("A waiting episode is not offered to this profile any more; it leaves the line");
-                    await _store.RemoveWaitingAsync(scope, w => w.EpisodeId == next.EpisodeId, CancellationToken.None).ConfigureAwait(false);
-                    break;
-                case DownloadStartResult.Limited:
-                    _logger.LogInformation("The server's download limit still holds; {Count} episodes wait", line.Count);
-                    NoteRefusal(scope, false);
-                    return;
-                default:
-                    NoteRefusal(scope, true);
-                    return;
+                return;
             }
         }
     }
+
+    // What the head's create came to: true when the line goes on to the next one, false when it waits.
+    private async Task<bool> TakeAsync(DownloadScope scope, WaitingEpisode next, CreateOutcome outcome, long freed)
+    {
+        bool unclear = outcome is { Result: DownloadStartResult.Failed, IsFinal: false };
+        int failures;
+        lock (_gate)
+        {
+            failures = unclear ? (_headFailures.EpisodeId == next.EpisodeId ? _headFailures.Count : 0) + 1 : 0;
+            _headFailures = unclear ? (next.EpisodeId, failures) : default;
+        }
+        switch (outcome.Result)
+        {
+            case DownloadStartResult.Started:
+                ForgetRefusals(scope);
+                await LeaveLineAsync(scope, next).ConfigureAwait(false);
+                return true;
+            case DownloadStartResult.AlreadyDownloading when _store.FindByItem(scope, next.EpisodeId) is not null:
+                await LeaveLineAsync(scope, next).ConfigureAwait(false);
+                return true;
+            case DownloadStartResult.AlreadyDownloading:
+                // Another start of it is under way, as the viewer's own Download: it stays in line until its download is here,
+                // since that start can still fail or meet the limit.
+                NoteRefusal(scope, null, freed);
+                return false;
+            case DownloadStartResult.Unavailable:
+                _logger.LogInformation("A waiting episode is not offered to this profile any more; it leaves the line");
+                await LeaveLineAsync(scope, next).ConfigureAwait(false);
+                return true;
+            case DownloadStartResult.Limited:
+                _logger.LogInformation("The server's download limit still holds; {Count} episodes wait", _store.WaitingIn(scope).Count);
+                NoteRefusal(scope, outcome.RetryAfter, freed);
+                return false;
+            case DownloadStartResult.Failed when outcome.IsFinal:
+                // Asked again, the server would answer the same: the others are not held back by it.
+                _logger.LogWarning("The server refused a waiting episode for good; it leaves the line");
+                await LeaveLineAsync(scope, next).ConfigureAwait(false);
+                return true;
+            default:
+                if (failures >= HeadTries)
+                {
+                    _logger.LogInformation("A waiting episode got no clear answer {Count} times in a row; it goes to the back of the line", failures);
+                    lock (_gate)
+                    {
+                        _headFailures = default;
+                    }
+                    await _store.MoveWaitingToEndAsync(scope, next.EpisodeId, CancellationToken.None).ConfigureAwait(false);
+                }
+                NoteRefusal(scope, null, freed);
+                return false;
+        }
+    }
+
+    private Task LeaveLineAsync(DownloadScope scope, WaitingEpisode episode) =>
+        _store.RemoveWaitingAsync(scope, w => w.EpisodeId == episode.EpisodeId, CancellationToken.None);
 }
