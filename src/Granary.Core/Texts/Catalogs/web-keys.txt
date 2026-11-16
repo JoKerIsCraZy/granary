@@ -2439,6 +2439,12 @@ web.settings.playbackConnection.transport.ethernet
 web.settings.playbackConnection.transport.unknown
 web.settings.playbackConnection.transport.wifi
 web.settings.resetButton.label
+# Settings' search box at the top of its sidebar (src/Granary.App/Views/SettingsPage.xaml(.cs) and
+# src/Granary.Core/ViewModels/Settings/SettingsSearchViewModel.cs), as the web's SettingsSearchInput.tsx and SettingsSidebar.tsx.
+web.settings.search.clear
+web.settings.search.matchCount
+web.settings.search.noMatches
+web.settings.search.placeholder
 web.settings.sessions.confirm.clientDescription
 web.settings.sessions.confirm.deviceTitle
 web.settings.sessions.confirm.note
