@@ -1776,7 +1776,8 @@ stream's commands on Activity and what Users does to accounts.
   account, profile, method tag and client; then the web's two conversion lines (12 px), the video's behind lucide's Film
   and the audio's behind AudioLines: an untouched stream's source alone, muted ("HEVC 2160p", "TrueHD 7.1"), a converted
   one's "HEVC 2160p → H.264 1080p" in the text colour, and after a video transcode its encoder in a small outlined chip
-  ("HW QSV", "SW"). As on the web, the row no longer names the container or "Audio Transcode" (the audio line shows the
+  ("HW QSV", "SW"); a line too long for the column is cut with an ellipsis, the chip staying beside it. As on the web,
+  the row no longer names the container or "Audio Transcode" (the audio line shows the
   conversion; the container is in Details). Beside them, in a column 140 px wide, the web's bitrate cell: the rate the
   viewer gets ("8.0 Mbps", 12 px), a muted line of what it is measured against ("limit 4.0 Mbps · source 20.0 Mbps", or
   either alone; 11 px, wrapping), and a bar 4 px high on a 128 px track of the delivered share of the source, shown while

@@ -111,7 +111,7 @@ release's section is what its update says it changes (docs/release.md).
   opened nothing.
 - Admin → Activity: a stream's Look up opens IP Lookup and scrolls to it with the accounts seen at that address, as on
   Silo's web, where before it looked the address up in the closed lookup. The address sits in the middle of its field.
-- The admin pages' green and amber are Silo's web colours exactly: Direct Play and Direct Stream on the Dashboard and
+- The admin pages' green, blue and amber are Silo's web colours exactly: Direct Play and Direct Stream on the Dashboard and
   Activity, a warning there, and "Connecting…" in the activity panel were a shade off.
 - The player's mouse cursor no longer comes back by itself while a title plays: a mouse lying still that reports a knock
   or its sensor's noise of a few pixels leaves it hidden; a move of 5 pixels or more brings it back.

@@ -4,14 +4,15 @@ using System.Text.RegularExpressions;
 namespace Granary.Tests.Admin;
 
 /// <summary>
-/// The admin pages' green and amber (Direct Play, Direct Stream, a limited bitrate, a warning) are the web's status
-/// tokens, <c>--success</c> and <c>--warning</c> in silo-server's <c>web/src/app.css</c>, which the web writes in OKLCH:
+/// The admin pages' green, blue and amber (the play methods, a limited bitrate, a warning) are the web's status tokens,
+/// <c>--success</c>, <c>--info</c> and <c>--warning</c> in silo-server's <c>web/src/app.css</c>, which the web writes in OKLCH:
 /// <c>Themes/Silo.xaml</c> holds them as sRGB.
 /// </summary>
 public sealed class StatusColourTests
 {
     [Theory]
     [InlineData("SiloSuccessColor", 0.75, 0.18, 145)]
+    [InlineData("SiloInfoColor", 0.7, 0.15, 250)]
     [InlineData("SiloWarningColor", 0.8, 0.15, 85)]
     public void TheStatusColours_AreTheWebsTokens(string key, double lightness, double chroma, double hue)
     {
