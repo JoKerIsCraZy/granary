@@ -92,6 +92,12 @@ release's section is what its update says it changes (docs/release.md).
 - A row's title on Home and in the libraries opens the same page as its Explore all, as on Silo's web: click "Recently
   Added Movies" itself.
 - A TMDB score shows TMDB's logo beside it, as on Silo's web; IMDb's and every other source's stay their names.
+- Admin → Activity shows a stream's video and audio on a line each, as Silo's web does: the source's format, and for a
+  stream your Silo server converts what the viewer gets ("HEVC 2160p → H.264 1080p", "TrueHD 7.1 → AAC 5.1"), with the
+  encoder of a video transcode ("HW QSV").
+- Admin → Activity shows each stream's bitrate as Silo's web does: the rate the viewer gets, the limit a transcode
+  encodes to and the source's rate ("limit 4.0 Mbps · source 20.0 Mbps"), and a bar of how much of the source's rate
+  arrives, amber while a limit squeezes the stream. A stream's details tag its Bitrate with the limit.
 
 ### Fixed
 
@@ -100,6 +106,8 @@ release's section is what its update says it changes (docs/release.md).
   opened nothing.
 - Admin → Activity: a stream's Look up opens IP Lookup and scrolls to it with the accounts seen at that address, as on
   Silo's web, where before it looked the address up in the closed lookup. The address sits in the middle of its field.
+- The admin pages' green, blue and amber are Silo's web colours exactly: Direct Play and Direct Stream on the Dashboard and
+  Activity, a warning there, and "Connecting…" in the activity panel were a shade off.
 - The player's mouse cursor no longer comes back by itself while a title plays: a mouse lying still that reports a knock
   or its sensor's noise of a few pixels leaves it hidden; a move of 5 pixels or more brings it back.
 - A movie's, series' or episode's page shows its IMDb and TMDB scores again, under its facts as on Silo's web, and
