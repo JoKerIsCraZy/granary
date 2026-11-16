@@ -1305,7 +1305,10 @@ else of the admin API is used.
   `profile_name`), what (`media_title`, `media_type`, `content_id`, `series_name`, `season_number`, `episode_number`,
   `episode_name`, `poster_url`, `media_file_id`), how (`play_method`; `effective_play_method` is `direct`, `remux`,
   `direct_stream` or `transcode` when the server knows, else read `video_decision`, `audio_decision` and
-  `transcode_audio`), the source and target codecs, `output_container`, `output_protocol`, `stream_bitrate_kbps`,
+  `transcode_audio`), the source and target codecs, `output_container`, `output_protocol`, the bitrates
+  (`stream_bitrate_kbps`, the rate the server plans to send: a transcode's target, else the audio's target, else the
+  file's, and when it knows none of them `target_bitrate_kbps`, then `source_bitrate_kbps`; `target_bitrate_kbps`, the
+  ceiling a transcode encodes to, null without one; `source_bitrate_kbps`, the file's; each null when unknown),
   `transcode_hw_accel`, where (`position_seconds`, `file_duration`, `is_paused`, `started_at`), the client
   (`client_label`, `client_label_full`, `client_name`, `client_version`, `client_ip`), the route (`routing_execution`,
   `routing_egress` and their node names and ids; older servers only `reporting_node` and `node_display_name`),

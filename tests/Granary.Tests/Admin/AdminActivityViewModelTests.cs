@@ -124,6 +124,41 @@ public sealed class AdminActivityViewModelTests
     }
 
     [Fact]
+    public async Task ALimitedTranscode_ShowsItsBitrate_AgainstItsLimitAndSource()
+    {
+        _silo.Map("api/v2/admin/sessions", AdminPayloads.LimitedTranscode);
+
+        var activity = await ShownAsync();
+
+        var movie = Assert.Single(activity.Streams);
+        Assert.Equal(("4.0 Mbps", "limit 4.0 Mbps · source 20.0 Mbps", 0.2, true), (movie.Bitrate, movie.BitrateReference, movie.BitrateShare, movie.HasBitrateShare));
+        Assert.Equal((true, "limit 4.0 Mbps", true), (movie.IsBitrateLimited, movie.BitrateLimit, movie.HasBitrateLimit));
+        Assert.Equal(("HEVC 2160p → H.264 1080p", "HW QSV"), (movie.VideoLine, movie.VideoEncoder));
+    }
+
+    [Fact]
+    public async Task ABitrateThatChanges_ChangesOnTheSameRow()
+    {
+        var activity = await ShownAsync();
+        var episode = activity.Streams[0];
+        var changed = new HashSet<string?>();
+        episode.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        _silo.Map("api/v2/admin/sessions", AdminPayloads.LimitedTranscode.Replace("\"s9\"", "\"s1\"", StringComparison.Ordinal));
+        _clock.Now = AdminPayloads.Now.AddSeconds(10);
+        await activity.TickAsync();
+
+        Assert.Same(episode, Assert.Single(activity.Streams));
+        Assert.Equal(("4.0 Mbps", "limit 4.0 Mbps · source 20.0 Mbps"), (episode.Bitrate, episode.BitrateReference));
+        Assert.Subset(changed, new HashSet<string?>
+        {
+            nameof(episode.Bitrate), nameof(episode.HasBitrate), nameof(episode.BitrateReference), nameof(episode.HasBitrateReference),
+            nameof(episode.BitrateShare), nameof(episode.HasBitrateShare), nameof(episode.IsBitrateLimited), nameof(episode.BitrateLimit),
+            nameof(episode.HasBitrateLimit),
+        });
+    }
+
+    [Fact]
     public async Task Tick_ReadsAgainEveryTenSeconds()
     {
         var activity = await ShownAsync();

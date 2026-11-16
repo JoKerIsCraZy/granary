@@ -1097,16 +1097,74 @@
       "value": "已观看"
     }
   ],
+  "web.admin.activity.bitrate.limit": [
+    {
+      "type": 0,
+      "value": "上限"
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    }
+  ],
+  "web.admin.activity.bitrate.limitAndSource": [
+    {
+      "type": 0,
+      "value": "上限"
+    },
+    {
+      "type": 1,
+      "value": "limit"
+    },
+    {
+      "type": 0,
+      "value": " · 来源"
+    },
+    {
+      "type": 1,
+      "value": "source"
+    }
+  ],
+  "web.admin.activity.bitrate.source": [
+    {
+      "type": 0,
+      "value": "来源"
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    }
+  ],
   "web.admin.activity.client.heading": [
     {
       "type": 0,
       "value": "客户端"
     }
   ],
+  "web.admin.activity.column.bitrate": [
+    {
+      "type": 0,
+      "value": "码率"
+    }
+  ],
   "web.admin.activity.column.route": [
     {
       "type": 0,
       "value": "路由"
+    }
+  ],
+  "web.admin.activity.detail.conversion": [
+    {
+      "type": 1,
+      "value": "source"
+    },
+    {
+      "type": 0,
+      "value": " → "
+    },
+    {
+      "type": 1,
+      "value": "output"
     }
   ],
   "web.admin.activity.detail.transcoding": [

@@ -42,6 +42,25 @@ internal static class AdminPayloads
         }
         """;
 
+    /// <summary>A movie whose video is transcoded down to a 4 Mbps limit from a 20 Mbps file.</summary>
+    public const string LimitedTranscode = """
+        {
+          "items": [
+            {
+              "session_id": "s9", "user_id": "1", "username": "elena", "profile_id": "p1", "media_file_id": "40",
+              "media_title": "Dune", "media_type": "movie", "play_method": "transcode", "effective_play_method": "transcode",
+              "video_decision": "transcode", "audio_decision": "copy", "is_paused": false, "position_seconds": 60,
+              "file_duration": 9000, "started_at": "2026-10-27T12:20:00.000Z", "updated_at": "2026-10-27T12:29:50.000Z",
+              "reporting_node": "local", "stream_location": "remote", "audio_track_index": 0, "has_playback_control": true,
+              "transcode_audio": false, "source_video_codec": "hevc", "source_video_resolution": "2160p",
+              "target_video_codec": "h264", "target_resolution": "1080p", "transcode_hw_accel": "qsv",
+              "source_bitrate_kbps": 20000, "stream_bitrate_kbps": 4000, "target_bitrate_kbps": 4000,
+              "source_audio_channels": 6, "requested_media_file_id": "40"
+            }
+          ]
+        }
+        """;
+
     public const string NoSessions = """{ "items": [] }""";
 
     public const string Status = """

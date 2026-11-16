@@ -260,6 +260,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="48" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="140" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <Grid Width="48" Height="72" VerticalAlignment="Top" CornerRadius="6" Background="{StaticResource SiloBackgroundBrush}">
@@ -292,15 +293,70 @@
                                             <TextBlock Text="{x:Bind MethodLabel, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontSize="10"
                                                        Foreground="{x:Bind local:AdminDashboardView.MethodBrush(Method), Mode=OneWay}" />
                                         </Border>
-                                        <TextBlock Text="{x:Bind TranscodeMode, Mode=OneWay}" Visibility="{x:Bind HasTranscodeMode, Mode=OneWay}" FontSize="10"
-                                                   Foreground="{StaticResource SiloMutedBrush}" VerticalAlignment="Center" />
                                         <TextBlock Text="{x:Bind Client, Mode=OneWay}" Visibility="{x:Bind HasClient, Mode=OneWay}" FontSize="10"
                                                    Foreground="{StaticResource SiloMutedBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="180" />
                                     </StackPanel>
-                                    <TextBlock FontSize="11" Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis"
-                                               Text="{x:Bind local:AdminActivityView.StreamLine(Container, Video, Audio), Mode=OneWay}" />
+                                    <!--
+                                        The web's ConversionLine, one for the video (lucide's Film) and one for the audio (AudioLines): the
+                                        source alone, muted, for an untouched stream; "source → output" for a converted one, and after a
+                                        video transcode its encoder in a small outlined chip.
+                                    -->
+                                    <StackPanel Spacing="2">
+                                        <Grid HorizontalAlignment="Left" ColumnSpacing="6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Viewbox Width="12" Height="12" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Stroke="{StaticResource SiloMutedBrush}" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round"
+                                                          StrokeEndLineCap="Round"
+                                                          Data="M5,3 H19 A2,2 0 0 1 21,5 V19 A2,2 0 0 1 19,21 H5 A2,2 0 0 1 3,19 V5 A2,2 0 0 1 5,3 Z M7,3 V21 M3,7.5 H7 M3,12 H21 M3,16.5 H7 M17,3 V21 M17,7.5 H21 M17,16.5 H21" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Grid.Column="1" Text="{x:Bind VideoLine, Mode=OneWay}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" Foreground="{x:Bind local:AdminActivityView.ConversionBrush(IsVideoConverted), Mode=OneWay}"
+                                                       AutomationProperties.Name="{x:Bind local:AdminActivityView.VideoName(VideoLine), Mode=OneWay}" />
+                                            <Border Grid.Column="2" Visibility="{x:Bind HasVideoEncoder, Mode=OneWay}" Padding="4,0" CornerRadius="4" BorderThickness="1"
+                                                    BorderBrush="{StaticResource SiloBorderBrush}" VerticalAlignment="Center">
+                                                <TextBlock Text="{x:Bind VideoEncoder, Mode=OneWay}" FontSize="10" LineHeight="16" Foreground="{StaticResource SiloMutedBrush}" />
+                                            </Border>
+                                        </Grid>
+                                        <Grid HorizontalAlignment="Left" ColumnSpacing="6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Viewbox Width="12" Height="12" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Stroke="{StaticResource SiloMutedBrush}" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round"
+                                                          StrokeEndLineCap="Round" Data="M2,10 V13 M6,6 V17 M10,3 V21 M14,8 V15 M18,5 V18 M22,10 V13" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Grid.Column="1" Text="{x:Bind AudioLine, Mode=OneWay}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" Foreground="{x:Bind local:AdminActivityView.ConversionBrush(IsAudioConverted), Mode=OneWay}"
+                                                       AutomationProperties.Name="{x:Bind local:AdminActivityView.AudioName(AudioLine), Mode=OneWay}" />
+                                        </Grid>
+                                    </StackPanel>
                                 </StackPanel>
-                                <StackPanel Grid.Column="2" Spacing="6" HorizontalAlignment="Right" MinWidth="200">
+                                <!--
+                                    The web's BitrateCell, beside the stream's lines as its column is: the rate the viewer gets, what it is
+                                    measured against, and a bar of the delivered share of the source, in amber while a transcode encodes to
+                                    a limit, green otherwise.
+                                -->
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Bitrate, Mode=OneWay}" Visibility="{x:Bind HasBitrate, Mode=OneWay}" FontSize="12"
+                                               Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{x:Bind BitrateReference, Mode=OneWay}" Visibility="{x:Bind HasBitrateReference, Mode=OneWay}" FontSize="11"
+                                               LineHeight="15" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
+                                    <Border Visibility="{x:Bind HasBitrateShare, Mode=OneWay}" Width="128" Height="4" Margin="0,4,0,0" CornerRadius="2"
+                                            HorizontalAlignment="Left" Background="{StaticResource SiloBorderBrush}">
+                                        <Border Width="{x:Bind local:AdminActivityView.BitrateFill(BitrateShare), Mode=OneWay}" HorizontalAlignment="Left" CornerRadius="2"
+                                                Background="{x:Bind local:AdminActivityView.BitrateBarBrush(IsBitrateLimited), Mode=OneWay}" />
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Grid.Column="3" Spacing="6" HorizontalAlignment="Right" MinWidth="200">
                                     <!-- As the web's row: Terminate beside the menu (Granary asks first), the rest in the menu. -->
                                     <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
                                         <Button Style="{StaticResource ActivityTerminateStyle}" IsEnabled="{x:Bind IsIdle, Mode=OneWay}" Click="OnTerminateClick" Tag="{x:Bind}">
@@ -356,9 +412,14 @@
                                         <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.row.audio')}" Style="{StaticResource ActivityDetailLabelStyle}" />
                                         <TextBlock Text="{x:Bind Audio, Mode=OneWay}" Style="{StaticResource ActivityDetailValueStyle}" />
                                     </StackPanel>
+                                    <!-- As the web's details: the delivered rate, tagged with a transcode's limit. -->
                                     <StackPanel Orientation="Horizontal" Visibility="{x:Bind HasBitrate, Mode=OneWay}">
-                                        <TextBlock Text="{x:Bind t:AppText.Get('web.player.info.bitrate')}" Style="{StaticResource ActivityDetailLabelStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.column.bitrate')}" Style="{StaticResource ActivityDetailLabelStyle}" />
                                         <TextBlock Text="{x:Bind Bitrate, Mode=OneWay}" Style="{StaticResource ActivityDetailValueStyle}" />
+                                        <Border Visibility="{x:Bind HasBitrateLimit, Mode=OneWay}" Margin="6,0,0,0" Padding="4,0" CornerRadius="4" BorderThickness="1"
+                                                BorderBrush="{StaticResource SiloBorderBrush}" VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind BitrateLimit, Mode=OneWay}" FontSize="10" LineHeight="16" Foreground="{StaticResource SiloMutedBrush}" />
+                                        </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.column.route')}" Style="{StaticResource ActivityDetailLabelStyle}" />

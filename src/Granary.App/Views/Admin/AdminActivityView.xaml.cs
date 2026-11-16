@@ -22,6 +22,9 @@ public sealed partial class AdminActivityView : UserControl
 {
     private const int MessageMaxLength = 500;
 
+    // The width of the bitrate bar's track in the markup.
+    private const double BitrateBarWidth = 128;
+
     private readonly DispatcherQueueTimer _clock;
 
     public AdminActivityView()
@@ -102,8 +105,21 @@ public sealed partial class AdminActivityView : UserControl
 
     public static Visibility NotLoading(bool isLoading, bool hasError) => isLoading || hasError ? Visibility.Collapsed : Visibility.Visible;
 
-    /// <summary>"MKV · HEVC · 2160p · TrueHD 7.1": what reaches the viewer, in one line.</summary>
-    public static string StreamLine(string container, string video, string audio) => $"{container} · {video} · {audio}";
+    /// <summary>A converted stream's line in the text colour, an untouched one's muted, as the web's ConversionLine.</summary>
+    public static Brush ConversionBrush(bool isConverted) =>
+        (Brush)Application.Current.Resources[isConverted ? "SiloForegroundBrush" : "SiloMutedBrush"];
+
+    // The web says which line is which to a screen reader only (its sr-only Video and Audio): the icon is not read.
+    public static string VideoName(string line) => $"{AppText.Get("web.admin.activity.row.video")}: {line}";
+
+    public static string AudioName(string line) => $"{AppText.Get("web.admin.activity.row.audio")}: {line}";
+
+    /// <summary>The bitrate bar's fill: the delivered share of the source, along the web's 128 px track (max-w-32).</summary>
+    public static double BitrateFill(double share) => Math.Clamp(share, 0, 1) * BitrateBarWidth;
+
+    /// <summary>The fill in the web's warning colour while a transcode encodes to a limit, in its success colour otherwise.</summary>
+    public static Brush BitrateBarBrush(bool isLimited) =>
+        (Brush)Application.Current.Resources[isLimited ? "SiloWarningBrush" : "SiloSuccessBrush"];
 
     public static string AddressLine(string ip, string location) => location.Length > 0 ? $"{ip} ({location})" : ip;
 

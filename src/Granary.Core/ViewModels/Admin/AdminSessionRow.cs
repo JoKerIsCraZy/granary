@@ -24,9 +24,11 @@ public sealed partial class AdminSessionRow : ObservableObject
     [NotifyPropertyChangedFor(nameof(Title), nameof(Subtitle), nameof(HasSubtitle), nameof(Username), nameof(Initial), nameof(Profile),
         nameof(HasProfile), nameof(Client), nameof(ClientFull), nameof(HasClient), nameof(ClientIp), nameof(HasClientIp), nameof(PosterUrl),
         nameof(ContentId), nameof(CanOpen), nameof(IsPlain), nameof(Method), nameof(MethodLabel), nameof(Container), nameof(Video),
-        nameof(Audio), nameof(Bitrate), nameof(HasBitrate), nameof(TranscodeMode), nameof(HasTranscodeMode), nameof(Route), nameof(Position),
-        nameof(Progress), nameof(IsPaused), nameof(PauseLabel), nameof(CanControl), nameof(CannotControl), nameof(Location), nameof(MediaType),
-        nameof(Elapsed), nameof(ActiveText))]
+        nameof(Audio), nameof(VideoLine), nameof(IsVideoConverted), nameof(VideoEncoder), nameof(HasVideoEncoder), nameof(AudioLine),
+        nameof(IsAudioConverted), nameof(Bitrate), nameof(HasBitrate), nameof(BitrateReference), nameof(HasBitrateReference),
+        nameof(BitrateShare), nameof(HasBitrateShare), nameof(IsBitrateLimited), nameof(BitrateLimit), nameof(HasBitrateLimit),
+        nameof(Route), nameof(Position), nameof(Progress), nameof(IsPaused), nameof(PauseLabel), nameof(CanControl), nameof(CannotControl),
+        nameof(Location), nameof(MediaType), nameof(Elapsed), nameof(ActiveText))]
     public partial AdminPlaybackSession Session { get; private set; }
 
     [ObservableProperty]
@@ -99,14 +101,45 @@ public sealed partial class AdminSessionRow : ObservableObject
 
     public string Audio => AdminSessionText.Audio(Session);
 
-    /// <summary>The stream's bitrate, "8.0 Mbps"; empty when unknown.</summary>
+    /// <summary>The rate the viewer receives, "8.0 Mbps"; empty when unknown.</summary>
     public string Bitrate => AdminSessionText.Bitrate(Session.StreamBitrateKbps);
 
     public bool HasBitrate => Bitrate.Length > 0;
 
-    public string TranscodeMode => AdminSessionText.TranscodeMode(Session);
+    /// <summary>The muted line under the rate: "limit 4.0 Mbps · source 20.0 Mbps", either alone, or empty.</summary>
+    public string BitrateReference => AdminSessionText.SessionBitrate(Session).Reference;
 
-    public bool HasTranscodeMode => TranscodeMode.Length > 0;
+    public bool HasBitrateReference => BitrateReference.Length > 0;
+
+    /// <summary>How much of the source's bitrate reaches the viewer, 0 to 1, for the bar under the rate; 0 when unknown.</summary>
+    public double BitrateShare => AdminSessionText.SessionBitrate(Session).Share ?? 0;
+
+    /// <summary>The bar shows only while both the delivered and the source's rate are known.</summary>
+    public bool HasBitrateShare => AdminSessionText.SessionBitrate(Session).Share is not null;
+
+    /// <summary>A transcode encodes to a limit: the bar shows in the warning colour, else in success.</summary>
+    public bool IsBitrateLimited => AdminSessionText.SessionBitrate(Session).IsLimited;
+
+    /// <summary>"limit 4.0 Mbps", the tag of Bitrate in the details; empty without a limit.</summary>
+    public string BitrateLimit => AdminSessionText.SessionBitrate(Session).LimitTag;
+
+    public bool HasBitrateLimit => BitrateLimit.Length > 0;
+
+    /// <summary>The video line, as the web's row: "HEVC 2160p", or "HEVC 2160p → H.264 1080p" while it is transcoded.</summary>
+    public string VideoLine => AdminSessionText.VideoConversion(Session).Text;
+
+    /// <summary>The server converts the video: its line shows in the text colour, an untouched one muted.</summary>
+    public bool IsVideoConverted => AdminSessionText.VideoConversion(Session).IsConverted;
+
+    /// <summary>"HW QSV", "SW": the encoder after a video transcode's line; empty otherwise.</summary>
+    public string VideoEncoder => AdminSessionText.VideoEncoder(Session);
+
+    public bool HasVideoEncoder => VideoEncoder.Length > 0;
+
+    /// <summary>The audio line: "TrueHD 7.1", or "TrueHD 7.1 → AAC 5.1" while it is re-encoded.</summary>
+    public string AudioLine => AdminSessionText.AudioConversion(Session).Text;
+
+    public bool IsAudioConverted => AdminSessionText.AudioConversion(Session).IsConverted;
 
     /// <summary>"Transcode gpu → Server Local server".</summary>
     public string Route => string.Join(" → ", AdminSessionText.Route(Session).Select(node => $"{node.Label} {node.Name}"));

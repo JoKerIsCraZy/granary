@@ -84,6 +84,54 @@ public sealed class AdminSessionTextTests
         Assert.Equal("Transcoding", AdminSessionText.Video(session with { PlayMethod = "transcode" }));
     }
 
+    [Fact]
+    public void AnUntouchedStream_ShowsItsSourceFormat_Alone()
+    {
+        var video = AdminSessionText.VideoConversion(Direct);
+        var audio = AdminSessionText.AudioConversion(Direct);
+
+        Assert.Equal(new AdminStreamConversion("HEVC 2160p", null), video);
+        // Codec and layout only: the track's language is not part of the compact form.
+        Assert.Equal(new AdminStreamConversion("TrueHD 7.1", null), audio);
+        Assert.Equal(("HEVC 2160p", false), (video.Text, video.IsConverted));
+        Assert.Equal("", AdminSessionText.VideoEncoder(Direct));
+    }
+
+    [Fact]
+    public void AConvertedStream_ShowsItsSource_AndWhatItDelivers()
+    {
+        var video = AdminSessionText.VideoConversion(Transcode);
+        var audio = AdminSessionText.AudioConversion(Transcode);
+
+        Assert.Equal(("HEVC 2160p → H.264 1080p", true), (video.Text, video.IsConverted));
+        Assert.Equal("TrueHD 7.1 → AAC 5.1", audio.Text);
+        Assert.Equal("HW QSV", AdminSessionText.VideoEncoder(Transcode));
+        // A transcode that keeps the source's height is named as the source.
+        Assert.Equal("HEVC 2160p → H.264 2160p",
+            AdminSessionText.VideoConversion(Transcode with { SourceVideoHeight = 1600, TargetResolution = "1600p" }).Text);
+    }
+
+    [Fact]
+    public void AnAudioOnlyConversion_ConvertsTheAudioLine_WithoutAnEncoder()
+    {
+        var session = Direct with { PlayMethod = "remux", VideoDecision = "copy", TranscodeAudio = true };
+
+        Assert.Equal(new AdminStreamConversion("HEVC 2160p", null), AdminSessionText.VideoConversion(session));
+        Assert.Equal("TrueHD 7.1 → AAC", AdminSessionText.AudioConversion(session).Text);
+        Assert.Equal("", AdminSessionText.VideoEncoder(session));
+    }
+
+    [Fact]
+    public void AConversionTheServerSaysLittleAbout_FallsBackAsTheWebDoes()
+    {
+        var session = new AdminPlaybackSession { PlayMethod = "transcode" };
+
+        Assert.Equal("Unknown source → Transcoding", AdminSessionText.VideoConversion(session).Text);
+        Assert.Equal("Unknown source → AAC", AdminSessionText.AudioConversion(session).Text);
+        Assert.Equal("HW/SW unknown", AdminSessionText.VideoEncoder(session));
+        Assert.Equal("Unknown source", AdminSessionText.VideoConversion(new AdminPlaybackSession { PlayMethod = "direct" }).Text);
+    }
+
     [Theory]
     [InlineData(null, "")]
     [InlineData(0, "")]
@@ -91,6 +139,42 @@ public sealed class AdminSessionTextTests
     [InlineData(8000, "8.0 Mbps")]
     [InlineData(12_345, "12.3 Mbps")]
     public void Bitrate_InKbpsOrMbps(int? kbps, string expected) => Assert.Equal(expected, AdminSessionText.Bitrate(kbps));
+
+    [Fact]
+    public void ALimitedTranscode_IsMeasuredAgainstItsLimit_AndItsSource()
+    {
+        var session = new AdminPlaybackSession { StreamBitrateKbps = 4000, TargetBitrateKbps = 4000, SourceBitrateKbps = 20_000 };
+
+        var bitrate = AdminSessionText.SessionBitrate(session);
+
+        Assert.Equal(new AdminSessionBitrate("4.0 Mbps", "20.0 Mbps", "4.0 Mbps", 0.2), bitrate);
+        Assert.Equal(("limit 4.0 Mbps · source 20.0 Mbps", true, "limit 4.0 Mbps"), (bitrate.Reference, bitrate.IsLimited, bitrate.LimitTag));
+    }
+
+    [Fact]
+    public void AnUnlimitedStream_IsMeasuredAgainstItsSource_AndFillsAtMostTheBar()
+    {
+        var bitrate = AdminSessionText.SessionBitrate(new AdminPlaybackSession { StreamBitrateKbps = 24_000, SourceBitrateKbps = 20_000 });
+
+        Assert.Equal(("source 20.0 Mbps", false, ""), (bitrate.Reference, bitrate.IsLimited, bitrate.LimitTag));
+        Assert.Equal(1, bitrate.Share);
+        // A target of nothing is no limit.
+        Assert.False(AdminSessionText.SessionBitrate(new AdminPlaybackSession { StreamBitrateKbps = 8000, TargetBitrateKbps = 0 }).IsLimited);
+    }
+
+    [Fact]
+    public void ABitrateWithoutTheSources_HasNoShare()
+    {
+        var limited = AdminSessionText.SessionBitrate(new AdminPlaybackSession { StreamBitrateKbps = 640, TargetBitrateKbps = 640 });
+        var unknown = AdminSessionText.SessionBitrate(new AdminPlaybackSession());
+
+        Assert.Equal(("640 kbps", "limit 640 kbps"), (limited.Live, limited.Reference));
+        Assert.Null(limited.Share);
+        Assert.Equal(new AdminSessionBitrate("", "", "", null), unknown);
+        Assert.Equal("", unknown.Reference);
+        // The source's rate says what the stream is measured against even while the delivered rate is unknown.
+        Assert.Equal("source 20.0 Mbps", AdminSessionText.SessionBitrate(new AdminPlaybackSession { SourceBitrateKbps = 20_000 }).Reference);
+    }
 
     [Fact]
     public void Position_AndProgress_FollowTheFilesLength()
