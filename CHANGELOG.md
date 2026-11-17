@@ -50,7 +50,7 @@ release's section is what its update says it changes (docs/release.md).
   Downloads, after asking. Signing out leaves your monitors on the server.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
   tracks, subtitles, chapters and Skip Intro (the Chapters menu shows each chapter's blurred picture, and the picture
-  itself while your Silo server is reachable), with your subtitle look, speed and other playback settings as Granary last
+  itself while your Silo server is reachable; the seek bar shows its preview pictures then too), with your subtitle look, speed and other playback settings as Granary last
   read them, and the next episode plays when it is downloaded too. What you watch offline goes back to your Silo server
   as soon as Granary reaches it again, also after Retry or when the server comes back on; signing out of a server or
   removing it sends what it still can first, and its question says how much progress is lost. On the Downloads page a

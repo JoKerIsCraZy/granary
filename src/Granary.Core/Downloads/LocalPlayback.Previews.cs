@@ -5,13 +5,22 @@ using Granary.Core.Playback;
 
 namespace Granary.Core.Downloads;
 
-// The pictures of a download's chapters (docs/architecture.md, "Playing a download"). The manifest keeps only each
-// chapter's blur. While the server answers, the watch detail lists the file the download was made from (the manifest's
-// media_file_id, also for a copy the server converted, whose timeline is the same) with its chapters' pictures.
+// The pictures of a download's chapters and seek bar (docs/architecture.md, "Playing a download"). The manifest keeps only
+// each chapter's blur. While the server answers, the watch detail lists the file the download was made from (the
+// manifest's media_file_id, also for a copy the server converted, whose timeline is the same): its chapters' pictures and,
+// when it has them, its seek-bar previews, read as the download's own account and profile.
 public sealed partial class LocalPlayback
 {
     // A chapter of the watch detail is the manifest's when it has the same index and starts within this of it.
     private const double ChapterStartTolerance = 1;
+
+    private PlayerTrickplay? _trickplay;
+    private TrickplayReads? _trickplayReads;
+
+    public event EventHandler? TrickplayChanged;
+
+    /// <summary>The previews of the file the download was made from, while the server answers; null without.</summary>
+    public PlayerTrickplay? Trickplay => _trickplay;
 
     /// <summary>
     /// The manifest's chapters, each with its blur, and with its picture where the watch detail lists the same chapter: after
@@ -39,4 +48,35 @@ public sealed partial class LocalPlayback
             && Math.Abs(c.StartSeconds - chapter.StartSeconds) <= ChapterStartTolerance) is { ThumbnailUrl: { } url }
             ? ArtworkUrl.Resolve(server, url)
             : null;
+
+    // Once the watch detail came: the previews of the file the download was made from, when it has them. Without the server
+    // there is no detail, and nothing is asked.
+    private void ReadTrickplay()
+    {
+        if (_stopping || _server is not { } server || SourceVersion is not { TrickplayAvailable: true } version)
+        {
+            return;
+        }
+        var owner = _download.Record.Scope;
+        string contentId = _download.Record.MediaItemId;
+        string fileId = version.FileId;
+        _trickplayReads?.Dispose();
+        _trickplayReads = new TrickplayReads(async cancellationToken =>
+        {
+            var manifest = await _watch.GetTrickplayAsAccountProfileAsync(server, owner.AccountId, owner.ProfileId, contentId, fileId, cancellationToken)
+                .ConfigureAwait(false);
+            return PlayerTrickplay.Of(manifest, server);
+        }, trickplay =>
+        {
+            _trickplay = trickplay;
+            TrickplayChanged?.Invoke(this, EventArgs.Empty);
+        }, _dispatcher, _time, _logger);
+        _trickplayReads.Start();
+    }
+
+    private void StopTrickplay()
+    {
+        _trickplayReads?.Dispose();
+        _trickplayReads = null;
+    }
 }

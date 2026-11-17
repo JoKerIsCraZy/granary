@@ -1,19 +1,23 @@
 using System.Globalization;
 using System.Net;
+using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Api.Images;
 using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Tests.Profiles;
+using static Granary.Tests.Playback.ServerPlaybackFixture;
 
 namespace Granary.Tests.Downloads;
 
 /// <summary>
-/// The pictures of a download's chapters: the manifest's blurs without the server, and while it answers the chapter
-/// pictures of the file the download was made from.
+/// The pictures of a download's chapters and seek bar: the manifest's blurs without the server, and while it answers the
+/// chapter pictures and seek-bar previews of the file the download was made from, read as the download's own profile.
 /// </summary>
 public sealed class LocalPlaybackPreviewTests : IAsyncDisposable
 {
+    private const string TrickplayPath = LocalPlaybackFixture.WatchPath + "/trickplay";
+
     private readonly LocalPlaybackFixture _fixture = new();
 
     public ValueTask DisposeAsync() => _fixture.DisposeAsync();
@@ -26,6 +30,20 @@ public sealed class LocalPlaybackPreviewTests : IAsyncDisposable
         var playback = await _fixture.PlayingAsync();
 
         Assert.Equal([new PlaybackChapter("Cold Open", 0, 142.5, null, "iC")], playback.Chapters);
+    }
+
+    [Fact]
+    public async Task WithoutTheServer_NoPreviewsAreAskedFor()
+    {
+        _fixture.GoOffline();
+        _fixture.Silo.On(HttpMethod.Get, TrickplayPath, Ok(Previews()));
+
+        var playback = await _fixture.PlayingAsync();
+        await _fixture.AdvanceAsync(TimeSpan.FromHours(2));
+
+        Assert.Null(playback.Trickplay);
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+        Assert.DoesNotContain(_fixture.Harness.Logs.Lines, line => line.StartsWith("Error", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -69,6 +87,109 @@ public sealed class LocalPlaybackPreviewTests : IAsyncDisposable
         Assert.Equal([new PlaybackChapter("Cold Open", 0, 142.5, null, "iC")], playback.Chapters);
     }
 
+    [Fact]
+    public async Task WithTheServer_ThePreviewsOfTheFileTheDownloadWasMadeFrom_AreReadAsItsAccountAndProfile()
+    {
+        ServerHas(trickplay: true);
+        _fixture.Silo.On(HttpMethod.Get, TrickplayPath, Ok(Previews()));
+
+        var playback = await StartedAsync();
+
+        var read = Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+        Assert.Equal("?file_id=4567", read.Uri.Query);
+        Assert.Equal(SiloAuth.Profile, read.Auth);
+        Assert.Equal(("1", "7"), (read.AsAccount, read.AsProfile));
+        var trickplay = playback.Trickplay!;
+        Assert.Equal(("4567", 10_000, 10, 90), (trickplay.FileId, trickplay.IntervalMs, trickplay.Columns, trickplay.Count));
+        Assert.Equal(ArtworkUrl.Resolve(ScriptedSilo.Base, "/api/v2/artwork/sheet0?exp=1&sig=a"), trickplay.Sheets[0]);
+    }
+
+    [Fact]
+    public async Task AFileWithoutPreviews_IsNotAskedForThem()
+    {
+        ServerHas(trickplay: false);
+        _fixture.Silo.On(HttpMethod.Get, TrickplayPath, Ok(Previews()));
+
+        var playback = await _fixture.PlayingAsync();
+
+        Assert.Null(playback.Trickplay);
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+    }
+
+    [Fact]
+    public async Task ThePreviews_AreReadAgainBeforeTheirAddressesExpire()
+    {
+        ServerHas(trickplay: true);
+        _fixture.Silo.On(HttpMethod.Get, TrickplayPath, Ok(Previews()), Ok(Previews()));
+        var playback = await StartedAsync();
+        int changes = 0;
+        playback.TrickplayChanged += (_, _) => changes++;
+
+        // They expire in an hour: read again five minutes before.
+        await _fixture.AdvanceAsync(TimeSpan.FromMinutes(54));
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+        await _fixture.AdvanceAsync(TimeSpan.FromMinutes(1));
+
+        await Until(() => changes == 1, "the previews are read again");
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath).Count);
+    }
+
+    [Fact]
+    public async Task APreviewReadThatFails_IsTriedAgainAMinuteLater()
+    {
+        ServerHas(trickplay: true);
+        _fixture.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.NetworkError(), Ok(Previews()));
+        int changes = 0;
+        var playback = await _fixture.PlayingAsync();
+        playback.TrickplayChanged += (_, _) => changes++;
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath).Count == 1, "the previews are asked for");
+        Assert.Null(playback.Trickplay);
+
+        await _fixture.AdvanceAsync(TimeSpan.FromMinutes(1));
+
+        await Until(() => changes == 1, "the previews are read on the second try");
+        Assert.NotNull(playback.Trickplay);
+    }
+
+    [Fact]
+    public async Task AnotherProfileActiveAtTheRefresh_EndsTheReadsQuietly()
+    {
+        ServerHas(trickplay: true);
+        _fixture.Silo.On(HttpMethod.Get, TrickplayPath, Ok(Previews()), Ok(Previews()));
+        var playback = await StartedAsync();
+
+        // The viewer switched profiles meanwhile: the download's previews are not asked for as the other one.
+        _fixture.Silo.ActingProfile = () => "8";
+        await _fixture.AdvanceAsync(TimeSpan.FromMinutes(55));
+        _fixture.Silo.ActingProfile = null;
+        await _fixture.AdvanceAsync(TimeSpan.FromHours(2));
+
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+        Assert.NotNull(playback.Trickplay);
+        Assert.DoesNotContain(_fixture.Harness.Logs.Lines, line => line.StartsWith("Error", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task TheStop_EndsTheRefresh()
+    {
+        ServerHas(trickplay: true);
+        _fixture.Silo.On(HttpMethod.Get, TrickplayPath, Ok(Previews()), Ok(Previews()));
+        var playback = await StartedAsync();
+
+        await playback.StopAsync();
+        await _fixture.AdvanceAsync(TimeSpan.FromHours(2));
+
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+    }
+
+    // Plays the download and waits for its previews to be read.
+    private async Task<LocalPlayback> StartedAsync()
+    {
+        var playback = await _fixture.PlayingAsync();
+        await Until(() => playback.Trickplay is not null, "the previews are read");
+        return playback;
+    }
+
     // The episode's watch detail with the file's chapters and whether it has previews.
     private void ServerHas(string chapters = "", bool trickplay = false, string fileId = "4567")
     {
@@ -84,4 +205,15 @@ public sealed class LocalPlaybackPreviewTests : IAsyncDisposable
         { "index": {{index}}, "title": "Cold Open", "start_seconds": {{start.ToString(CultureInfo.InvariantCulture)}}, "end_seconds": 142.5,
           "source": "embedded", "thumbnail_url": "{{thumbnail}}", "thumbnail_thumbhash": "iC" }
         """;
+
+    // The file's previews, whose addresses expire an hour from now.
+    private string Previews()
+    {
+        string expires = _fixture.Harness.Time.GetUtcNow().AddHours(1).ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
+        return $$"""
+            { "file_id": "4567", "interval_ms": 10000, "thumbnail_width": 320, "thumbnail_height": 180, "tile_columns": 10,
+              "tile_rows": 10, "thumbnail_count": 90, "sheets": [ { "index": 0, "url": "/api/v2/artwork/sheet0?exp=1&sig=a" } ],
+              "expires_at": "{{expires}}" }
+            """;
+    }
 }

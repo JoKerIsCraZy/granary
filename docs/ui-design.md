@@ -2034,8 +2034,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   the server answers), the skip pills, the audio and subtitle menus (the subtitle files
   kept with the download, then the tracks inside the file), the speed, both delays, the sleep timer and the next episode
   are as for a stream. What needs the server's own stream is not there: the settings gear has no Quality and no Version
-  rows, the subtitle menu has no Add Subtitles, there is no Edit markers button, no seek-bar previews and no subtitle
-  sync. The playback info says "Play method: Offline file" (the Apple app's stats' word) and "Protocol:
+  rows, the subtitle menu has no Add Subtitles, there is no Edit markers button and no subtitle sync. The seek bar's
+  bubble shows the picture as for a stream while the server answers and the file the download was made from has
+  previews; without the server it shows the time and chapter only. The playback info says "Play method: Offline file" (the Apple app's stats' word) and "Protocol:
   file" under Player, has no Playback Stream Info, and shows the file under Current Source File as the download's
   manifest describes it: Container, Size, Video codec, Video range type (HDR or SDR), and the codec and channels of the
   audio track that plays. A file that will not play shows the failed screen with Granary's own "This download can't be played. Try

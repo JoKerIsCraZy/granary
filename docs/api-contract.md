@@ -2541,6 +2541,12 @@ presigned S3 URL. Refetch after `expires_at`. Thumbnail `i` is on sheet
 `i / (cols·rows)`, column `i % cols`, row `(i % (cols·rows)) / cols`
 (`silo-server/internal/apiv2/watch_trickplay.go:60-110`). Android does not implement trickplay.
 
+A download (14) reads the previews of its manifest's `media_file_id` with the same request while the server answers and
+the watch detail lists that file with `trickplay_available`, bound to the download's account and profile as its watch
+detail is (`WatchApi.GetTrickplayAsAccountProfileAsync`; refused unsent once another acts, `ProfileChangedException`). The
+id names the catalog file the download was made from, also for a remuxed or transcoded copy, whose timeline is the same
+(the server's `prepare_file.go` cuts nothing).
+
 ## 12. Realtime events
 
 `/api/v2/events/ws` keeps Home and detail views fresh; a minimal client can skip it and refetch on
