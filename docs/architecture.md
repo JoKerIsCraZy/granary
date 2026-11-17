@@ -893,7 +893,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   as the Sleep timer does; an open marker panel stays with its draft. F11 is the window's (`MainWindow.FullScreen.cs`)
   and always works.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
-  transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
+  transcode), in order, empty ones left out, pictures resolved against the server, each with its `thumbnail_thumbhash`
+  for the blur behind the picture; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,
   a pure function of the chapters and the position).
 - **Seek-bar previews** (11.4): for a file with `trickplay_available`, the manifest is read after its first frame and
@@ -2197,7 +2198,12 @@ while the server answers.
   the last two). `SessionId` is null.
 - **What comes from where.** The title's two lines, its length, its audio tracks, chapters and marked parts come from
   the manifest (`PlaybackStarter.EpisodeTitles` and `PlaybackMediaInfo.OfEpisode`/`OfTitle`, shared with a stream's; the
-  first intro and every recap, credits and preview part, as `PlaybackMarker.Of` takes a stream's). The picture for
+  first intro and every recap, credits and preview part, as `PlaybackMarker.Of` takes a stream's). Each chapter carries
+  its picture's blur from the manifest (`thumbnail_thumbhash`; an older manifest without it shows the placeholder). Once
+  the watch detail came (see "What the server adds"), its version whose `file_id` is the manifest's `media_file_id`
+  (the file the download was made from, also for a copy the server converted, whose timeline is the same) lends a chapter
+  its picture, `thumbnail_url`, where the two lists agree: the same index, and starts within a second of each other.
+  After a rescan they can differ, and a chapter that does not match keeps only its blur. The picture for
   Windows' media controls is the poster or still kept in the folder, a `file:` address the app reads from the disk
   (`WindowsMediaControls`), as the Apple app shows its `posterFileURL`. The Discord status words the title from the same
   `PlaybackMediaInfo`; its poster and page come from TMDB through the server, so without a connection it shows without

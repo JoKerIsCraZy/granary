@@ -3110,7 +3110,9 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   `series_title`, `season_number`, `episode_number`, `poster_thumbhash`, `backdrop_thumbhash`, `series_poster_thumbhash`,
   `artwork_urls { poster, backdrop, logo, series_poster }`, `container`, `duration_seconds`, `selected_audio_track_index`,
   `audio_tracks [{ index, title, language, codec, layout, channels, default }]`, `chapters [{ index, title, start_seconds,
-  end_seconds }]`, `marker_segments [{ kind, start_seconds, end_seconds }]`, `subtitles [{ language, title, format, forced,
+  end_seconds, thumbnail_thumbhash }]` (the hash only for the blur in the Chapters menu; the manifest has no chapter
+  picture, so while the server answers the watch detail's `thumbnail_url` of the same chapter of the `media_file_id`
+  file is shown over it, 7.8), `marker_segments [{ kind, start_seconds, end_seconds }]`, `subtitles [{ language, title, format, forced,
   hearing_impaired, external, fetch_url, file_size, revision }]`, `integrity { expected_bytes, media_file_hash }` and
   `manifest_version` (3).
 - `GET /api/v2/downloads/{id}/artwork/{kind}` (`poster`, `backdrop`, `logo`, `series_poster`) and

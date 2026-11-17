@@ -49,7 +49,8 @@ release's section is what its update says it changes (docs/release.md).
   default quality as Silo's iPhone and iPad app does, and its new Storage says what your downloads use, with Remove All
   Downloads, after asking. Signing out leaves your monitors on the server.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
-  tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
+  tracks, subtitles, chapters and Skip Intro (the Chapters menu shows each chapter's blurred picture, and the picture
+  itself while your Silo server is reachable), with your subtitle look, speed and other playback settings as Granary last
   read them, and the next episode plays when it is downloaded too. What you watch offline goes back to your Silo server
   as soon as Granary reaches it again, also after Retry or when the server comes back on; signing out of a server or
   removing it sends what it still can first, and its question says how much progress is lost. On the Downloads page a
@@ -102,6 +103,7 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- **Chapters menu:** a chapter's picture has its blur behind it, so the row is not empty while the picture loads.
 - **Dates and numbers** are written as Windows' regional format writes them, as Silo's web writes them in the browser's:
   on a German Windows an episode aired on "5. Nov. 2026" and the calendar's air times and Ends say "21:00". Dates read
   as the web reads them too: an episode's air date is "Nov 5, 2026" in American English, the
