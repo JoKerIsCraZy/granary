@@ -893,11 +893,14 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   as the Sleep timer does; an open marker panel stays with its draft. F11 is the window's (`MainWindow.FullScreen.cs`)
   and always works.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
-  transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
+  transcode), in order, empty ones left out, pictures resolved against the server, each with its `thumbnail_thumbhash`
+  for the blur behind the picture; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,
   a pure function of the chapters and the position).
 - **Seek-bar previews** (11.4): for a file with `trickplay_available`, the manifest is read after its first frame and
-  again 5 minutes before its sheets expire (a minute after a transient failure; a 404 means none). Thumbnail `i` of
+  again 5 minutes before its sheets expire (a minute after a transient failure; a 404 means none). `TrickplayReads`
+  keeps these reads for one file, for a stream and for a download alike (see "Playing a download"); disposing it ends
+  them, and calls off a read on its way. Thumbnail `i` of
   `interval_ms` sits on sheet `i / (cols·rows)`; the seek bar keeps three sheets decoded at the bubble's width and
   loads the next one ahead. Markers carry their segment's picture for the bubble; it plays no part in their equality.
 - **Settings pages** (6.6): `ProfileSettings` reads the page's keys in one batch, key by key when an older server
@@ -2191,11 +2194,18 @@ while the server answers.
   volume, full screen kept for the next title, Windows' media controls, the taskbar's buttons and the Discord status. It
   loads the media file straight into the engine (`MediaSource.Local`, no proxy route, no headers) and opens no playback
   session, online or not, as both apps: the server's Activity page does not list it, and there is no quality, no other
-  version, no trickplay, no subtitle sync, no Add Subtitles and no marker editing (`PlayingFileId` is null, which hides
-  the last two). `SessionId` is null.
+  version, no subtitle sync, no Add Subtitles and no marker editing (`PlayingFileId` is null, which hides the last two).
+  `SessionId` is null. Seek-bar previews come only while the server answers (see "What the server adds"): the manifest
+  carries none, and pictures taken from the file itself, as the Apple app does, or previews kept with the download are
+  not done yet (#169).
 - **What comes from where.** The title's two lines, its length, its audio tracks, chapters and marked parts come from
   the manifest (`PlaybackStarter.EpisodeTitles` and `PlaybackMediaInfo.OfEpisode`/`OfTitle`, shared with a stream's; the
-  first intro and every recap, credits and preview part, as `PlaybackMarker.Of` takes a stream's). The picture for
+  first intro and every recap, credits and preview part, as `PlaybackMarker.Of` takes a stream's). Each chapter carries
+  its picture's blur from the manifest (`thumbnail_thumbhash`; an older manifest without it shows the placeholder). Once
+  the watch detail came (see "What the server adds"), its version whose `file_id` is the manifest's `media_file_id`
+  (the file the download was made from, also for a copy the server converted, whose timeline is the same) lends a chapter
+  its picture, `thumbnail_url`, where the two lists agree: the same index, and starts within a second of each other.
+  After a rescan they can differ, and a chapter that does not match keeps only its blur. The picture for
   Windows' media controls is the poster or still kept in the folder, a `file:` address the app reads from the disk
   (`WindowsMediaControls`), as the Apple app shows its `posterFileURL`. The Discord status words the title from the same
   `PlaybackMediaInfo`; its poster and page come from TMDB through the server, so without a connection it shows without
@@ -2212,6 +2222,17 @@ while the server answers.
   account and profile are no longer the active ones as it starts (another became active between the two), nothing is
   asked, since another server's ids may be the same too, and settings that answered for another profile that became
   active during the read are not taken: the download plays with the defaults.
+- **Seek-bar previews while the server answers.** When the watch detail came and its version whose `file_id` is the
+  manifest's `media_file_id` has `trickplay_available`, `LocalPlayback` reads that file's previews (11.4) through
+  `TrickplayReads`, as a stream does: again 5 minutes before their sheets expire, a minute after a transient failure,
+  none after a 404. The file is the one the download was made from, also for a copy the server converted: the server
+  cuts nothing when it prepares a download, so the timelines match. The reads are the download's account and profile's
+  (`WatchApi.GetTrickplayAsAccountProfileAsync`), as the watch detail's: once another profile acts on the server, the
+  next read is refused unsent and the reads end quietly, keeping the previews already read until the play ends. The stop
+  (or a dispose) ends the reads and their timer. Without the server there is no watch detail, so nothing is asked and the
+  seek bar's bubble shows the time only. Silo's apps show no server previews for a download: Android none, and the Apple
+  app only stills it takes from the file (`PlayerViewModel.loadServerTrickplay` needs `trickplayAvailable`, which its
+  offline `FileVersion` never sets).
 - **Without the server.** The profile's own settings still hold, as this PC last read them. Every answer
   `PlaybackPreferencesReader` gets, for a stream or a download, is kept by `KeptPlaybackSettings` in
   `playback-settings.json` in the data folder, for the server's entry, the account and the profile, one batch of keys

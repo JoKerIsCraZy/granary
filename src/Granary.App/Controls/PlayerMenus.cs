@@ -48,4 +48,7 @@ public static class PlayerMenus
 
     // 80 by 48 on the row; a chapter without a picture keeps the placeholder.
     public static ImageSource? ChapterThumbnail(Uri? url) => Artwork.Load(url, 80);
+
+    // The picture's blur behind it, and in its place while it loads or when there is none (a download without the server).
+    public static ImageSource? ChapterBlur(string? hash) => Thumbhashes.Get(hash);
 }

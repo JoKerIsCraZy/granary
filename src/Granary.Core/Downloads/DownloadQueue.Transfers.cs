@@ -658,7 +658,7 @@ public sealed partial class DownloadQueue
     {
         try
         {
-            await _api.ReportAsync(server, key.Scope.ProfileId, key.Id, report, stop).ConfigureAwait(false);
+            await _api.ReportAsync(server, key.Scope.AccountId, key.Scope.ProfileId, key.Id, report, stop).ConfigureAwait(false);
         }
         catch (SiloApiException ex) when (IsFinal(ex))
         {

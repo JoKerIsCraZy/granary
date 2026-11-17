@@ -327,7 +327,7 @@ public sealed partial class SeriesMonitors
         {
             for (int page = 0; page < MaxPages; page++)
             {
-                var read = await _downloads.ListAsync(server, scope.ProfileId, cursor, cancellationToken).ConfigureAwait(false);
+                var read = await _downloads.ListAsync(server, scope.AccountId, scope.ProfileId, cursor, cancellationToken).ConfigureAwait(false);
                 entries.AddRange(read.Items);
                 if (read.Page is not { HasMore: true })
                 {
@@ -356,7 +356,7 @@ public sealed partial class SeriesMonitors
         OfflineManifest manifest;
         try
         {
-            manifest = OfflineManifest.Read(await _downloads.GetManifestAsync(server, scope.ProfileId, entry.Id, cancellationToken).ConfigureAwait(false));
+            manifest = OfflineManifest.Read(await _downloads.GetManifestAsync(server, scope.AccountId, scope.ProfileId, entry.Id, cancellationToken).ConfigureAwait(false));
         }
         catch (Exception ex) when (IsServerFailure(ex, cancellationToken))
         {

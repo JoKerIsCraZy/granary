@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Downloads;
 
-// The tracks of a download (docs/architecture.md, "Playing a download"). Audio tracks, chapters and marked parts are the
-// manifest's. Subtitles are the files kept beside the media (the manifest's list, each read into the player when it is
+// The tracks of a download (docs/architecture.md, "Playing a download"). Audio tracks and marked parts are the manifest's,
+// and so are the chapters (LocalPlayback.Previews). Subtitles are the files kept beside the media (the manifest's list, each read into the player when it is
 // picked, as Silo's apps side-load them) and, once the file plays, the tracks the file carries itself, which no manifest
 // lists. The subtitle a title starts with is the one a stream would start with: the title page's pick, else the automatic
 // choice from the profile's preference (SubtitleAutoSelection), over these tracks.
@@ -51,12 +51,6 @@ public sealed partial class LocalPlayback
     public IReadOnlyList<SubtitleInventoryItem> SubtitleTracks => [.. _subtitles.Select(s => s.Item)];
 
     public string? SubtitleTrack => _subtitle;
-
-    public IReadOnlyList<PlaybackChapter> Chapters =>
-    [
-        .. _manifest.Chapters.Where(c => c.EndSeconds > c.StartSeconds).OrderBy(c => c.StartSeconds)
-            .Select(c => new PlaybackChapter(c.Title ?? "", c.StartSeconds, c.EndSeconds, null)),
-    ];
 
     /// <summary>
     /// The marked parts the manifest lists, as a stream's (<see cref="PlaybackMarker.Of"/>): the first intro, and every recap,

@@ -121,7 +121,9 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         Assert.True(folderGoneFirst);
         Assert.Null(_h.Find("dl_1"));
         Assert.Empty(_h.Store.PendingDeletes(Scope7));
-        Assert.Equal("7", _h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1"))[0].AsProfile);
+        Assert.Equal(("7", "1"), (_h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1"))[0].AsProfile, _h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1"))[0].AsAccount));
+        // The registry read that found it revoked goes as the account and profile too.
+        Assert.All(_h.Silo.SentTo(HttpMethod.Get, ListPath), read => Assert.Equal(("7", "1"), (read.AsProfile, read.AsAccount)));
     }
 
     [Fact]

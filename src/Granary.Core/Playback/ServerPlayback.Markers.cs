@@ -19,7 +19,8 @@ public sealed partial class ServerPlayback
     // The server's list: mpv reads none through remux or transcode routes (11.3).
     public IReadOnlyList<PlaybackChapter> Chapters => PlayingVersion is { } version && _context is { } context
         ? [.. version.Chapters.Where(c => c.EndSeconds > c.StartSeconds).OrderBy(c => c.StartSeconds)
-            .Select(c => new PlaybackChapter(c.Title, c.StartSeconds, c.EndSeconds, Api.Images.ArtworkUrl.Resolve(context.Server.BaseUri, c.ThumbnailUrl)))]
+            .Select(c => new PlaybackChapter(c.Title, c.StartSeconds, c.EndSeconds, Api.Images.ArtworkUrl.Resolve(context.Server.BaseUri, c.ThumbnailUrl),
+                c.ThumbnailThumbhash))]
         : [];
 
     public async Task SaveMarkersAsync(IReadOnlyDictionary<string, WatchMarker?> changes, CancellationToken cancellationToken = default)

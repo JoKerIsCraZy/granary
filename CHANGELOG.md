@@ -49,7 +49,8 @@ release's section is what its update says it changes (docs/release.md).
   default quality as Silo's iPhone and iPad app does, and its new Storage says what your downloads use, with Remove All
   Downloads, after asking. Signing out leaves your monitors on the server.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
-  tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
+  tracks, subtitles, chapters and Skip Intro (the Chapters menu shows each chapter's blurred picture, and the picture
+  itself while your Silo server is reachable; the seek bar shows its preview pictures then too), with your subtitle look, speed and other playback settings as Granary last
   read them, and the next episode plays when it is downloaded too. What you watch offline goes back to your Silo server
   as soon as Granary reaches it again, also after Retry or when the server comes back on; signing out of a server or
   removing it sends what it still can first, and its question says how much progress is lost. On the Downloads page a
@@ -102,6 +103,7 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- **Chapters menu:** a chapter's picture has its blur behind it, so the row is not empty while the picture loads.
 - **Dates and numbers** are written as Windows' regional format writes them, as Silo's web writes them in the browser's:
   on a German Windows an episode aired on "5. Nov. 2026" and the calendar's air times and Ends say "21:00". Dates read
   as the web reads them too: an episode's air date is "Nov 5, 2026" in American English, the
@@ -142,6 +144,9 @@ release's section is what its update says it changes (docs/release.md).
   screen draws it, as Silo's web does, where it came at a card's size and was stretched.
 - The Settings sidebar scrolls in a short window, as on Silo's web, so its last pages, such as About, can be reached with
   the mouse, the keyboard and a controller.
+- Downloads ask your Silo server only as the account they belong to, also when they read what the server has, fetch a
+  file or delete one: with two accounts signed in on the same server whose profiles share an id, one account's downloads
+  could be read or deleted under the other.
 - A player button's grey box shows only while the mouse is on it: the times at the bottom left kept it after a click once
   the controls had hidden, with their text already back to grey.
 

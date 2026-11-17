@@ -95,7 +95,8 @@ public sealed record OfflineManifest
 /// <summary>An audio track of the delivered file; <see cref="Index"/> is its position among the file's audio tracks.</summary>
 public sealed record OfflineAudioTrack(int Index, string? Title, string? Language, string? Codec, string? Layout, int? Channels, bool Default);
 
-public sealed record OfflineChapter(int Index, string? Title, double StartSeconds, double EndSeconds);
+/// <summary>A chapter of the delivered file; <see cref="ThumbnailThumbhash"/> is its picture's blur, absent from older manifests.</summary>
+public sealed record OfflineChapter(int Index, string? Title, double StartSeconds, double EndSeconds, string? ThumbnailThumbhash = null);
 
 /// <summary>One marker range: <c>intro</c>, <c>credits</c>, <c>recap</c> or <c>preview</c>.</summary>
 public sealed record OfflineMarker(string Kind, double StartSeconds, double EndSeconds);
