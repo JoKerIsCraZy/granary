@@ -107,6 +107,7 @@ public sealed class DownloadManagerTests : IAsyncDisposable
         var record = Assert.Single(_h.Store.All).Record;
         Assert.Equal(("dl_9", DownloadState.Preparing, "ep_5"), (record.DownloadId, record.State, record.MediaItemId));
         Assert.Single(CreatesSent);
+        Assert.Equal(("7", "1"), (_h.Silo.SentTo(HttpMethod.Get, ListPath).Single().AsProfile, _h.Silo.SentTo(HttpMethod.Get, ListPath).Single().AsAccount));
     }
 
     [Fact]

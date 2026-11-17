@@ -37,30 +37,35 @@ public sealed class DownloadsApi(SiloHttp http, TimeProvider? time = null)
         http.SendAsAccountProfileAsync(HttpMethod.Post, server, "api/v2/downloads", accountId, profileId, body,
             DownloadsJsonContext.Default.CreateDownloadBody, DownloadsJsonContext.Default.DownloadCreated, cancellationToken);
 
-    /// <summary>One page of this profile's and PC's entries, newest first; <paramref name="cursor"/> continues a listing.</summary>
-    public Task<DownloadEntryPage> ListAsync(Uri server, string profileId, string? cursor, CancellationToken cancellationToken)
+    /// <summary>
+    /// One page of this profile's and PC's entries, newest first; <paramref name="cursor"/> continues a listing. Like every call
+    /// about an entry below, it goes only as account <paramref name="accountId"/>'s profile <paramref name="profileId"/>: another
+    /// account signed in on the same server, also with a profile of the same id, never answers for it.
+    /// </summary>
+    public Task<DownloadEntryPage> ListAsync(Uri server, string accountId, string profileId, string? cursor, CancellationToken cancellationToken)
     {
         string path = SiloHttp.Invariant($"api/v2/downloads?limit={PageLimit}") + (cursor is null ? "" : "&cursor=" + SiloHttp.Escape(cursor));
-        return http.GetAsProfileAsync(server, path, profileId, DownloadsJsonContext.Default.DownloadEntryPage, cancellationToken);
+        return http.GetAsAccountProfileAsync(server, path, accountId, profileId, DownloadsJsonContext.Default.DownloadEntryPage, cancellationToken);
     }
 
     /// <summary>Tells the server what the PC holds now; an older or equal event leaves the entry as it is (200 either way).</summary>
-    public Task<DownloadEntry> ReportAsync(Uri server, string profileId, string downloadId, DownloadStatusEvent statusEvent,
+    public Task<DownloadEntry> ReportAsync(Uri server, string accountId, string profileId, string downloadId, DownloadStatusEvent statusEvent,
         CancellationToken cancellationToken) =>
-        http.SendAsProfileAsync(HttpMethod.Patch, server, Entry(downloadId), profileId, statusEvent, DownloadsJsonContext.Default.DownloadStatusEvent,
-            DownloadsJsonContext.Default.DownloadEntry, cancellationToken);
+        http.SendAsAccountProfileAsync(HttpMethod.Patch, server, Entry(downloadId), accountId, profileId, statusEvent,
+            DownloadsJsonContext.Default.DownloadStatusEvent, DownloadsJsonContext.Default.DownloadEntry, cancellationToken);
 
     /// <summary>Asks for a finished download's prepared file again, after the file route said <c>prepared_file_expired</c>.</summary>
-    public Task<DownloadEntry> PrepareAsync(Uri server, string profileId, string downloadId, CancellationToken cancellationToken) =>
-        http.SendAsProfileAsync(HttpMethod.Post, server, Entry(downloadId) + "/prepare", profileId, DownloadsJsonContext.Default.DownloadEntry,
-            cancellationToken);
+    public Task<DownloadEntry> PrepareAsync(Uri server, string accountId, string profileId, string downloadId, CancellationToken cancellationToken) =>
+        http.SendAsAccountProfileAsync(HttpMethod.Post, server, Entry(downloadId) + "/prepare", accountId, profileId,
+            DownloadsJsonContext.Default.DownloadEntry, cancellationToken);
 
     /// <summary>Removes the entry (204). One the server no longer has (404) is gone already, which is what was asked.</summary>
-    public async Task DeleteAsync(Uri server, string profileId, string downloadId, CancellationToken cancellationToken)
+    public async Task DeleteAsync(Uri server, string accountId, string profileId, string downloadId, CancellationToken cancellationToken)
     {
         try
         {
-            await http.SendAsProfileAsync(HttpMethod.Delete, server, Entry(downloadId), profileId, cancellationToken).ConfigureAwait(false);
+            await http.SendAsAccountProfileAsync(HttpMethod.Delete, server, Entry(downloadId), accountId, profileId, cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (SiloApiException ex) when (ex.Status == (int)HttpStatusCode.NotFound)
         {
@@ -72,13 +77,13 @@ public sealed class DownloadsApi(SiloHttp http, TimeProvider? time = null)
     /// <exception cref="HttpRequestException">
     /// <see cref="HttpRequestError.ResponseEnded"/>: no byte came for <see cref="ManifestStallTimeout"/>.
     /// </exception>
-    public async Task<byte[]> GetManifestAsync(Uri server, string profileId, string downloadId, CancellationToken cancellationToken)
+    public async Task<byte[]> GetManifestAsync(Uri server, string accountId, string profileId, string downloadId, CancellationToken cancellationToken)
     {
         using var stall = new CancellationTokenSource(ManifestStallTimeout, _time);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, stall.Token);
         try
         {
-            return await ReadManifestAsync(server, profileId, downloadId, stall, linked.Token).ConfigureAwait(false);
+            return await ReadManifestAsync(server, accountId, profileId, downloadId, stall, linked.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -86,11 +91,11 @@ public sealed class DownloadsApi(SiloHttp http, TimeProvider? time = null)
         }
     }
 
-    private async Task<byte[]> ReadManifestAsync(Uri server, string profileId, string downloadId, CancellationTokenSource stall,
+    private async Task<byte[]> ReadManifestAsync(Uri server, string accountId, string profileId, string downloadId, CancellationTokenSource stall,
         CancellationToken cancellationToken)
     {
-        using var response = await http.OpenAsProfileAsync(server, Entry(downloadId) + "/manifest", profileId, null, null, cancellationToken)
-            .ConfigureAwait(false);
+        using var response = await http.OpenAsAccountProfileAsync(server, Entry(downloadId) + "/manifest", accountId, profileId, null, null,
+            cancellationToken).ConfigureAwait(false);
         await SiloHttp.EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
         if (response.Content.Headers.ContentLength > MaxManifestBytes)
         {
@@ -119,8 +124,9 @@ public sealed class DownloadsApi(SiloHttp http, TimeProvider? time = null)
     /// A download's artwork or subtitle at <paramref name="relativePath"/> (from <see cref="AssetPath"/>), whatever its status.
     /// <paramref name="etag"/> is the version kept: an unchanged subtitle answers 304.
     /// </summary>
-    public Task<HttpResponseMessage> OpenAssetAsync(Uri server, string profileId, string relativePath, string? etag, CancellationToken cancellationToken) =>
-        http.OpenAsProfileAsync(server, relativePath, profileId, null, etag, cancellationToken);
+    public Task<HttpResponseMessage> OpenAssetAsync(Uri server, string accountId, string profileId, string relativePath, string? etag,
+        CancellationToken cancellationToken) =>
+        http.OpenAsAccountProfileAsync(server, relativePath, accountId, profileId, null, etag, cancellationToken);
 
     /// <summary>
     /// The media file, whatever its status: from <paramref name="range"/>'s offset to the end with <c>If-Range</c>, or whole.
@@ -128,9 +134,9 @@ public sealed class DownloadsApi(SiloHttp http, TimeProvider? time = null)
     /// local network that is the local route. The caller reads and disposes the answer.
     /// </summary>
     /// <exception cref="ArgumentException"><paramref name="range"/>'s validator is not one <c>If-Range</c> takes.</exception>
-    public Task<HttpResponseMessage> OpenFileAsync(Uri server, string profileId, string downloadId, ByteRange? range,
+    public Task<HttpResponseMessage> OpenFileAsync(Uri server, string accountId, string profileId, string downloadId, ByteRange? range,
         CancellationToken cancellationToken) =>
-        http.OpenAsProfileAsync(server, Entry(downloadId) + "/file", profileId, range, null, cancellationToken);
+        http.OpenAsAccountProfileAsync(server, Entry(downloadId) + "/file", accountId, profileId, range, null, cancellationToken);
 
     /// <summary>
     /// A manifest's <c>artwork_urls</c> or <c>subtitles[].fetch_url</c> as a path under the saved address, or null when it is

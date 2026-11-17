@@ -8,10 +8,14 @@ using Granary.Tests.Profiles;
 
 namespace Granary.Tests.Downloads;
 
-/// <summary>The server's downloads calls (downloads-api.md, sections 3 to 6), each sent as the profile it was made for.</summary>
+/// <summary>
+/// The server's downloads calls (downloads-api.md, sections 3 to 6), each sent as the profile it was made for, and every one of
+/// an entry's as its account too.
+/// </summary>
 public sealed class DownloadsApiTests
 {
     private const string Profile = "7";
+    private const string Account = "1";
     private const string FilePath = "api/v2/downloads/dl_1/file";
 
     private readonly ScriptedSilo _silo = new();
@@ -84,7 +88,7 @@ public sealed class DownloadsApiTests
     }
 
     [Fact]
-    public async Task EveryCall_GoesAsTheProfileItWasMadeFor()
+    public async Task EveryCall_GoesAsTheProfileItWasMadeFor_AndAnEntrysAsItsAccountToo()
     {
         string entry = DownloadPayloads.Entry("dl_1", "ready");
         _silo.On(HttpMethod.Get, "api/v2/capabilities/downloads", ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Capability()))
@@ -99,17 +103,19 @@ public sealed class DownloadsApiTests
         var server = ScriptedSilo.Base;
 
         await Api.GetCapabilityAsync(server, Profile, Token);
-        await Api.CreateAsync(server, "1", Profile, new CreateDownloadBody { ContentId = "mv_1", Quality = DownloadQualities.Original, ExpectedRevision = 0 }, Token);
-        await Api.ListAsync(server, Profile, null, Token);
-        await Api.ReportAsync(server, Profile, "dl_1", new DownloadStatusEvent(DownloadStatuses.Downloading, DateTimeOffset.UnixEpoch, 1), Token);
-        await Api.PrepareAsync(server, Profile, "dl_1", Token);
-        await Api.DeleteAsync(server, Profile, "dl_1", Token);
-        await Api.GetManifestAsync(server, Profile, "dl_1", Token);
-        (await Api.OpenAssetAsync(server, Profile, "api/v2/downloads/dl_1/artwork/poster", "\"a0\"", Token)).Dispose();
-        (await Api.OpenFileAsync(server, Profile, "dl_1", null, Token)).Dispose();
+        await Api.CreateAsync(server, Account, Profile, new CreateDownloadBody { ContentId = "mv_1", Quality = DownloadQualities.Original, ExpectedRevision = 0 }, Token);
+        await Api.ListAsync(server, Account, Profile, null, Token);
+        await Api.ReportAsync(server, Account, Profile, "dl_1", new DownloadStatusEvent(DownloadStatuses.Downloading, DateTimeOffset.UnixEpoch, 1), Token);
+        await Api.PrepareAsync(server, Account, Profile, "dl_1", Token);
+        await Api.DeleteAsync(server, Account, Profile, "dl_1", Token);
+        await Api.GetManifestAsync(server, Account, Profile, "dl_1", Token);
+        (await Api.OpenAssetAsync(server, Account, Profile, "api/v2/downloads/dl_1/artwork/poster", "\"a0\"", Token)).Dispose();
+        (await Api.OpenFileAsync(server, Account, Profile, "dl_1", null, Token)).Dispose();
 
         Assert.Equal(9, _silo.Sent.Count);
         Assert.All(_silo.Sent, sent => Assert.Equal((SiloAuth.Profile, Profile), (sent.Auth, sent.AsProfile)));
+        // What the server offers the profile is no entry's: only it goes without the account.
+        Assert.Equal([null, Account, Account, Account, Account, Account, Account, Account, Account], _silo.Sent.Select(r => r.AsAccount));
         Assert.Equal("?limit=100", _silo.SentTo(HttpMethod.Get, "api/v2/downloads").Single().Uri.Query);
         Assert.Equal("\"a0\"", _silo.SentTo(HttpMethod.Get, "api/v2/downloads/dl_1/artwork/poster").Single().IfNoneMatch);
         Assert.Null(_silo.SentTo(HttpMethod.Get, FilePath).Single().Range);
@@ -121,7 +127,7 @@ public sealed class DownloadsApiTests
         _silo.On(HttpMethod.Get, "api/v2/downloads",
             ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Page("next/page=", DownloadPayloads.Entry("dl_2", "preparing"))));
 
-        var page = await Api.ListAsync(ScriptedSilo.Base, Profile, "abc+/=", Token);
+        var page = await Api.ListAsync(ScriptedSilo.Base, Account, Profile, "abc+/=", Token);
 
         Assert.Equal("?limit=100&cursor=abc%2B%2F%3D", Assert.Single(_silo.Sent).Uri.Query);
         Assert.Equal(new DownloadPageInfo(true, "next/page="), page.Page);
@@ -133,7 +139,7 @@ public sealed class DownloadsApiTests
     {
         _silo.On(HttpMethod.Get, "api/v2/downloads", ScriptedSilo.Json(HttpStatusCode.OK, "{ \"items\": [], \"skipped\": [], \"page\": {} }"));
 
-        var failure = await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Profile, "abc", Token));
+        var failure = await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Account, Profile, "abc", Token));
         Assert.Equal(HttpRequestError.InvalidResponse, failure.HttpRequestError);
     }
 
@@ -143,7 +149,7 @@ public sealed class DownloadsApiTests
         _silo.On(HttpMethod.Get, FilePath,
             DownloadPayloads.Bytes(HttpStatusCode.PartialContent, DownloadPayloads.Source(10), "\"v1\"", 5_000_000_000, 5_000_000_010));
 
-        using var response = await Api.OpenFileAsync(ScriptedSilo.Base, Profile, "dl_1", new ByteRange(5_000_000_000, "\"v1\""), Token);
+        using var response = await Api.OpenFileAsync(ScriptedSilo.Base, Account, Profile, "dl_1", new ByteRange(5_000_000_000, "\"v1\""), Token);
 
         var sent = Assert.Single(_silo.Sent);
         Assert.Equal("bytes=5000000000-", sent.Range);
@@ -159,7 +165,7 @@ public sealed class DownloadsApiTests
         _silo.On(HttpMethod.Get, "api/v2/downloads",
             ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_1", "ready", size: 8_589_934_592))));
 
-        var page = await Api.ListAsync(ScriptedSilo.Base, Profile, null, Token);
+        var page = await Api.ListAsync(ScriptedSilo.Base, Account, Profile, null, Token);
 
         Assert.Equal(8_589_934_592L, Assert.Single(page.Items).FileSize);
     }
@@ -180,7 +186,7 @@ public sealed class DownloadsApiTests
     public async Task OpenFile_WithAnUnreadableValidator_IsRefusedUnsent()
     {
         var error = await Assert.ThrowsAsync<ArgumentException>(() =>
-            Api.OpenFileAsync(ScriptedSilo.Base, Profile, "dl_1", new ByteRange(1000, "garbage"), Token));
+            Api.OpenFileAsync(ScriptedSilo.Base, Account, Profile, "dl_1", new ByteRange(1000, "garbage"), Token));
 
         Assert.Equal("range", error.ParamName);
         Assert.Empty(_silo.Sent);
@@ -195,7 +201,7 @@ public sealed class DownloadsApiTests
             () => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(body) }));
         var api = new DownloadsApi(_silo.Http, time);
 
-        var read = api.GetManifestAsync(ScriptedSilo.Base, Profile, "dl_1", Token);
+        var read = api.GetManifestAsync(ScriptedSilo.Base, Account, Profile, "dl_1", Token);
         await body.Stalling.WaitAsync(Token);
         time.Advance(DownloadsApi.ManifestStallTimeout - TimeSpan.FromSeconds(1));
 
@@ -249,7 +255,7 @@ public sealed class DownloadsApiTests
         string json = DownloadPayloads.Manifest("dl_1", "mkv", 8_589_934_592);
         _silo.On(HttpMethod.Get, "api/v2/downloads/dl_1/manifest", ScriptedSilo.Json(HttpStatusCode.OK, json));
 
-        byte[] bytes = await Api.GetManifestAsync(ScriptedSilo.Base, Profile, "dl_1", Token);
+        byte[] bytes = await Api.GetManifestAsync(ScriptedSilo.Base, Account, Profile, "dl_1", Token);
         var manifest = OfflineManifest.Read(bytes);
 
         Assert.Equal(DownloadPayloads.Utf8(json), bytes);
@@ -273,7 +279,7 @@ public sealed class DownloadsApiTests
         string huge = $$"""{ "download_id": "dl_1", "overview": "{{new string('x', DownloadsApi.MaxManifestBytes)}}" }""";
         _silo.On(HttpMethod.Get, "api/v2/downloads/dl_1/manifest", ScriptedSilo.Json(HttpStatusCode.OK, huge));
 
-        var error = await Assert.ThrowsAsync<SiloApiException>(() => Api.GetManifestAsync(ScriptedSilo.Base, Profile, "dl_1", Token));
+        var error = await Assert.ThrowsAsync<SiloApiException>(() => Api.GetManifestAsync(ScriptedSilo.Base, Account, Profile, "dl_1", Token));
 
         Assert.Equal(413, error.Status);
     }
@@ -284,8 +290,8 @@ public sealed class DownloadsApiTests
         _silo.On(HttpMethod.Delete, "api/v2/downloads/dl_1", ScriptedSilo.Problem(404, ProblemCodes.NotFound));
         _silo.On(HttpMethod.Delete, "api/v2/downloads/dl_2", ScriptedSilo.Problem(503, ProblemCodes.DependencyUnavailable));
 
-        await Api.DeleteAsync(ScriptedSilo.Base, Profile, "dl_1", Token);
-        var error = await Assert.ThrowsAsync<SiloApiException>(() => Api.DeleteAsync(ScriptedSilo.Base, Profile, "dl_2", Token));
+        await Api.DeleteAsync(ScriptedSilo.Base, Account, Profile, "dl_1", Token);
+        var error = await Assert.ThrowsAsync<SiloApiException>(() => Api.DeleteAsync(ScriptedSilo.Base, Account, Profile, "dl_2", Token));
 
         Assert.Equal(503, error.Status);
     }
