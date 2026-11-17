@@ -6,149 +6,56 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-17
+
 ### Added
 
-- **Search in Settings:** a search box at the top of the Settings sidebar, as on Silo's web. Typing narrows the sidebar
-  to the pages whose name, description or settings match, in the language on screen (English words work too), and says
-  how many match or "No matching settings". A page opened from it comes up at the setting that matched; a click, Enter
-  or a remote's OK puts the focus on it. Ctrl+F jumps to the box, and Escape empties it.
-- **Granary in seven languages:** English, Spanish, German, French, Brazilian Portuguese, Japanese and Simplified
-  Chinese, in the words and translations of Silo's web and apps where they have the text. Granary follows the language
-  your profile chose in any Silo app, else Windows' languages, else English. Settings → Accessibility → Language
-  chooses it for your profile, as on Silo's web: Match device or a language by its own name. A new choice shows the
-  next time Granary starts. Arabic is not offered yet: it needs a layout that runs right to left, so a profile or a
-  Windows set to Arabic gets the next language in line.
-- **Downloads:** download a film, an episode, a whole season or a whole series from its ⋯ menu, in the original quality
-  or a smaller one your Silo server offers, and manage them on the new Downloads page: your films and series as cards, as in a library,
-  each with its size and where it stands, and while it downloads a bar, its speed and the time left; a series' card
-  opens its episodes by season. Each card's menu pauses, resumes, retries and deletes, and the top says the space they
-  take; a download you delete while it still comes leaves this PC at once. The sidebar's Downloads shows how many are
-  coming, with a small dot that pulses slowly while one downloads, and Granary's taskbar button shows how far they are
-  (yellow while they are all paused, and not while a title plays). When downloads finish or fail, Granary says so
-  ("Example Movie is ready to watch offline"): in its window while it is in front, else as a Windows notification with
-  Play and Open Downloads; a season or a series that finishes together is one message. Settings → Downloads → Notify
-  when downloads finish turns these messages off, and Download settings on the Downloads page leads there. Downloads
-  wait on a metered connection unless Settings → Downloads allows them, and say so ("Paused · metered connection"), also
-  one that was downloading when Granary closed; they come two at a time unless Settings → Downloads →
-  Simultaneous Downloads says from one to four, and carry on where they stopped when Granary starts again. X on a controller plays a
-  downloaded card, and a series' card its next episode on this PC, as its play button does; the bumpers go between Films
-  and Series, and between a series' seasons. Settings → Downloads → Drive puts new downloads on another drive, also with a
-  controller, which Windows' folder picker behind Change does not take. Signing out of a server or
-  removing it deletes its downloads after asking. Your Silo server has to allow downloads.
-- **Monitored series:** a series' Download, from its page or its ⋯ menu, has One Time and Monitor: Monitor keeps new
-  episodes coming to this PC as they air, from all episodes, future ones or the last season on, in the quality you pick
-  when your Silo server allows it, with Delete after watching and a storage limit; for a monitored series it saves what
-  you change or stops monitoring, after asking. The Downloads page lists your monitored series with what each takes and
-  what comes next ("Episode 6 on Thursday"). A monitored series brings its new episodes by itself: Granary asks the
-  server for them when it starts, when you switch profiles, when a notification comes and every four hours, and downloads
-  what the server registered like any other download, in episode order. A monitor with Delete after watching deletes
-  the episodes you finished at the end of each of these runs, never the one that plays. A monitor's storage limit holds
-  back the episodes that would pass it, and so does Settings → Downloads → Storage limit for downloads, a slider, which
-  the download dialog keeps to as well; nothing is deleted to make room. Settings → Downloads → Monitoring Defaults says
-  what a new monitor starts with: Delete after watching, and a storage limit. Settings → Downloads also explains the
-  default quality as Silo's iPhone and iPad app does, and its new Storage says what your downloads use, with Remove All
-  Downloads, after asking. Signing out leaves your monitors on the server.
-- **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
-  tracks, subtitles, chapters and Skip Intro (the Chapters menu shows each chapter's blurred picture, and the picture
-  itself while your Silo server is reachable; the seek bar shows its preview pictures then too), with your subtitle look, speed and other playback settings as Granary last
-  read them, and the next episode plays when it is downloaded too. What you watch offline goes back to your Silo server
-  as soon as Granary reaches it again, also after Retry or when the server comes back on; signing out of a server or
-  removing it sends what it still can first, and its question says how much progress is lost. On the Downloads page a
-  downloaded card plays at a click and shows how much of it you watched as Continue Watching does ("18 min left", or
-  Watched), also without your Silo server; it says Missing file for one whose file was deleted outside Granary, and
-  Reclaim Watched deletes the downloads you have finished to free up space, after asking, unless Settings → Downloads →
-  Keep watched downloads is on.
-- **Offline start:** when Granary starts and can't reach your Silo server, also when a proxy or a network's sign-in page
-  answers in its place, it opens your downloads instead of an error, with Retry.
-- **Download from any card:** the ⋯ menu of a film's, an episode's, a season's or a series' card has Download wherever the
-  card shows, on Home, in a library, in search, in a collection and on a title's page. Download series takes every
-  season's episodes that are not on this PC yet, the specials last, and says how many they are and the space they need
-  before it starts; Cancel stops a long season or series after the episode under way. A title on this PC shows how
-  its download stands there instead, which opens the Downloads page, with Delete download beside it.
-- **Only unwatched episodes:** when you download a season or a whole series and you have watched some of its episodes,
-  the download dialog has Only unwatched episodes, on unless you watched every one of them: it leaves out the episodes
-  you watched to the end and keeps the one you are in the middle of, so at episode 7 you get 7 to the end. The episodes
-  and the space the dialog shows follow the switch; turn it off to download the watched ones too. Monitoring keeps its
-  own rules.
-- **One episode or one season from a series:** a series' download dialog offers, as Silo's iPhone and iPad app does, the
-  episode you would watch next ("S01E07 · Pilot", "This episode only", or "On this PC" when it is here already), the
-  season it is in and All episodes. It opens on that episode, or on the first of the others when it is here already.
-  Only unwatched episodes works for the season and for all episodes.
-- **Your Silo server's download limit:** when the limit your Silo server sets for an account stops a season or a whole
-  series part-way, the rest of its episodes wait on this PC, also across restarts, and start in order once the server
-  allows more: when one of your downloads is ready on the server, or your Silo server has heard that you deleted one, or
-  after a wait that grows while the server still says no (half an hour at most). An episode the server keeps refusing no
-  longer holds the others back. The download dialog says how many of the series' episodes wait, in words that name the
-  limit, with Done; Cancel while it starts keeps nothing waiting. The Downloads page says so too, with Cancel to drop
-  them, and a waiting episode's own Download says Queued. Deleting a series' downloads, or Remove all downloads in
-  Settings → Downloads (offered also while episodes only wait), drops the waiting episodes as well, and the one that was
-  just being asked for goes with them.
-- **Phone remote:** Silo's phone app can control what plays in Granary: play and pause, seek, volume, audio and
-  subtitles, speed, quality and the next episode. Switch it on under Settings → Playback → This PC, open Connect a Phone
-  and scan the code with the phone's camera once. It works on your local network only, while Granary runs, and only for
-  phones that scanned the code; Reset Pairing Code takes that back. The phone's app words some of its messages for
-  another kind of device. Press Play on the phone while it is connected and the title starts on the PC where the phone
-  left off, for the profile that is signed in on the PC; the player says which phone started it. A locked PC starts
-  nothing.
-- **Missing and upcoming episodes in More Episodes:** an episode's page shows its season's missing episodes and the ones
-  still to air among More Episodes, as the season's page does.
-- **Next episode:** a series' page, and its seasons' and episodes', say when its next episode airs, such as "Episode 6
-  on Thursday" or "Season 4 starts tomorrow".
-- **Game controller switch:** Settings → Navigation & Cards → Controller → Game controller turns controller input on
-  and off for this PC. Off, Granary reads no controller at all, so a pad or a wheel attached for other programs does
-  nothing in it; switching it on or off takes effect at once, without a restart.
-- **Close Granary with a controller or a remote:** Back on Home's entry in the sidebar, B on a controller or a remote's
-  Back, asks "Close Granary?". Close closes it as the title bar's Close does; Cancel has the focus, so a stray A or
-  Enter keeps it open, and B, Esc or the remote's Back do too.
+- **Downloads:** download a film, an episode, a season or a whole series from its ⋯ menu, in the original quality or a
+  smaller one your Silo server offers. The new Downloads page shows them as cards with size, progress, speed and time
+  left, and pauses, resumes, retries and deletes them. Granary tells you when downloads finish, and Settings → Downloads
+  sets the drive, simultaneous downloads, a storage limit, metered connections and notifications. Your Silo server has
+  to allow downloads.
+- **Choose what to download:** a series' dialog offers the next episode, its season or all episodes, as Silo's iPhone app
+  does, and Only unwatched episodes leaves out what you have already seen.
+- **Monitored series:** Monitor keeps new episodes coming to this PC as they air, with Delete after watching and a
+  storage limit. The Downloads page lists your monitored series and what comes next.
+- **Watch offline:** downloads play from this PC without your Silo server, with audio tracks, subtitles, chapters, Skip
+  Intro and the next episode. What you watch offline is sent to your server once Granary reaches it again. Without a
+  connection, Granary starts on your downloads instead of an error.
+- **Server download limit:** when your Silo server's limit stops a season part-way, the rest waits on this PC and starts
+  by itself once the server allows more.
+- **Seven languages:** English, Spanish, German, French, Brazilian Portuguese, Japanese and Simplified Chinese, in the
+  words of Silo's web and apps. Granary follows your profile's language; Settings → Accessibility → Language changes it.
+- **Search in Settings:** a search box at the top of the Settings sidebar finds a setting by its name or description.
+  Ctrl+F jumps to it.
+- **Phone remote:** Silo's phone app can control what plays in Granary. Switch it on under Settings → Playback → This PC
+  and scan the code once. It works on your local network only.
+- **Your profile picture** shows at the bottom of the sidebar and in its menu.
+- **Next episode:** a series' page says when its next episode airs, and an episode's page lists its season's missing
+  and upcoming episodes.
+- **Game controller switch** under Settings → Navigation & Cards, and **Close Granary?** when you press Back on Home's
+  sidebar entry with a controller or a remote.
 
 ### Changed
 
-- **Chapters menu:** a chapter's picture has its blur behind it, so the row is not empty while the picture loads.
-- **Dates and numbers** are written as Windows' regional format writes them, as Silo's web writes them in the browser's:
-  on a German Windows an episode aired on "5. Nov. 2026" and the calendar's air times and Ends say "21:00". Dates read
-  as the web reads them too: an episode's air date is "Nov 5, 2026" in American English, the
-  next episode's "November 5, 2026", and a sign-in in Settings → Devices "11/5/2026, 8:00 AM". Sizes, rates and speeds
-  follow the same format ("1,5 GB", "1,25×" on a German Windows), and a title's Info lists its size and bitrate as the
-  web's media info does ("700.0 MB", "8,000 kbps").
-- The server's name or logo at the top of the sidebar opens Home, as on Silo's web.
-- A game controller now has to be switched on first, under Settings → Navigation & Cards → Controller → Game controller;
-  0.4.0 read it from the start.
-- A row's title on Home and in the libraries opens the same page as its Explore all, as on Silo's web: click "Recently
-  Added Movies" itself.
-- A TMDB score shows TMDB's logo beside it, as on Silo's web; IMDb's and every other source's stay their names.
-- Admin → Activity shows a stream's video and audio on a line each, as Silo's web does: the source's format, and for a
-  stream your Silo server converts what the viewer gets ("HEVC 2160p → H.264 1080p", "TrueHD 7.1 → AAC 5.1"), with the
-  encoder of a video transcode ("HW QSV").
-- Admin → Activity shows each stream's bitrate as Silo's web does: the rate the viewer gets, the limit a transcode
-  encodes to and the source's rate ("limit 4.0 Mbps · source 20.0 Mbps"), and a bar of how much of the source's rate
-  arrives, amber while a limit squeezes the stream. A stream's details tag its Bitrate with the limit.
-- Your profile's picture, an uploaded one or one of the pictures your Silo server offers to pick, shows at the bottom of
-  the sidebar, also when the sidebar is only icons, and at the top of its menu with your name, as on Silo's web; otherwise
-  the first letter of your name on the accent colour. A picture you change in another Silo app shows within five
-  minutes.
+- **Game controllers are off by default.** Turn them on under Settings → Navigation & Cards → Controller.
+- Dates and numbers follow Windows' regional format, as Silo's web follows the browser's.
+- Admin → Activity shows each stream's video and audio as "source → delivered" and its bitrate against the limit and
+  the source, as on Silo's web.
+- The server's name or logo at the top of the sidebar opens Home, and a row's title opens the same page as its Explore
+  all.
+- A TMDB score shows TMDB's logo.
 
 ### Fixed
 
-- A row without Explore all, on Home, For You, a library or Requests, no longer shows EXPLORE ALL or a title that turns
-  the accent under the mouse after scrolling: a row reused for another one kept the link of the one before, though it
-  opened nothing.
-- Admin → Activity: a stream's Look up opens IP Lookup and scrolls to it with the accounts seen at that address, as on
-  Silo's web, where before it looked the address up in the closed lookup. The address sits in the middle of its field.
-- The admin pages' green, blue and amber are Silo's web colours exactly: Direct Play and Direct Stream on the Dashboard and
-  Activity, a warning there, and "Connecting…" in the activity panel were a shade off.
-- The player's mouse cursor no longer comes back by itself while a title plays: a mouse lying still that reports a knock
-  or its sensor's noise of a few pixels leaves it hidden; a move of 5 pixels or more brings it back.
-- A movie's, series' or episode's page shows its IMDb and TMDB scores again, under its facts as on Silo's web, and
-  every other score your Silo server shows for it.
-- The next episode's picture on the Playing Next screen is sharp: Granary asks your Silo server for it as wide as the
-  screen draws it, as Silo's web does, where it came at a card's size and was stretched.
-- The Settings sidebar scrolls in a short window, as on Silo's web, so its last pages, such as About, can be reached with
-  the mouse, the keyboard and a controller.
-- Downloads ask your Silo server only as the account they belong to, also when they read what the server has, fetch a
-  file or delete one: with two accounts signed in on the same server whose profiles share an id, one account's downloads
-  could be read or deleted under the other.
-- A player button's grey box shows only while the mouse is on it: the times at the bottom left kept it after a click once
-  the controls had hidden, with their text already back to grey.
+- The player's mouse cursor no longer comes back by itself while a title plays.
+- Player buttons show their grey box only while the mouse is on them.
+- A title's page shows its IMDb and TMDB scores again.
+- The next episode's picture on the Playing Next screen is sharp.
+- The Settings sidebar scrolls in a short window.
+- A row without Explore all no longer shows EXPLORE ALL after scrolling.
+- Admin: IP Lookup from a stream works, and the status colours match Silo's web.
+- Downloads ask your Silo server only as the account they belong to.
 
 ## [0.4.0] - 2026-11-14
 
