@@ -147,8 +147,8 @@ release's section is what its update says it changes (docs/release.md).
 - Downloads ask your Silo server only as the account they belong to, also when they read what the server has, fetch a
   file or delete one: with two accounts signed in on the same server whose profiles share an id, one account's downloads
   could be read or deleted under the other.
-- A player button shows its grey box only while the mouse is on it: after the controls hid and came back, a button the
-  mouse had left kept it (the times at the bottom left after a click), and the one under the mouse could lack it.
+- A player button's grey box shows only while the mouse is on it: the times at the bottom left kept it after a click once
+  the controls had hidden, with their text already back to grey.
 
 ## [0.4.0] - 2026-11-14
 
