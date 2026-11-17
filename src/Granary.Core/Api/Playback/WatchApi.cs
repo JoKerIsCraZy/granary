@@ -37,12 +37,21 @@ public sealed class WatchApi(SiloHttp http)
     /// The seek-bar previews of <paramref name="fileId"/> (docs/api-contract.md, 11.4), for a file whose
     /// <see cref="WatchFileVersion.TrickplayAvailable"/> is true; 404 <c>not_found</c> when it has none.
     /// </summary>
-    public Task<TrickplayManifest> GetTrickplayAsync(Uri server, string contentId, string fileId, CancellationToken cancellationToken = default)
-    {
-        string path = "api/v2/watch/" + SiloHttp.PathSegment(contentId, nameof(contentId)) + "/trickplay";
-        string query = new QueryBuilder().Add("file_id", fileId).ToString();
-        return http.GetAsync(server, path + query, SiloAuth.Profile, PlaybackJsonContext.Default.TrickplayManifest, cancellationToken);
-    }
+    public Task<TrickplayManifest> GetTrickplayAsync(Uri server, string contentId, string fileId, CancellationToken cancellationToken = default) =>
+        http.GetAsync(server, TrickplayPath(contentId, fileId), SiloAuth.Profile, PlaybackJsonContext.Default.TrickplayManifest, cancellationToken);
+
+    /// <summary>
+    /// As <see cref="GetTrickplayAsync"/>, for a file kept for account <paramref name="accountId"/>'s profile
+    /// <paramref name="profileId"/>, as a download is: it goes out only while the server still acts as that profile of that
+    /// account, else it throws <see cref="ProfileChangedException"/> unsent.
+    /// </summary>
+    public Task<TrickplayManifest> GetTrickplayAsAccountProfileAsync(Uri server, string accountId, string profileId, string contentId, string fileId,
+        CancellationToken cancellationToken = default) =>
+        http.GetAsAccountProfileAsync(server, TrickplayPath(contentId, fileId), accountId, profileId, PlaybackJsonContext.Default.TrickplayManifest,
+            cancellationToken);
+
+    private static string TrickplayPath(string contentId, string fileId) =>
+        "api/v2/watch/" + SiloHttp.PathSegment(contentId, nameof(contentId)) + "/trickplay" + new QueryBuilder().Add("file_id", fileId).ToString();
 }
 
 /// <summary>A file's seek-bar previews as the server lists them; sheet addresses carry their own authorization.</summary>

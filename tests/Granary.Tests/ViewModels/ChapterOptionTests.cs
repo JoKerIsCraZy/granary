@@ -10,11 +10,11 @@ public sealed class ChapterOptionTests
     [
         new("Opening", 0, 300, new Uri("https://silo.test/1.webp")),
         new("  ", 300, 900, null),
-        new("Heist", 1000, 1800, null),
+        new("Heist", 1000, 1800, null, "iC"),
     ];
 
     [Fact]
-    public void TheRows_MarkTheOneThatPlays_AndNameAnUntitledChapterByItsPlace()
+    public void TheRows_MarkTheOneThatPlays_NameAnUntitledChapterByItsPlace_AndKeepTheBlur()
     {
         var rows = ChapterOption.For(Chapters, 1);
 
@@ -22,7 +22,7 @@ public sealed class ChapterOptionTests
             [
                 new ChapterOption("Opening", 0, new Uri("https://silo.test/1.webp"), false),
                 new ChapterOption("Chapter 2", 300, null, true),
-                new ChapterOption("Heist", 1000, null, false),
+                new ChapterOption("Heist", 1000, null, false, "iC"),
             ],
             rows);
     }

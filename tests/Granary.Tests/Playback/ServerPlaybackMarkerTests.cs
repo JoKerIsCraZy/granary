@@ -67,7 +67,7 @@ public sealed class ServerPlaybackMarkerTests
     {
         string chapters = Regex.Replace(PlaybackPayloads.WatchStateOk, @"""chapters"": \[[^\]]*\]", """
             "chapters": [
-              { "index": 2, "title": "Heist", "start_seconds": 300, "end_seconds": 900, "thumbnail_url": "/api/v2/chapters/2.webp" },
+              { "index": 2, "title": "Heist", "start_seconds": 300, "end_seconds": 900, "thumbnail_url": "/api/v2/chapters/2.webp", "thumbnail_thumbhash": "iH" },
               { "index": 1, "title": "Opening", "start_seconds": 0, "end_seconds": 300 },
               { "index": 3, "title": "Nothing", "start_seconds": 900, "end_seconds": 900 }
             ]
@@ -80,7 +80,7 @@ public sealed class ServerPlaybackMarkerTests
         Assert.Equal(
             [
                 new PlaybackChapter("Opening", 0, 300, null),
-                new PlaybackChapter("Heist", 300, 900, ArtworkUrl.Resolve(ScriptedSilo.Base, "/api/v2/chapters/2.webp")),
+                new PlaybackChapter("Heist", 300, 900, ArtworkUrl.Resolve(ScriptedSilo.Base, "/api/v2/chapters/2.webp"), "iH"),
             ],
             playback.Chapters);
     }

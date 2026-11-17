@@ -284,7 +284,7 @@ public sealed class DownloadsApiTests
         Assert.Equal(("mkv", 7200.0, 1), (manifest.Container, manifest.DurationSeconds, manifest.SelectedAudioTrackIndex));
         Assert.Equal(2, manifest.AudioTracks.Count);
         Assert.Equal((1, "Commentary", 2), manifest.AudioTracks.Where(t => !t.Default).Select(t => (t.Index, t.Title, t.Channels)).Single());
-        Assert.Equal(new OfflineChapter(0, "Cold Open", 0, 142.5), Assert.Single(manifest.Chapters));
+        Assert.Equal(new OfflineChapter(0, "Cold Open", 0, 142.5, "iC"), Assert.Single(manifest.Chapters));
         Assert.Equal([new OfflineMarker("intro", 60, 90), new OfflineMarker("credits", 7100, 7200)], manifest.MarkerSegments);
         var subtitle = Assert.Single(manifest.Subtitles);
         Assert.Equal(("srt", true, "/api/v2/downloads/dl_1/subtitles/external:0", "r1"), (subtitle.Format, subtitle.External, subtitle.FetchUrl, subtitle.Revision));

@@ -2541,6 +2541,12 @@ presigned S3 URL. Refetch after `expires_at`. Thumbnail `i` is on sheet
 `i / (cols·rows)`, column `i % cols`, row `(i % (cols·rows)) / cols`
 (`silo-server/internal/apiv2/watch_trickplay.go:60-110`). Android does not implement trickplay.
 
+A download (14) reads the previews of its manifest's `media_file_id` with the same request while the server answers and
+the watch detail lists that file with `trickplay_available`, bound to the download's account and profile as its watch
+detail is (`WatchApi.GetTrickplayAsAccountProfileAsync`; refused unsent once another acts, `ProfileChangedException`). The
+id names the catalog file the download was made from, also for a remuxed or transcoded copy, whose timeline is the same
+(the server's `prepare_file.go` cuts nothing).
+
 ## 12. Realtime events
 
 `/api/v2/events/ws` keeps Home and detail views fresh; a minimal client can skip it and refetch on
@@ -3113,7 +3119,9 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   `series_title`, `season_number`, `episode_number`, `poster_thumbhash`, `backdrop_thumbhash`, `series_poster_thumbhash`,
   `artwork_urls { poster, backdrop, logo, series_poster }`, `container`, `duration_seconds`, `selected_audio_track_index`,
   `audio_tracks [{ index, title, language, codec, layout, channels, default }]`, `chapters [{ index, title, start_seconds,
-  end_seconds }]`, `marker_segments [{ kind, start_seconds, end_seconds }]`, `subtitles [{ language, title, format, forced,
+  end_seconds, thumbnail_thumbhash }]` (the hash only for the blur in the Chapters menu; the manifest has no chapter
+  picture, so while the server answers the watch detail's `thumbnail_url` of the same chapter of the `media_file_id`
+  file is shown over it, 7.8), `marker_segments [{ kind, start_seconds, end_seconds }]`, `subtitles [{ language, title, format, forced,
   hearing_impaired, external, fetch_url, file_size, revision }]`, `integrity { expected_bytes, media_file_hash }` and
   `manifest_version` (3).
 - `GET /api/v2/downloads/{id}/artwork/{kind}` (`poster`, `backdrop`, `logo`, `series_poster`) and
