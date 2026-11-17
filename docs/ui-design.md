@@ -2433,6 +2433,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   pointer as they hid (a notification, the volume flyout) goes once it is over the picture again: on a pointer event
   that is no move (looked at no more than every 250 ms), when the window is activated or changes, and on a look every
   250 ms while it waits.
+  A player button shows its grey highlight only while the pointer is on it; the highlight fades in and out over 0.1 s
+  with the button's own state (`SiloPlayerButtonTemplate`), also when the controls hide in between.
   Hidden controls take no clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
   `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element.
   Moves count from where the pointer is as the cursor hides, not from where the page saw the mouse last: it does not see
