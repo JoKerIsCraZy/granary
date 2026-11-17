@@ -161,6 +161,8 @@ public sealed class LocalPlaybackPreviewTests : IAsyncDisposable
         // The viewer switched profiles meanwhile: the download's previews are not asked for as the other one.
         _fixture.Silo.ActingProfile = () => "8";
         await _fixture.AdvanceAsync(TimeSpan.FromMinutes(55));
+        await Until(() => _fixture.Harness.Logs.Lines.Any(line => line.Contains("the server acts for another profile now", StringComparison.Ordinal)
+            && line.Contains("seek-bar previews", StringComparison.Ordinal)), "the refresh is refused as the other profile");
         _fixture.Silo.ActingProfile = null;
         await _fixture.AdvanceAsync(TimeSpan.FromHours(2));
 
@@ -180,6 +182,27 @@ public sealed class LocalPlaybackPreviewTests : IAsyncDisposable
         await _fixture.AdvanceAsync(TimeSpan.FromHours(2));
 
         Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+    }
+
+    [Fact]
+    public async Task TheStop_CallsOffAPreviewReadOnItsWay()
+    {
+        ServerHas(trickplay: true);
+        var asked = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.Silo.OnCancellable(HttpMethod.Get, TrickplayPath, async cancellationToken =>
+        {
+            asked.TrySetResult(cancellationToken);
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            throw new InvalidOperationException("Never answers.");
+        });
+        var playback = await _fixture.PlayingAsync();
+        var read = await asked.Task.WaitAsync(LocalPlaybackFixture.Token);
+
+        await playback.StopAsync();
+
+        Assert.True(read.IsCancellationRequested);
+        Assert.Null(playback.Trickplay);
+        Assert.DoesNotContain(_fixture.Harness.Logs.Lines, line => line.StartsWith("Error", StringComparison.Ordinal));
     }
 
     // Plays the download and waits for its previews to be read.

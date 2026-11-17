@@ -9,7 +9,7 @@ namespace Granary.Core.Playback;
 /// The reads of one file's seek-bar previews (docs/api-contract.md, 11.4), as the web player keeps them: read once, and
 /// again 5 minutes before their addresses expire, or a minute after a failure that may pass. A stream's
 /// (<see cref="ServerPlayback"/>) and a download's while the server answers (<c>LocalPlayback</c>) share them. Disposing
-/// ends them: a read on its way is not taken and starts no other.
+/// ends them: a read on its way is called off, is not taken and starts no other.
 /// </summary>
 public sealed class TrickplayReads : IDisposable
 {
@@ -24,6 +24,9 @@ public sealed class TrickplayReads : IDisposable
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger _logger;
+
+    // Calls off the read on its way once the reads end: nobody needs its answer.
+    private readonly CancellationTokenSource _cancel = new();
     private ITimer? _refresh;
     private bool _ended;
 
@@ -44,19 +47,35 @@ public sealed class TrickplayReads : IDisposable
 
     public void Dispose()
     {
+        if (_ended)
+        {
+            return;
+        }
         _ended = true;
         _refresh?.Dispose();
         _refresh = null;
+        _cancel.Cancel();
+        _cancel.Dispose();
     }
 
     private async Task ReadAsync()
     {
+        if (_ended)
+        {
+            return;
+        }
+        var cancellationToken = _cancel.Token;
         TimeSpan? again;
         PlayerTrickplay? trickplay = null;
         try
         {
-            trickplay = await _read(CancellationToken.None).ConfigureAwait(false);
+            trickplay = await _read(cancellationToken).ConfigureAwait(false);
             again = trickplay is null ? null : Max(trickplay.ExpiresAt - _time.GetUtcNow() - RefreshMargin, Retry);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The play ended meanwhile.
+            return;
         }
         catch (SiloApiException ex) when (ex.Status == 404)
         {
@@ -94,6 +113,11 @@ public sealed class TrickplayReads : IDisposable
         if (trickplay is not null)
         {
             _take(trickplay);
+            // Whoever took them may have ended the reads (a handler that stops the play).
+            if (_ended)
+            {
+                return;
+            }
         }
         _refresh?.Dispose();
         _refresh = again is { } wait
