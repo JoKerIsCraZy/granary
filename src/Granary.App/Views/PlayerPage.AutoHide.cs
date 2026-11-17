@@ -234,6 +234,9 @@ public sealed partial class PlayerPage
         }
         else
         {
+            ClearHover(TopChrome);
+            ClearHover(BottomChrome);
+            ClearHover(MiniChrome);
             // How far the mouse went while the cursor showed tells a hand (hundreds of pixels) from a knock (a few).
             double travelled = _cursor.Travelled;
             // The cursor hides only where Windows says where the pointer is: moves then count from there, never from a
@@ -247,6 +250,20 @@ public sealed partial class PlayerPage
                 isOverPicture, _cursor.IsHidden, travelled);
         }
         WatchCursor();
+    }
+
+    // Hidden controls take no pointer, and then the shield has it, so WinUI never tells the button under a resting pointer
+    // that it left: its highlight stayed lit, also after the controls came back (the times' grey box). It goes with them.
+    private static void ClearHover(DependencyObject element)
+    {
+        if (element is Button { IsEnabled: true } button)
+        {
+            VisualStateManager.GoToState(button, "Normal", false);
+        }
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            ClearHover(VisualTreeHelper.GetChild(element, i));
+        }
     }
 
     // The window's Exit full screen fades with the controls, but stays on the Playing Next screen, as its Close does.
