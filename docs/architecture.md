@@ -897,7 +897,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,
   a pure function of the chapters and the position).
 - **Seek-bar previews** (11.4): for a file with `trickplay_available`, the manifest is read after its first frame and
-  again 5 minutes before its sheets expire (a minute after a transient failure; a 404 means none). Thumbnail `i` of
+  again 5 minutes before its sheets expire (a minute after a transient failure; a 404 means none). `TrickplayReads`
+  keeps these reads for one file, for a stream and for a download alike (see "Playing a download"); disposing it ends
+  them, and a read on its way is then not taken. Thumbnail `i` of
   `interval_ms` sits on sheet `i / (cols·rows)`; the seek bar keeps three sheets decoded at the bubble's width and
   loads the next one ahead. Markers carry their segment's picture for the bubble; it plays no part in their equality.
 - **Settings pages** (6.6): `ProfileSettings` reads the page's keys in one batch, key by key when an older server
