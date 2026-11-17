@@ -182,6 +182,26 @@ public sealed class DownloadsApiTests
     public void IfRange_TakesAStrongETagOrADate(string? validator, bool usable) =>
         Assert.Equal(usable, ByteRange.IsValidator(validator));
 
+    // A call bound to an account goes only as that account: without one it is not sent at all, never as whichever account is
+    // signed in now.
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task AnEntryCall_WithoutItsAccount_IsRefusedUnsent(string? account)
+    {
+        var server = ScriptedSilo.Base;
+
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => Api.ListAsync(server, account!, Profile, null, Token));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => Api.PrepareAsync(server, account!, Profile, "dl_1", Token));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => Api.DeleteAsync(server, account!, Profile, "dl_1", Token));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => Api.ReportAsync(server, account!, Profile, "dl_1",
+            new DownloadStatusEvent(DownloadStatuses.Downloading, DateTimeOffset.UnixEpoch, 1), Token));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => Api.OpenFileAsync(server, account!, Profile, "dl_1", null, Token));
+
+        Assert.Empty(_silo.Sent);
+    }
+
     [Fact]
     public async Task OpenFile_WithAnUnreadableValidator_IsRefusedUnsent()
     {
