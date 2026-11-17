@@ -56,7 +56,7 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
     {
         ArgumentNullException.ThrowIfNull(download);
         var record = download.Record;
-        byte[] bytes = await api.GetManifestAsync(server, record.Scope.ProfileId, record.DownloadId, cancellationToken).ConfigureAwait(false);
+        byte[] bytes = await api.GetManifestAsync(server, record.Scope.AccountId, record.Scope.ProfileId, record.DownloadId, cancellationToken).ConfigureAwait(false);
         var manifest = OfflineManifest.Read(bytes);
         if (manifest.DownloadId != record.DownloadId)
         {
@@ -173,7 +173,7 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
         var record = download.Record;
         try
         {
-            using var response = await api.OpenAssetAsync(server, record.Scope.ProfileId, path, null, cancellationToken).ConfigureAwait(false);
+            using var response = await api.OpenAssetAsync(server, record.Scope.AccountId, record.Scope.ProfileId, path, null, cancellationToken).ConfigureAwait(false);
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 // A 404 will not change; a busy store (503) is tried at the next refresh.

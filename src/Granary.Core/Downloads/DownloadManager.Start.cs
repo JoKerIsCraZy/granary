@@ -294,7 +294,7 @@ public sealed partial class DownloadManager
         {
             for (int page = 0; page < MaxPages; page++)
             {
-                var read = await _api.ListAsync(server, scope.ProfileId, cursor, cancellationToken).ConfigureAwait(false);
+                var read = await _api.ListAsync(server, scope.AccountId, scope.ProfileId, cursor, cancellationToken).ConfigureAwait(false);
                 if (read.Items.FirstOrDefault(e => IsFor(e, body)) is { } entry)
                 {
                     return !IsTakeable(scope, entry, deleting) ? default
