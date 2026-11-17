@@ -142,8 +142,8 @@ release's section is what its update says it changes (docs/release.md).
   screen draws it, as Silo's web does, where it came at a card's size and was stretched.
 - The Settings sidebar scrolls in a short window, as on Silo's web, so its last pages, such as About, can be reached with
   the mouse, the keyboard and a controller.
-- A player button shows its grey box only while the mouse is on it: after the controls hid and came back, a button the
-  mouse had left kept it (the times at the bottom left after a click), and the one under the mouse could lack it.
+- A player button's grey box shows only while the mouse is on it: the times at the bottom left kept it after a click once
+  the controls had hidden, with their text already back to grey.
 
 ## [0.4.0] - 2026-11-14
 

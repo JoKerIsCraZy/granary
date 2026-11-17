@@ -246,45 +246,7 @@ public sealed partial class PlayerPage
                 "The player's controls hid (pointer over the picture: {OverPicture}, cursor hidden: {CursorHidden}, the mouse went {Travelled:0} px while it showed)",
                 isOverPicture, _cursor.IsHidden, travelled);
         }
-        SyncButtonHover();
         WatchCursor();
-    }
-
-    // A player button is grey only while the pointer is on it. Hidden controls take no pointer and the cursor shield then
-    // has it, so WinUI never tells a button under a resting pointer that it left, nor one the pointer is on again that it
-    // came: its highlight stayed lit after the controls came back (the times' grey box), or stayed off under the pointer.
-    // So as they hide and show, every button of theirs takes the state the pointer's place says: PointerOver for the
-    // one under it while they show, Normal for all others. A button held down keeps its Pressed.
-    private void SyncButtonHover()
-    {
-        var under = new HashSet<Button>();
-        if (_areControlsVisible && PointerInPage() is { } inPage && XamlRoot?.Content is UIElement content)
-        {
-            var inWindow = TransformToVisual(null).TransformPoint(inPage);
-            foreach (var element in VisualTreeHelper.FindElementsInHostCoordinates(inWindow, content, false))
-            {
-                if (element is Button button)
-                {
-                    under.Add(button);
-                }
-            }
-        }
-        foreach (var root in new UIElement[] { TopChrome, BottomChrome, MiniChrome, PartyPanel, CornerFullScreenButton })
-        {
-            SyncButtonHover(root, under);
-        }
-    }
-
-    private static void SyncButtonHover(DependencyObject element, HashSet<Button> under)
-    {
-        if (element is Button { IsEnabled: true, IsPressed: false } button)
-        {
-            VisualStateManager.GoToState(button, under.Contains(button) ? "PointerOver" : "Normal", true);
-        }
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
-        {
-            SyncButtonHover(VisualTreeHelper.GetChild(element, i), under);
-        }
     }
 
     // The window's Exit full screen fades with the controls, but stays on the Playing Next screen, as its Close does.
