@@ -76,10 +76,11 @@ internal sealed class DownloadHarness : IAsyncDisposable
     public static CancellationToken Token => TestContext.Current.CancellationToken;
 
     /// <summary>A queue over this harness, not started yet; it is stopped when the harness goes.</summary>
-    public DownloadQueue NewQueue(Action<long>? flushed = null, MonitorBook? monitors = null)
+    /// <remarks><paramref name="assets"/>: what fetches the manifest and assets; one that keeps no previews when not given.</remarks>
+    public DownloadQueue NewQueue(Action<long>? flushed = null, MonitorBook? monitors = null, DownloadAssets? assets = null)
     {
         var transfer = new DownloadTransfer(Api, Disk, Time, Logs.For<DownloadTransfer>()) { Flushed = flushed };
-        var assets = new DownloadAssets(Api, Time, Logs.For<DownloadAssets>());
+        assets ??= new DownloadAssets(Api, Time, Logs.For<DownloadAssets>());
         var queue = new DownloadQueue(Store, transfer, assets, Api, Session, Network, Preferences, Time, Logs.For<DownloadQueue>(), monitors);
         _queues.Add(queue);
         return queue;

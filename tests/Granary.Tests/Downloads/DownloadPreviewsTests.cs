@@ -33,6 +33,28 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
             MaxPreviewBytes = maxPreviewBytes,
         };
 
+    // The manifest and assets, then the previews, as the queue fetches them.
+    private async Task<FetchedAssets> FetchAllAsync(StoredDownload download, long maxPreviewBytes = DownloadAssets.MaxPreviewSetBytes)
+    {
+        var assets = Assets(maxPreviewBytes);
+        var fetched = await assets.FetchAsync(ScriptedSilo.Base, download, Token);
+        await assets.FetchPreviewsAsync(ScriptedSilo.Base, download, Token);
+        return fetched;
+    }
+
+    // A sheet host that takes the request and never answers, until the request is called off.
+    private TaskCompletionSource StallFirstSheet()
+    {
+        var asked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.OnCancellable(HttpMethod.Get, FirstSheetPath, async cancellationToken =>
+        {
+            asked.TrySetResult();
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            throw new InvalidOperationException("Never answers.");
+        });
+        return asked;
+    }
+
     private static string[] FilesIn(StoredDownload download) =>
         [.. Directory.EnumerateFiles(download.Folder).Select(Path.GetFileName).OfType<string>().Order()];
 
@@ -61,7 +83,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
 
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         Assert.Contains(DownloadPaths.Previews, FilesIn(stored));
         Assert.Equal(SheetBytes, await File.ReadAllBytesAsync(Path.Combine(stored.Folder, SheetName(stored, 0)), Token));
@@ -79,7 +101,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
 
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         var read = Assert.Single(_h.Silo.SentTo(HttpMethod.Get, TrickplayPath));
         Assert.Equal("?file_id=4567", read.Uri.Query);
@@ -90,12 +112,131 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task NothingOfTheSheets_ReachesTheLog()
+    public async Task TheManifestAndAssets_AreFetchedWithoutWaitingForPreviews()
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
 
         await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+    }
+
+    // A sheet host that does not answer holds the previews a minute at most, all sheets together.
+    [Fact]
+    public async Task APreviewSetThatTakesTooLong_IsGivenUpAtItsDeadline()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews();
+        var asked = StallFirstSheet();
+        var assets = Assets();
+        await assets.FetchAsync(ScriptedSilo.Base, stored, Token);
+
+        var previews = assets.FetchPreviewsAsync(ScriptedSilo.Base, stored, Token);
+        await asked.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        _h.Time.Advance(DownloadAssets.PreviewDeadline - TimeSpan.FromSeconds(1));
+        Assert.False(previews.IsCompleted);
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        await previews.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+        Assert.DoesNotContain(FilesIn(stored), name => name == DownloadPaths.Previews || name.StartsWith("tp-", StringComparison.Ordinal));
+        Assert.Contains(_h.Logs.Lines, line => line.Contains("were not kept (took too long)", StringComparison.Ordinal));
+    }
+
+    // The media's transfer does not wait for a sheet host that does not answer.
+    [Fact]
+    public async Task ASlowSheetHost_DoesNotHoldUpTheMediasTransfer()
+    {
+        await _h.AddAsync("dl_1");
+        ServePreviews();
+        var asked = StallFirstSheet();
+        _h.ServeFile("dl_1", DownloadPayloads.Source(3000));
+        var queue = _h.NewQueue(assets: Assets());
+        queue.Start();
+
+        await asked.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await Until(() => _h.Find("dl_1")?.Record.State == DownloadState.Completed, "the media came");
+
+        Assert.Single(_h.FileRequests("dl_1"));
+    }
+
+    [Theory]
+    [InlineData(true)] // the host answers 503
+    [InlineData(false)] // the connection fails
+    public async Task AFailingSheet_LeavesNothingSignedInTheLog(bool answers)
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews();
+        _h.Silo.On(HttpMethod.Get, SecondSheet, answers
+            ? () => Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable))
+            : ScriptedSilo.NetworkError());
+
+        await FetchAllAsync(stored);
+
+        Assert.Contains(_h.Logs.Lines, line => line.Contains("were not kept", StringComparison.Ordinal));
+        Assert.DoesNotContain(_h.Logs.Lines, line => line.Contains("sig=", StringComparison.Ordinal) || line.Contains("cdn.example", StringComparison.Ordinal)
+            || line.Contains("mv_1", StringComparison.Ordinal) || line.Contains("tp0", StringComparison.Ordinal));
+    }
+
+    // A body that names no length is held to the cap as it arrives, and leaves no piece behind.
+    [Fact]
+    public async Task ASheetWithoutALength_IsHeldToTheCapAsItArrives()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews();
+        _h.Silo.On(HttpMethod.Get, FirstSheetPath, DownloadPayloads.Streamed(HttpStatusCode.OK, new MemoryStream(DownloadPayloads.Source(64)), null, null));
+
+        await FetchAllAsync(stored, maxPreviewBytes: 32);
+
+        Assert.DoesNotContain(FilesIn(stored), name => name.StartsWith("tp-", StringComparison.Ordinal));
+        Assert.Contains(_h.Logs.Lines, line => line.Contains("larger than 32 bytes", StringComparison.Ordinal));
+    }
+
+    // A play that began with the set kept before reads its sheets as it shows them: a new set leaves them be, and only the
+    // generation before that goes.
+    [Fact]
+    public async Task ANewSet_KeepsTheSheetsOfTheSetBefore_AndDropsOlderOnes()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews();
+        await FetchAllAsync(stored);
+        string first = SheetName(stored, 0);
+        _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Json(HttpStatusCode.OK, Previews(columns: 20)));
+        await FetchAllAsync(stored);
+        string second = SheetName(stored, 0);
+
+        Assert.Contains(first, FilesIn(stored));
+        Assert.Contains(second, FilesIn(stored));
+
+        _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Json(HttpStatusCode.OK, Previews(columns: 30)));
+        await FetchAllAsync(stored);
+
+        Assert.DoesNotContain(first, FilesIn(stored));
+        Assert.Contains(second, FilesIn(stored));
+        Assert.Contains(SheetName(stored, 0), FilesIn(stored));
+    }
+
+    // Pieces of sheets a stopped fetch left go when the next set is kept.
+    [Fact]
+    public async Task PiecesOfSheetsLeftBehind_GoWhenASetIsKept()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        string piece = Path.Combine(stored.Folder, "tp-0a1b2c3d-0.jpg.0123456789abcdef.arriving");
+        await File.WriteAllBytesAsync(piece, [1, 2, 3], Token);
+        ServePreviews();
+
+        await FetchAllAsync(stored);
+
+        Assert.False(File.Exists(piece));
+    }
+
+    [Fact]
+    public async Task NothingOfTheSheets_ReachesTheLog()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews();
+
+        await FetchAllAsync(stored);
 
         Assert.DoesNotContain(_h.Logs.Lines, line => line.Contains("sig=", StringComparison.Ordinal) || line.Contains("cdn.example", StringComparison.Ordinal)
             || line.Contains("mv_1", StringComparison.Ordinal));
@@ -107,7 +248,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         var stored = await _h.AddAsync("dl_1");
         _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Problem(404, "not_found"));
 
-        var fetched = await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        var fetched = await FetchAllAsync(stored);
 
         Assert.Equal("poster.jpg", fetched.ArtworkFiles["poster"]);
         Assert.DoesNotContain(DownloadPaths.Previews, FilesIn(stored));
@@ -119,12 +260,12 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
         string[] before = FilesIn(stored);
         _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Json(HttpStatusCode.OK, Previews(columns: 20)));
         _h.Silo.On(HttpMethod.Get, SecondSheet, () => Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)));
 
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         Assert.Equal(before, FilesIn(stored));
         Assert.NotNull(KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
@@ -136,14 +277,14 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
         string old = SheetName(stored, 0);
         _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Json(HttpStatusCode.OK, Previews(columns: 20)));
 
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         Assert.NotEqual(old, SheetName(stored, 0));
-        Assert.DoesNotContain(old, FilesIn(stored));
+        Assert.Contains(old, FilesIn(stored));
     }
 
     [Fact]
@@ -152,7 +293,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         var stored = await _h.AddAsync("dl_1");
         ServePreviews(Previews().Replace("{ \"index\": 1, ", "null, { \"index\": 1, ", StringComparison.Ordinal));
 
-        var fetched = await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        var fetched = await FetchAllAsync(stored);
 
         Assert.Equal("poster.jpg", fetched.ArtworkFiles["poster"]);
         Assert.DoesNotContain(FilesIn(stored), name => name == DownloadPaths.Previews || name.StartsWith("tp-", StringComparison.Ordinal));
@@ -163,10 +304,10 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
         _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Problem(404, "not_found"));
 
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         Assert.Contains(DownloadPaths.Previews, FilesIn(stored));
         Assert.Contains(SheetName(stored, 1), FilesIn(stored));
@@ -178,11 +319,11 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
         _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Problem(404, "not_found"));
 
         var renewed = await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { Revision = 2 }, Token);
-        await Assets().FetchAsync(ScriptedSilo.Base, renewed, Token);
+        await FetchAllAsync(renewed);
 
         Assert.DoesNotContain(FilesIn(stored), name => name == DownloadPaths.Previews || name.StartsWith("tp-", StringComparison.Ordinal));
     }
@@ -194,7 +335,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         var stored = await _h.AddAsync("dl_1");
         ServePreviews(Previews().Replace("\"file_id\": \"4567\"", "\"file_id\": \"\"", StringComparison.Ordinal));
 
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         Assert.NotNull(KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
     }
@@ -216,13 +357,13 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
                 DownloadPayloads.Asset(SheetBytes, "image/jpeg"));
         }
 
-        var fetched = await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        var fetched = await FetchAllAsync(stored);
 
         Assert.Equal("poster.jpg", fetched.ArtworkFiles["poster"]);
         Assert.Equal("r1", fetched.SubtitleRevisions["external:0"]);
         Assert.DoesNotContain(FilesIn(stored), name => name == DownloadPaths.Previews || name.StartsWith("tp-", StringComparison.Ordinal));
 
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         Assert.Contains(DownloadPaths.Previews, FilesIn(stored));
         Assert.Contains(SheetName(stored, 1), FilesIn(stored));
@@ -233,10 +374,10 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
         int sheets = SheetRequests();
 
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         Assert.Equal(2, sheets);
         Assert.Equal(sheets, SheetRequests());
@@ -248,10 +389,10 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         var renewed = await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { Revision = 2 }, Token);
-        await Assets().FetchAsync(ScriptedSilo.Base, renewed, Token);
+        await FetchAllAsync(renewed);
 
         Assert.Equal(4, SheetRequests());
         using var kept = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(stored.Folder, DownloadPaths.Previews), Token));
@@ -259,11 +400,11 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AnotherLayoutOnTheServer_FetchesTheSetAgain_AndDropsSheetsItNoLongerHas()
+    public async Task AnotherLayoutOnTheServer_FetchesTheSetAgain_WithOnlyTheSheetsItHas()
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
         string one = """
             { "file_id": "4567", "interval_ms": 10000, "thumbnail_width": 320, "thumbnail_height": 180, "tile_columns": 20,
               "tile_rows": 10, "thumbnail_count": 150, "sheets": [ { "index": 0, "url": "/api/v2/artwork/tp0?exp=2&sig=c" } ],
@@ -271,11 +412,11 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
             """;
         _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Json(HttpStatusCode.OK, one));
 
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Get, FirstSheetPath).Count);
         Assert.Contains(SheetName(stored, 0), FilesIn(stored));
-        Assert.Single(FilesIn(stored), name => name.StartsWith("tp-", StringComparison.Ordinal));
+        Assert.Single(KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>())!.SheetFiles!);
         using var kept = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(stored.Folder, DownloadPaths.Previews), Token));
         Assert.Equal(20, kept.RootElement.GetProperty("tile_columns").GetInt32());
     }
@@ -287,14 +428,14 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         ServePreviews();
 
         // Each sheet alone fits; both do not.
-        await Assets(maxPreviewBytes: SheetBytes.Length + 1).FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored, SheetBytes.Length + 1);
 
         Assert.DoesNotContain(FilesIn(stored), name => name.StartsWith("tp-", StringComparison.Ordinal) || name.EndsWith(".arriving", StringComparison.Ordinal));
         Assert.Null(KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
         int sheets = SheetRequests();
         Assert.Contains(_h.Logs.Lines, line => line.Contains("larger than", StringComparison.Ordinal));
 
-        await Assets(maxPreviewBytes: SheetBytes.Length + 1).FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored, SheetBytes.Length + 1);
 
         Assert.Equal(sheets, SheetRequests());
     }
@@ -305,7 +446,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
 
-        await Assets(maxPreviewBytes: 4).FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored, 4);
 
         Assert.Equal(1, SheetRequests());
         Assert.DoesNotContain(FilesIn(stored), name => name.StartsWith("tp-", StringComparison.Ordinal));
@@ -334,7 +475,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         var trickplay = KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>());
 
@@ -351,12 +492,14 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     [InlineData("file_id", "\"9999\"")] // another file of the title
     [InlineData("sheets", "3")] // a sheet that is not there
     [InlineData("tile_columns", "0")]
+    [InlineData("tile_rows", "101")] // more than a sheet holds
+    [InlineData("thumbnail_width", "4097")] // wider than a thumbnail is
     [InlineData("generation", "\"..\\\\x\"")] // not a name Granary makes
     public async Task AKeptSetThatDoesNotFitTheDownload_IsNotShown(string field, string value)
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
         string path = Path.Combine(stored.Folder, DownloadPaths.Previews);
         var json = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(path, Token))!.AsObject();
         json[field] = System.Text.Json.Nodes.JsonNode.Parse(value);
@@ -371,7 +514,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
         string path = Path.Combine(stored.Folder, DownloadPaths.Previews);
         var json = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(path, Token))!.AsObject();
         json["tile_columns"] = 65536;
@@ -396,7 +539,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     {
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
         Assert.Contains(SheetName(stored, 0), FilesIn(stored));
 
         await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: true, Token);
@@ -411,7 +554,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         long before = _h.Store.BytesOnDisk(Scope7);
         ServePreviews();
 
-        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await FetchAllAsync(stored);
 
         long kept = new FileInfo(Path.Combine(stored.Folder, DownloadPaths.Previews)).Length;
         Assert.True(_h.Store.BytesOnDisk(Scope7) >= before + (2 * SheetBytes.Length) + kept,

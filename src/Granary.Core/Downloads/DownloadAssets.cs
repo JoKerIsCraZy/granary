@@ -26,8 +26,8 @@ public sealed class ManifestRevisionException() : Exception("The manifest is of 
 /// (docs/architecture.md, "What the server says"). The manifest is kept as the server sent it; artwork and subtitles that do not
 /// come are logged and left out, to be tried at the next refresh. Only this download's own asset paths are asked for
 /// (<see cref="DownloadsApi.AssetPath"/>): they carry the profile's credentials. With <paramref name="watch"/> and
-/// <paramref name="http"/>, the seek-bar previews of the file the download was made from are kept as well
-/// (<c>DownloadAssets.Previews.cs</c>).
+/// <paramref name="http"/>, the seek-bar previews of the file the download was made from can be kept as well, apart from the
+/// rest (<see cref="FetchPreviewsAsync"/>).
 /// </summary>
 public sealed partial class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<DownloadAssets> logger, WatchApi? watch = null,
     IHttpClientFactory? http = null)
@@ -79,8 +79,6 @@ public sealed partial class DownloadAssets(DownloadsApi api, TimeProvider time, 
         SafeFile.WriteWhole(Path.Combine(download.Folder, DownloadPaths.Manifest), temp => File.WriteAllBytes(temp, bytes));
         var artwork = await FetchArtworkAsync(server, download, manifest, cancellationToken).ConfigureAwait(false);
         var subtitles = await FetchSubtitlesAsync(server, download, manifest, cancellationToken).ConfigureAwait(false);
-        // Last: whatever becomes of them, the artwork and subtitles above are kept.
-        await FetchPreviewsAsync(server, download, manifest, cancellationToken).ConfigureAwait(false);
         return new FetchedAssets(manifest, artwork, subtitles);
     }
 

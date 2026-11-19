@@ -1664,19 +1664,24 @@ client guide.
   profile's credentials. Artwork or a subtitle that does not come (404, a busy store's 503, a stall of 60 s, over 512 MiB)
   is logged and left out, to be tried at the next refresh; a manifest that does not come ends the attempt as the file
   would have. The record keeps the artwork's file names and each subtitle's revision; a refresh fetches the artwork the
-  folder lacks and the subtitles whose revision changed. Last come the seek-bar previews (`DownloadAssets.Previews.cs`):
-  the previews (11.4) of the manifest's `media_file_id`, read as the download's account and profile, their sheets
-  fetched without credentials through the artwork client (signed addresses, possibly on another host; never logged).
-  Each set kept gets a generation of its own (8 hex digits) that its sheets are named after, so a new set never
-  overwrites the sheets of the one before, which a play may still read. Once all its sheets came, `trickplay.json` is
-  written whole and names it; only then do the older sheets go, as far as nothing holds them. A set that does not come
-  whole leaves the one kept before as it was. A list with an empty entry, or a grid an `int` cannot count, is not kept. A set is fetched again when the download's revision,
-  the file or the server's layout differs from the kept one, or a sheet is missing; otherwise a refresh costs only the
-  previews' read. A set over `MaxPreviewSetBytes` (64 MiB; a 2-hour film's takes a few) is not kept, and its
+  folder lacks and the subtitles whose revision changed. The seek-bar previews come apart from them
+  (`DownloadAssets.FetchPreviewsAsync`, in `DownloadAssets.Previews.cs`): beside the media's first transfer, which they
+  never hold back (the transfer ends with them, so a stop or a replacement stops them too), and after each refresh.
+  They are the previews (11.4) of the kept manifest's `media_file_id`, read as the download's account and profile, their
+  sheets fetched one after another without credentials through the artwork client (signed addresses, possibly on another
+  host; never logged). The read and all sheets together have `PreviewDeadline` (60 s); a set slower than that is tried
+  at the next refresh. Each set kept gets a generation of its own (8 hex digits) that its sheets are named after, so a
+  new set never overwrites the sheets of the one before. Once all its sheets came, `trickplay.json` is written whole and
+  names it. The set it named before stays beside it, since a play that began with that set reads its sheets only as it
+  shows them; older generations go, with pieces of sheets that never came whole (`*.arriving`), as far as nothing holds
+  them. A set that does not come whole leaves the one kept before as it was. A list with an empty entry, or a grid past
+  the seek bar's bounds (`PlayerTrickplay.IsDrawableGrid`: thumbnails up to 4096 px a side, sheets up to 100 by 100,
+  which streams' previews share), is not kept. A set is fetched again when the download's revision, the file or the
+  server's layout differs from the kept one, or a sheet is missing; otherwise a refresh costs only the previews' read. A
+  set over `MaxPreviewSetBytes` (64 MiB; a 2-hour film's takes a few), counted as its bodies arrive, is not kept, and its
   `trickplay.json` says so, so it is not fetched again while the layout stays the same. The set is kept under the file
   asked for. A 404 keeps a set of the same bytes and drops one of another revision or file (a replacement deletes only
-  the media and the manifest); any other failure is logged and leaves the download as it is, to be tried at the next
-  refresh. A download made before
+  the media and the manifest); any other failure is logged and leaves the download as it is. A download made before
   this gets its previews at its next refresh (a day after its manifest was read). Deleting a download deletes its
   folder, previews included, and the space a scope's downloads take (`DownloadStore.BytesOnDisk`) counts every file. A refresh that finds the manifest of another revision than the
   finished media keeps nothing of it, since its tracks and subtitles describe other bytes, and reads the registry again,

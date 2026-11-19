@@ -14,12 +14,15 @@ namespace Granary.Core.Downloads;
 // without the server. They are the previews of the file the download was made from (the manifest's media_file_id), whose
 // timeline is the download's, read as the download's own account and profile. Their sheets are signed addresses that need no
 // credentials: they are fetched as artwork is, never through SiloHttp. A set is kept whole or not at all, and fetched again
-// when the download's revision or the server's layout changes; one that does not come is tried at the next refresh. Nothing
-// here fails the fetch of the manifest, artwork and subtitles.
+// when the download's revision or the server's layout changes; one that does not come is tried at the next refresh. They are
+// fetched beside the media's transfer and after a refresh, never in the way of either (DownloadQueue).
 public sealed partial class DownloadAssets
 {
     /// <summary>The largest set of previews kept; a 2-hour film's takes a few megabytes.</summary>
     public const long MaxPreviewSetBytes = 64L * 1024 * 1024;
+
+    /// <summary>The longest a set of previews takes to come, its read and every sheet together; one slower is tried again later.</summary>
+    public static readonly TimeSpan PreviewDeadline = TimeSpan.FromSeconds(60);
 
     /// <summary>The cap a set of previews is held to; <see cref="MaxPreviewSetBytes"/>, lower for tests.</summary>
     internal long MaxPreviewBytes { get; init; } = MaxPreviewSetBytes;
@@ -27,48 +30,69 @@ public sealed partial class DownloadAssets
     /// <summary>The previews are kept: what reads and fetches them was given.</summary>
     internal bool KeepsPreviews => watch is not null && http is not null;
 
-    private async Task FetchPreviewsAsync(Uri server, StoredDownload download, OfflineManifest manifest, CancellationToken cancellationToken)
+    /// <summary>
+    /// Keeps the seek-bar previews of the file <paramref name="download"/> was made from, after the manifest kept in its folder,
+    /// within <see cref="PreviewDeadline"/>. Never throws but for <paramref name="cancellationToken"/>: what does not come is
+    /// logged, and the download stays as it is.
+    /// </summary>
+    public async Task FetchPreviewsAsync(Uri server, StoredDownload download, CancellationToken cancellationToken)
     {
-        var record = download.Record;
-        if (watch is null || http is null || (manifest.MediaFileId ?? record.MediaFileId) is not { Length: > 0 } fileId)
+        ArgumentNullException.ThrowIfNull(download);
+        if (watch is null || http is null)
         {
             return;
         }
+        var record = download.Record;
+        using var deadline = new CancellationTokenSource(PreviewDeadline, time);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
         try
         {
-            TrickplayManifest? listed;
-            try
+            var manifest = OfflineManifest.Read(await File.ReadAllBytesAsync(Path.Combine(download.Folder, DownloadPaths.Manifest), linked.Token)
+                .ConfigureAwait(false));
+            if (manifest.DownloadId != record.DownloadId || manifest.Revision != record.Revision
+                || (manifest.MediaFileId ?? record.MediaFileId) is not { Length: > 0 } fileId)
             {
-                listed = await watch.GetTrickplayAsAccountProfileAsync(server, record.Scope.AccountId, record.Scope.ProfileId, record.MediaItemId,
-                    fileId, cancellationToken).ConfigureAwait(false);
-            }
-            catch (SiloApiException ex) when (ex.Status == (int)HttpStatusCode.NotFound)
-            {
-                listed = null;
-            }
-            if (listed is null)
-            {
-                // The file has no previews. A set kept before for these bytes stays, it shows the same file; one of other bytes
-                // (a replaced revision leaves it in the folder) goes.
-                logger.LogDebug("The file of download {DownloadId} has no seek-bar previews", record.DownloadId);
-                if (KeptSet(download) is { } kept && (kept.Revision != record.Revision || kept.FileId != fileId))
-                {
-                    PublishPreviews(download, null);
-                }
                 return;
             }
-            // Kept under the file asked for, which a play compares with the manifest's.
-            await KeepPreviewsAsync(server, download, listed with { FileId = fileId }, http, cancellationToken).ConfigureAwait(false);
+            await FetchPreviewsAsync(server, download, fileId, watch, http, linked.Token).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is SiloApiException or HttpRequestException or JsonException or IOException or UnauthorizedAccessException
             or ProfileChangedException or ArgumentException
             || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))
         {
             logger.LogInformation("The seek-bar previews of download {DownloadId} were not kept ({Failure}); they are tried at the next refresh",
-                record.DownloadId, PreviewFailure(ex));
+                record.DownloadId, deadline.IsCancellationRequested ? "took too long" : PreviewFailure(ex));
         }
     }
 
+    private async Task FetchPreviewsAsync(Uri server, StoredDownload download, string fileId, WatchApi watchApi, IHttpClientFactory clients,
+        CancellationToken cancellationToken)
+    {
+        var record = download.Record;
+        TrickplayManifest? listed;
+        try
+        {
+            listed = await watchApi.GetTrickplayAsAccountProfileAsync(server, record.Scope.AccountId, record.Scope.ProfileId, record.MediaItemId,
+                fileId, cancellationToken).ConfigureAwait(false);
+        }
+        catch (SiloApiException ex) when (ex.Status == (int)HttpStatusCode.NotFound)
+        {
+            listed = null;
+        }
+        if (listed is null)
+        {
+            // The file has no previews. A set kept before for these bytes stays, it shows the same file; one of other bytes
+            // (a replaced revision leaves it in the folder) goes.
+            logger.LogDebug("The file of download {DownloadId} has no seek-bar previews", record.DownloadId);
+            if (KeptSet(download) is { } kept && (kept.Revision != record.Revision || kept.FileId != fileId))
+            {
+                PublishPreviews(download, null);
+            }
+            return;
+        }
+        // Kept under the file asked for, which a play compares with the manifest's.
+        await KeepPreviewsAsync(server, download, listed with { FileId = fileId }, clients, cancellationToken).ConfigureAwait(false);
+    }
     private async Task KeepPreviewsAsync(Uri server, StoredDownload download, TrickplayManifest listed, IHttpClientFactory clients,
         CancellationToken cancellationToken)
     {
@@ -160,11 +184,13 @@ public sealed partial class DownloadAssets
     }
 
     // The description is written whole, last: from then on it names the new set, or none (null), and a failure before leaves
-    // the set kept before as it was. Sheets of other generations go after, as far as they can: one a play still reads stays
-    // until the next set is kept, and is never taken for this one.
+    // the set kept before as it was. The set it named before stays beside the new one: a play that began with it reads its
+    // sheets only as it shows them, and goes on finding them. Older generations go, as do the pieces of sheets that never
+    // came whole, as far as nothing holds them; a set dropped (null) goes whole.
     private void PublishPreviews(StoredDownload download, KeptPreviewsFile? set)
     {
         string description = Path.Combine(download.Folder, DownloadPaths.Previews);
+        var before = set is null ? null : KeptSet(download);
         if (set is null)
         {
             File.Delete(description);
@@ -174,25 +200,31 @@ public sealed partial class DownloadAssets
             byte[] json = KeptPreviews.Write(set);
             SafeFile.WriteWhole(description, temp => File.WriteAllBytes(temp, json));
         }
-        var current = set is { TooLarge: false }
-            ? Enumerable.Range(0, set.Sheets).Select(ordinal => DownloadPaths.PreviewSheet(set.Generation, ordinal)).ToHashSet(StringComparer.OrdinalIgnoreCase)
-            : [];
-        foreach (string file in Directory.EnumerateFiles(download.Folder, "tp-*.jpg"))
+        var kept = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var named in new[] { set, before })
         {
-            if (!current.Contains(Path.GetFileName(file)))
+            if (named is { TooLarge: false } && KeptPreviews.IsGeneration(named.Generation))
             {
-                try
-                {
-                    File.Delete(file);
-                }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-                {
-                    logger.LogDebug("An older seek-bar preview sheet of download {DownloadId} stays ({Failure})", download.Record.DownloadId,
-                        DownloadLog.Failure(ex));
-                }
+                kept.UnionWith(Enumerable.Range(0, Math.Min(named.Sheets, KeptPreviews.MaxSheets))
+                    .Select(ordinal => DownloadPaths.PreviewSheet(named.Generation, ordinal)));
+            }
+        }
+        var leftovers = Directory.EnumerateFiles(download.Folder, "tp-*.jpg").Where(file => !kept.Contains(Path.GetFileName(file)))
+            .Concat(Directory.EnumerateFiles(download.Folder, "tp-*.arriving")).ToList();
+        foreach (string file in leftovers)
+        {
+            try
+            {
+                File.Delete(file);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                logger.LogDebug("An older seek-bar preview sheet of download {DownloadId} stays ({Failure})", download.Record.DownloadId,
+                    DownloadLog.Failure(ex));
             }
         }
     }
+
     // The set kept now; null when there is none or it does not read, which a fetch replaces.
     private KeptPreviewsFile? KeptSet(StoredDownload download)
     {

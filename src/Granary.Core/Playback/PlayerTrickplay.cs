@@ -35,14 +35,28 @@ public sealed record PlayerTrickplay(
     {
         ArgumentNullException.ThrowIfNull(manifest);
         var sheets = manifest.Sheets.OrderBy(s => s.Index).Select(s => ArtworkUrl.Resolve(server, s.Url)).ToList();
-        if (manifest.IntervalMs <= 0 || manifest.ThumbnailWidth <= 0 || manifest.ThumbnailHeight <= 0 || manifest.TileColumns <= 0
-            || manifest.TileRows <= 0 || manifest.ThumbnailCount <= 0 || sheets.Count == 0 || sheets.Any(s => s is null))
+        if (manifest.IntervalMs <= 0 || !IsDrawableGrid(manifest.ThumbnailWidth, manifest.ThumbnailHeight, manifest.TileColumns, manifest.TileRows)
+            || manifest.ThumbnailCount <= 0 || sheets.Count == 0 || sheets.Any(s => s is null))
         {
             return null;
         }
         return new PlayerTrickplay(manifest.FileId, manifest.IntervalMs, manifest.ThumbnailWidth, manifest.ThumbnailHeight,
             manifest.TileColumns, manifest.TileRows, manifest.ThumbnailCount, [.. sheets.OfType<Uri>()], manifest.ExpiresAt);
     }
+
+    /// <summary>The most thumbnails a sheet's row or column holds; the server's sheets have 10.</summary>
+    public const int MaxTiles = 100;
+
+    /// <summary>The widest and tallest thumbnail, in pixels; the server's are 320 wide.</summary>
+    public const int MaxThumbnailSide = 4096;
+
+    /// <summary>
+    /// A grid the seek bar can draw: each thumbnail at most <see cref="MaxThumbnailSide"/> on a side, each sheet at most
+    /// <see cref="MaxTiles"/> by <see cref="MaxTiles"/>. Within these, a thumbnail's offset and the width a sheet is decoded at
+    /// stay sane numbers.
+    /// </summary>
+    public static bool IsDrawableGrid(int width, int height, int columns, int rows) =>
+        width is > 0 and <= MaxThumbnailSide && height is > 0 and <= MaxThumbnailSide && columns is > 0 and <= MaxTiles && rows is > 0 and <= MaxTiles;
 
     /// <summary>The thumbnail for <paramref name="seconds"/> of media time; null outside the previews.</summary>
     public TrickplayTile? TileAt(double seconds)

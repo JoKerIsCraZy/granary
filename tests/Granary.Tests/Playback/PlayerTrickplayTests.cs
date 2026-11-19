@@ -46,6 +46,27 @@ public sealed class PlayerTrickplayTests
         Assert.Equal(DateTimeOffset.MaxValue, trickplay.ExpiresAt);
     }
 
+    // Within these the thumbnail's offset and the width a sheet is decoded at stay sane; past them the previews are not shown.
+    [Theory]
+    [InlineData(320, 180, 100, 100, true)]
+    [InlineData(4096, 4096, 10, 10, true)]
+    [InlineData(320, 180, 101, 10, false)]
+    [InlineData(320, 180, 10, 101, false)]
+    [InlineData(4097, 180, 10, 10, false)]
+    [InlineData(320, 4097, 10, 10, false)]
+    public void AServersGrid_IsShownOnlyWithinTheSeekBarsBounds(int width, int height, int columns, int rows, bool shown)
+    {
+        var manifest = Manifest(new TrickplaySheet { Index = 0, Url = "/api/v2/artwork/a?exp=1&sig=y" }) with
+        {
+            ThumbnailWidth = width,
+            ThumbnailHeight = height,
+            TileColumns = columns,
+            TileRows = rows,
+        };
+
+        Assert.Equal(shown, PlayerTrickplay.Of(manifest, Server) is not null);
+    }
+
     [Fact]
     public void TheServersSheets_HaveNoFiles()
     {

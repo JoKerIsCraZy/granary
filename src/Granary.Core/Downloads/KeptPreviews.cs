@@ -105,12 +105,12 @@ public static class KeptPreviews
     }
 
     /// <summary>
-    /// A layout the seek bar can draw, of at least one and at most <see cref="MaxSheets"/> sheets, whose grid of tiles a sheet
-    /// holds is counted in an <see cref="int"/> (<see cref="PlayerTrickplay.TileAt"/> divides by it).
+    /// A layout the seek bar can draw, of at least one and at most <see cref="MaxSheets"/> sheets, on a grid within the
+    /// seek bar's bounds (<see cref="PlayerTrickplay.IsDrawableGrid"/>).
     /// </summary>
     internal static bool IsDrawable(KeptPreviewsFile set) =>
-        set is { IntervalMs: > 0, ThumbnailWidth: > 0, ThumbnailHeight: > 0, TileColumns: > 0, TileRows: > 0, ThumbnailCount: > 0, Sheets: > 0 }
-        && set.Sheets <= MaxSheets && set.FileId.Length > 0 && (long)set.TileColumns * set.TileRows <= int.MaxValue;
+        set is { IntervalMs: > 0, ThumbnailCount: > 0, Sheets: > 0 } && set.Sheets <= MaxSheets && set.FileId.Length > 0
+        && PlayerTrickplay.IsDrawableGrid(set.ThumbnailWidth, set.ThumbnailHeight, set.TileColumns, set.TileRows);
 
     /// <summary>A generation a file name can carry: up to 32 letters and digits, as Granary makes them.</summary>
     internal static bool IsGeneration(string generation) =>
