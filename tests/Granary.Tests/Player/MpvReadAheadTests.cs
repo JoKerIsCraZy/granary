@@ -42,10 +42,15 @@ public sealed class MpvReadAheadTests
     [Fact]
     public void WhatTheViewersMpvConfSets_IsLeftToIt()
     {
-        var options = MpvReadAhead.Options(ReadAheadBuffer.Gb1, new HashSet<string> { "demuxer-max-bytes", "cache" });
+        var options = MpvReadAhead.Options(ReadAheadBuffer.Gb1, new HashSet<string> { "demuxer-max-bytes" });
 
-        Assert.Equal([new("demuxer-max-back-bytes", Bytes(192)), new("demuxer-readahead-secs", "120")], options);
+        Assert.Equal([new("cache", "yes"), new("demuxer-max-back-bytes", Bytes(192)), new("demuxer-readahead-secs", "120")], options);
     }
+
+    // cache=no keeps memory and delay low on purpose: a large read-ahead must not come in through the sizes.
+    [Fact]
+    public void AMpvConfThatSetsTheCache_HasTheWholeBufferLeftToIt() =>
+        Assert.Empty(MpvReadAhead.Options(ReadAheadBuffer.Gb2, new HashSet<string> { "cache" }));
 
     [Fact]
     public void TheNamesAMpvConfMaySet_AreTheOptionsTheBufferSets() =>
@@ -57,5 +62,6 @@ public sealed class MpvReadAheadTests
         Assert.Equal(ReadAheadBuffers.All, ReadAheadBuffers.All.Select(b => ReadAheadBuffers.FromName(ReadAheadBuffers.Name(b))));
         Assert.Equal(ReadAheadBuffer.Default, ReadAheadBuffers.FromName("3gb"));
         Assert.Equal(ReadAheadBuffer.Default, ReadAheadBuffers.FromName(null));
+        Assert.Equal(ReadAheadBuffer.Gb1, ReadAheadBuffers.FromName(" 1GB "));
     }
 }

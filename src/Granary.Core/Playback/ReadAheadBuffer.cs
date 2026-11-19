@@ -59,5 +59,5 @@ public static class ReadAheadBuffers
 
     /// <summary>The choice a name stands for; <see cref="ReadAheadBuffer.Default"/> for none or one Granary does not know.</summary>
     public static ReadAheadBuffer FromName(string? name) =>
-        All.FirstOrDefault(buffer => string.Equals(Name(buffer), name, StringComparison.Ordinal));
+        All.FirstOrDefault(buffer => string.Equals(Name(buffer), name?.Trim(), StringComparison.OrdinalIgnoreCase));
 }

@@ -20,6 +20,11 @@ internal static class MpvReadAhead
     public static IReadOnlyList<KeyValuePair<string, string>> Options(ReadAheadBuffer buffer, IReadOnlySet<string> fileSets)
     {
         ArgumentNullException.ThrowIfNull(fileSets);
+        // A file that sets the cache itself (cache=no keeps memory and delay low) has the whole buffer left to it, sizes too.
+        if (fileSets.Contains("cache"))
+        {
+            return [];
+        }
         var (ahead, behind) = ReadAheadBuffers.Bytes(buffer);
         // Byte counts, not mpv's own size suffixes.
         KeyValuePair<string, string>[] all =

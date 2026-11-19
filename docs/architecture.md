@@ -199,7 +199,8 @@ With the cache on, mpv's `cache-secs` stands over `demuxer-readahead-secs` and i
 while it plays, not in bursts, so the connection never sits idle long enough for a proxy before the server (nginx's
 `send_timeout` of 60 s) to close it, which is what makes a large buffer safe; a mpv.conf that sets it has its way. The
 viewer's mpv.conf wins: any of the four it names, at the top, in a profile or in an include (the pre-scan's entries), is
-left out for the whole run of that mpv, and the log says so once. A file on this PC (a download, `--play`) gets none of
+left out for the whole run of that mpv, and the log says so once. One that sets `cache` (`cache=no` keeps memory and
+delay low) has all four left to it. A profile counts though it may never apply. A file on this PC (a download, `--play`) gets none of
 them: mpv does not cache a local file by default, and the seek bar shows no cache for one.
 
 **The log** says once per start which file mpv read (`mpv started with …`), names the options of Granary's that the file
