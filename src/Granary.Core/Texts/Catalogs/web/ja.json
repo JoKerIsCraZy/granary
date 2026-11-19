@@ -941,6 +941,12 @@
       "value": "アプリのメニュー、ボタン、メッセージの言語です。音声、字幕、メタデータの言語とは別に設定します。"
     }
   ],
+  "settingsManifest.ui.date_format.option.auto": [
+    {
+      "type": 0,
+      "value": "デバイスに合わせる"
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -963,6 +969,12 @@
     {
       "type": 0,
       "value": "テーマ音楽をループ"
+    }
+  ],
+  "settingsManifest.ui.time_format.option.auto": [
+    {
+      "type": 0,
+      "value": "デバイスに合わせる"
     }
   ],
   "settingsManifest.ui.title_art.label": [
@@ -13517,6 +13529,50 @@
       "value": "アプリの言語を保存できませんでした"
     }
   ],
+  "web.settings.accessibility.dateFormat": [
+    {
+      "type": 0,
+      "value": "日付の形式"
+    }
+  ],
+  "web.settings.accessibility.dateTimeDescription": [
+    {
+      "type": 0,
+      "value": "アプリ全体での日付と時刻の表示方法を選択します。使用中のプロフィールに保存されます。"
+    }
+  ],
+  "web.settings.accessibility.dateTimePreview": [
+    {
+      "type": 0,
+      "value": "プレビュー："
+    },
+    {
+      "type": 1,
+      "value": "short"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "medium"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.settings.accessibility.dateTimeTitle": [
+    {
+      "type": 0,
+      "value": "日付と時刻"
+    }
+  ],
   "web.settings.accessibility.languageTitle": [
     {
       "type": 0,
@@ -13527,6 +13583,24 @@
     {
       "type": 0,
       "value": "デバイスに合わせる"
+    }
+  ],
+  "web.settings.accessibility.time12h": [
+    {
+      "type": 0,
+      "value": "12時間制"
+    }
+  ],
+  "web.settings.accessibility.time24h": [
+    {
+      "type": 0,
+      "value": "24時間制"
+    }
+  ],
+  "web.settings.accessibility.timeFormat": [
+    {
+      "type": 0,
+      "value": "時刻の形式"
     }
   ],
   "web.settings.accessibility.title": [

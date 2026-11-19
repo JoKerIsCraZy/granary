@@ -941,6 +941,12 @@
       "value": "Langue des menus, boutons et messages de l’application. Distincte des langues de l’audio, des sous-titres et des métadonnées."
     }
   ],
+  "settingsManifest.ui.date_format.option.auto": [
+    {
+      "type": 0,
+      "value": "Identique à l’appareil"
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -963,6 +969,12 @@
     {
       "type": 0,
       "value": "Musique de générique en boucle"
+    }
+  ],
+  "settingsManifest.ui.time_format.option.auto": [
+    {
+      "type": 0,
+      "value": "Selon l’appareil"
     }
   ],
   "settingsManifest.ui.title_art.label": [
@@ -15646,6 +15658,50 @@
       "value": "Impossible d’enregistrer la langue de l’application"
     }
   ],
+  "web.settings.accessibility.dateFormat": [
+    {
+      "type": 0,
+      "value": "Format de date"
+    }
+  ],
+  "web.settings.accessibility.dateTimeDescription": [
+    {
+      "type": 0,
+      "value": "Choisissez l’affichage des dates et des heures dans toute l’application. Enregistré pour le profil actif."
+    }
+  ],
+  "web.settings.accessibility.dateTimePreview": [
+    {
+      "type": 0,
+      "value": "Aperçu : "
+    },
+    {
+      "type": 1,
+      "value": "short"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "medium"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.settings.accessibility.dateTimeTitle": [
+    {
+      "type": 0,
+      "value": "Date et heure"
+    }
+  ],
   "web.settings.accessibility.languageTitle": [
     {
       "type": 0,
@@ -15656,6 +15712,24 @@
     {
       "type": 0,
       "value": "Suivre l’appareil"
+    }
+  ],
+  "web.settings.accessibility.time12h": [
+    {
+      "type": 0,
+      "value": "12 heures"
+    }
+  ],
+  "web.settings.accessibility.time24h": [
+    {
+      "type": 0,
+      "value": "24 heures"
+    }
+  ],
+  "web.settings.accessibility.timeFormat": [
+    {
+      "type": 0,
+      "value": "Format de l’heure"
     }
   ],
   "web.settings.accessibility.title": [
