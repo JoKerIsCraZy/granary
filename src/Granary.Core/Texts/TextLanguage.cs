@@ -44,6 +44,7 @@ public sealed class TextLanguage
         Formats = formats ?? FormatLocale.For(Tag);
         // As the web's createAppIntl: only Arabic names a numbering system, its format locale's.
         MessageDigits = AppLanguage.Match(Tag) == "ar" ? Formats.Digits : null;
+        LocalizedFormats = Tag != AppLanguage.English && AppLanguage.Match(Formats.Culture.Name) == AppLanguage.Match(Tag);
         _formatter = new MessageFormatter(own.Tag, marksProblems, MessageDigits);
         // An English fallback prints its numbers in Latin digits, its plural # too.
         _englishFormatter = ReferenceEquals(own, english) ? _formatter : new MessageFormatter(english.Tag, marksProblems);
@@ -60,6 +61,13 @@ public sealed class TextLanguage
     /// format in the app (<see cref="AppLanguage.FormatCulture"/>), the language's own in tests.
     /// </summary>
     public FormatLocale Formats { get; }
+
+    /// <summary>
+    /// Whether dates come out in this language, not English: the language is not English and its format locale is of this
+    /// language (the web's <c>localizedFormats</c>, lib/appLocale.ts). Then a date format's English order is not pinned
+    /// (<see cref="DateText"/>), as no locale puts German month names first.
+    /// </summary>
+    public bool LocalizedFormats { get; }
 
     /// <summary>The digits numbers in this language's messages take: Arabic-Indic in Arabic where its format locale has them; null for Latin.</summary>
     internal string? MessageDigits { get; }
