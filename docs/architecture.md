@@ -1755,7 +1755,9 @@ client guide.
   Its state sits under the manager's lock, which is never held while the store writes, a create runs or a timer fires. The
   store change's handler reads the profile's downloads and deletes under it, so two changes on two threads leave the later
   read as what the next one compares with: those reads take the store's own lock inside the manager's, never the other way
-  round, as the queue's lock comes before the store's. The creates take no token of their own: `SiloHttp`'s client bounds each at 100 s. A season's
+  round, as the queue's lock comes before the store's. So the store raises `Changed` under no lock of its own: its first
+  load and the folder work a recheck starts begin on the thread pool, since work that is done at once would otherwise
+  raise it on the thread holding the store's lock. The creates take no token of their own: `SiloHttp`'s client bounds each at 100 s. A season's
   or a series' run that the viewer cancels while its create is under way keeps nothing waiting when that create meets the
   limit; the cancel is looked at again in the store change that would put them in line (`AddWaitingUnlessClearedAsync`
   with the run's token), so one that comes just before it keeps none either. The run answers how many of the series'

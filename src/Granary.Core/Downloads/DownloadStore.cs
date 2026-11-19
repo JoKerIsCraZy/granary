@@ -118,7 +118,10 @@ public sealed partial class DownloadStore
         {
             if (_load is null || _load.IsFaulted || _load.IsCanceled)
             {
-                _load = LoadOnceAsync();
+                // Started on the thread pool, never on this thread: a read that is done at once would otherwise raise Changed
+                // while this lock is held, and a handler that takes its own lock first (the waiting line's reads the store
+                // under the manager's) could then wait on a thread that waits on it.
+                _load = Task.Run(LoadOnceAsync, CancellationToken.None);
             }
             return _load.WaitAsync(cancellationToken);
         }
@@ -440,7 +443,9 @@ public sealed partial class DownloadStore
                 {
                     if (FolderWork.IsCompleted)
                     {
-                        FolderWork = FolderWorkAsync();
+                        // On the thread pool, as LoadAsync starts its load: work that is done at once raises Changed, never
+                        // under this lock.
+                        FolderWork = Task.Run(() => FolderWorkAsync(), CancellationToken.None);
                     }
                 }
             }
