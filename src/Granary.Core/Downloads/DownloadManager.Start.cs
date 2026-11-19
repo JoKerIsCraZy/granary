@@ -169,7 +169,7 @@ public sealed partial class DownloadManager
                 continue;
             }
             // Taken before the create: a place the server frees while it is asked is not lost to the refusal (Waiting.cs).
-            long freed = FreeGeneration;
+            long freed = FreeGenerationOf(scope);
             // For the profile the run started for, which the check above looked at: another one active by the create sends nothing.
             var outcome = await StartAsync(new DownloadRequest(episode.EpisodeId, seriesId, episode.MediaFileId, quality, episode.Title,
                 seriesTitle, season, episode.EpisodeNumber), scope, onlyWhileWaiting: false, CancellationToken.None).ConfigureAwait(false);

@@ -561,6 +561,30 @@ public sealed class WaitingEpisodesTests : IAsyncDisposable
         Assert.Empty(Waiting(Scope8));
     }
 
+    // CodeRabbit on #179: the server's limit is the account's, so a place another account frees does not cut this one's wait
+    // short: back on the first account, its line still waits for the minute.
+    [Fact]
+    public async Task APlaceAnotherAccountFrees_DoesNotCutTheWaitShort()
+    {
+        var other = new DownloadScope("srv1", "2", "9");
+        await _h.AddAsync("dl_9", DownloadState.Preparing, scope: other, mediaItemId: "mv_9");
+        var manager = await LimitedAsync();
+        Creates(Created("dl_2", "ep_2"), Created("dl_21", "ep_21"));
+        var first = _h.Session.Account;
+
+        _h.Session.Account = new Granary.Core.Api.Auth.Account("2", "elena", "", "user", [], true, false, null);
+        _h.SwitchProfile("9");
+        await manager.WaitingRun;
+        await _h.Store.UpdateAsync(other, "dl_9", r => r with { State = DownloadState.Queued }, Token);
+        await manager.WaitingRun;
+        _h.Session.Account = first;
+        _h.SwitchProfile("7");
+        await manager.WaitingRun;
+
+        Assert.Equal(2, CreatedEpisodes().Count);
+        Assert.Equal(["ep_2", "ep_21"], Waiting());
+    }
+
     // Review of #179: a profile switched while a season's run reads the downloads, right before its create, sends nothing,
     // and the run stops there without counting a failure.
     [Fact]

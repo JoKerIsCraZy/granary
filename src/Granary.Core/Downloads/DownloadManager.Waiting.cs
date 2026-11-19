@@ -46,12 +46,14 @@ public sealed partial class DownloadManager
     private Task _drain = Task.CompletedTask;
 
     // The profile whose create the limit refused last, how often in a row, the earliest the line is asked again, and how many
-    // places had freed (_freeGeneration) as that create was sent: a place freed after it lets the line be asked at once.
+    // places had freed for its account (_freeGenerations) as that create was sent: a place freed after it lets the line be
+    // asked at once. The server's limit is the account's, so the places are counted per server and account: one another
+    // profile of the account frees counts, one another account frees does not.
     private DownloadScope? _refusedScope;
     private int _refusals;
     private DateTimeOffset _notBefore;
     private long _refusedAtFree;
-    private long _freeGeneration;
+    private readonly Dictionary<(string Server, string Account), long> _freeGenerations = [];
 
     // The head that failed without a clear answer, and how often in a row.
     private (string? EpisodeId, int Count) _headFailures;
@@ -78,17 +80,16 @@ public sealed partial class DownloadManager
         }
     }
 
-    // How many places the server freed for the active profile so far; taken before a create, compared after a refusal.
-    private long FreeGeneration
+    // How many places the server freed for the scope's account so far; taken before a create, compared after a refusal.
+    private long FreeGenerationOf(DownloadScope scope)
     {
-        get
+        lock (_gate)
         {
-            lock (_gate)
-            {
-                return _freeGeneration;
-            }
+            return FreedLocked(scope);
         }
     }
+
+    private long FreedLocked(DownloadScope scope) => _freeGenerations.GetValueOrDefault((scope.ServerEntryId, scope.AccountId));
 
     /// <summary>
     /// How many of the active profile's episodes wait for the server's limit of downloads; 0 without a profile.
@@ -221,9 +222,9 @@ public sealed partial class DownloadManager
     {
         lock (_gate)
         {
-            freed = _freeGeneration;
+            freed = FreedLocked(scope);
             var now = _time.GetUtcNow();
-            if (_refusedScope != scope || _freeGeneration > _refusedAtFree || now >= _notBefore)
+            if (_refusedScope != scope || freed > _refusedAtFree || now >= _notBefore)
             {
                 return true;
             }
@@ -278,7 +279,7 @@ public sealed partial class DownloadManager
             if (_seenScope == scope && (_seenPreparing.Any(id => downloads.TryGetValue(id, out var state) && state != DownloadState.Preparing)
                 || _seenDeletes.Any(id => !deletes.Contains(id) && !downloads.ContainsKey(id))))
             {
-                _freeGeneration++;
+                _freeGenerations[(scope.ServerEntryId, scope.AccountId)] = FreedLocked(scope) + 1;
             }
             var preparing = downloads.Where(d => d.Value == DownloadState.Preparing).Select(d => d.Key).ToHashSet(StringComparer.Ordinal);
             (_seenScope, _seenPreparing, _seenDeletes) = (scope, preparing, deletes);
@@ -319,7 +320,7 @@ public sealed partial class DownloadManager
                 _logger.LogError("Asking for the waiting episodes again failed unexpectedly ({Failure})", DownloadLog.Failure(ex));
                 if (DownloadScope.Of(_session) is { } scope)
                 {
-                    NoteRefusal(scope, null, FreeGeneration);
+                    NoteRefusal(scope, null, FreeGenerationOf(scope));
                 }
             }
             lock (_gate)

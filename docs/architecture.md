@@ -1771,7 +1771,8 @@ client guide.
   every 30 minutes while the server still refuses, or the server's `Retry-After` when it names a longer one, kept to 30
   minutes (a date years ahead included), as the sign-in's and the token refresh's are. A place freed while the head's
   create is under way is not lost to that create's refusal: a free count is taken before the create and compared after
-  (`_freeGeneration`). The same holds for a season's or a series' own create, before anything waits: a store change keeps
+  (`_freeGenerations`, per server and account, since the limit is the account's: a place another profile of the account
+  frees counts, one another account frees does not). The same holds for a season's or a series' own create, before anything waits: a store change keeps
   what it compares with whether or not episodes wait, so a download leaving Preparing while that create is refused lets the
   line it starts be asked at once; a switch of profile takes the new profile's as that, so one of its downloads leaving
   Preparing before any store change counts too. Of two refusals, the later free count is kept: an older one, from a create sent earlier,
