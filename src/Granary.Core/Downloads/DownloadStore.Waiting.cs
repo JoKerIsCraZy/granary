@@ -18,13 +18,26 @@ public sealed partial class DownloadStore
     /// all of a scope whose downloads were cleared since <paramref name="clearGeneration"/> (the run that refused them began
     /// before a sign-out). Answers how many were put in line.
     /// </summary>
-    public async Task<int> AddWaitingUnlessClearedAsync(IReadOnlyList<WaitingEpisode> episodes, long clearGeneration, CancellationToken cancellationToken)
+    public Task<int> AddWaitingUnlessClearedAsync(IReadOnlyList<WaitingEpisode> episodes, long clearGeneration, CancellationToken cancellationToken) =>
+        AddWaitingUnlessClearedAsync(episodes, clearGeneration, CancellationToken.None, cancellationToken);
+
+    /// <summary>
+    /// As the other <c>AddWaitingUnlessClearedAsync</c>, and none at all once <paramref name="stopped"/> is cancelled: the viewer
+    /// stopped the run that was refused. Asked in the same change that would put them in line, so a stop either comes first
+    /// and keeps them out, or comes after they went in, and they wait as the run then says.
+    /// </summary>
+    public async Task<int> AddWaitingUnlessClearedAsync(IReadOnlyList<WaitingEpisode> episodes, long clearGeneration, CancellationToken stopped,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(episodes);
         await LoadAsync(cancellationToken);
         int added = 0;
         Change(state =>
         {
+            if (stopped.IsCancellationRequested)
+            {
+                return state;
+            }
             var line = new List<WaitingEpisode>(state.Waiting);
             foreach (var episode in episodes)
             {

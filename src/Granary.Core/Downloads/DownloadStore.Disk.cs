@@ -19,14 +19,19 @@ public sealed partial class DownloadStore
     // first: a crash after the folder is made cannot delete it at the next start. A server delete not yet sent for this very
     // download goes with it: the entry is this download's again, and the next index write, this one's, no longer names it.
     // Null, and nothing kept, when the scope's downloads were cleared since clearGeneration: before the folder is made, none
-    // is made; while it is made, it goes again. The same with onlyWhileWaiting once its episode no longer waits in line. The row
-    // kept carries the clears seen as it was added, and its episode no longer waits for the server's limit of downloads.
-    private StoredDownload? AddToDisk(StoredDownload download, long clearGeneration, bool onlyWhileWaiting)
+    // is made; while it is made, it goes again. The same with onlyWhileWaiting once its episode no longer waits in line. Answers
+    // also which of the two kept it out, for the log. The row kept carries the clears seen as it was added, and its episode no
+    // longer waits for the server's limit of downloads.
+    private (StoredDownload? Kept, NotKept Why) AddToDisk(StoredDownload download, long clearGeneration, bool onlyWhileWaiting)
     {
         var record = download.Record;
-        if (IsClearedSince(record.Scope, clearGeneration) || (onlyWhileWaiting && !IsWaiting(record.Scope, record.MediaItemId)))
+        if (IsClearedSince(record.Scope, clearGeneration))
         {
-            return null;
+            return (null, NotKept.Cleared);
+        }
+        if (onlyWhileWaiting && !IsWaiting(record.Scope, record.MediaItemId))
+        {
+            return (null, NotKept.LeftLine);
         }
         var waiting = Current.FolderDeletes.Where(d => IsSameFolder(d.Folder, download.Folder)).ToList();
         var unsent = Current.PendingDeletes.Where(d => d.Scope == record.Scope && d.DownloadId == record.DownloadId).ToList();
@@ -51,11 +56,17 @@ public sealed partial class DownloadStore
         }
         // Checked with the change itself: a clear either comes first and keeps the row out, or after and takes it with the rest.
         StoredDownload? kept = null;
+        var why = NotKept.None;
         Change(state =>
         {
-            if (IsClearedSinceLocked(record.Scope, clearGeneration)
-                || (onlyWhileWaiting && !state.Waiting.Any(w => w.Scope == record.Scope && w.EpisodeId == record.MediaItemId)))
+            if (IsClearedSinceLocked(record.Scope, clearGeneration))
             {
+                why = NotKept.Cleared;
+                return state;
+            }
+            if (onlyWhileWaiting && !state.Waiting.Any(w => w.Scope == record.Scope && w.EpisodeId == record.MediaItemId))
+            {
+                why = NotKept.LeftLine;
                 return state;
             }
             kept = download with { ClearsSeen = _clearGeneration };
@@ -68,10 +79,18 @@ public sealed partial class DownloadStore
         if (kept is null)
         {
             Unmake(download);
-            return null;
+            return (null, why);
         }
         WriteIndex(Current);
-        return kept;
+        return (kept, NotKept.None);
+    }
+
+    // Why a new download was not kept: its scope's downloads were cleared, or its episode no longer waits in line.
+    private enum NotKept
+    {
+        None,
+        Cleared,
+        LeftLine,
     }
 
     // A new download's folder starts empty: what a download before it under the same id left there is not its bytes. A folder

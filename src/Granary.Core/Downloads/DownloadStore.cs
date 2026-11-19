@@ -196,6 +196,7 @@ public sealed partial class DownloadStore
         string folder = DownloadPaths.Folder(_preferences.Folder, record.Scope, record.DownloadId);
         var stored = new StoredDownload(record, folder, FilesMissing: false);
         StoredDownload? kept;
+        NotKept why;
         await _writes.WaitAsync(cancellationToken);
         try
         {
@@ -203,7 +204,7 @@ public sealed partial class DownloadStore
             {
                 throw new InvalidOperationException("This download is kept already.");
             }
-            kept = await Task.Run(() => AddToDisk(stored, clearGeneration, onlyWhileWaiting), CancellationToken.None);
+            (kept, why) = await Task.Run(() => AddToDisk(stored, clearGeneration, onlyWhileWaiting), CancellationToken.None);
         }
         finally
         {
@@ -211,7 +212,14 @@ public sealed partial class DownloadStore
         }
         if (kept is null)
         {
-            _logger.LogInformation("Download {DownloadId} is not kept: its account's downloads were cleared meanwhile", record.DownloadId);
+            if (why == NotKept.LeftLine)
+            {
+                _logger.LogInformation("Download {DownloadId} is not kept: its episode left the line meanwhile", record.DownloadId);
+            }
+            else
+            {
+                _logger.LogInformation("Download {DownloadId} is not kept: its account's downloads were cleared meanwhile", record.DownloadId);
+            }
             return null;
         }
         Changed?.Invoke(this, EventArgs.Empty);

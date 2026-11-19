@@ -6,6 +6,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Server download limit:** waiting episodes start as soon as another download is ready on the server, also when that
+  happens while the season is being refused.
+
 ## [0.5.0] - 2026-11-17
 
 ### Added

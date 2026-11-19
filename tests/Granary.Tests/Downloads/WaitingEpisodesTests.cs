@@ -460,6 +460,53 @@ public sealed class WaitingEpisodesTests : IAsyncDisposable
         Assert.Equal(new SeasonStartResult(Started: 1, AlreadyThere: 0, Failed: 0, ReachedLimit: true, Waiting: 2), result);
     }
 
+    // Issue #173: a place that frees while a season's own create is refused, with nothing waiting yet, is not lost either: the
+    // episodes the refusal keeps waiting are asked for at once, not after the minute.
+    [Fact]
+    public async Task APlaceFreedWhileTheRunsCreateIsRefused_IsNotLost()
+    {
+        await _h.AddAsync("dl_0", DownloadState.Preparing, mediaItemId: "mv_9");
+        _h.List();
+        var (held, gate) = ItemDetailFixture.Held();
+        Creates(Created("dl_1", "ep_1"), held, Created("dl_2", "ep_2"), Created("dl_21", "ep_21"));
+        var manager = _h.NewManager();
+        await manager.WaitingRun;
+
+        var run = manager.StartSeriesAsync(Series, Token);
+        await Until(() => CreatedEpisodes().Count == 2, "the second episode's create was sent");
+        await _h.Store.UpdateAsync(Scope7, "dl_0", r => r with { State = DownloadState.Queued }, Token);
+        gate.SetResult(await Limit()());
+        await run;
+        await Until(() => Waiting().Length == 0, "the waiting episodes were asked for again");
+        await manager.WaitingRun;
+
+        Assert.Equal(["ep_1", "ep_2", "ep_2", "ep_21"], CreatedEpisodes());
+        Assert.NotNull(_h.Find("dl_21"));
+    }
+
+    // Issue #173: Remove all downloads for a profile that has only waiting episodes, as the manager does it: the line goes, no
+    // delete is sent, and nothing is asked for again later.
+    [Fact]
+    public async Task RemovingAllWithOnlyWaitingEpisodes_DropsTheLine_AndSendsNothing()
+    {
+        _h.List();
+        Creates(Limit());
+        var manager = _h.NewManager();
+        await manager.StartSeriesAsync(Series, Token);
+        Assert.Equal(["ep_1", "ep_2", "ep_21"], Waiting());
+        int sent = _h.Silo.Sent.Count;
+
+        await manager.DropWaitingAsync(Scope7, null, Token);
+        await manager.DeleteAllAsync(Scope7, [], Token);
+        await AdvanceAsync(TimeSpan.FromHours(1), manager);
+
+        Assert.Empty(Waiting());
+        Assert.Empty(_h.Store.In(Scope7));
+        Assert.Empty(_h.Store.PendingDeletes(Scope7));
+        Assert.Equal(sent, _h.Silo.Sent.Count);
+        Assert.Equal(0, manager.WaitingCount());
+    }
+
     private static Func<Task<HttpResponseMessage>> LimitUntil(DateTimeOffset date) => async () =>
     {
         var response = await Limit()();
