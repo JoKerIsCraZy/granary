@@ -9,7 +9,8 @@ namespace Granary.App.Controls;
 
 // The bubble's picture, as Silo's web player shows it: the trickplay thumbnail of the time under the pointer; while its
 // sheet loads, or without previews, the picture of the marked part or of the chapter there, or a placeholder. With a
-// picture the bubble is 176 px wide and its lines sit left; with none it only shows the time.
+// picture the bubble is 176 px wide and its lines sit left; with none it only shows the time. A download's kept previews
+// (PlayerTrickplay.SheetFiles) are read from their files.
 public sealed partial class SeekBar
 {
     public static readonly DependencyProperty TrickplayProperty = DependencyProperty.Register(nameof(Trickplay),
@@ -71,11 +72,11 @@ public sealed partial class SeekBar
     // The thumbnail cut out of its sheet, scaled to the bubble; false while the sheet loads or when it failed.
     private bool ShowTile(PlayerTrickplay trickplay, TrickplayTile tile)
     {
-        var sheet = Sheet(trickplay, tile.Url);
+        var sheet = Sheet(trickplay, tile.Sheet);
         if (tile.Sheet + 1 < trickplay.Sheets.Count)
         {
             // The next one too, so scrubbing forward rarely waits.
-            Sheet(trickplay, trickplay.Sheets[tile.Sheet + 1]);
+            Sheet(trickplay, tile.Sheet + 1);
         }
         if (!sheet.IsLoaded || sheet.HasFailed)
         {
@@ -95,9 +96,10 @@ public sealed partial class SeekBar
         return true;
     }
 
-    private SheetEntry Sheet(PlayerTrickplay trickplay, Uri url)
+    // Sheets are told apart by their place: the previews they belong to are the bar's until they change, which clears them.
+    private SheetEntry Sheet(PlayerTrickplay trickplay, int sheet)
     {
-        int index = _sheets.FindIndex(s => s.Url == url);
+        int index = _sheets.FindIndex(s => s.Index == sheet);
         if (index >= 0)
         {
             var kept = _sheets[index];
@@ -106,16 +108,20 @@ public sealed partial class SeekBar
             return kept;
         }
         // Decoded as wide as the bubble shows it, not at the sheet's own size.
-        var entry = new SheetEntry(url, Artwork.Load(url, (int)Math.Ceiling(trickplay.Columns * PictureWidth))!);
-        entry.Bitmap.ImageOpened += (_, _) =>
+        int decodeWidth = (int)Math.Ceiling(trickplay.Columns * PictureWidth);
+        SheetEntry entry;
+        if (trickplay.SheetFiles is { } files)
         {
-            entry.IsLoaded = true;
-            if (_sheets.Contains(entry))
-            {
-                ShowTipAgain();
-            }
-        };
-        entry.Bitmap.ImageFailed += (_, _) => entry.HasFailed = true;
+            // Kept with a download: read from its file on the thread pool, as a download's artwork is, never through an address.
+            entry = new SheetEntry(sheet, new BitmapImage { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical });
+            LoadFile(entry, files[sheet]);
+        }
+        else
+        {
+            entry = new SheetEntry(sheet, Artwork.Load(trickplay.Sheets[sheet], decodeWidth)!);
+            entry.Bitmap.ImageOpened += (_, _) => SheetLoaded(entry);
+            entry.Bitmap.ImageFailed += (_, _) => entry.HasFailed = true;
+        }
         _sheets.Add(entry);
         if (_sheets.Count > KeptSheets)
         {
@@ -125,9 +131,38 @@ public sealed partial class SeekBar
         return entry;
     }
 
-    private sealed class SheetEntry(Uri url, BitmapImage bitmap)
+    private void SheetLoaded(SheetEntry entry)
     {
-        public Uri Url { get; } = url;
+        entry.IsLoaded = true;
+        if (_sheets.Contains(entry))
+        {
+            ShowTipAgain();
+        }
+    }
+
+    // async void: whatever escapes would end the app over one picture. A file that is gone or does not decode leaves the
+    // bubble with the chapter's picture or the time, as a sheet that does not load does.
+    private async void LoadFile(SheetEntry entry, string path)
+    {
+        try
+        {
+            using var stream = await LocalArtwork.ReadAsync(path);
+            await entry.Bitmap.SetSourceAsync(stream);
+            LocalArtwork.Forget(path);
+        }
+        catch (Exception ex)
+        {
+            LocalArtwork.SayFailed(path, ex);
+            entry.HasFailed = true;
+            return;
+        }
+        // Back on the UI thread, where each await above came back to.
+        SheetLoaded(entry);
+    }
+
+    private sealed class SheetEntry(int index, BitmapImage bitmap)
+    {
+        public int Index { get; } = index;
 
         public BitmapImage Bitmap { get; } = bitmap;
 

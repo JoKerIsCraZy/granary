@@ -13,6 +13,23 @@ namespace Granary.Core.Playback;
 public sealed record PlayerTrickplay(
     string FileId, int IntervalMs, int Width, int Height, int Columns, int Rows, int Count, IReadOnlyList<Uri> Sheets, DateTimeOffset ExpiresAt)
 {
+    /// <summary>
+    /// For previews kept with a download: each sheet's file on this PC, in the order of <see cref="Sheets"/>, which then only
+    /// name them. The sheets are read from these paths, never through their addresses; null for the server's.
+    /// </summary>
+    public IReadOnlyList<string>? SheetFiles { get; init; }
+
+    /// <summary>Previews whose sheets are the files at <paramref name="files"/>, kept on this PC; they do not expire.</summary>
+    public static PlayerTrickplay Local(string fileId, int intervalMs, int width, int height, int columns, int rows, int count,
+        IReadOnlyList<string> files)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        return new PlayerTrickplay(fileId, intervalMs, width, height, columns, rows, count, [.. files.Select(f => new Uri(f))], DateTimeOffset.MaxValue)
+        {
+            SheetFiles = files,
+        };
+    }
+
     /// <summary>The previews of <paramref name="manifest"/>, the sheets resolved against <paramref name="server"/>; null when they cannot be shown.</summary>
     public static PlayerTrickplay? Of(TrickplayManifest manifest, Uri server)
     {
