@@ -152,7 +152,7 @@ public sealed class WaitingEpisodesStoreTests : IAsyncDisposable
         using var stopped = new CancellationTokenSource();
         await stopped.CancelAsync();
 
-        Assert.Equal(0, await _h.Store.AddWaitingUnlessClearedAsync([Waiting(7)], _h.Store.ClearGeneration, stopped.Token, Token));
+        Assert.Equal((0, 0), await _h.Store.AddWaitingUnlessClearedAsync([Waiting(7)], _h.Store.ClearGeneration, stopped.Token, Token));
 
         Assert.Empty(_h.Store.WaitingIn(Scope7));
     }

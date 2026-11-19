@@ -46,7 +46,7 @@ public sealed partial class DownloadManager
         long clears = _store.ClearGeneration;
         if (DownloadScope.Of(_session) is not { } scope || _session.ActiveServer is not { } server || (onlyFor is not null && scope != onlyFor))
         {
-            return new(DownloadStartResult.Unavailable);
+            return new(DownloadStartResult.Unavailable, NotActive: true);
         }
         if (_store.IsClearPending(scope))
         {
@@ -65,6 +65,11 @@ public sealed partial class DownloadManager
         try
         {
             await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
+            // Looked at again once the downloads are read: the profile may have switched while they were.
+            if (onlyFor is not null && DownloadScope.Of(_session) != onlyFor)
+            {
+                return new(DownloadStartResult.Unavailable, NotActive: true);
+            }
             if (_store.FindByItem(scope, request.MediaItemId) is not null)
             {
                 return new(DownloadStartResult.AlreadyDownloading);
@@ -168,6 +173,12 @@ public sealed partial class DownloadManager
             // For the profile the run started for, which the check above looked at: another one active by the create sends nothing.
             var outcome = await StartAsync(new DownloadRequest(episode.EpisodeId, seriesId, episode.MediaFileId, quality, episode.Title,
                 seriesTitle, season, episode.EpisodeNumber), scope, onlyWhileWaiting: false, CancellationToken.None).ConfigureAwait(false);
+            if (outcome.NotActive)
+            {
+                // The profile switched between the look above and the create: nothing was sent, so it is no failure.
+                _logger.LogInformation("A season's or series' downloads stopped after {Count} episodes", started + there + failed);
+                break;
+            }
             switch (outcome.Result)
             {
                 case DownloadStartResult.Started:
@@ -298,8 +309,10 @@ public sealed partial class DownloadManager
 
     // What a create came to: its result; whether a failure is one the server would give again as the create stands, which takes a
     // waiting episode out of line; the wait a refusal for the limit names (Retry-After), if any; and whether a waiting episode
-    // was taken out of line while it was asked for (Dropped: nothing kept, and the server hears the delete of what it made).
-    private readonly record struct CreateOutcome(DownloadStartResult Result, bool IsFinal = false, TimeSpan? RetryAfter = null, bool Dropped = false);
+    // was taken out of line while it was asked for (Dropped: nothing kept, and the server hears the delete of what it made); and
+    // whether nothing was sent because the profile it was for is not the active one (NotActive: a run stops there).
+    private readonly record struct CreateOutcome(DownloadStartResult Result, bool IsFinal = false, TimeSpan? RetryAfter = null, bool Dropped = false,
+        bool NotActive = false);
 
     // The account's limit of downloads at once or in a period (silo-server internal/downloads/limiter.go), by its problem code:
     // a 429 of another kind, as a proxy's, is no such limit.

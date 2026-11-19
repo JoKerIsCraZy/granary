@@ -118,20 +118,19 @@ public sealed partial class DownloadManager
     // The episodes from the one the limit refused on wait in line, after the wait the refusal starts: the line is not asked
     // again before it, unless a place frees. The wait is noted before the episodes go in line, so the store's change does not
     // ask at once, and its timer is set once they are in it. A run the viewer stopped (stopped) by the time they would go in
-    // line keeps none of them, asked in the store's change itself. Answers how many of the series' episodes wait: the ones
-    // that waited already and the ones put in line, counted as they went in, since a place freed meanwhile can start the line
-    // at once and take some of them out again before this answers.
+    // line keeps none of them, asked in the store's change itself. Answers how many of the series' episodes wait as that
+    // change left the line, counted in it: a place freed meanwhile can start the line at once and take some out again before
+    // this answers.
     private async Task<int> KeepWaitingAsync(DownloadScope scope, string seriesId, string seriesTitle, string quality,
         IEnumerable<(int Season, SeasonEpisode Episode)> episodes, long clears, TimeSpan? retryAfter, long freed, CancellationToken stopped)
     {
         var wait = BeginRefusal(scope, retryAfter, freed);
         List<WaitingEpisode> line = [.. episodes.Select(e => new WaitingEpisode(scope, seriesId, seriesTitle, e.Season, e.Episode.EpisodeId,
             e.Episode.EpisodeNumber, e.Episode.Title, e.Episode.MediaFileId, quality))];
-        int before = _store.WaitingIn(scope).Count(w => w.SeriesId == seriesId);
-        int added = 0;
+        int waiting = 0;
         try
         {
-            added = await _store.AddWaitingUnlessClearedAsync(line, clears, stopped, CancellationToken.None).ConfigureAwait(false);
+            (_, waiting) = await _store.AddWaitingUnlessClearedAsync(line, clears, stopped, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -141,7 +140,7 @@ public sealed partial class DownloadManager
         {
             ArmRetry(wait);
         }
-        return before + added;
+        return waiting;
     }
 
     // A refusal for the limit (with the wait the server named), or a create without a clear answer: the next ask waits, longer
@@ -241,13 +240,15 @@ public sealed partial class DownloadManager
     // deleted here holds its place until its delete is sent. What it compares with is kept while nothing waits too: a place
     // that frees while a season's own create is refused, before anything waits, lets the line that refusal starts be asked at
     // once. The store is read under the manager's lock (the manager's lock, then the store's, never the other way round), so
-    // of two changes on two threads the later read is the one the next change compares with.
+    // of two changes on two threads the later read is the one the next change compares with. The active profile is read under
+    // it too (the session's snapshot, which takes no lock), so a change that looked before a switch never stores its old
+    // profile over the new one's.
     private void OnStoreChangedForWaiting(object? sender, EventArgs e)
     {
-        var scope = DownloadScope.Of(_session);
         bool waits;
         lock (_gate)
         {
+            var scope = DownloadScope.Of(_session);
             if (scope is null)
             {
                 (_seenScope, _seenPreparing, _seenDeletes) = (null, [], []);
@@ -362,6 +363,11 @@ public sealed partial class DownloadManager
         {
             // Taken out of line while it was asked for: nothing of it is kept, and the line goes on as it is now.
             return true;
+        }
+        if (outcome.NotActive)
+        {
+            // Nothing was sent: another profile was active for a moment. The episode stays, and the line waits for its profile.
+            return false;
         }
         bool unclear = outcome is { Result: DownloadStartResult.Failed, IsFinal: false };
         int failures;

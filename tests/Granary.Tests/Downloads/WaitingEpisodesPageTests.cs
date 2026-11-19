@@ -141,6 +141,7 @@ public sealed class WaitingEpisodesPageTests : IAsyncDisposable
     public async Task DeletingASeries_TakesADownloadKeptBeforeTheDrop_ThoughTheProfileSwitchedAfterIt()
     {
         await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_1", change: r => r with { SeriesId = "sr_1", SeriesTitle = "Example Series" });
+        await _h.AddAsync("dl_9", DownloadState.Completed, mediaItemId: "ep_9", change: r => r with { SeriesId = "sr_2", SeriesTitle = "Example Series" });
         await WaitAsync(Waiting("ep_2"));
         var page = await PageAsync();
         bool armed = false;
@@ -158,10 +159,11 @@ public sealed class WaitingEpisodesPageTests : IAsyncDisposable
             armed = true;
         };
 
-        await page.Actions.DeleteSeriesCommand.ExecuteAsync(page.Series.Single().Card);
+        await page.Actions.DeleteSeriesCommand.ExecuteAsync(page.Series.Single(s => s.Card.Id == "sr_1").Card);
 
         Assert.Equal("8", _h.Session.ProfileId);
-        Assert.Empty(_h.Store.In(Scope7));
+        // The other series' download stays: only sr_1's were read again.
+        Assert.Equal(["dl_9"], _h.Store.In(Scope7).Select(d => d.Record.DownloadId));
         Assert.Equal(["dl_1", "dl_3"], _h.Store.PendingDeletes(Scope7).Select(d => d.DownloadId).Order(StringComparer.Ordinal));
     }
 

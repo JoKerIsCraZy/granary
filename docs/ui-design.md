@@ -906,7 +906,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     Download (the primary button, also Enter) starts it and closes the dialog; while it starts, a 16 px ring turns beside
     the size and Download waits. A start that fails keeps the dialog open with the web's "Download could not be started.
     Check access and try again." in an error bar, until another version or quality is picked; a season or a series
-    pressed again sends only the episodes not started yet. A series starts season by season, the specials last, so the
+    pressed again sends only the episodes not started yet. The dialog downloads for the profile it was opened in: after a
+    switch to another profile while it shows, Download sends nothing and says the same error. A series starts season by season, the specials last, so the
     first episode comes first; neither app caps or asks about a long series, and neither does Granary beyond this dialog,
     whose size and free space hold back one that does not fit. Once your Silo server refuses one for the account's limit of
     downloads (429 `rate_limited`), that episode and the ones after it wait on this PC and start once the server allows
