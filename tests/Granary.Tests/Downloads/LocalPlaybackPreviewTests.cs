@@ -205,6 +205,82 @@ public sealed class LocalPlaybackPreviewTests : IAsyncDisposable
         Assert.DoesNotContain(_fixture.Harness.Logs.Lines, line => line.StartsWith("Error", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task WithoutTheServer_TheKeptPreviewsShow_FromTheFilesBesideTheDownload()
+    {
+        var download = await _fixture.Harness.AddPlayableAsync();
+        KeepPreviews(download);
+        _fixture.GoOffline();
+        var playback = Assert.IsType<LocalPlayback>(await _fixture.Playbacks.TryCreateAsync(PlayRequest.Resume(LocalPlaybackFixture.EpisodeId),
+            LocalPlaybackFixture.Token));
+        int changes = 0;
+        playback.TrickplayChanged += (_, _) => changes++;
+
+        await playback.StartAsync(PlayRequest.Resume(LocalPlaybackFixture.EpisodeId), LocalPlaybackFixture.Token);
+
+        Assert.Equal(1, changes);
+        var trickplay = playback.Trickplay!;
+        Assert.Equal(("4567", 10_000, 10, 90), (trickplay.FileId, trickplay.IntervalMs, trickplay.Columns, trickplay.Count));
+        Assert.Equal([Path.Combine(download.Folder, DownloadPaths.PreviewSheet(0))], trickplay.SheetFiles);
+        await _fixture.AdvanceAsync(TimeSpan.FromHours(2));
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+    }
+
+    // The kept sheets are the same pictures of the same file: the server is not asked for them again.
+    [Fact]
+    public async Task WithTheServer_TheKeptPreviewsShow_WithoutAskingForThem()
+    {
+        ServerHas(trickplay: true);
+        _fixture.Silo.On(HttpMethod.Get, TrickplayPath, Ok(Previews()));
+        var download = await _fixture.Harness.AddPlayableAsync();
+        KeepPreviews(download);
+
+        var playback = await _fixture.StartAsync();
+
+        Assert.NotNull(playback!.Trickplay?.SheetFiles);
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+    }
+
+    [Fact]
+    public async Task KeptPreviewsOfAnotherRevision_AreNotShown_AndTheServersAreReadInstead()
+    {
+        ServerHas(trickplay: true);
+        _fixture.Silo.On(HttpMethod.Get, TrickplayPath, Ok(Previews()));
+        var download = await _fixture.Harness.AddPlayableAsync();
+        KeepPreviews(download, revision: 2);
+
+        var playback = await _fixture.StartAsync();
+        await Until(() => playback!.Trickplay is not null, "the previews are read");
+
+        Assert.Null(playback!.Trickplay!.SheetFiles);
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+    }
+
+    [Fact]
+    public async Task ADownloadWithoutKeptPreviews_StillPlaysWithoutTheServer()
+    {
+        var download = await _fixture.Harness.AddPlayableAsync();
+        Assert.False(File.Exists(Path.Combine(download.Folder, DownloadPaths.Previews)));
+        _fixture.GoOffline();
+
+        var playback = await _fixture.StartAsync();
+
+        Assert.NotNull(playback);
+        Assert.Null(playback.Trickplay);
+        Assert.NotEqual(ServerPlaybackPhase.Failed, playback.Status.Phase);
+        Assert.Single(_fixture.Engine.Loaded);
+    }
+
+    // The set as a fetch keeps it: one sheet of the file the download was made from, of the download's revision.
+    private static void KeepPreviews(StoredDownload download, long revision = 1)
+    {
+        File.WriteAllBytes(Path.Combine(download.Folder, DownloadPaths.PreviewSheet(0)), [0xFF, 0xD8, 0xFF, 0xE0, 1]);
+        File.WriteAllText(Path.Combine(download.Folder, DownloadPaths.Previews), $$"""
+            { "revision": {{revision}}, "file_id": "4567", "interval_ms": 10000, "thumbnail_width": 320, "thumbnail_height": 180,
+              "tile_columns": 10, "tile_rows": 10, "thumbnail_count": 90, "sheets": 1, "bytes": 5 }
+            """);
+    }
+
     // Plays the download and waits for its previews to be read.
     private async Task<LocalPlayback> StartedAsync()
     {

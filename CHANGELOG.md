@@ -6,6 +6,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Previews offline:** downloads keep the seek bar's preview pictures, so they show while you scrub without a
+  connection too. Downloads you already have get them the next time Granary refreshes them with your Silo server.
+
 ## [0.5.0] - 2026-11-17
 
 ### Added

@@ -99,6 +99,7 @@ public sealed partial class LocalPlayback : IServerPlayback
         _download = media.Download;
         _manifest = media.Manifest;
         _files = media.Files;
+        _keptPreviews = media.Previews;
         _engine = engine;
         _dispatcher = dispatcher;
         _session = session;

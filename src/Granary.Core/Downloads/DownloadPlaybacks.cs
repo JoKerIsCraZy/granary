@@ -6,8 +6,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Downloads;
 
-/// <summary>A download as its folder holds it when a play begins: its record, its manifest, and the names of its files.</summary>
-public sealed record LocalMedia(StoredDownload Download, OfflineManifest Manifest, IReadOnlySet<string> Files);
+/// <summary>
+/// A download as its folder holds it when a play begins: its record, its manifest, the names of its files, and the seek-bar
+/// previews kept with it (<see cref="KeptPreviews"/>), when it has some that fit it.
+/// </summary>
+public sealed record LocalMedia(StoredDownload Download, OfflineManifest Manifest, IReadOnlySet<string> Files, PlayerTrickplay? Previews = null);
 
 /// <summary>
 /// Decides whether a title plays from this PC (docs/architecture.md, "Playing a download"). Local first, as Silo's Android
@@ -185,7 +188,7 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
                 logger.LogWarning("The manifest of download {DownloadId} is of another revision; the title streams", id);
                 return null;
             }
-            return new LocalMedia(download, manifest, files);
+            return new LocalMedia(download, manifest, files, KeptPreviews.Read(download, manifest, files, logger));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
