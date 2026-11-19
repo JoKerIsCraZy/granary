@@ -2545,7 +2545,9 @@ A download (14) reads the previews of its manifest's `media_file_id` with the sa
 the watch detail lists that file with `trickplay_available`, bound to the download's account and profile as its watch
 detail is (`WatchApi.GetTrickplayAsAccountProfileAsync`; refused unsent once another acts, `ProfileChangedException`). The
 id names the catalog file the download was made from, also for a remuxed or transcoded copy, whose timeline is the same
-(the server's `prepare_file.go` cuts nothing).
+(the server's `prepare_file.go` cuts nothing). The same read, with the download's assets, keeps the set in the download's
+folder: every sheet is fetched once, without credentials, and the set is read from the disk from then on, also offline
+(docs/architecture.md, "Assets"). A `404` there means the file has none.
 
 ## 12. Realtime events
 
