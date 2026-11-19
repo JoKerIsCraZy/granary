@@ -145,8 +145,13 @@ public sealed partial class MpvPlaybackEngine
 
         // Plan URLs are replayed byte for byte (docs/api-contract.md, 9.2): the string as given, not as Uri re-escapes it.
         string target = source.Url.IsFile ? source.Url.LocalPath : source.Url.OriginalString;
-        // With a mpv.conf, Granary's own options too, over the file's protocol and extension profiles.
-        string perFileOptions = string.Join(",", PerFileOptions(source).Concat(_perFile));
+        // A stream gets this PC's read-ahead buffer as it is now, but what the viewer's mpv.conf sets of it; a file on this PC
+        // plays as mpv has it, without a cache of its own. With a mpv.conf, Granary's own options too, over the file's
+        // protocol and extension profiles.
+        IReadOnlyList<KeyValuePair<string, string>> readAhead = source.Url.IsFile
+            ? []
+            : MpvReadAhead.Options(_device?.ReadAhead ?? ReadAheadBuffer.Default, _fileReadAhead);
+        string perFileOptions = string.Join(",", PerFileOptions(source).Concat(MpvOwnOptions.PerFile(readAhead)).Concat(_perFile));
         lock (_gate)
         {
             if (_activeLoad != loadId)
@@ -293,7 +298,7 @@ public sealed partial class MpvPlaybackEngine
     private bool ReplaceMpv(Action start, string purpose)
     {
         var before = _mpv;
-        var (own, kept, perFile) = (_own, _kept, _perFile);
+        var (own, kept, perFile, fileReadAhead) = (_own, _kept, _perFile, _fileReadAhead);
         MpvConfigState status;
         bool stopped;
         lock (_gate)
@@ -317,7 +322,7 @@ public sealed partial class MpvPlaybackEngine
                 Close(_mpv);
             }
             _mpv = before;
-            (_own, _kept, _perFile) = (own, kept, perFile);
+            (_own, _kept, _perFile, _fileReadAhead) = (own, kept, perFile, fileReadAhead);
             Attach(before);
             // What changed meanwhile went to the new mpv.
             RestoreGlobals();

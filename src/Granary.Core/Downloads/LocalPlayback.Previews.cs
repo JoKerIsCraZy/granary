@@ -8,18 +8,23 @@ namespace Granary.Core.Downloads;
 // The pictures of a download's chapters and seek bar (docs/architecture.md, "Playing a download"). The manifest keeps only
 // each chapter's blur. While the server answers, the watch detail lists the file the download was made from (the
 // manifest's media_file_id, also for a copy the server converted, whose timeline is the same): its chapters' pictures and,
-// when it has them, its seek-bar previews, read as the download's own account and profile.
+// when it has them, its seek-bar previews, read as the download's own account and profile. Previews kept with the download
+// (DownloadAssets.Previews.cs) are those same pictures: they show at once, online or not, and the server is not asked for them.
 public sealed partial class LocalPlayback
 {
     // A chapter of the watch detail is the manifest's when it has the same index and starts within this of it.
     private const double ChapterStartTolerance = 1;
 
+    private readonly PlayerTrickplay? _keptPreviews;
     private PlayerTrickplay? _trickplay;
     private TrickplayReads? _trickplayReads;
 
     public event EventHandler? TrickplayChanged;
 
-    /// <summary>The previews of the file the download was made from, while the server answers; null without.</summary>
+    /// <summary>
+    /// The previews of the file the download was made from: the ones kept with it, else the server's while it answers; null
+    /// without.
+    /// </summary>
     public PlayerTrickplay? Trickplay => _trickplay;
 
     /// <summary>
@@ -50,9 +55,15 @@ public sealed partial class LocalPlayback
             : null;
 
     // Once the watch detail came: the previews of the file the download was made from, when it has them. Without the server
-    // there is no detail, and nothing is asked.
+    // there is no detail, and nothing is asked. Kept ones need neither.
     private void ReadTrickplay()
     {
+        if (!_stopping && _keptPreviews is { } kept)
+        {
+            _trickplay = kept;
+            TrickplayChanged?.Invoke(this, EventArgs.Empty);
+            return;
+        }
         if (_stopping || _server is not { } server || SourceVersion is not { TrickplayAvailable: true } version)
         {
             return;

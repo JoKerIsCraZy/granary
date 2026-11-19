@@ -402,6 +402,44 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
+    public void AtFirst_TheReadAheadBufferIsTheDefault() => Assert.Equal(ReadAheadBuffer.Default, Create().ReadAhead);
+
+    [Theory]
+    [InlineData(ReadAheadBuffer.Mb150, "150mb")]
+    [InlineData(ReadAheadBuffer.Mb768, "768mb")]
+    [InlineData(ReadAheadBuffer.Gb1, "1gb")]
+    [InlineData(ReadAheadBuffer.Gb2, "2gb")]
+    [InlineData(ReadAheadBuffer.Default, "default")]
+    public async Task TheReadAheadBuffer_StaysOnThisPc_AtTheNextStart_WithTheOtherChoices(ReadAheadBuffer buffer, string name)
+    {
+        var preferences = Create();
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetReadAheadAsync(buffer);
+
+        var again = Create();
+        Assert.Equal(buffer, again.ReadAhead);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.Contains($"\"read_ahead\": \"{name}\"", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("{ \"up_down\": \"volume\" }")]
+    [InlineData("{ \"read_ahead\": \"3gb\", \"up_down\": \"volume\" }")]
+    [InlineData("{ \"read_ahead\": 1024, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"read_ahead\": [\"1gb\"], \"up_down\": \"volume\" }")]
+    public async Task AnOlderFile_OrAReadAheadGranaryDoesNotKnow_IsTheDefault_AndKeepsTheOtherChoices(string file)
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.Equal(ReadAheadBuffer.Default, preferences.ReadAhead);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+    }
+
+    [Fact]
     public void AtFirst_TheDiscordStatusIsOff() => Assert.False(Create().DiscordStatus);
 
     [Fact]

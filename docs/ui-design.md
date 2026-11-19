@@ -1433,7 +1433,11 @@ entry is chosen, and a controller's bumpers, which go from the chosen entry, do 
 
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
-  hardware decoding, a switch, off by default, counting from the next title, its text saying a fixed Quality can still convert a file; Up and Down in the player, a select with
+  hardware decoding, a switch, off by default, counting from the next title, its text saying a fixed Quality can still convert a file; Read-ahead buffer (Granary's own), a
+  select labelled by the size read ahead in the language's numbers, Default (384 MB), 150 MB, 768 MB, 1 GB and 2 GB, with
+  "How much of a title Granary reads ahead. More helps on a slow or unsteady network or NAS, and takes as much more memory
+  while a title plays. Cache settings in your mpv.conf come first. Counts from the next title you play."; search finds it
+  by cache, buffer, stutter, network and NAS too (docs/architecture.md, "Read-ahead buffer"); Up and Down in the player, a select with
   Controls and menus (the default, as Silo's TV app) and Volume (the web player's keys), which the
   player follows at its next key; Rewind on resume, the contract's words ("Skip back this far when resuming a partly
   watched item, to re-establish context. 0 turns it off."), a number box from 0 to 30 in steps of 1 with "seconds"
@@ -2352,7 +2356,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   lies in ("● Intro 0:03-0:12") and under it the chapter (11 px, white 50 %). With a picture the bubble is the web's
   176 px card (neutral 95 %, white 8 % edge, a caret under it): the trickplay thumbnail of that time, or while its
   sheet loads and without previews the part's or the chapter's picture, or a faint film frame on a gradient; the
-  lines sit left under it. The part under the pointer grows to 8 px with a white 80 % ring. It seeks on click and when a drag is released, never while dragging or when the
+  lines sit left under it. A download shows the previews kept with it, also without a connection; one made before
+  they were kept gets them at its next refresh while the server answers. The part under the pointer grows to 8 px with a white 80 % ring. It seeks on click and when a drag is released, never while dragging or when the
   position moves on, and keeps the target until playback has caught up, so the bar does not jump back. Keys:
   Left and Right by the skip intervals, Shift for 5 s, Home, End. Screen readers get a slider whose value
   is the position in words.

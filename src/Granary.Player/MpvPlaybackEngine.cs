@@ -26,6 +26,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
 
     private readonly ILogger<MpvPlaybackEngine> _logger;
     private readonly MpvEngineOptions _options;
+    private readonly IPlaybackDevicePreferences? _device;
     private readonly TrailingThrottle _bufferedReads;
     private readonly object _gate = new();
     private PlaybackSnapshot _current = PlaybackSnapshot.Idle;
@@ -56,16 +57,19 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     private nint _swapChain;
 
     /// <param name="status">Where the engine says how the viewer's mpv.conf fared, for Settings.</param>
-    public MpvPlaybackEngine(MpvEngineOptions options, ILogger<MpvPlaybackEngine> logger, TimeProvider? time = null, IMpvConfigStatus? status = null)
-        : this(options, logger, time, ReadConfigText, status)
+    /// <param name="device">This PC's playback choices: the read-ahead buffer, read as each title opens. Without them, the default.</param>
+    public MpvPlaybackEngine(MpvEngineOptions options, ILogger<MpvPlaybackEngine> logger, TimeProvider? time = null, IMpvConfigStatus? status = null,
+        IPlaybackDevicePreferences? device = null)
+        : this(options, logger, time, ReadConfigText, status, device)
     {
     }
 
     /// <param name="readConfig">Reads a config file Granary checks before mpv does: its text, or null when it is missing.</param>
     internal MpvPlaybackEngine(MpvEngineOptions options, ILogger<MpvPlaybackEngine> logger, TimeProvider? time, Func<string, string?> readConfig,
-        IMpvConfigStatus? status = null)
+        IMpvConfigStatus? status = null, IPlaybackDevicePreferences? device = null)
     {
         _options = options;
+        _device = device;
         _logger = logger;
         _readConfig = readConfig;
         _status = status ?? new MpvConfigStatus();

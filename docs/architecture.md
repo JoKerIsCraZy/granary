@@ -190,6 +190,19 @@ starts. All of them exist in v0.41.0-dev (`ThisMpv_KnowsEveryOptionGranaryKeepsW
 and start position go with each title (`loadfile` options), over the file's own. Everything else is the file's to
 change, `hwdec` included.
 
+**Read-ahead buffer** (`MpvReadAhead`; Settings → Playback → This PC, `read_ahead` in `playback-device.json`). Not one of
+Granary's kept options: each stream gets it as `loadfile` options as its title opens, so a change counts from the next
+title. Every choice sets `cache=yes`, `demuxer-max-bytes` and `demuxer-max-back-bytes` (Default 384 MiB ahead and
+64 MiB behind, then 150/50, 768/128, 1 GiB/192 MiB and 2 GiB/256 MiB) and `demuxer-readahead-secs=120`, as byte counts.
+With the cache on, mpv's `cache-secs` stands over `demuxer-readahead-secs` and is very high by default, so
+`demuxer-max-bytes` is the real limit. `demuxer-hysteresis-secs` stays at mpv's 0: mpv then tops the cache up all the time
+while it plays, not in bursts, so the connection never sits idle long enough for a proxy before the server (nginx's
+`send_timeout` of 60 s) to close it, which is what makes a large buffer safe; a mpv.conf that sets it has its way. The
+viewer's mpv.conf wins: any of the four it names, at the top, in a profile or in an include (the pre-scan's entries), is
+left out for the whole run of that mpv, and the log says so once. One that sets `cache` (`cache=no` keeps memory and
+delay low) has all four left to it. A profile counts though it may never apply. A file on this PC (a download, `--play`) gets none of
+them: mpv does not cache a local file by default, and the seek bar shows no cache for one.
+
 **The log** says once per start which file mpv read (`mpv started with …`), names the options of Granary's that the file
 sets (`mpv.conf sets vo; Granary keeps its own`, read from the file and its includes by mpv's rules for option names),
 and passes on mpv's own messages about the file (an unknown option, a shader it cannot open),
@@ -1414,9 +1427,11 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   gets `-` and 16 hex digits of the value's SHA-256. So no id the server sends names another path, and two ids never share
   a folder, also where Windows ignores case. The folder holds `download.json` (the `DownloadRecord`, so the folder
   describes itself), `manifest.json` as the server sent it, `media.part` while the file arrives, then `media.<container>`,
-  the artwork as `<kind>.<ext>` and the subtitles as `sub-<reference>.<format>` (the reference made a name as a folder is
-  from an id, so a file holds the same subtitle whatever its place in the manifest); extensions are short plain names or a
-  fallback, never what the server sent unchecked. A record's media file is used only when it is such a `media.<ext>` name.
+  the artwork as `<kind>.<ext>`, the subtitles as `sub-<reference>.<format>` (the reference made a name as a folder is
+  from an id, so a file holds the same subtitle whatever its place in the manifest) and the seek-bar previews as
+  `trickplay.json` (their layout, the file and revision they were fetched for, the number of sheets and the set's
+  generation) and `tp-<generation>-<n>.jpg`, one per sheet in the server's order; extensions are short plain names or a fallback, never what the server sent
+  unchecked. A record's media file is used only when it is such a `media.<ext>` name.
 - **Root.** `<root>` is the downloads folder chosen when the download started (`IDownloadPreferences.Folder`, in
   `download-settings.json`; `downloads` in the data folder by default). Choosing another applies to new downloads only:
   the ones there keep their folders. It is a full path below a drive's or a share's root, never the root itself.
@@ -1649,7 +1664,26 @@ client guide.
   profile's credentials. Artwork or a subtitle that does not come (404, a busy store's 503, a stall of 60 s, over 512 MiB)
   is logged and left out, to be tried at the next refresh; a manifest that does not come ends the attempt as the file
   would have. The record keeps the artwork's file names and each subtitle's revision; a refresh fetches the artwork the
-  folder lacks and the subtitles whose revision changed. A refresh that finds the manifest of another revision than the
+  folder lacks and the subtitles whose revision changed. The seek-bar previews come apart from them
+  (`DownloadAssets.FetchPreviewsAsync`, in `DownloadAssets.Previews.cs`): beside the media's first transfer, which they
+  never hold back (the transfer ends with them, so a stop or a replacement stops them too), and after each refresh.
+  They are the previews (11.4) of the kept manifest's `media_file_id`, read as the download's account and profile, their
+  sheets fetched one after another without credentials through the artwork client (signed addresses, possibly on another
+  host; never logged). The read and all sheets together have `PreviewDeadline` (60 s); a set slower than that is tried
+  at the next refresh. Each set kept gets a generation of its own (8 hex digits) that its sheets are named after, so a
+  new set never overwrites the sheets of the one before. Once all its sheets came, `trickplay.json` is written whole and
+  names it. The set it named before stays beside it, since a play that began with that set reads its sheets only as it
+  shows them; older generations go, with pieces of sheets that never came whole (`*.arriving`), as far as nothing holds
+  them. A set that does not come whole leaves the one kept before as it was. A list with an empty entry, or a grid past
+  the seek bar's bounds (`PlayerTrickplay.IsDrawableGrid`: thumbnails up to 4096 px a side, sheets up to 100 by 100,
+  which streams' previews share), is not kept. A set is fetched again when the download's revision, the file or the
+  server's layout differs from the kept one, or a sheet is missing; otherwise a refresh costs only the previews' read. A
+  set over `MaxPreviewSetBytes` (64 MiB; a 2-hour film's takes a few), counted as its bodies arrive, is not kept, and its
+  `trickplay.json` says so, so it is not fetched again while the layout stays the same. The set is kept under the file
+  asked for. A 404 keeps a set of the same bytes and drops one of another revision or file (a replacement deletes only
+  the media and the manifest); any other failure is logged and leaves the download as it is. A download made before
+  this gets its previews at its next refresh (a day after its manifest was read). Deleting a download deletes its
+  folder, previews included, and the space a scope's downloads take (`DownloadStore.BytesOnDisk`) counts every file. A refresh that finds the manifest of another revision than the
   finished media keeps nothing of it, since its tracks and subtitles describe other bytes, and reads the registry again,
   which replaces the download for the new ones (the Apple app's subtitle refresh passes such a manifest over too). A
   replacement stops a refresh of its download that is under way and waits for it to end before the old files go, as it
@@ -2210,9 +2244,9 @@ while the server answers.
   loads the media file straight into the engine (`MediaSource.Local`, no proxy route, no headers) and opens no playback
   session, online or not, as both apps: the server's Activity page does not list it, and there is no quality, no other
   version, no subtitle sync, no Add Subtitles and no marker editing (`PlayingFileId` is null, which hides the last two).
-  `SessionId` is null. Seek-bar previews come only while the server answers (see "What the server adds"): the manifest
-  carries none, and pictures taken from the file itself, as the Apple app does, or previews kept with the download are
-  not done yet (#169).
+  `SessionId` is null. Seek-bar previews come from the set kept with the download, else from the server while it
+  answers (see "Seek-bar previews"); pictures taken from the file itself, as the Apple app does, are not done: decoding
+  stills costs CPU while the title plays (#169).
 - **What comes from where.** The title's two lines, its length, its audio tracks, chapters and marked parts come from
   the manifest (`PlaybackStarter.EpisodeTitles` and `PlaybackMediaInfo.OfEpisode`/`OfTitle`, shared with a stream's; the
   first intro and every recap, credits and preview part, as `PlaybackMarker.Of` takes a stream's). Each chapter carries
@@ -2237,6 +2271,13 @@ while the server answers.
   account and profile are no longer the active ones as it starts (another became active between the two), nothing is
   asked, since another server's ids may be the same too, and settings that answered for another profile that became
   active during the read are not taken: the download plays with the defaults.
+- **Seek-bar previews.** The set kept in the folder (see "Assets") is read with the manifest, on the thread pool
+  (`KeptPreviews.Read`, carried on `LocalMedia`). It is used when it is of the record's revision and the manifest's
+  `media_file_id`, its layout can be drawn and every sheet is there; a set that does not fit or does not read is left
+  aside and the title plays. A kept set shows from the start, online or not, and the server is not asked: it is the same
+  pictures of the same file, without a read, an expiry or a swap mid-play. Its sheets are files
+  (`PlayerTrickplay.SheetFiles`), which the seek bar reads on the thread pool as a download's artwork, never as
+  addresses. Without a kept set, the server's are read as follows.
 - **Seek-bar previews while the server answers.** When the watch detail came and its version whose `file_id` is the
   manifest's `media_file_id` has `trickplay_available`, `LocalPlayback` reads that file's previews (11.4) through
   `TrickplayReads`, as a stream does: again 5 minutes before their sheets expire, a minute after a transient failure,
@@ -2244,8 +2285,8 @@ while the server answers.
   cuts nothing when it prepares a download, so the timelines match. The reads are the download's account and profile's
   (`WatchApi.GetTrickplayAsAccountProfileAsync`), as the watch detail's: once another profile acts on the server, the
   next read is refused unsent and the reads end quietly, keeping the previews already read until the play ends. The stop
-  (or a dispose) ends the reads and their timer. Without the server there is no watch detail, so nothing is asked and the
-  seek bar's bubble shows the time only. Silo's apps show no server previews for a download: Android none, and the Apple
+  (or a dispose) ends the reads and their timer. Without the server and without a kept set there is no watch detail, so
+  nothing is asked and the seek bar's bubble shows the time only. Silo's apps show no server previews for a download: Android none, and the Apple
   app only stills it takes from the file (`PlayerViewModel.loadServerTrickplay` needs `trickplayAvailable`, which its
   offline `FileVersion` never sets).
 - **Without the server.** The profile's own settings still hold, as this PC last read them. Every answer

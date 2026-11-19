@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -6,7 +7,8 @@ namespace Granary.Core.Downloads;
 /// <summary>
 /// Where a download's files go: <c>&lt;root&gt;\&lt;server&gt;\acct-&lt;account&gt;\&lt;profile&gt;\&lt;download&gt;\</c>, every
 /// part one folder name made by <see cref="Segment"/>, so no id the server sends can name another path. The folder holds
-/// <see cref="Record"/>, <see cref="Manifest"/>, <see cref="MediaPart"/> and then the media file, the artwork and the subtitles.
+/// <see cref="Record"/>, <see cref="Manifest"/>, <see cref="MediaPart"/> and then the media file, the artwork, the subtitles and the
+/// seek-bar previews (<see cref="Previews"/>, <see cref="PreviewSheet"/>).
 /// </summary>
 public static class DownloadPaths
 {
@@ -18,6 +20,16 @@ public static class DownloadPaths
 
     /// <summary>The download's own record (<see cref="DownloadRecord"/>), so its folder describes itself.</summary>
     public const string Record = "download.json";
+
+    /// <summary>What the kept seek-bar previews are (<see cref="KeptPreviews"/>): their layout, revision and number of sheets.</summary>
+    public const string Previews = "trickplay.json";
+
+    /// <summary>
+    /// The sheet at <paramref name="ordinal"/>, in the server's order, of the kept previews of <paramref name="generation"/>:
+    /// <c>tp-1a2b3c4d-0.jpg</c>. Each set kept has its own generation, so a new set never overwrites the one before's sheets.
+    /// </summary>
+    public static string PreviewSheet(string generation, int ordinal) =>
+        string.Create(CultureInfo.InvariantCulture, $"tp-{generation}-{ordinal}.jpg");
 
     private const int MaxPlainLength = 40;
     private const int HashDigits = 16;
