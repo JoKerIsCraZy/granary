@@ -96,7 +96,7 @@ public static class KeptPreviews
             return PlayerTrickplay.Local(kept.FileId, kept.IntervalMs, kept.ThumbnailWidth, kept.ThumbnailHeight, kept.TileColumns, kept.TileRows,
                 kept.ThumbnailCount, [.. Enumerable.Range(0, kept.Sheets).Select(i => Path.Combine(download.Folder, DownloadPaths.PreviewSheet(i)))]);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or UriFormatException)
         {
             // Only the kind: a file error's message holds the folder, with the Windows user's name.
             logger.LogInformation("The kept seek-bar previews of download {DownloadId} cannot be read ({Failure}); it plays without them", id,

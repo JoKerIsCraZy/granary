@@ -113,6 +113,47 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         Assert.DoesNotContain(DownloadPaths.Previews, FilesIn(stored));
     }
 
+    [Fact]
+    public async Task ANotFound_KeepsASetOfTheSameBytes()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews();
+        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Problem(404, "not_found"));
+
+        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+
+        Assert.Contains(DownloadPaths.Previews, FilesIn(stored));
+        Assert.Contains(DownloadPaths.PreviewSheet(1), FilesIn(stored));
+    }
+
+    // A replaced revision leaves the old set in the folder; new bytes without previews do not keep it.
+    [Fact]
+    public async Task ANotFound_ForANewRevision_DropsTheOldSet()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews();
+        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Problem(404, "not_found"));
+
+        var renewed = await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { Revision = 2 }, Token);
+        await Assets().FetchAsync(ScriptedSilo.Base, renewed, Token);
+
+        Assert.DoesNotContain(FilesIn(stored), name => name == DownloadPaths.Previews || name.StartsWith("tp-", StringComparison.Ordinal));
+    }
+
+    // The set is kept under the file it was asked for, whatever the answer names.
+    [Fact]
+    public async Task TheSet_IsKeptUnderTheFileAskedFor()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews(Previews().Replace("\"file_id\": \"4567\"", "\"file_id\": \"\"", StringComparison.Ordinal));
+
+        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+
+        Assert.NotNull(KeptPreviews.Read(stored, ManifestOf(stored), FilesOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
+    }
+
     [Theory]
     [InlineData(true)] // the previews' read
     [InlineData(false)] // a sheet

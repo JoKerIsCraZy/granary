@@ -1658,8 +1658,10 @@ client guide.
   comes back last, so a set half replaced is never read as whole. A set is fetched again when the download's revision,
   the file or the server's layout differs from the kept one, or a sheet is missing; otherwise a refresh costs only the
   previews' read. A set over `MaxPreviewSetBytes` (64 MiB; a 2-hour film's takes a few) is not kept, and its
-  `trickplay.json` says so, so it is not fetched again while the layout stays the same. A 404 keeps what is there; any
-  other failure is logged and leaves the download as it is, to be tried at the next refresh. A download made before
+  `trickplay.json` says so, so it is not fetched again while the layout stays the same. The set is kept under the file
+  asked for. A 404 keeps a set of the same bytes and drops one of another revision or file (a replacement deletes only
+  the media and the manifest); any other failure is logged and leaves the download as it is, to be tried at the next
+  refresh. A download made before
   this gets its previews at its next refresh (a day after its manifest was read). Deleting a download deletes its
   folder, previews included, and the space a scope's downloads take (`DownloadStore.BytesOnDisk`) counts every file. A refresh that finds the manifest of another revision than the
   finished media keeps nothing of it, since its tracks and subtitles describe other bytes, and reads the registry again,

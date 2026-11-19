@@ -36,14 +36,29 @@ public sealed partial class DownloadAssets
         }
         try
         {
-            var listed = await watch.GetTrickplayAsAccountProfileAsync(server, record.Scope.AccountId, record.Scope.ProfileId, record.MediaItemId,
-                fileId, cancellationToken).ConfigureAwait(false);
-            await KeepPreviewsAsync(server, download, listed, http, cancellationToken).ConfigureAwait(false);
-        }
-        catch (SiloApiException ex) when (ex.Status == (int)HttpStatusCode.NotFound)
-        {
-            // The file has no previews; a set kept before stays, it shows the same file.
-            logger.LogDebug("The file of download {DownloadId} has no seek-bar previews", record.DownloadId);
+            TrickplayManifest? listed;
+            try
+            {
+                listed = await watch.GetTrickplayAsAccountProfileAsync(server, record.Scope.AccountId, record.Scope.ProfileId, record.MediaItemId,
+                    fileId, cancellationToken).ConfigureAwait(false);
+            }
+            catch (SiloApiException ex) when (ex.Status == (int)HttpStatusCode.NotFound)
+            {
+                listed = null;
+            }
+            if (listed is null)
+            {
+                // The file has no previews. A set kept before for these bytes stays, it shows the same file; one of other bytes
+                // (a replaced revision leaves it in the folder) goes.
+                logger.LogDebug("The file of download {DownloadId} has no seek-bar previews", record.DownloadId);
+                if (KeptSet(download) is { } kept && (kept.Revision != record.Revision || kept.FileId != fileId))
+                {
+                    CommitPreviews(download, null, []);
+                }
+                return;
+            }
+            // Kept under the file asked for, which a play compares with the manifest's.
+            await KeepPreviewsAsync(server, download, listed with { FileId = fileId }, http, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is SiloApiException or HttpRequestException or JsonException or IOException or UnauthorizedAccessException
             or ProfileChangedException or ArgumentException
@@ -132,8 +147,8 @@ public sealed partial class DownloadAssets
     }
 
     // The new set takes the old one's place: its description goes first, so a set half replaced is never taken for whole, and
-    // comes back last, once every sheet is in place. Sheets of the old set past the new one's go.
-    private static void CommitPreviews(StoredDownload download, KeptPreviewsFile set, IReadOnlyList<string> staged)
+    // comes back last, once every sheet is in place. Sheets of the old set past the new one's go. Without a set, the old one goes.
+    private static void CommitPreviews(StoredDownload download, KeptPreviewsFile? set, IReadOnlyList<string> staged)
     {
         string description = Path.Combine(download.Folder, DownloadPaths.Previews);
         File.Delete(description);
@@ -149,6 +164,10 @@ public sealed partial class DownloadAssets
             {
                 File.Delete(file);
             }
+        }
+        if (set is null)
+        {
+            return;
         }
         byte[] json = KeptPreviews.Write(set);
         SafeFile.WriteWhole(description, temp => File.WriteAllBytes(temp, json));
