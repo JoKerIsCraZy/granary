@@ -18,6 +18,12 @@ public interface IPlaybackDevicePreferences
     /// <summary>What Up and Down do in the player while focus is on the picture.</summary>
     PlayerUpDown UpDown { get; }
 
+    /// <summary>
+    /// How much of a title the player reads ahead (<see cref="ReadAheadBuffer"/>); the player reads it as each title opens,
+    /// and the viewer's mpv.conf wins over it. <see cref="ReadAheadBuffer.Default"/> at first.
+    /// </summary>
+    ReadAheadBuffer ReadAhead { get; }
+
     /// <summary>The player's time ends with the time left, not the duration: the viewer's last click on it; off by default.</summary>
     bool TimeLeft { get; }
 
@@ -74,6 +80,8 @@ public interface IPlaybackDevicePreferences
 
     Task SetUpDownAsync(PlayerUpDown upDown);
 
+    Task SetReadAheadAsync(ReadAheadBuffer readAhead);
+
     Task SetTimeLeftAsync(bool shown);
 
     Task SetPassoutThresholdAsync(int episodes);
@@ -116,11 +124,11 @@ public sealed record PlayerVolume(double Percent, bool IsMuted);
 
 /// <summary>
 /// <see cref="IPlaybackDevicePreferences"/> in <c>playback-device.json</c> in the data directory
-/// (<c>{ "decodes_in_software": true, "up_down": "volume", "time_left": true, "passout_threshold": 5,
+/// (<c>{ "decodes_in_software": true, "up_down": "volume", "read_ahead": "1gb", "time_left": true, "passout_threshold": 5,
 /// "resume_rewind_seconds": 7, "discord_status": true, "volume": 40, "muted": false, "player_full_screen": true,
 /// "phone_remote": true }</c>).
 /// Without the file, or with one that cannot be read, direct play needs the GPU, Up and Down show the controls and menus,
-/// the player's time shows the duration, the player waits after three episodes, a resume lands on the saved point,
+/// the player reads ahead by the default buffer, the player's time shows the duration, the player waits after three episodes, a resume lands on the saved point,
 /// Discord's status stays as it is, the player keeps mpv's own volume and opens in a window, and no phone controls this
 /// PC, as by default; a value it does
 /// not know, or one an older file lacks, is the default. A volume out of range is brought into it; one that is not a
@@ -143,6 +151,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private readonly Lock _saves = new();
     private volatile bool _decodesInSoftware;
     private volatile PlayerUpDown _upDown;
+    private volatile ReadAheadBuffer _readAhead;
     private volatile bool _timeLeft;
     private volatile int _passoutThreshold;
     private volatile int _resumeRewindSeconds;
@@ -162,6 +171,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         var file = Load();
         _decodesInSoftware = file?.DecodesInSoftware == true;
         _upDown = file?.UpDown == VolumeValue ? PlayerUpDown.Volume : PlayerUpDown.ControlsAndMenus;
+        _readAhead = ReadAheadBuffers.FromName(file?.ReadAhead);
         _timeLeft = file?.TimeLeft == true;
         _passoutThreshold = file?.PassoutThreshold is { } episodes and >= 0 and <= AutoPlayStreak.MaxThreshold
             ? episodes
@@ -184,6 +194,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public bool DecodesInSoftware => _decodesInSoftware;
 
     public PlayerUpDown UpDown => _upDown;
+
+    public ReadAheadBuffer ReadAhead => _readAhead;
 
     public bool TimeLeft => _timeLeft;
 
@@ -235,6 +247,12 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public Task SetUpDownAsync(PlayerUpDown upDown)
     {
         _upDown = upDown;
+        return QueueSave();
+    }
+
+    public Task SetReadAheadAsync(ReadAheadBuffer readAhead)
+    {
+        _readAhead = readAhead;
         return QueueSave();
     }
 
@@ -334,6 +352,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
                 var file = new PlaybackDeviceFile(_decodesInSoftware, _upDown == PlayerUpDown.Volume ? VolumeValue : ControlsValue, _passoutThreshold)
                 {
                     TimeLeft = _timeLeft,
+                    ReadAhead = ReadAheadBuffers.Name(_readAhead),
                     ResumeRewindSeconds = _resumeRewindSeconds,
                     DiscordStatus = _discordStatus,
                     PhoneRemote = _phoneRemote,
@@ -366,6 +385,11 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDown, int? PassoutThreshold)
 {
     public bool? TimeLeft { get; init; }
+
+    // Missing from an older file, or a name Granary does not know: the default buffer. Read leniently, so that a number
+    // or a list typed into the file only loses this value, not the file's other choices.
+    [JsonConverter(typeof(AnyTextConverter))]
+    public string? ReadAhead { get; init; }
 
     // Missing from an older file: a resume then lands on the saved point, the default. Read leniently, so that 7.5,
     // "seven" or a list typed into the file only loses this value, not the file's other choices.
@@ -420,6 +444,34 @@ internal sealed class AnyNumberConverter : JsonConverter<double?>
         else
         {
             writer.WriteNullValue();
+        }
+    }
+}
+
+/// <summary>A JSON string as itself; any other value, a number, an object or a list included, as none.</summary>
+internal sealed class AnyTextConverter : JsonConverter<string?>
+{
+    public override string? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            return reader.GetString();
+        }
+        // Past the whole value, so the next member reads as it should.
+        reader.Skip();
+        return null;
+    }
+
+    public override void Write(Utf8JsonWriter writer, string? value, JsonSerializerOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        if (value is null)
+        {
+            writer.WriteNullValue();
+        }
+        else
+        {
+            writer.WriteStringValue(value);
         }
     }
 }

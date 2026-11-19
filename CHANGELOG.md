@@ -10,6 +10,9 @@ release's section is what its update says it changes (docs/release.md).
 
 - **Previews offline:** downloads keep the seek bar's preview pictures, so they show while you scrub without a
   connection too. Downloads you already have get them the next time Granary refreshes them with your Silo server.
+- **Read-ahead buffer:** Settings → Playback → This PC sets how much of a title streamed from your Silo server
+  Granary reads ahead, from 150 MB to 2 GB. The new default of 384 MB, up from 150 MB, helps on a slow or unsteady
+  network or NAS. Cache settings in your mpv.conf come first.
 
 ## [0.5.0] - 2026-11-17
 

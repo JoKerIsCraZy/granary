@@ -30,6 +30,35 @@ public sealed partial class PlaybackSettingsViewModel
     [ObservableProperty]
     public partial string MpvConfigStatusText { get; private set; } = "";
 
+    /// <summary>
+    /// The read-ahead buffer (<see cref="IPlaybackDevicePreferences.ReadAhead"/>), each by the size it reads ahead, in the
+    /// language's numbers.
+    /// </summary>
+    public IReadOnlyList<SettingChoice> ReadAheadChoices { get; } = [.. ReadAheadBuffers.All.Select(ReadAheadChoice)];
+
+    [ObservableProperty]
+    public partial SettingChoice? SelectedReadAhead { get; set; }
+
+    private static SettingChoice ReadAheadChoice(ReadAheadBuffer buffer)
+    {
+        long megabytes = ReadAheadBuffers.Bytes(buffer).AheadBytes / (1024 * 1024);
+        string label = buffer == ReadAheadBuffer.Default
+            ? AppText.Get("granary.settings.playback.readAheadDefault", ("size", AppText.Number(megabytes)))
+            : megabytes >= 1024
+                ? AppText.Get("granary.settings.playback.readAheadGigabytes", ("size", AppText.Number(megabytes / 1024)))
+                : AppText.Get("granary.settings.playback.readAheadMegabytes", ("size", AppText.Number(megabytes)));
+        return new SettingChoice(ReadAheadBuffers.Name(buffer), label);
+    }
+
+    partial void OnSelectedReadAheadChanged(SettingChoice? value)
+    {
+        if (value is not null && ReadAheadBuffers.FromName(value.Value) is var buffer && buffer != _devicePreferences.ReadAhead)
+        {
+            // Never fails, as the switch below; the player reads it as the next title opens.
+            _ = _devicePreferences.SetReadAheadAsync(buffer);
+        }
+    }
+
     /// <summary>Up and Down in the player (<see cref="IPlaybackDevicePreferences.UpDown"/>), the TV app's way first.</summary>
     public IReadOnlyList<SettingChoice> UpDownChoices { get; } =
     [

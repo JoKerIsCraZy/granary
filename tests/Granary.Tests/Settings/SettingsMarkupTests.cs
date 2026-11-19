@@ -211,6 +211,11 @@ public sealed partial class SettingsMarkupTests
         var devices = SettingsMarkup.ReadPage(File.ReadAllText(AppFile("Views/Settings/DevicesSettingsView.xaml")));
 
         Assert.Contains(playback.Entries, entry => entry is { Kind: SettingsEntryKind.Row, LabelKey: "granary.settings.playback.softwareDecoding" });
+        Assert.Contains(playback.Entries, entry => entry is
+        {
+            Kind: SettingsEntryKind.Row, LabelKey: "granary.settings.playback.readAhead",
+            DescriptionKey: "granary.settings.playback.readAheadDescription",
+        } && entry.Keywords.Contains("cache") && entry.Keywords.Contains("stutter"));
         Assert.Contains(playback.Entries, entry => entry is { Kind: SettingsEntryKind.Section, LabelKey: "web.settings.playback.quality.title" });
         Assert.Equal("web.settings.playback.subtitle", playback.DescriptionKey);
         Assert.Contains(devices.Entries, entry => entry is { Kind: SettingsEntryKind.Heading, LabelKey: "web.settings.sessions.title" });
