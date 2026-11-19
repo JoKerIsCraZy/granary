@@ -1432,7 +1432,11 @@ entry is chosen, and a controller's bumpers, which go from the chosen entry, do 
 
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
-  hardware decoding, a switch, off by default, counting from the next title, its text saying a fixed Quality can still convert a file; Up and Down in the player, a select with
+  hardware decoding, a switch, off by default, counting from the next title, its text saying a fixed Quality can still convert a file; Read-ahead buffer (Granary's own), a
+  select labelled by the size read ahead in the language's numbers, Default (384 MB), 150 MB, 768 MB, 1 GB and 2 GB, with
+  "How much of a title Granary reads ahead. More helps on a slow or unsteady network or NAS, and takes as much more memory
+  while a title plays. Cache settings in your mpv.conf come first. Counts from the next title you play."; search finds it
+  by cache, buffer, stutter, network and NAS too (docs/architecture.md, "Read-ahead buffer"); Up and Down in the player, a select with
   Controls and menus (the default, as Silo's TV app) and Volume (the web player's keys), which the
   player follows at its next key; Rewind on resume, the contract's words ("Skip back this far when resuming a partly
   watched item, to re-establish context. 0 turns it off."), a number box from 0 to 30 in steps of 1 with "seconds"

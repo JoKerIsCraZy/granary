@@ -8,6 +8,9 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Read-ahead buffer:** Settings → Playback → This PC sets how much of a title streamed from your Silo server
+  Granary reads ahead, from 150 MB to 2 GB. The new default of 384 MB, up from 150 MB, helps on a slow or unsteady
+  network or NAS. Cache settings in your mpv.conf come first.
 - **Date and time formats:** dates and times follow your profile's date format (DD/MM/YYYY, MM/DD/YYYY or YYYY-MM-DD)
   and time format (12-hour or 24-hour), as on Silo's web: with DD/MM/YYYY the day comes first in English dates too.
   Choose them in Settings → Accessibility → Date & time; they apply at once.

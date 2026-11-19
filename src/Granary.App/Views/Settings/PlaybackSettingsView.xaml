@@ -53,6 +53,14 @@
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DecodesInSoftware, Mode=TwoWay}"
                                   AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.playback.softwareDecoding')}" />
                 </controls:SettingsRow>
+                <!-- Granary's own: how much of a stream mpv reads ahead, which the player reads as each title opens; mpv.conf wins (MpvReadAhead). -->
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.playback.readAhead')}"
+                                      Description="{x:Bind t:AppText.Get('granary.settings.playback.readAheadDescription')}"
+                                      controls:SearchKeywords.Terms="cache, buffer, buffering, read ahead, stutter, network, nas, memory">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.ReadAheadChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedReadAhead, Mode=TwoWay}"
+                              AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.playback.readAhead')}" />
+                </controls:SettingsRow>
                 <!-- Granary's own: a remote's arrows and a keyboard's are the same keys, so the viewer says which they use. -->
                 <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.playback.upDown')}"
                                       Description="{x:Bind t:AppText.Get('granary.settings.playback.upDownDescription')}">

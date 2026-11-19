@@ -53,6 +53,23 @@ public sealed partial class GranaryCatalogFilesTests
         Assert.Equal(EnglishKeys(), keys);
     }
 
+    /// <summary>The read-ahead buffer's row (Settings → Playback → This PC) speaks every shipped language, the English with its notes.</summary>
+    [Fact]
+    public void TheReadAheadBuffersTexts_AreInEveryCatalog()
+    {
+        string[] keys =
+        [
+            "granary.settings.playback.readAhead", "granary.settings.playback.readAheadDefault", "granary.settings.playback.readAheadDescription",
+            "granary.settings.playback.readAheadGigabytes", "granary.settings.playback.readAheadMegabytes",
+        ];
+        foreach (string tag in AppLanguage.Shipped)
+        {
+            var messages = Messages(tag).ToDictionary(message => message.Key, message => message.Value, StringComparer.Ordinal);
+            Assert.All(keys, key => Assert.False(string.IsNullOrWhiteSpace(messages.GetValueOrDefault(key)), $"{tag}: {key}"));
+        }
+        Assert.All(keys, key => Assert.Contains($"\"@{key}\"", File.ReadAllText(CatalogPath(AppLanguage.English)), StringComparison.Ordinal));
+    }
+
     /// <summary>Laid out as the English file is: two spaces a level, a line end at the end.</summary>
     [Theory]
     [MemberData(nameof(Translations))]
