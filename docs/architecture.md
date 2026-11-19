@@ -1694,7 +1694,8 @@ client guide.
   entry and `expected_download_id` its id. Whatever that answers, nothing is sent again; a second conflict fails. An entry
   whose delete this PC still has to send is never taken over or revived (the delete would end it under the new download):
   that start fails, and works once the queue has sent the delete. The download dialog binds its start to the profile active
-  as it opened (`StartAsync`, `StartSeasonAsync` and `StartSeriesAsync` with `onlyFor`): with another profile active by the
+  as it opened, or as a card's dialog began its last read of the offer, so Try Again after a switch reads and downloads for
+  the new one (`StartAsync`, `StartSeasonAsync` and `StartSeriesAsync` with `onlyFor`): with another profile active by the
   time Download is pressed it sends nothing (`Unavailable`; a season or a series counts nothing) and says it did not start,
   so a download never lands on a profile the dialog was not opened for. An answer for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
   kept with the request's title, series, season and episode, queued, or Preparing while the server prepares a copy, and the
@@ -1738,7 +1739,8 @@ client guide.
   create is under way is not lost to that create's refusal: a free count is taken before the create and compared after
   (`_freeGeneration`). The same holds for a season's or a series' own create, before anything waits: a store change keeps
   what it compares with whether or not episodes wait, so a download leaving Preparing while that create is refused lets the
-  line it starts be asked at once. Of two refusals, the later free count is kept: an older one, from a create sent earlier,
+  line it starts be asked at once; a switch of profile takes the new profile's as that, so one of its downloads leaving
+  Preparing before any store change counts too. Of two refusals, the later free count is kept: an older one, from a create sent earlier,
   would make a place freed before the later refusal look freed after it. A timer that fires before the wait is over (the clock stepped back) is set again for the rest of it.
   Then it goes on as far as the server takes them. Its outcomes:
   - taken, or the download is here already (found in the store): the episode leaves the line;

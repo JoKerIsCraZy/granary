@@ -194,6 +194,12 @@ public sealed partial class DownloadManager
                 case DownloadStartResult.Limited:
                     int waiting = await KeepWaitingAsync(scope, seriesId, seriesTitle, quality, all.Skip(i), clears, outcome.RetryAfter, freed,
                         cancellationToken).ConfigureAwait(false);
+                    if (waiting == 0 && cancellationToken.IsCancellationRequested)
+                    {
+                        // Stopped just before they went in line, which then kept none: as a stop before the limit's answer.
+                        _logger.LogInformation("A season's or series' downloads stopped after {Count} episodes", started + there + failed + 1);
+                        return new SeasonStartResult(started, there, failed + 1, ReachedLimit: true);
+                    }
                     _logger.LogInformation("The server's download limit stopped a season's or series' downloads after {Count} episodes; {Waiting} wait",
                         started + there + failed, waiting);
                     return new SeasonStartResult(started, there, waiting == 0 ? failed + 1 : failed, ReachedLimit: true, waiting);

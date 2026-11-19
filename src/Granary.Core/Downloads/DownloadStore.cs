@@ -100,6 +100,9 @@ public sealed partial class DownloadStore
     /// <summary>What the last load's look for download folders did.</summary>
     internal ScanCount LastScan { get; private set; } = new(0, 0, false);
 
+    /// <summary>For tests: the calling thread holds the store's lock, which no follower of <see cref="Changed"/> may find held.</summary>
+    internal bool HoldsLock => _gate.IsHeldByCurrentThread;
+
     private Snapshot Current
     {
         get

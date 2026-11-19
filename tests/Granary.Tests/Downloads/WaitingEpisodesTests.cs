@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Granary.Core.Api;
@@ -505,6 +506,71 @@ public sealed class WaitingEpisodesTests : IAsyncDisposable
         Assert.Empty(_h.Store.PendingDeletes(Scope7));
         Assert.Equal(sent, _h.Silo.Sent.Count);
         Assert.Equal(0, manager.WaitingCount());
+    }
+
+    // Review of #179: what a place freed is compared with follows a switch of profile too. A line asked at the switch and
+    // refused, with no store change since, is asked again at once when the new profile's download leaves Preparing.
+    [Fact]
+    public async Task AfterASwitch_APlaceTheNewProfileFrees_LetsItsLineTryAtOnce()
+    {
+        await _h.AddAsync("dl_8", DownloadState.Preparing, scope: Scope8, mediaItemId: "mv_9");
+        await _h.Store.AddWaitingUnlessClearedAsync([new WaitingEpisode(Scope8, "sr_1", "Example Series", 1, "ep_2", 2, "Chapter Two", null, "original")],
+            _h.Store.ClearGeneration, Token);
+        _h.List();
+        Creates(Limit(), Created("dl_2", "ep_2"));
+        var manager = _h.NewManager();
+        await manager.WaitingRun;
+
+        _h.SwitchProfile("8");
+        await manager.WaitingRun;
+        Assert.Single(CreatedEpisodes());
+        await _h.Store.UpdateAsync(Scope8, "dl_8", r => r with { State = DownloadState.Queued }, Token);
+        await manager.WaitingRun;
+
+        Assert.Equal(["ep_2", "ep_2"], CreatedEpisodes());
+        Assert.Empty(Waiting(Scope8));
+    }
+
+    // Review of #179: a profile switched while a season's run reads the downloads, right before its create, sends nothing,
+    // and the run stops there without counting a failure.
+    [Fact]
+    public async Task ASwitchWhileTheDownloadsAreRead_StopsTheRun_WithNothingSentOrFailed()
+    {
+        _h.List();
+        Creates(Created("dl_1", "ep_1"));
+        var store = _h.UnreadStore();
+        store.Changed += (_, _) =>
+        {
+            if (_h.Session.ProfileId == "7")
+            {
+                _h.SwitchProfile("8");
+            }
+        };
+        var manager = new DownloadManager(store, _h.NewQueue(), _h.Api, _h.NewFeature(), _h.Session, new FakeDeviceProbe(),
+            new InMemoryPlaybackDevicePreferences(), _h.Time, _h.Logs.For<DownloadManager>(), _h.Playing);
+
+        var result = await manager.StartSeriesAsync(Series, Scope7, Token);
+
+        Assert.Equal(new SeasonStartResult(0, 0, 0), result);
+        Assert.Empty(CreatedEpisodes());
+    }
+
+    // Review of #179: the line's head asked while another profile is active for a moment sends nothing and stays in line.
+    [Fact]
+    public async Task AHeadAskedWhileItsProfileIsBrieflyNotActive_StaysInLine()
+    {
+        var manager = await LimitedAsync();
+        Creates(Created("dl_2", "ep_2"), Created("dl_21", "ep_21"));
+        // The run's own reads only: its second look at the profile (the start's) sees profile 8.
+        var reads = new AsyncLocal<StrongBox<int>?>();
+        _h.Session.ReadingProfile = () => reads.Value is { } box && Interlocked.Increment(ref box.Value) == 2 ? "8" : null;
+        reads.Value = new StrongBox<int>();
+
+        await AdvanceAsync(TimeSpan.FromMinutes(1), manager);
+        _h.Session.ReadingProfile = null;
+
+        Assert.Equal(2, CreatedEpisodes().Count);
+        Assert.Equal(["ep_2", "ep_21"], Waiting());
     }
 
     // Issue #173: a run bound to the profile a dialog was opened in sends nothing once another one is active.

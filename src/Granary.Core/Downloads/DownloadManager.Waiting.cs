@@ -119,8 +119,7 @@ public sealed partial class DownloadManager
     // again before it, unless a place frees. The wait is noted before the episodes go in line, so the store's change does not
     // ask at once, and its timer is set once they are in it. A run the viewer stopped (stopped) by the time they would go in
     // line keeps none of them, asked in the store's change itself. Answers how many of the series' episodes wait as that
-    // change left the line, counted in it: a place freed meanwhile can start the line at once and take some out again before
-    // this answers.
+    // change left the line, counted in the change itself.
     private async Task<int> KeepWaitingAsync(DownloadScope scope, string seriesId, string seriesTitle, string quality,
         IEnumerable<(int Season, SeasonEpisode Episode)> episodes, long clears, TimeSpan? retryAfter, long freed, CancellationToken stopped)
     {
@@ -242,17 +241,36 @@ public sealed partial class DownloadManager
     // once. The store is read under the manager's lock (the manager's lock, then the store's, never the other way round), so
     // of two changes on two threads the later read is the one the next change compares with. The active profile is read under
     // it too (the session's snapshot, which takes no lock), so a change that looked before a switch never stores its old
-    // profile over the new one's.
+    // profile over the new one's. The reads stay inside the lock on purpose: read outside, two changes could store their
+    // snapshots in the other order. They are copies of the store's state in memory, one pass over the profile's downloads,
+    // which a PC keeps by the hundreds at most; no disk or network is touched.
     private void OnStoreChangedForWaiting(object? sender, EventArgs e)
     {
-        bool waits;
+        if (NoteFreedPlaces())
+        {
+            DrainSoon();
+        }
+    }
+
+    // A switch of profile: what a place freed is compared with is the new profile's from now on, so a download of it leaving
+    // Preparing before any store change counts; then the line is asked once.
+    private void OnSessionChangedForWaiting(object? sender, EventArgs e)
+    {
+        NoteFreedPlaces();
+        DrainSoon();
+    }
+
+    // Notes whether the store as it is now freed a place for the active profile since the last look, and keeps what the next
+    // look compares with. Answers whether episodes of the profile wait.
+    private bool NoteFreedPlaces()
+    {
         lock (_gate)
         {
             var scope = DownloadScope.Of(_session);
             if (scope is null)
             {
                 (_seenScope, _seenPreparing, _seenDeletes) = (null, [], []);
-                return;
+                return false;
             }
             var downloads = _store.In(scope).ToDictionary(d => d.Record.DownloadId, d => d.Record.State, StringComparer.Ordinal);
             var deletes = _store.PendingDeletes(scope).Select(d => d.DownloadId).ToHashSet(StringComparer.Ordinal);
@@ -263,15 +281,9 @@ public sealed partial class DownloadManager
             }
             var preparing = downloads.Where(d => d.Value == DownloadState.Preparing).Select(d => d.Key).ToHashSet(StringComparer.Ordinal);
             (_seenScope, _seenPreparing, _seenDeletes) = (scope, preparing, deletes);
-            waits = _store.WaitingIn(scope).Count > 0;
-        }
-        if (waits)
-        {
-            DrainSoon();
+            return _store.WaitingIn(scope).Count > 0;
         }
     }
-
-    private void OnSessionChangedForWaiting(object? sender, EventArgs e) => DrainSoon();
 
     // A run when none runs, else one more look once it ends.
     private void DrainSoon()

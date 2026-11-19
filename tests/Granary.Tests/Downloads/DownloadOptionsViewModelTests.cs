@@ -513,6 +513,29 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.Empty(_h.Store.In(Scope8));
     }
 
+    // Review of #179: a card's dialog whose read failed as the profile switched reads again with Try Again for the profile
+    // active then, and downloads for that one: the profile goes with the offer on screen.
+    [Fact]
+    public async Task TryAgainAfterAProfileSwitch_DownloadsForTheProfileItReadFor()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready")));
+        var options = await OptionsAsync();
+        int reads = 0;
+        options.ForReading(_ => ++reads == 1
+            ? Task.FromException<DownloadOffer>(new ProfileChangedException())
+            : Task.FromResult<DownloadOffer>(new TitleDownloadOffer(Movie, [OneFile], 7200)));
+        await options.Reading;
+        Assert.True(options.ReadFailed);
+
+        _h.SwitchProfile("8");
+        await options.TryAgainCommand.ExecuteAsync(null);
+        await options.SpaceRead;
+
+        Assert.True(await options.StartAsync());
+        Assert.Equal("8", _h.Silo.SentTo(HttpMethod.Post, CreatePath).Single().AsProfile);
+        Assert.NotNull(_h.Find("dl_1", Scope8));
+    }
+
     [Fact]
     public async Task AProfileSwitchWhileASeasonsDialogShows_SendsNoCreate()
     {

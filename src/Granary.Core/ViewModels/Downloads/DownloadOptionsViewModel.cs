@@ -85,7 +85,8 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     // What the dialog offers, as given or read; the choices the viewer makes in it pick from it what Download starts.
     private DownloadOffer? _offer;
 
-    // The profile active as the dialog opened: Download starts for it, and sends nothing once another one is active.
+    // The profile active as the dialog opened, or as its last read of the offer began: Download starts for it, and sends
+    // nothing once another one is active.
     private DownloadScope? _openedFor;
 
     private DownloadRequest? _title;
@@ -469,6 +470,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         {
             return;
         }
+        // Each read is for the profile active as it begins, and so is Download: Try Again after a switch of profile reads, and
+        // downloads, for the new one.
+        _openedFor = _downloads.ActiveScope;
         StopReading();
         var reading = new CancellationTokenSource();
         _reading = reading;

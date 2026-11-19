@@ -13,7 +13,19 @@ internal sealed class FakeSessionManager : ISessionManager
 
     public Account? Account { get; set; }
 
-    public string? ProfileId { get; set; }
+    private string? _profileId;
+
+    public string? ProfileId
+    {
+        get => ReadingProfile?.Invoke() ?? _profileId;
+        set => _profileId = value;
+    }
+
+    /// <summary>
+    /// When set, a read of <see cref="ProfileId"/> sees what it answers instead of the profile set, unless it answers null:
+    /// another profile active for a moment, as between two looks of the same run.
+    /// </summary>
+    public Func<string?>? ReadingProfile { get; set; }
 
     public List<string> Calls { get; } = [];
 

@@ -194,4 +194,18 @@ public sealed class WaitingEpisodesStoreTests : IAsyncDisposable
         Assert.Contains(_h.Logs.Lines, line => line.Contains("Download dl_7 is not kept: its episode left the line meanwhile", StringComparison.Ordinal));
         Assert.Contains(_h.Logs.Lines, line => line.Contains("Download dl_8 is not kept: its account's downloads were cleared meanwhile", StringComparison.Ordinal));
     }
+    // Review of #179: the store's first load tells its followers off the store's lock, so a follower that takes a lock of its
+    // own first and then reads the store (the waiting line's) cannot wait on a thread that waits on it.
+    [Fact]
+    public async Task TheFirstLoad_TellsItsFollowers_WithoutTheStoresLockHeld()
+    {
+        await _h.AddAsync("dl_1", mediaItemId: "ep_1");
+        var store = _h.UnreadStore();
+        bool? held = null;
+        store.Changed += (_, _) => held ??= store.HoldsLock;
+
+        await store.LoadAsync(Token);
+
+        Assert.False(held);
+    }
 }
