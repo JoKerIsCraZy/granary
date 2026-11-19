@@ -368,10 +368,23 @@ differently; a text only Granary has keeps its English under a key of its own. A
   sees other formats than Windows'. Tests get the language's own (`TextLanguage.Load(tag, formats: …)`).
   - `DateText` writes a date by the fields Intl is asked for, as an ICU skeleton (`yMd`, `yMMMd`, `jmm`, `MMMEd`, …),
     in the locale's best pattern for them, through ICU (`icu.dll`, which .NET's globalization loads too), as
-    Intl.DateTimeFormat does: .NET's own patterns differ ("05.11.2026" for Intl's "5.11.2026"). The clock is Windows'
-    own, 12 or 24 hours as its time format says (a user's choice included), as the web's 12h/24h preference sets Intl's
-    hour cycle; Granary does not read the web's date and time preferences. Without ICU it writes .NET's nearest pattern.
-    A value is written as it reads; callers convert to the viewer's zone first.
+    Intl.DateTimeFormat does: .NET's own patterns differ ("05.11.2026" for Intl's "5.11.2026"). Without ICU it writes
+    .NET's nearest pattern. A value is written as it reads; callers convert to the viewer's zone first.
+  - The profile's date and time formats (`DateTimePreferences`, `DateText.Preferences`; the web's `lib/datetime.ts`)
+    set the order and the clock. A date in digits takes the exact pattern (`DD/MM/YYYY` is "12/09/2013", in Latin
+    digits). A medium date and every date fragment with a month's name (`DateText.Format`, the web's
+    `toLocaleDateString(preferredDateLocale(), …)`) take British or American English for DD/MM/YYYY and MM/DD/YYYY,
+    unless the texts are in a language other than English and the format locale is of that language
+    (`TextLanguage.LocalizedFormats`, the web's `pinnedLocaleUnlessLocalized`): German month names keep German order.
+    YYYY-MM-DD writes medium dates in digits too; fragments without a year keep the format locale's order. The
+    calendar's week and day labels keep the format locale whatever the format (`DateText.InFormatLocale`, as
+    `lib/calendarWeek.ts`). The clock: 12h and 24h set the hour cycle, 24h with two-digit hours ("09:04"); auto is
+    Windows' own clock, 12 or 24 hours as its time format says (a user's choice included). Auto in both changes nothing.
+  - Those formats (`DateTimeFormatSetting`) are read with the app language, for every profile and each time Settings →
+    Accessibility shows, and apply at once: every date written from then on follows them (pages open already follow
+    once they word their rows again). They are kept on this PC (`date-time-format.json`, `DateTimeFormatFile`), which
+    the next start applies before it knows who is watching, as the web seeds them from its storage. A failed read and
+    signing out keep the formats in use.
   - `NumberText.Decimal` is the web's `formatDecimal` (no grouping, `toFixed`'s rounding of the binary value),
     `NumberText.Grouped` and `AppText.Number` its `toLocaleString(formatLocale())`, and `NumberText.Digits` its
     `numberText`, for clocks ("1:05:09") and years in the messages' digits. Codes such as "S01E05" keep Latin digits.

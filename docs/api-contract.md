@@ -608,6 +608,7 @@ Profile and device settings live on the server (manifest
 | `ui.title_art` | profile, profile_device (the profile's wins) | `true`, or the administrator's | a title's page names it with its logo ([6.6.4](#664-title-pages)) |
 | `ui.theme_music_enabled`, `ui.theme_music_loop` | profile, profile_device | `false`, `false` | title pages' theme music ([6.6.4](#664-title-pages), [7.19](#719-theme-music)) |
 | `ui.app_language` | profile, profile_device (resolved device, profile, default) | `null` (follow the device) | the language Granary starts in ([6.6.5](#665-app-language)) |
+| `ui.date_format`, `ui.time_format` | profile | `auto`, `auto` | how dates and times are written ([6.6.6](#666-date-and-time-formats)) |
 
 #### 6.6.1 Card badges
 
@@ -724,6 +725,19 @@ acts as if it were `null`.
   effective value, as the profile's may have changed since. Both go out as the profile the choice was made for
   (`SettingsApi.SetValueAsProfileAsync`, `ClearValueAsProfileAsync`). A stored tag Granary does not offer is shown, not
   rewritten.
+
+#### 6.6.6 Date and time formats
+
+`ui.date_format` (`auto`, `DD/MM/YYYY`, `MM/DD/YYYY`, `YYYY-MM-DD`) and `ui.time_format` (`auto`, `12h`, `24h`): enums of
+the profile alone (settings manifest, `scopes: ["profile"]`), default `auto`. A value Granary does not know reads as
+`auto`, as the web parses it (`lib/datetime.ts`).
+
+- Read: both effective values in one request, with the app language's reads: at sign-in, with every server or profile,
+  and each time Settings → Accessibility shows. They apply at once and are kept on this PC for the next start. A read
+  that fails keeps the formats in use.
+- Write (Settings → Accessibility → Date & time, as the web's `DateTimeFormatProvider`): `PUT …/ui.date_format?scope=profile`
+  or `…/ui.time_format?scope=profile` with the value, applied before it lands; a refused write goes back to what the
+  server has and reads the values again. The values carry no version, so the writes send no `If-Match`.
 
 ## 7. Catalog
 
