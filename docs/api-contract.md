@@ -734,7 +734,7 @@ the profile alone (settings manifest, `scopes: ["profile"]`), default `auto`. A 
 
 - Read: both effective values in one request, with the app language's reads: at sign-in, with every server or profile,
   and each time Settings → Accessibility shows. They apply at once and are kept on this PC for the next start. A read
-  that fails keeps the formats in use.
+  that fails keeps the formats in use; a server that knows neither key (each `422`) offers no choice.
 - Write (Settings → Accessibility → Date & time, as the web's `DateTimeFormatProvider`): `PUT …/ui.date_format?scope=profile`
   or `…/ui.time_format?scope=profile` with the value, applied before it lands; a refused write goes back to what the
   server has and reads the values again. Each goes out as the profile it was made for (`SettingsApi.SetValueAsProfileAsync`).

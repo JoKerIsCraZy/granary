@@ -94,6 +94,12 @@
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
                 </StackPanel>
+                <!-- The read failed: the choices wait, as one would overwrite a format not seen. -->
+                <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind DateTime.LoadFailed, Mode=OneWay}">
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.loadFailed')}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                               FontSize="13" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+                    <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind DateTime.RetryCommand}" />
+                </StackPanel>
                 <TextBlock Text="{x:Bind DateTime.Preview, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="13" TextWrapping="Wrap" />
             </StackPanel>
         </controls:SettingsGroup>

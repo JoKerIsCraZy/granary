@@ -1695,8 +1695,9 @@ entry is chosen, and a controller's bumpers, which go from the chosen entry, do 
   the settings manifest's "Match device" here). A choice saves at once for the profile and applies at once: dates written
   from then on follow it, and pages open already follow once they word their rows again. Under them, in 13 px muted,
   "Preview: 12/09/2013 · 12 Sept 2013 · 15:04", today in the formats chosen. The buttons are off until the profile's
-  formats are read, which the page reads again each time it shows; a refused choice goes back to what the server has,
-  without a message, as on the web.
+  formats are read, which the page reads again each time it shows; a read that fails says "Couldn’t load preferences."
+  with Retry, in 13 px muted, and a server that knows neither setting offers no choice. A refused choice goes back to
+  what the server has, without a message, as on the web.
 - **Devices** (`DevicesSettingsView` on `DevicesViewModel`; the web's Signed-in sessions and Your Devices on one page,
   without the household view and the per-device settings editor): the title and its line with Refresh (outline) on the
   right, then what the last action did in 13 px muted text ("Session signed out", "Couldn't forget"). **Signed-in

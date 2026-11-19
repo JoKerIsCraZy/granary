@@ -112,14 +112,22 @@ public sealed class DateTimeFormatSettingTests : IDisposable
     [Fact]
     public async Task AChoice_AppliesAtOnce_AndIsSavedForTheProfile()
     {
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, DatePath, async () =>
+        {
+            await release.Task;
+            return await ScriptedSilo.NoContent()();
+        });
         var setting = Create();
         await setting.StartAsync();
 
-        await setting.ChooseDateFormatAsync(DateTimePreferences.MonthDayYear);
+        var choice = setting.ChooseDateFormatAsync(DateTimePreferences.MonthDayYear);
 
         var expected = DateTimePreferences.Parse("MM/DD/YYYY", "24h");
         Assert.Equal(expected, setting.Preferences);
         Assert.Equal(expected, _applied[^1]);
+        release.SetResult();
+        await choice;
         Assert.Equal(expected, KeptFile().AtStart);
         var put = Assert.Single(_harness.Silo.SentTo(HttpMethod.Put, DatePath));
         Assert.Equal("?scope=profile", put.Uri.Query);
@@ -192,6 +200,56 @@ public sealed class DateTimeFormatSettingTests : IDisposable
         await setting.ChooseTimeFormatAsync(DateTimePreferences.TwelveHours);
 
         Assert.Equal("7", Assert.Single(_harness.Silo.SentTo(HttpMethod.Put, TimePath)).AsProfile);
+    }
+
+    [Fact]
+    public async Task AFormatTheWebDoesNotKnow_IsNotSent()
+    {
+        var setting = Create();
+        await setting.StartAsync();
+
+        await setting.ChooseDateFormatAsync("DD.MM.YYYY");
+        await setting.ChooseTimeFormatAsync("13h");
+
+        Assert.Empty(_harness.Silo.SentTo(HttpMethod.Put, DatePath));
+        Assert.Empty(_harness.Silo.SentTo(HttpMethod.Put, TimePath));
+        Assert.Equal(DateTimePreferences.Parse("DD/MM/YYYY", "24h"), setting.Preferences);
+    }
+
+    [Fact]
+    public async Task AServerThatKnowsNeitherKey_OffersNoChoice()
+    {
+        var kept = DateTimePreferences.Parse("YYYY-MM-DD", "12h");
+        await KeptFile().KeepAsync(kept);
+        _harness.Answer(EffectivePath, ScriptedSilo.Problem(422, "validation_failed"));
+        var setting = Create();
+
+        await setting.StartAsync();
+
+        Assert.False(setting.IsReady);
+        Assert.False(setting.LoadFailed);
+        Assert.Equal(kept, setting.Preferences);
+    }
+
+    [Fact]
+    public async Task AReadOvertakenByAChoice_DoesNotBecomeWhatARefusedChoiceGoesBackTo()
+    {
+        // The date format is chosen while a read is on its way; the time format is then refused, and the read after it fails.
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, TimePath, ScriptedSilo.Problem(500, "internal"));
+        var setting = Create();
+        await setting.StartAsync();
+        _harness.Answer(EffectivePath, LibraryHarness.Held(release, Answer("DD/MM/YYYY", "24h")));
+        var read = setting.RefreshAsync();
+
+        await setting.ChooseDateFormatAsync(DateTimePreferences.YearMonthDay);
+        release.SetResult();
+        await read;
+        _harness.Answer(EffectivePath, ScriptedSilo.Problem(503, "unavailable"));
+        await setting.ChooseTimeFormatAsync(DateTimePreferences.TwelveHours);
+        await setting.Working;
+
+        Assert.Equal(DateTimePreferences.Parse("YYYY-MM-DD", "24h"), setting.Preferences);
     }
 
     [Fact]

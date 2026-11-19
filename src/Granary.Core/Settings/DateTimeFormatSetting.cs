@@ -102,7 +102,8 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
 
     private Task ChooseAsync(string key, string value, DateTimePreferences next, Func<DateTimePreferences, DateTimePreferences> confirm)
     {
-        if (!IsReady || next == Preferences || _readFor != Owner()
+        IReadOnlyList<string> known = key == DateKey ? DateTimePreferences.DateFormats : DateTimePreferences.TimeFormats;
+        if (!known.Contains(value, StringComparer.Ordinal) || !IsReady || next == Preferences || _readFor != Owner()
             || _session is not { State: SessionState.Ready, ActiveServer: { } server, ProfileId: { } profileId })
         {
             return Task.CompletedTask;
@@ -233,17 +234,26 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
             }
             return;
         }
-        // An unset key, or one a server does not know, is auto, the contract's default.
+        if (!values.ContainsKey(DateKey) && !values.ContainsKey(TimeKey))
+        {
+            // A server that knows neither key has nowhere to keep a choice: the formats in use stay, and nothing is offered.
+            _readFor = null;
+            LoadFailed = false;
+            IsReady = false;
+            return;
+        }
+        if (_readFor == owner && (choices != _choices || _savesQueued > 0))
+        {
+            // The viewer chose meanwhile: that choice is newer than what the server answered, and so is what a refused one
+            // goes back to.
+            return;
+        }
+        // An unset key is auto, the contract's default; so is a value the web does not know.
         _confirmed = DateTimePreferences.Parse(
             SettingValues.Text(values.GetValueOrDefault(DateKey)), SettingValues.Text(values.GetValueOrDefault(TimeKey)));
         _readFor = owner;
         LoadFailed = false;
         IsReady = true;
-        if (choices != _choices || _savesQueued > 0)
-        {
-            // The viewer chose meanwhile: that choice is newer than what the server answered.
-            return;
-        }
         Show(_confirmed);
         await _file.KeepAsync(_confirmed);
     }

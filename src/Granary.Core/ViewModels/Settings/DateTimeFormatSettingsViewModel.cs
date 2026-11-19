@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Settings;
 using Granary.Core.Texts;
 
@@ -36,6 +37,9 @@ public sealed partial class DateTimeFormatSettingsViewModel : ObservableObject, 
     /// <summary>The choices can be used: the profile's formats are known.</summary>
     public bool CanChoose => _setting.IsReady;
 
+    /// <summary>The profile's formats could not be read; Retry reads them again.</summary>
+    public bool LoadFailed => _setting.LoadFailed;
+
     /// <summary>"Preview: 11/19/2026 · Nov 19, 2026 · 3:04 PM": today in the formats in use, as the web's line under the choices.</summary>
     public string Preview
     {
@@ -55,6 +59,9 @@ public sealed partial class DateTimeFormatSettingsViewModel : ObservableObject, 
     public Task LoadAsync() => Working = _setting.RefreshAsync();
 
     public void Dispose() => _setting.PropertyChanged -= OnSettingChanged;
+
+    [RelayCommand]
+    private Task RetryAsync() => LoadAsync();
 
     private static string DateLabel(string format) => format == DateTimePreferences.Auto
         ? AppText.Get("settingsManifest.ui.date_format.option.auto")
@@ -90,6 +97,9 @@ public sealed partial class DateTimeFormatSettingsViewModel : ObservableObject, 
                 break;
             case nameof(DateTimeFormatSetting.IsReady):
                 OnPropertyChanged(nameof(CanChoose));
+                break;
+            case nameof(DateTimeFormatSetting.LoadFailed):
+                OnPropertyChanged(nameof(LoadFailed));
                 break;
         }
     }

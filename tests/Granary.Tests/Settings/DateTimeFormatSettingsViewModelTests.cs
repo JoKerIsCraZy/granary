@@ -80,16 +80,25 @@ public sealed class DateTimeFormatSettingsViewModelTests : IDisposable
         Assert.True(page.DateChoices[3].IsSelected);
         Assert.False(page.DateChoices[1].IsSelected);
         Assert.Equal("""{"value":"YYYY-MM-DD"}""", Assert.Single(_harness.Silo.SentTo(HttpMethod.Put, DatePath)).Body);
-        Assert.StartsWith("Preview: 2013-09-12 · 2013-09-12 · ", page.Preview, StringComparison.Ordinal);
+        // 15:04 UTC on Windows' clock here, which may be either.
+        Assert.Matches("^Preview: 2013-09-12 · 2013-09-12 · (15:04|3:04[  ](PM|pm))$", page.Preview);
     }
 
     [Fact]
-    public async Task BeforeTheFormatsAreRead_NothingCanBeChosen()
+    public async Task BeforeTheFormatsAreRead_NothingCanBeChosen_AndRetryReadsThemAgain()
     {
         _harness.Answer(EffectivePath, ScriptedSilo.Problem(503, "unavailable"));
 
         var page = await OpenAsync();
 
         Assert.False(page.CanChoose);
+        Assert.True(page.LoadFailed);
+
+        _harness.Answer(EffectivePath, """{ "items": [{ "key": "ui.date_format", "source": "profile", "value": "MM/DD/YYYY" }], "revision": 30 }""");
+        await page.RetryCommand.ExecuteAsync(null);
+
+        Assert.True(page.CanChoose);
+        Assert.False(page.LoadFailed);
+        Assert.True(page.DateChoices[2].IsSelected);
     }
 }
