@@ -58,6 +58,11 @@ public sealed partial class MpvPlaybackEngine
     private Dictionary<string, string>? _kept;
     private string[] _perFile = [];
 
+    // The read-ahead buffer's options the mpv.conf mpv runs with names anywhere (MpvReadAhead): the file's, not Granary's.
+    // Empty without one.
+    private IReadOnlySet<string> _fileReadAhead = NoReadAhead;
+    private static readonly HashSet<string> NoReadAhead = [];
+
     // How often each option was set back for the title _setBacksTitle (a load, as Load counts them; 0 before the first);
     // on mpv's event thread only, so a load on another thread never touches them. A new mpv gets a new count: the event
     // thread of the mpv before may be just done with its own.
@@ -96,7 +101,8 @@ public sealed partial class MpvPlaybackEngine
     private bool StartWith(string file)
     {
         var all = _core.Concat(MpvOwnOptions.Guarded(_options.VideoOutput)).ToList();
-        var names = all.Select(o => o.Key).Append(MpvOwnOptions.OperationMode).Concat(MpvOwnOptions.Refused.Keys).ToHashSet();
+        var names = all.Select(o => o.Key).Append(MpvOwnOptions.OperationMode).Concat(MpvOwnOptions.Refused.Keys).Concat(MpvReadAhead.Names)
+            .ToHashSet();
         MpvConfigScan scan;
         try
         {
@@ -146,6 +152,11 @@ public sealed partial class MpvPlaybackEngine
             return false;
         }
         Report(new MpvConfigState(MpvConfigUse.Used, KeptOptions: SayWhatIsKept(file, entries)));
+        _fileReadAhead = entries.Select(e => e.Option).Where(MpvReadAhead.Names.Contains).ToHashSet(StringComparer.Ordinal);
+        if (_fileReadAhead.Count > 0)
+        {
+            _logger.LogInformation("mpv.conf sets {Options}; Granary's read-ahead buffer leaves them to it", string.Join(", ", _fileReadAhead.Order()));
+        }
         return true;
     }
 
@@ -176,6 +187,7 @@ public sealed partial class MpvPlaybackEngine
         _own = [];
         _kept = null;
         _perFile = [];
+        _fileReadAhead = NoReadAhead;
         _setBacks = [];
         _mpv = new MpvClient(_logger);
         _mpv.PropertyChanged += OnPropertyChanged;
