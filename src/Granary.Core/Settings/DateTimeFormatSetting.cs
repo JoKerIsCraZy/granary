@@ -32,9 +32,9 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
     private readonly ILogger<DateTimeFormatSetting> _logger;
     private readonly Action<DateTimePreferences> _apply;
     private bool _following;
-    private (string? ServerId, string? ProfileId)? _loadedFor;
+    private (string? ServerId, string? AccountId, string? ProfileId)? _loadedFor;
     // The profile whose formats Preferences are.
-    private (string? ServerId, string? ProfileId)? _readFor;
+    private (string? ServerId, string? AccountId, string? ProfileId)? _readFor;
     private int _loads;
     // Counts the viewer's choices: a read that began before one does not put the old value back.
     private int _choices;
@@ -104,22 +104,23 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
     {
         IReadOnlyList<string> known = key == DateKey ? DateTimePreferences.DateFormats : DateTimePreferences.TimeFormats;
         if (!known.Contains(value, StringComparer.Ordinal) || !IsReady || next == Preferences || _readFor != Owner()
-            || _session is not { State: SessionState.Ready, ActiveServer: { } server, ProfileId: { } profileId })
+            || _session is not { State: SessionState.Ready, ActiveServer: { } server, Account: { } account, ProfileId: { } profileId })
         {
             return Task.CompletedTask;
         }
         _choices++;
         Show(next);
         var owner = Owner();
-        var target = new WriteTarget(server.BaseUri, profileId);
+        var target = new WriteTarget(server.BaseUri, account.Id, profileId);
         _savesQueued++;
         return Working = _saves = SaveInTurnAsync(_saves, key, value, owner, target, confirm);
     }
 
-    // The server and profile a choice was made for: it goes out as that profile, refused unsent once another acts.
-    private readonly record struct WriteTarget(Uri Server, string ProfileId);
+    // The server, account and profile a choice was made for: it goes out as that account's profile, refused unsent once another
+    // acts, also another account's profile of the same id.
+    private readonly record struct WriteTarget(Uri Server, string AccountId, string ProfileId);
 
-    private async Task SaveInTurnAsync(Task previous, string key, string value, (string?, string?) owner, WriteTarget target,
+    private async Task SaveInTurnAsync(Task previous, string key, string value, (string?, string?, string?) owner, WriteTarget target,
         Func<DateTimePreferences, DateTimePreferences> confirm)
     {
         await previous.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ContinueOnCapturedContext);
@@ -155,7 +156,7 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
         await LoadIfNewAsync(Task.CompletedTask);
     }
 
-    private async Task SaveAsync(string key, string value, (string?, string?) owner, WriteTarget target,
+    private async Task SaveAsync(string key, string value, (string?, string?, string?) owner, WriteTarget target,
         Func<DateTimePreferences, DateTimePreferences> confirm)
     {
         if (_session.State != SessionState.Ready || owner != Owner())
@@ -166,7 +167,8 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
         }
         try
         {
-            await _api.SetValueAsProfileAsync(target.Server, key, SettingValues.Json(value), SettingScopes.Profile, target.ProfileId);
+            await _api.SetValueAsAccountProfileAsync(target.Server, key, SettingValues.Json(value), SettingScopes.Profile, target.AccountId,
+                target.ProfileId);
             if (owner == Owner() && _readFor == owner)
             {
                 _confirmed = confirm(_confirmed);
@@ -206,7 +208,7 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
         return LoadAsync(owner, ++_loads, saves);
     }
 
-    private async Task LoadAsync((string? ServerId, string? ProfileId) owner, int load, Task saves)
+    private async Task LoadAsync((string? ServerId, string? AccountId, string? ProfileId) owner, int load, Task saves)
     {
         await saves.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ContinueOnCapturedContext);
         int choices = _choices;
@@ -264,7 +266,8 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
         _apply(preferences);
     }
 
-    private (string? ServerId, string? ProfileId) Owner() => (_session.ActiveServer?.Id, _session.ProfileId);
+    private (string? ServerId, string? AccountId, string? ProfileId) Owner() =>
+        (_session.ActiveServer?.Id, _session.Account?.Id, _session.ProfileId);
 
     // Changed can come from a background thread (a sign-out by the authentication handler).
     private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() => Working = LoadIfNewAsync(_saves));

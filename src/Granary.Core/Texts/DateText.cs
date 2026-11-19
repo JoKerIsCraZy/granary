@@ -80,21 +80,27 @@ public static class DateText
     /// A date in digits, the web's <c>formatDate(value)</c>: the date format's exact pattern in Latin digits, or the format
     /// locale's own under auto.
     /// </summary>
-    public static string Date(DateTime value) => Preferences.DateFormat switch
+    public static string Date(DateTime value) => Date(value, Preferences);
+
+    // Each date reads the formats once: one chosen meanwhile on another thread never mixes into it.
+    private static string Date(DateTime value, DateTimePreferences preferences) => preferences.DateFormat switch
     {
         DateTimePreferences.DayMonthYear => Digits(value, "dd'/'MM'/'yyyy"),
         DateTimePreferences.MonthDayYear => Digits(value, "MM'/'dd'/'yyyy"),
         DateTimePreferences.YearMonthDay => Digits(value, "yyyy'-'MM'-'dd"),
-        _ => Write(value, NumericDate, AppText.Language.Formats),
+        _ => Write(value, NumericDate, AppText.Language.Formats, preferences),
     };
 
     /// <summary>
     /// A date with its month's short name, the web's <c>formatDate(value, "medium")</c>: in the order of the date format,
     /// and in digits under YYYY-MM-DD, which has no form with a month's name.
     /// </summary>
-    public static string MediumDate(DateTime value) => Preferences.DateFormat == DateTimePreferences.YearMonthDay
-        ? Date(value)
-        : Write(value, MediumDay, PreferredLocale());
+    public static string MediumDate(DateTime value) => MediumDate(value, Preferences);
+
+    private static string MediumDate(DateTime value, DateTimePreferences preferences) =>
+        preferences.DateFormat == DateTimePreferences.YearMonthDay
+            ? Date(value, preferences)
+            : Write(value, MediumDay, PreferredLocale(preferences), preferences);
 
     /// <summary>A time of day, the web's <c>formatTime(value)</c>.</summary>
     public static string Time(DateTime value) => Format(value, HourMinute);
@@ -103,29 +109,36 @@ public static class DateText
     /// A date and its time, the web's <c>formatDateTime(value, { dateStyle, seconds })</c>: "11/5/2026, 3:04:09 PM", or
     /// with <paramref name="medium"/> "Nov 5, 2026, 3:04 PM".
     /// </summary>
-    public static string DateTime(DateTime value, bool seconds = true, bool medium = false) =>
-        $"{(medium ? MediumDate(value) : Date(value))}, {Format(value, seconds ? HourMinuteSecond : HourMinute)}";
+    public static string DateTime(DateTime value, bool seconds = true, bool medium = false)
+    {
+        var preferences = Preferences;
+        return $"{(medium ? MediumDate(value, preferences) : Date(value, preferences))}, " +
+            Format(value, seconds ? HourMinuteSecond : HourMinute, preferences);
+    }
 
     /// <summary>
     /// <paramref name="value"/> with the fields of <paramref name="skeleton"/> (one of this class's constants), in the best
     /// pattern for them: a date as the web's <c>toLocaleDateString(preferredDateLocale(), …)</c>, in the order of the date
     /// format; a time as its <c>formatTime</c>, in the format locale on the clock of the time format.
     /// </summary>
-    public static string Format(DateTime value, string skeleton) =>
-        Write(value, skeleton, skeleton.Contains('j', StringComparison.Ordinal) ? AppText.Language.Formats : PreferredLocale());
+    public static string Format(DateTime value, string skeleton) => Format(value, skeleton, Preferences);
+
+    private static string Format(DateTime value, string skeleton, DateTimePreferences preferences) =>
+        Write(value, skeleton, skeleton.Contains('j', StringComparison.Ordinal) ? AppText.Language.Formats : PreferredLocale(preferences),
+            preferences);
 
     /// <summary>
     /// <paramref name="value"/> with the fields of <paramref name="skeleton"/> in the format locale whatever the date format,
     /// as the web's <c>toLocaleDateString(formatLocale(), …)</c> (the calendar's week and day labels, lib/calendarWeek.ts).
     /// </summary>
-    public static string InFormatLocale(DateTime value, string skeleton) => Write(value, skeleton, AppText.Language.Formats);
+    public static string InFormatLocale(DateTime value, string skeleton) => Write(value, skeleton, AppText.Language.Formats, Preferences);
 
     // The web's preferredDateLocale: British or American English for a date format of that order, unless dates come out in
     // the language on screen (pinnedLocaleUnlessLocalized); the format locale for auto and for YYYY-MM-DD.
-    private static FormatLocale PreferredLocale()
+    private static FormatLocale PreferredLocale(DateTimePreferences preferences)
     {
         var language = AppText.Language;
-        return Preferences.DateFormat switch
+        return preferences.DateFormat switch
         {
             DateTimePreferences.DayMonthYear when !language.LocalizedFormats => British.Value,
             DateTimePreferences.MonthDayYear when !language.LocalizedFormats => American.Value,
@@ -136,23 +149,22 @@ public static class DateText
     // The web's pad2 patterns: Latin digits in every language.
     private static string Digits(DateTime value, string pattern) => value.ToString(pattern, CultureInfo.InvariantCulture);
 
-    private static string Write(DateTime value, string skeleton, FormatLocale locale)
+    private static string Write(DateTime value, string skeleton, FormatLocale locale, DateTimePreferences preferences)
     {
-        var (fields, hour) = Clock(skeleton, locale);
+        var (fields, hour) = Clock(skeleton, locale, preferences.TimeFormat);
         return IcuDates.Format(locale.IcuName, fields, value, matchHourLength: fields.Contains("HH", StringComparison.Ordinal))
-            ?? Fallback(value, skeleton, locale, Preferences.TimeFormat == DateTimePreferences.Auto ? null : hour);
+            ?? Fallback(value, skeleton, locale, preferences.TimeFormat == DateTimePreferences.Auto ? null : hour);
     }
 
     // The hour of a time's skeleton (j, the locale's): 12h and 24h set it, as the web's formatTime sets hourCycle; under
     // auto, Windows' own clock (its time format, a user's choice included). 24h writes two digits ("09:04"), as the web's
     // asks for "2-digit", unless the hour alone was asked for.
-    private static (string Fields, char? Hour) Clock(string skeleton, FormatLocale locale)
+    private static (string Fields, char? Hour) Clock(string skeleton, FormatLocale locale, string time)
     {
         if (!skeleton.Contains('j', StringComparison.Ordinal))
         {
             return (skeleton, null);
         }
-        string time = Preferences.TimeFormat;
         char? hour = time switch
         {
             DateTimePreferences.TwelveHours => 'h',

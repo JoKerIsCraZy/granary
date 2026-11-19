@@ -66,8 +66,9 @@ public sealed class DateTimeFormatFile
                 File.WriteAllText(temp, JsonSerializer.Serialize(data, DateTimeFormatJsonContext.Default.DateTimeFormatFileData)));
             _kept = preferences;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            // Never fails: the formats in use stay, and the next start reads what it can.
             _logger.LogWarning(ex, "The date and time formats for the next start could not be saved");
         }
     }

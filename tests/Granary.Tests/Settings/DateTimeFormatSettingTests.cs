@@ -192,14 +192,15 @@ public sealed class DateTimeFormatSettingTests : IDisposable
     }
 
     [Fact]
-    public async Task AChoice_GoesOutAsTheProfileItWasMadeFor()
+    public async Task AChoice_GoesOutAsTheAccountAndProfileItWasMadeFor()
     {
         var setting = Create();
         await setting.StartAsync();
 
         await setting.ChooseTimeFormatAsync(DateTimePreferences.TwelveHours);
 
-        Assert.Equal("7", Assert.Single(_harness.Silo.SentTo(HttpMethod.Put, TimePath)).AsProfile);
+        var sent = Assert.Single(_harness.Silo.SentTo(HttpMethod.Put, TimePath));
+        Assert.Equal(("1", "7"), (sent.AsAccount, sent.AsProfile));
     }
 
     [Fact]
