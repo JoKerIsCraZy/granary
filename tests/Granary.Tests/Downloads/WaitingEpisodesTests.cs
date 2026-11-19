@@ -507,6 +507,24 @@ public sealed class WaitingEpisodesTests : IAsyncDisposable
         Assert.Equal(0, manager.WaitingCount());
     }
 
+    // Issue #173: a run bound to the profile a dialog was opened in sends nothing once another one is active.
+    [Fact]
+    public async Task ARunForAProfileNoLongerActive_SendsNothing()
+    {
+        _h.List();
+        Creates(Created("dl_1", "ep_1"));
+        var manager = _h.NewManager();
+        _h.SwitchProfile("8");
+
+        var series = await manager.StartSeriesAsync(Series, Scope7, Token);
+        var season = await manager.StartSeasonAsync(new SeasonDownloadRequest("sr_1", "Example Series", 1, [new("ep_1", 1, "Pilot")], "original"), Scope7, Token);
+        var single = await manager.StartAsync(new DownloadRequest("ep_1", "sr_1", null, "original", "Pilot", "Example Series", 1, 1), Scope7, Token);
+
+        Assert.Equal((new SeasonStartResult(0, 0, 0), new SeasonStartResult(0, 0, 0), DownloadStartResult.Unavailable), (series, season, single));
+        Assert.Empty(CreatedEpisodes());
+        Assert.Empty(Waiting(Scope8));
+    }
+
     private static Func<Task<HttpResponseMessage>> LimitUntil(DateTimeOffset date) => async () =>
     {
         var response = await Limit()();

@@ -1693,7 +1693,10 @@ client guide.
   (revoked, failed or cancelled), one explicit second create revives it: `expected_revision` the registry's revision of that
   entry and `expected_download_id` its id. Whatever that answers, nothing is sent again; a second conflict fails. An entry
   whose delete this PC still has to send is never taken over or revived (the delete would end it under the new download):
-  that start fails, and works once the queue has sent the delete. An answer for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
+  that start fails, and works once the queue has sent the delete. The download dialog binds its start to the profile active
+  as it opened (`StartAsync`, `StartSeasonAsync` and `StartSeriesAsync` with `onlyFor`): with another profile active by the
+  time Download is pressed it sends nothing (`Unavailable`; a season or a series counts nothing) and says it did not start,
+  so a download never lands on a profile the dialog was not opened for. An answer for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
   kept with the request's title, series, season and episode, queued, or Preparing while the server prepares a copy, and the
   queue is woken. Once the server made it, a cancel does not keep it from being kept. A download kept again takes its unsent
   server delete off the index in the same write. A create takes the store's `ClearGeneration` before anything else, and its

@@ -497,4 +497,34 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.Equal(["ep_1"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
         Assert.NotNull(_h.Find("dl_1"));
     }
+    // Issue #173: the dialog downloads for the profile it was opened in. Another profile active by the time Download is pressed
+    // sends nothing, for a film as for a season, and the dialog says it did not start.
+    [Fact]
+    public async Task AProfileSwitchWhileATitlesDialogShows_SendsNoCreate()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready")));
+        var options = await ForTitleAsync(Movie, [OneFile]);
+
+        _h.SwitchProfile("8");
+
+        Assert.False(await options.StartAsync());
+        Assert.Empty(CreateBodies());
+        Assert.Equal(DownloadOptionsViewModel.StartFailed, options.ErrorText);
+        Assert.Empty(_h.Store.In(Scope8));
+    }
+
+    [Fact]
+    public async Task AProfileSwitchWhileASeasonsDialogShows_SendsNoCreate()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1")));
+        var options = await OptionsAsync();
+        options.ForSeason(Season, "Season 1", 6 * GB);
+        await options.SpaceRead;
+
+        _h.SwitchProfile("8");
+
+        Assert.False(await options.StartAsync());
+        Assert.Empty(CreateBodies());
+        Assert.Empty(_h.Store.WaitingIn(Scope8));
+    }
 }

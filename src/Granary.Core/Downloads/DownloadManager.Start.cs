@@ -24,6 +24,16 @@ public sealed partial class DownloadManager
     public async Task<DownloadStartResult> StartAsync(DownloadRequest request, CancellationToken cancellationToken) =>
         (await StartAsync(request, null, onlyWhileWaiting: false, cancellationToken).ConfigureAwait(false)).Result;
 
+    /// <summary>
+    /// As the other <c>StartAsync</c>, only while <paramref name="onlyFor"/> is the active profile: the one a dialog was opened
+    /// in. Another one active by then sends nothing and is <see cref="DownloadStartResult.Unavailable"/>.
+    /// </summary>
+    public async Task<DownloadStartResult> StartAsync(DownloadRequest request, DownloadScope onlyFor, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(onlyFor);
+        return (await StartAsync(request, onlyFor, onlyWhileWaiting: false, cancellationToken).ConfigureAwait(false)).Result;
+    }
+
     // As the public StartAsync, for the active profile; with onlyFor, only while that one is the active profile (a season's run
     // and the waiting line are their profile's), else Unavailable with nothing sent. With onlyWhileWaiting, a waiting episode's
     // create, which goes, and keeps its download, only while the episode is still in line. Answers also whether a failure is
@@ -89,7 +99,19 @@ public sealed partial class DownloadManager
     {
         ArgumentNullException.ThrowIfNull(request);
         return StartEpisodesAsync(request.SeriesId, request.SeriesTitle, request.Quality,
-            request.Episodes.Select(e => (request.SeasonNumber, e)), cancellationToken);
+            request.Episodes.Select(e => (request.SeasonNumber, e)), null, cancellationToken);
+    }
+
+    /// <summary>
+    /// As the other <c>StartSeasonAsync</c>, for <paramref name="onlyFor"/>, the profile a dialog was opened in: with another one
+    /// active it sends nothing and counts nothing.
+    /// </summary>
+    public Task<SeasonStartResult> StartSeasonAsync(SeasonDownloadRequest request, DownloadScope onlyFor, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(onlyFor);
+        return StartEpisodesAsync(request.SeriesId, request.SeriesTitle, request.Quality,
+            request.Episodes.Select(e => (request.SeasonNumber, e)), onlyFor, cancellationToken);
     }
 
     /// <summary>
@@ -101,15 +123,28 @@ public sealed partial class DownloadManager
     {
         ArgumentNullException.ThrowIfNull(request);
         return StartEpisodesAsync(request.SeriesId, request.SeriesTitle, request.Quality,
-            request.Seasons.SelectMany(s => s.Episodes.Select(e => (s.SeasonNumber, e))), cancellationToken);
+            request.Seasons.SelectMany(s => s.Episodes.Select(e => (s.SeasonNumber, e))), null, cancellationToken);
     }
 
+    /// <summary>
+    /// As the other <c>StartSeriesAsync</c>, for <paramref name="onlyFor"/>, the profile a dialog was opened in: with another one
+    /// active it sends nothing and counts nothing.
+    /// </summary>
+    public Task<SeasonStartResult> StartSeriesAsync(SeriesDownloadRequest request, DownloadScope onlyFor, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(onlyFor);
+        return StartEpisodesAsync(request.SeriesId, request.SeriesTitle, request.Quality,
+            request.Seasons.SelectMany(s => s.Episodes.Select(e => (s.SeasonNumber, e))), onlyFor, cancellationToken);
+    }
+
+    // The run for onlyFor, else for the profile active as it begins; it stops once that one is no longer the active one.
     private async Task<SeasonStartResult> StartEpisodesAsync(string seriesId, string seriesTitle, string quality,
-        IEnumerable<(int Season, SeasonEpisode Episode)> episodes, CancellationToken cancellationToken)
+        IEnumerable<(int Season, SeasonEpisode Episode)> episodes, DownloadScope? onlyFor, CancellationToken cancellationToken)
     {
         // Taken before the first create: a sign-out from here on keeps nothing of this run waiting.
         long clears = _store.ClearGeneration;
-        var scope = DownloadScope.Of(_session);
+        var scope = onlyFor ?? DownloadScope.Of(_session);
         var all = episodes.ToList();
         int started = 0;
         int there = 0;
