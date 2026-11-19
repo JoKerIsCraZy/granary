@@ -497,4 +497,57 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.Equal(["ep_1"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
         Assert.NotNull(_h.Find("dl_1"));
     }
+    // Issue #173: the dialog downloads for the profile it was opened in. Another profile active by the time Download is pressed
+    // sends nothing, for a film as for a season, and the dialog says it did not start.
+    [Fact]
+    public async Task AProfileSwitchWhileATitlesDialogShows_SendsNoCreate()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready")));
+        var options = await ForTitleAsync(Movie, [OneFile]);
+
+        _h.SwitchProfile("8");
+
+        Assert.False(await options.StartAsync());
+        Assert.Empty(CreateBodies());
+        Assert.Equal(DownloadOptionsViewModel.StartFailed, options.ErrorText);
+        Assert.Empty(_h.Store.In(Scope8));
+    }
+
+    // Review of #179: a card's dialog whose read failed as the profile switched reads again with Try Again for the profile
+    // active then, and downloads for that one: the profile goes with the offer on screen.
+    [Fact]
+    public async Task TryAgainAfterAProfileSwitch_DownloadsForTheProfileItReadFor()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready")));
+        var options = await OptionsAsync();
+        int reads = 0;
+        options.ForReading(_ => ++reads == 1
+            ? Task.FromException<DownloadOffer>(new ProfileChangedException())
+            : Task.FromResult<DownloadOffer>(new TitleDownloadOffer(Movie, [OneFile], 7200)));
+        await options.Reading;
+        Assert.True(options.ReadFailed);
+
+        _h.SwitchProfile("8");
+        await options.TryAgainCommand.ExecuteAsync(null);
+        await options.SpaceRead;
+
+        Assert.True(await options.StartAsync());
+        Assert.Equal("8", _h.Silo.SentTo(HttpMethod.Post, CreatePath).Single().AsProfile);
+        Assert.NotNull(_h.Find("dl_1", Scope8));
+    }
+
+    [Fact]
+    public async Task AProfileSwitchWhileASeasonsDialogShows_SendsNoCreate()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1")));
+        var options = await OptionsAsync();
+        options.ForSeason(Season, "Season 1", 6 * GB);
+        await options.SpaceRead;
+
+        _h.SwitchProfile("8");
+
+        Assert.False(await options.StartAsync());
+        Assert.Empty(CreateBodies());
+        Assert.Empty(_h.Store.WaitingIn(Scope8));
+    }
 }

@@ -546,8 +546,8 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
             // start one of them on this PC again. A create of the line under way then keeps nothing, unless its download was kept
             // before: then it is among the downloads read here, and goes too.
             await _downloads.DropWaitingAsync(scope, null, CancellationToken.None);
-            string[] now = _downloads.ActiveScope == scope ? [.. _downloads.Items.Select(i => i.DownloadId)] : [];
-            await _downloads.DeleteAllAsync(scope, [.. asked.Union(now, StringComparer.Ordinal)], CancellationToken.None);
+            // Read for the profile the question was asked in, whichever is active now.
+            await _downloads.DeleteAllAsync(scope, [.. asked.Union(_downloads.DownloadIdsIn(scope), StringComparer.Ordinal)], CancellationToken.None);
         }
         await _dispatcher.ResumeOnUi();
         ShowStorage();

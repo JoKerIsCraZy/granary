@@ -1740,7 +1740,11 @@ client guide.
   (revoked, failed or cancelled), one explicit second create revives it: `expected_revision` the registry's revision of that
   entry and `expected_download_id` its id. Whatever that answers, nothing is sent again; a second conflict fails. An entry
   whose delete this PC still has to send is never taken over or revived (the delete would end it under the new download):
-  that start fails, and works once the queue has sent the delete. An answer for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
+  that start fails, and works once the queue has sent the delete. The download dialog binds its start to the profile active
+  as it opened, or as a card's dialog began its last read of the offer, so Try Again after a switch reads and downloads for
+  the new one (`StartAsync`, `StartSeasonAsync` and `StartSeriesAsync` with `onlyFor`): with another profile active by the
+  time Download is pressed it sends nothing (`Unavailable`; a season or a series counts nothing) and says it did not start,
+  so a download never lands on a profile the dialog was not opened for. An answer for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
   kept with the request's title, series, season and episode, queued, or Preparing while the server prepares a copy, and the
   queue is woken. Once the server made it, a cancel does not keep it from being kept. A download kept again takes its unsent
   server delete off the index in the same write. A create takes the store's `ClearGeneration` before anything else, and its
@@ -1780,7 +1784,12 @@ client guide.
   every 30 minutes while the server still refuses, or the server's `Retry-After` when it names a longer one, kept to 30
   minutes (a date years ahead included), as the sign-in's and the token refresh's are. A place freed while the head's
   create is under way is not lost to that create's refusal: a free count is taken before the create and compared after
-  (`_freeGeneration`). A timer that fires before the wait is over (the clock stepped back) is set again for the rest of it.
+  (`_freeGenerations`, per server and account, since the limit is the account's: a place another profile of the account
+  frees counts, one another account frees does not). The same holds for a season's or a series' own create, before anything waits: a store change keeps
+  what it compares with whether or not episodes wait, so a download leaving Preparing while that create is refused lets the
+  line it starts be asked at once; a switch of profile takes the new profile's as that, so one of its downloads leaving
+  Preparing before any store change counts too. Of two refusals, the later free count is kept: an older one, from a create sent earlier,
+  would make a place freed before the later refusal look freed after it. A timer that fires before the wait is over (the clock stepped back) is set again for the rest of it.
   Then it goes on as far as the server takes them. Its outcomes:
   - taken, or the download is here already (found in the store): the episode leaves the line;
   - another start of it under way (the viewer's own Download, `AlreadyDownloading` from the create guard): it stays until
@@ -1792,12 +1801,17 @@ client guide.
     the back of the line, since it may have reached the server but must not hold the others back;
   - a run that fails unexpectedly waits as a refusal does, so it is not tried again at every store change.
   At a start, and at a switch to the profile, the line is asked once, then waits. One run at a time: a store change only
-  notes what it freed and starts one (and with nothing waiting, compares nothing); a timer starts one when the wait is over.
-  Its state sits under the manager's lock, which is never held while the store writes, a create runs or a timer fires; the
-  store's handlers take only the store's own lock for their reads, as the queue's do (the queue's lock before the store's,
-  never the other way round). The creates take no token of their own: `SiloHttp`'s client bounds each at 100 s. A season's
+  notes what it freed and starts one when episodes wait; a timer starts one when the wait is over.
+  Its state sits under the manager's lock, which is never held while the store writes, a create runs or a timer fires. The
+  store change's handler reads the profile's downloads and deletes under it, so two changes on two threads leave the later
+  read as what the next one compares with: those reads take the store's own lock inside the manager's, never the other way
+  round, as the queue's lock comes before the store's. So the store raises `Changed` under no lock of its own: its first
+  load and the folder work a recheck starts begin on the thread pool, since work that is done at once would otherwise
+  raise it on the thread holding the store's lock. The creates take no token of their own: `SiloHttp`'s client bounds each at 100 s. A season's
   or a series' run that the viewer cancels while its create is under way keeps nothing waiting when that create meets the
-  limit. A waiting episode counts as on its way wherever a download does: a season's or a series' offer leaves it out
+  limit; the cancel is looked at again in the store change that would put them in line (`AddWaitingUnlessClearedAsync`
+  with the run's token), so one that comes just before it keeps none either. The run answers how many of the series'
+  episodes wait as they went in line, not as the line is read after, which a place freed meanwhile may have shortened. A waiting episode counts as on its way wherever a download does: a season's or a series' offer leaves it out
   (`DownloadOfferReader`, the season page's `DownloadActions.StateOf`, which says "Queued" and opens the Downloads page),
   and the series dialog's This Episode cannot be chosen. The dialog's count is the series' whole line. The Downloads page
   says how many wait (`DownloadManager.WaitingCount`) with Cancel (`DropWaitingAsync` for the profile), and a series'
@@ -1807,7 +1821,9 @@ client guide.
   its download only while its episode is still in line, asked in the store change that keeps it (`AddUnlessClearedAsync`
   with `onlyWhileWaiting`), so the download is either kept before the line went, and the deletes, which read the series'
   (or the profile's) downloads after it, take it along, or never kept, the server hearing the delete of the entry it
-  made (`QueueServerDeleteAsync`). The head is looked at again right before its create, too.
+  made (`QueueServerDeleteAsync`, which queues each entry's delete once, and none for a download kept here). That read is
+  for the profile the question was asked in (`DownloadIdsIn`), whichever is active by then. The store logs whether such a
+  download was kept out because its episode left the line or because its account's downloads were cleared. The head is looked at again right before its create, too.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
   it, and has one that waited out a retry delay tried at once.

@@ -130,6 +130,46 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         Assert.False(settings.CanRemoveAll);
     }
 
+    // Issue #173: a download kept while the question showed (a create of the line answered just before the line went) goes
+    // too, also when another profile became active between the line's drop and the read of the downloads.
+    [Fact]
+    public async Task RemoveAll_TakesADownloadKeptBeforeTheDrop_ThoughTheProfileSwitchedAfterIt()
+    {
+        _h.List();
+        _h.Silo.On(HttpMethod.Post, "api/v2/downloads", ScriptedSilo.Problem(429, ProblemCodes.RateLimited));
+        await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "mv_1");
+        await _h.Store.AddWaitingUnlessClearedAsync([new WaitingEpisode(Scope7, "sr_1", "Example Series", 1, "ep_2", 2, "Chapter Two", null, "original")],
+            _h.Store.ClearGeneration, Token);
+        var manager = _h.NewManager();
+        await manager.WaitingRun;
+        bool armed = false;
+        _h.Store.Changed += (_, _) =>
+        {
+            if (armed && _h.Store.WaitingIn(Scope7).Count == 0)
+            {
+                armed = false;
+                _h.SwitchProfile("8");
+            }
+        };
+        var confirmation = new FakeConfirmation
+        {
+            WhileAsking = async () =>
+            {
+                await _h.AddAsync("dl_3", DownloadState.Queued, mediaItemId: "ep_3");
+                armed = true;
+            },
+        };
+        var settings = new DownloadSettingsViewModel(_h.Preferences, _h.NewFeature(), _picker, _launcher, new ImmediateDispatcher(), _h.Time,
+            downloads: manager, confirmation: confirmation) { DriveList = () => [] };
+        await settings.LoadAsync(Token);
+
+        await settings.RemoveAllCommand.ExecuteAsync(null);
+
+        Assert.Equal("8", _h.Session.ProfileId);
+        Assert.Empty(_h.Store.In(Scope7));
+        Assert.Equal(["dl_1", "dl_3"], _h.Store.PendingDeletes(Scope7).Select(d => d.DownloadId).Order(StringComparer.Ordinal));
+    }
+
     [Fact]
     public async Task Storage_FollowsTheDownloadsWhileItShows_AndNoLongerOnceItIsLeft()
     {

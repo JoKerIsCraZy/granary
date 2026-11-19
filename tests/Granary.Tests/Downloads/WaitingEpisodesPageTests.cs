@@ -135,6 +135,38 @@ public sealed class WaitingEpisodesPageTests : IAsyncDisposable
         Assert.Contains(_h.Store.PendingDeletes(Scope7), d => d.DownloadId == "dl_2");
     }
 
+    // Issue #173: a download of the series kept while the question showed goes with the others, also when another profile
+    // became active between the line's drop and the read of the series' downloads.
+    [Fact]
+    public async Task DeletingASeries_TakesADownloadKeptBeforeTheDrop_ThoughTheProfileSwitchedAfterIt()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_1", change: r => r with { SeriesId = "sr_1", SeriesTitle = "Example Series" });
+        await _h.AddAsync("dl_9", DownloadState.Completed, mediaItemId: "ep_9", change: r => r with { SeriesId = "sr_2", SeriesTitle = "Example Series" });
+        await WaitAsync(Waiting("ep_2"));
+        var page = await PageAsync();
+        bool armed = false;
+        _h.Store.Changed += (_, _) =>
+        {
+            if (armed && _h.Store.WaitingIn(Scope7).Count == 0)
+            {
+                armed = false;
+                _h.SwitchProfile("8");
+            }
+        };
+        _confirmation.WhileAsking = async () =>
+        {
+            await _h.AddAsync("dl_3", DownloadState.Queued, mediaItemId: "ep_3", change: r => r with { SeriesId = "sr_1", SeriesTitle = "Example Series" });
+            armed = true;
+        };
+
+        await page.Actions.DeleteSeriesCommand.ExecuteAsync(page.Series.Single(s => s.Card.Id == "sr_1").Card);
+
+        Assert.Equal("8", _h.Session.ProfileId);
+        // The other series' download stays: only sr_1's were read again.
+        Assert.Equal(["dl_9"], _h.Store.In(Scope7).Select(d => d.Record.DownloadId));
+        Assert.Equal(["dl_1", "dl_3"], _h.Store.PendingDeletes(Scope7).Select(d => d.DownloadId).Order(StringComparer.Ordinal));
+    }
+
     // Its card and its season's Download count it as on its way: it is not offered again.
     [Fact]
     public async Task AWaitingEpisode_IsQueued_AndOpensTheDownloadsPage()

@@ -18,8 +18,9 @@ namespace Granary.Core.Downloads;
 /// </summary>
 /// <remarks>
 /// One run at a time (<see cref="WaitingRun"/>); a trigger while one runs has it look once more. The state below is guarded by
-/// the manager's <c>_gate</c>; no store write, create or timer callback runs while it is held. The store's handlers only note
-/// and start a run: what the run does happens on the thread pool.
+/// the manager's <c>_gate</c>; no store write, create or timer callback runs while it is held, and of the store only its reads,
+/// which take the store's own lock inside it (never the other way round). The store's handlers only note and start a run: what
+/// the run does happens on the thread pool.
 /// </remarks>
 public sealed partial class DownloadManager
 {
@@ -45,12 +46,14 @@ public sealed partial class DownloadManager
     private Task _drain = Task.CompletedTask;
 
     // The profile whose create the limit refused last, how often in a row, the earliest the line is asked again, and how many
-    // places had freed (_freeGeneration) as that create was sent: a place freed after it lets the line be asked at once.
+    // places had freed for its account (_freeGenerations) as that create was sent: a place freed after it lets the line be
+    // asked at once. The server's limit is the account's, so the places are counted per server and account: one another
+    // profile of the account frees counts, one another account frees does not.
     private DownloadScope? _refusedScope;
     private int _refusals;
     private DateTimeOffset _notBefore;
     private long _refusedAtFree;
-    private long _freeGeneration;
+    private readonly Dictionary<(string Server, string Account), long> _freeGenerations = [];
 
     // The head that failed without a clear answer, and how often in a row.
     private (string? EpisodeId, int Count) _headFailures;
@@ -77,17 +80,16 @@ public sealed partial class DownloadManager
         }
     }
 
-    // How many places the server freed for the active profile so far; taken before a create, compared after a refusal.
-    private long FreeGeneration
+    // How many places the server freed for the scope's account so far; taken before a create, compared after a refusal.
+    private long FreeGenerationOf(DownloadScope scope)
     {
-        get
+        lock (_gate)
         {
-            lock (_gate)
-            {
-                return _freeGeneration;
-            }
+            return FreedLocked(scope);
         }
     }
+
+    private long FreedLocked(DownloadScope scope) => _freeGenerations.GetValueOrDefault((scope.ServerEntryId, scope.AccountId));
 
     /// <summary>
     /// How many of the active profile's episodes wait for the server's limit of downloads; 0 without a profile.
@@ -116,26 +118,30 @@ public sealed partial class DownloadManager
 
     // The episodes from the one the limit refused on wait in line, after the wait the refusal starts: the line is not asked
     // again before it, unless a place frees. The wait is noted before the episodes go in line, so the store's change does not
-    // ask at once, and its timer is set once they are in it. Answers how many of the series' episodes wait now.
-    private async Task<int> KeepWaitingAsync(DownloadScope scope, string seriesId, string seriesTitle, string quality,
-        IEnumerable<(int Season, SeasonEpisode Episode)> episodes, long clears, TimeSpan? retryAfter, long freed)
+    // ask at once, and its timer is set once they are in it. A run the viewer stopped (stopped) by the time they would go in
+    // line keeps none of them, asked in the store's change itself. Answers how many of the series' episodes wait as that
+    // change left the line, counted in the change itself, and how many of them it put there. Should the index then not be
+    // written, the episodes still wait in memory, and are counted as they are.
+    private async Task<(int Added, int Waiting)> KeepWaitingAsync(DownloadScope scope, string seriesId, string seriesTitle, string quality,
+        IEnumerable<(int Season, SeasonEpisode Episode)> episodes, long clears, TimeSpan? retryAfter, long freed, CancellationToken stopped)
     {
         var wait = BeginRefusal(scope, retryAfter, freed);
         List<WaitingEpisode> line = [.. episodes.Select(e => new WaitingEpisode(scope, seriesId, seriesTitle, e.Season, e.Episode.EpisodeId,
             e.Episode.EpisodeNumber, e.Episode.Title, e.Episode.MediaFileId, quality))];
         try
         {
-            await _store.AddWaitingUnlessClearedAsync(line, clears, CancellationToken.None).ConfigureAwait(false);
+            return await _store.AddWaitingUnlessClearedAsync(line, clears, stopped, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning("The episodes past the server's download limit could not be kept waiting ({Failure})", DownloadLog.Failure(ex));
+            var now = _store.WaitingIn(scope).Where(w => w.SeriesId == seriesId).ToList();
+            return (now.Count(w => line.Any(l => l.EpisodeId == w.EpisodeId)), now.Count);
         }
         finally
         {
             ArmRetry(wait);
         }
-        return _store.WaitingIn(scope).Count(w => w.SeriesId == seriesId);
     }
 
     // A refusal for the limit (with the wait the server named), or a create without a clear answer: the next ask waits, longer
@@ -145,7 +151,8 @@ public sealed partial class DownloadManager
     {
         lock (_gate)
         {
-            if (_refusedScope != scope)
+            bool sameScope = _refusedScope == scope;
+            if (!sameScope)
             {
                 _refusals = 0;
             }
@@ -157,7 +164,9 @@ public sealed partial class DownloadManager
                 wait = named < MaxNamedWait ? named : MaxNamedWait;
             }
             _notBefore = _time.GetUtcNow() + wait;
-            _refusedAtFree = freed;
+            // A create sent before one refused since counted fewer freed places: those freed before the later refusal did not
+            // help it, so the older count must not make them look freed after it.
+            _refusedAtFree = sameScope ? Math.Max(_refusedAtFree, freed) : freed;
             return wait;
         }
     }
@@ -213,9 +222,9 @@ public sealed partial class DownloadManager
     {
         lock (_gate)
         {
-            freed = _freeGeneration;
+            freed = FreedLocked(scope);
             var now = _time.GetUtcNow();
-            if (_refusedScope != scope || _freeGeneration > _refusedAtFree || now >= _notBefore)
+            if (_refusedScope != scope || freed > _refusedAtFree || now >= _notBefore)
             {
                 return true;
             }
@@ -227,36 +236,56 @@ public sealed partial class DownloadManager
         }
     }
 
-    // A store change only notes whether it freed a place for the active profile, and starts a run when episodes wait. A place
-    // frees on the server, not on this PC: a download still kept here that is no longer preparing, or a delete no longer to
-    // send. One deleted here holds its place until its delete is sent. Without waiting episodes there is nothing to compare.
+    // A store change notes whether it freed a place for the active profile, and starts a run when episodes wait. A place frees
+    // on the server, not on this PC: a download still kept here that is no longer preparing, or a delete no longer to send. One
+    // deleted here holds its place until its delete is sent. What it compares with is kept while nothing waits too: a place
+    // that frees while a season's own create is refused, before anything waits, lets the line that refusal starts be asked at
+    // once. The store is read under the manager's lock (the manager's lock, then the store's, never the other way round), so
+    // of two changes on two threads the later read is the one the next change compares with. The active profile is read under
+    // it too (the session's snapshot, which takes no lock), so a change that looked before a switch never stores its old
+    // profile over the new one's. The reads stay inside the lock on purpose: read outside, two changes could store their
+    // snapshots in the other order. They are copies of the store's state in memory, one pass over the profile's downloads,
+    // which a PC keeps by the hundreds at most; no disk or network is touched.
     private void OnStoreChangedForWaiting(object? sender, EventArgs e)
     {
-        var scope = DownloadScope.Of(_session);
-        if (scope is null || _store.WaitingIn(scope).Count == 0)
+        if (NoteFreedPlaces())
         {
-            lock (_gate)
-            {
-                _seenScope = null;
-            }
-            return;
+            DrainSoon();
         }
-        var downloads = _store.In(scope).ToDictionary(d => d.Record.DownloadId, d => d.Record.State, StringComparer.Ordinal);
-        var preparing = downloads.Where(d => d.Value == DownloadState.Preparing).Select(d => d.Key).ToHashSet(StringComparer.Ordinal);
-        var deletes = _store.PendingDeletes(scope).Select(d => d.DownloadId).ToHashSet(StringComparer.Ordinal);
-        lock (_gate)
-        {
-            if (_seenScope == scope && (_seenPreparing.Any(id => downloads.TryGetValue(id, out var state) && state != DownloadState.Preparing)
-                || _seenDeletes.Any(id => !deletes.Contains(id) && !downloads.ContainsKey(id))))
-            {
-                _freeGeneration++;
-            }
-            (_seenScope, _seenPreparing, _seenDeletes) = (scope, preparing, deletes);
-        }
+    }
+
+    // A switch of profile: what a place freed is compared with is the new profile's from now on, so a download of it leaving
+    // Preparing before any store change counts; then the line is asked once.
+    private void OnSessionChangedForWaiting(object? sender, EventArgs e)
+    {
+        NoteFreedPlaces();
         DrainSoon();
     }
 
-    private void OnSessionChangedForWaiting(object? sender, EventArgs e) => DrainSoon();
+    // Notes whether the store as it is now freed a place for the active profile since the last look, and keeps what the next
+    // look compares with. Answers whether episodes of the profile wait.
+    private bool NoteFreedPlaces()
+    {
+        lock (_gate)
+        {
+            var scope = DownloadScope.Of(_session);
+            if (scope is null)
+            {
+                (_seenScope, _seenPreparing, _seenDeletes) = (null, [], []);
+                return false;
+            }
+            var downloads = _store.In(scope).ToDictionary(d => d.Record.DownloadId, d => d.Record.State, StringComparer.Ordinal);
+            var deletes = _store.PendingDeletes(scope).Select(d => d.DownloadId).ToHashSet(StringComparer.Ordinal);
+            if (_seenScope == scope && (_seenPreparing.Any(id => downloads.TryGetValue(id, out var state) && state != DownloadState.Preparing)
+                || _seenDeletes.Any(id => !deletes.Contains(id) && !downloads.ContainsKey(id))))
+            {
+                _freeGenerations[(scope.ServerEntryId, scope.AccountId)] = FreedLocked(scope) + 1;
+            }
+            var preparing = downloads.Where(d => d.Value == DownloadState.Preparing).Select(d => d.Key).ToHashSet(StringComparer.Ordinal);
+            (_seenScope, _seenPreparing, _seenDeletes) = (scope, preparing, deletes);
+            return _store.WaitingIn(scope).Count > 0;
+        }
+    }
 
     // A run when none runs, else one more look once it ends.
     private void DrainSoon()
@@ -291,7 +320,7 @@ public sealed partial class DownloadManager
                 _logger.LogError("Asking for the waiting episodes again failed unexpectedly ({Failure})", DownloadLog.Failure(ex));
                 if (DownloadScope.Of(_session) is { } scope)
                 {
-                    NoteRefusal(scope, null, FreeGeneration);
+                    NoteRefusal(scope, null, FreeGenerationOf(scope));
                 }
             }
             lock (_gate)
@@ -348,6 +377,11 @@ public sealed partial class DownloadManager
         {
             // Taken out of line while it was asked for: nothing of it is kept, and the line goes on as it is now.
             return true;
+        }
+        if (outcome.NotActive)
+        {
+            // Nothing was sent: another profile was active for a moment. The episode stays, and the line waits for its profile.
+            return false;
         }
         bool unclear = outcome is { Result: DownloadStartResult.Failed, IsFinal: false };
         int failures;

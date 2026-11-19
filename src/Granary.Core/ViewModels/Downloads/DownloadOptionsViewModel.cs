@@ -85,6 +85,10 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     // What the dialog offers, as given or read; the choices the viewer makes in it pick from it what Download starts.
     private DownloadOffer? _offer;
 
+    // The profile active as the dialog opened, or as its last read of the offer began: Download starts for it, and sends
+    // nothing once another one is active.
+    private DownloadScope? _openedFor;
+
     private DownloadRequest? _title;
     private SeasonDownloadRequest? _season;
     private SeriesDownloadRequest? _series;
@@ -466,6 +470,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         {
             return;
         }
+        // Each read is for the profile active as it begins, and so is Download: Try Again after a switch of profile reads, and
+        // downloads, for the new one.
+        _openedFor = _downloads.ActiveScope;
         StopReading();
         var reading = new CancellationTokenSource();
         _reading = reading;
@@ -536,6 +543,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     // The rows as the dialog opens: the server's qualities with the viewer's default chosen, the size, and a fresh read of the space.
     private void Open(DownloadVersionRow? version)
     {
+        _openedFor = _downloads.ActiveScope;
         ErrorText = "";
         var options = OfferedQualities();
         _options = options.ToDictionary(o => o.Preset, StringComparer.Ordinal);
@@ -664,23 +672,27 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     }
 
     // A season's or a series' run stops between two episodes once the viewer stops it; a film's or an episode's one create is
-    // never cut off.
+    // never cut off. Each is for the profile the dialog was opened in: another one active by now (or none then) sends nothing.
     private async Task<(StartOutcome Kind, int Waiting)> StartSelectionAsync(CancellationToken stopping)
     {
+        if (_openedFor is not { } scope)
+        {
+            return (StartOutcome.Failed, 0);
+        }
         string quality = SelectedQuality?.Preset ?? DownloadQualities.Original;
         if (_season is { } season)
         {
-            var result = await _downloads.StartSeasonAsync(season with { Quality = quality }, stopping).ConfigureAwait(false);
+            var result = await _downloads.StartSeasonAsync(season with { Quality = quality }, scope, stopping).ConfigureAwait(false);
             // A season cut short (another profile took over) counts none of the episodes after that: it did not all start.
             return OutcomeOf(result, season.Episodes.Count);
         }
         if (_series is { } series)
         {
-            var result = await _downloads.StartSeriesAsync(series with { Quality = quality }, stopping).ConfigureAwait(false);
+            var result = await _downloads.StartSeriesAsync(series with { Quality = quality }, scope, stopping).ConfigureAwait(false);
             return OutcomeOf(result, series.EpisodeCount);
         }
         var request = _title! with { MediaFileId = SelectedVersion?.FileId ?? _title.MediaFileId, Quality = quality };
-        return (await _downloads.StartAsync(request, CancellationToken.None).ConfigureAwait(false) switch
+        return (await _downloads.StartAsync(request, scope, CancellationToken.None).ConfigureAwait(false) switch
         {
             DownloadStartResult.Started or DownloadStartResult.AlreadyDownloading => StartOutcome.Started,
             DownloadStartResult.Limited => StartOutcome.Limited,

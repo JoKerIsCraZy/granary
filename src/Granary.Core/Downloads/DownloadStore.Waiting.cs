@@ -18,15 +18,28 @@ public sealed partial class DownloadStore
     /// all of a scope whose downloads were cleared since <paramref name="clearGeneration"/> (the run that refused them began
     /// before a sign-out). Answers how many were put in line.
     /// </summary>
-    public async Task<int> AddWaitingUnlessClearedAsync(IReadOnlyList<WaitingEpisode> episodes, long clearGeneration, CancellationToken cancellationToken)
+    public async Task<int> AddWaitingUnlessClearedAsync(IReadOnlyList<WaitingEpisode> episodes, long clearGeneration, CancellationToken cancellationToken) =>
+        (await AddWaitingUnlessClearedAsync(episodes, clearGeneration, CancellationToken.None, cancellationToken)).Added;
+
+    /// <summary>
+    /// As the other <c>AddWaitingUnlessClearedAsync</c>, and none at all once <paramref name="stopped"/> is cancelled: the viewer
+    /// stopped the run that was refused. Asked in the same change that would put them in line, so a stop either comes first
+    /// and keeps them out, or comes after they went in, and they wait as the run then says. Answers also how many of the
+    /// series of the first episode wait in its scope's line as that change left it, those added included.
+    /// </summary>
+    public async Task<(int Added, int SeriesWaiting)> AddWaitingUnlessClearedAsync(IReadOnlyList<WaitingEpisode> episodes, long clearGeneration,
+        CancellationToken stopped, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(episodes);
         await LoadAsync(cancellationToken);
         int added = 0;
+        int seriesWaiting = 0;
+        var first = episodes.Count > 0 ? episodes[0] : null;
         Change(state =>
         {
             var line = new List<WaitingEpisode>(state.Waiting);
-            foreach (var episode in episodes)
+            IReadOnlyList<WaitingEpisode> taken = stopped.IsCancellationRequested ? [] : episodes;
+            foreach (var episode in taken)
             {
                 if (IsClearedSinceLocked(episode.Scope, clearGeneration) || line.Any(w => IsSame(w, episode))
                     || state.Downloads.Any(d => d.Record.Scope == episode.Scope && d.Record.MediaItemId == episode.EpisodeId))
@@ -36,13 +49,14 @@ public sealed partial class DownloadStore
                 line.Add(episode with { ClearsSeen = _clearGeneration });
                 added++;
             }
+            seriesWaiting = first is null ? 0 : line.Count(w => w.Scope == first.Scope && w.SeriesId == first.SeriesId);
             return added == 0 ? state : state with { Waiting = line };
         });
         if (added > 0)
         {
             await RaiseThenWriteIndexAsync();
         }
-        return added;
+        return (added, seriesWaiting);
     }
 
     /// <summary>Takes the scope's waiting episodes <paramref name="match"/> picks out of line; answers how many went.</summary>

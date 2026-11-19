@@ -24,6 +24,16 @@ public sealed partial class DownloadManager
     public async Task<DownloadStartResult> StartAsync(DownloadRequest request, CancellationToken cancellationToken) =>
         (await StartAsync(request, null, onlyWhileWaiting: false, cancellationToken).ConfigureAwait(false)).Result;
 
+    /// <summary>
+    /// As the other <c>StartAsync</c>, only while <paramref name="onlyFor"/> is the active profile: the one a dialog was opened
+    /// in. Another one active by then sends nothing and is <see cref="DownloadStartResult.Unavailable"/>.
+    /// </summary>
+    public async Task<DownloadStartResult> StartAsync(DownloadRequest request, DownloadScope onlyFor, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(onlyFor);
+        return (await StartAsync(request, onlyFor, onlyWhileWaiting: false, cancellationToken).ConfigureAwait(false)).Result;
+    }
+
     // As the public StartAsync, for the active profile; with onlyFor, only while that one is the active profile (a season's run
     // and the waiting line are their profile's), else Unavailable with nothing sent. With onlyWhileWaiting, a waiting episode's
     // create, which goes, and keeps its download, only while the episode is still in line. Answers also whether a failure is
@@ -36,7 +46,7 @@ public sealed partial class DownloadManager
         long clears = _store.ClearGeneration;
         if (DownloadScope.Of(_session) is not { } scope || _session.ActiveServer is not { } server || (onlyFor is not null && scope != onlyFor))
         {
-            return new(DownloadStartResult.Unavailable);
+            return new(DownloadStartResult.Unavailable, NotActive: true);
         }
         if (_store.IsClearPending(scope))
         {
@@ -55,6 +65,11 @@ public sealed partial class DownloadManager
         try
         {
             await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
+            // Looked at again once the downloads are read: the profile may have switched while they were.
+            if (onlyFor is not null && DownloadScope.Of(_session) != onlyFor)
+            {
+                return new(DownloadStartResult.Unavailable, NotActive: true);
+            }
             if (_store.FindByItem(scope, request.MediaItemId) is not null)
             {
                 return new(DownloadStartResult.AlreadyDownloading);
@@ -89,7 +104,19 @@ public sealed partial class DownloadManager
     {
         ArgumentNullException.ThrowIfNull(request);
         return StartEpisodesAsync(request.SeriesId, request.SeriesTitle, request.Quality,
-            request.Episodes.Select(e => (request.SeasonNumber, e)), cancellationToken);
+            request.Episodes.Select(e => (request.SeasonNumber, e)), null, cancellationToken);
+    }
+
+    /// <summary>
+    /// As the other <c>StartSeasonAsync</c>, for <paramref name="onlyFor"/>, the profile a dialog was opened in: with another one
+    /// active it sends nothing and counts nothing.
+    /// </summary>
+    public Task<SeasonStartResult> StartSeasonAsync(SeasonDownloadRequest request, DownloadScope onlyFor, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(onlyFor);
+        return StartEpisodesAsync(request.SeriesId, request.SeriesTitle, request.Quality,
+            request.Episodes.Select(e => (request.SeasonNumber, e)), onlyFor, cancellationToken);
     }
 
     /// <summary>
@@ -101,15 +128,28 @@ public sealed partial class DownloadManager
     {
         ArgumentNullException.ThrowIfNull(request);
         return StartEpisodesAsync(request.SeriesId, request.SeriesTitle, request.Quality,
-            request.Seasons.SelectMany(s => s.Episodes.Select(e => (s.SeasonNumber, e))), cancellationToken);
+            request.Seasons.SelectMany(s => s.Episodes.Select(e => (s.SeasonNumber, e))), null, cancellationToken);
     }
 
+    /// <summary>
+    /// As the other <c>StartSeriesAsync</c>, for <paramref name="onlyFor"/>, the profile a dialog was opened in: with another one
+    /// active it sends nothing and counts nothing.
+    /// </summary>
+    public Task<SeasonStartResult> StartSeriesAsync(SeriesDownloadRequest request, DownloadScope onlyFor, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(onlyFor);
+        return StartEpisodesAsync(request.SeriesId, request.SeriesTitle, request.Quality,
+            request.Seasons.SelectMany(s => s.Episodes.Select(e => (s.SeasonNumber, e))), onlyFor, cancellationToken);
+    }
+
+    // The run for onlyFor, else for the profile active as it begins; it stops once that one is no longer the active one.
     private async Task<SeasonStartResult> StartEpisodesAsync(string seriesId, string seriesTitle, string quality,
-        IEnumerable<(int Season, SeasonEpisode Episode)> episodes, CancellationToken cancellationToken)
+        IEnumerable<(int Season, SeasonEpisode Episode)> episodes, DownloadScope? onlyFor, CancellationToken cancellationToken)
     {
         // Taken before the first create: a sign-out from here on keeps nothing of this run waiting.
         long clears = _store.ClearGeneration;
-        var scope = DownloadScope.Of(_session);
+        var scope = onlyFor ?? DownloadScope.Of(_session);
         var all = episodes.ToList();
         int started = 0;
         int there = 0;
@@ -129,10 +169,16 @@ public sealed partial class DownloadManager
                 continue;
             }
             // Taken before the create: a place the server frees while it is asked is not lost to the refusal (Waiting.cs).
-            long freed = FreeGeneration;
+            long freed = FreeGenerationOf(scope);
             // For the profile the run started for, which the check above looked at: another one active by the create sends nothing.
             var outcome = await StartAsync(new DownloadRequest(episode.EpisodeId, seriesId, episode.MediaFileId, quality, episode.Title,
                 seriesTitle, season, episode.EpisodeNumber), scope, onlyWhileWaiting: false, CancellationToken.None).ConfigureAwait(false);
+            if (outcome.NotActive)
+            {
+                // The profile switched between the look above and the create: nothing was sent, so it is no failure.
+                _logger.LogInformation("A season's or series' downloads stopped after {Count} episodes", started + there + failed);
+                break;
+            }
             switch (outcome.Result)
             {
                 case DownloadStartResult.Started:
@@ -146,8 +192,15 @@ public sealed partial class DownloadManager
                     _logger.LogInformation("A season's or series' downloads stopped after {Count} episodes", started + there + failed + 1);
                     return new SeasonStartResult(started, there, failed + 1, ReachedLimit: true);
                 case DownloadStartResult.Limited:
-                    int waiting = await KeepWaitingAsync(scope, seriesId, seriesTitle, quality, all.Skip(i), clears, outcome.RetryAfter, freed)
-                        .ConfigureAwait(false);
+                    var (added, waiting) = await KeepWaitingAsync(scope, seriesId, seriesTitle, quality, all.Skip(i), clears, outcome.RetryAfter,
+                        freed, cancellationToken).ConfigureAwait(false);
+                    if (added == 0 && cancellationToken.IsCancellationRequested)
+                    {
+                        // Stopped just before they went in line, which then kept none of this run's: as a stop before the limit's
+                        // answer, whatever of the series waited from before.
+                        _logger.LogInformation("A season's or series' downloads stopped after {Count} episodes", started + there + failed + 1);
+                        return new SeasonStartResult(started, there, failed + 1, ReachedLimit: true);
+                    }
                     _logger.LogInformation("The server's download limit stopped a season's or series' downloads after {Count} episodes; {Waiting} wait",
                         started + there + failed, waiting);
                     return new SeasonStartResult(started, there, waiting == 0 ? failed + 1 : failed, ReachedLimit: true, waiting);
@@ -263,8 +316,10 @@ public sealed partial class DownloadManager
 
     // What a create came to: its result; whether a failure is one the server would give again as the create stands, which takes a
     // waiting episode out of line; the wait a refusal for the limit names (Retry-After), if any; and whether a waiting episode
-    // was taken out of line while it was asked for (Dropped: nothing kept, and the server hears the delete of what it made).
-    private readonly record struct CreateOutcome(DownloadStartResult Result, bool IsFinal = false, TimeSpan? RetryAfter = null, bool Dropped = false);
+    // was taken out of line while it was asked for (Dropped: nothing kept, and the server hears the delete of what it made); and
+    // whether nothing was sent because the profile it was for is not the active one (NotActive: a run stops there).
+    private readonly record struct CreateOutcome(DownloadStartResult Result, bool IsFinal = false, TimeSpan? RetryAfter = null, bool Dropped = false,
+        bool NotActive = false);
 
     // The account's limit of downloads at once or in a period (silo-server internal/downloads/limiter.go), by its problem code:
     // a 429 of another kind, as a proxy's, is no such limit.

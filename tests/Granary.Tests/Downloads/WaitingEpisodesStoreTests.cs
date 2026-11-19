@@ -22,6 +22,19 @@ public sealed class WaitingEpisodesStoreTests : IAsyncDisposable
 
     private static string[] Ids(IEnumerable<WaitingEpisode> waiting) => [.. waiting.Select(w => w.EpisodeId)];
 
+    private static DownloadRecord Record(string id, string episodeId) => new()
+    {
+        DownloadId = id,
+        Scope = Scope7,
+        MediaItemId = episodeId,
+        SeriesId = "sr_1",
+        Title = "Chapter Two",
+        Quality = DownloadQualities.Original,
+        Revision = 1,
+        ExpectedBytes = 3000,
+        State = DownloadState.Queued,
+    };
+
     [Fact]
     public async Task WaitingEpisodes_AreKeptAcrossAStart_InTheirOrder_ForTheirOwnProfile()
     {
@@ -129,5 +142,70 @@ public sealed class WaitingEpisodesStoreTests : IAsyncDisposable
         Assert.Equal(0, await _h.Store.AddWaitingUnlessClearedAsync([Waiting(7)], before, Token));
 
         Assert.Empty(_h.Store.WaitingIn(Scope7));
+    }
+    // Issue #173: a cancel that comes after a season's run looked, but before its refused episodes are put in line, keeps none
+    // of them waiting: the store looks at it in the change that would keep them.
+    [Fact]
+    public async Task ARunStoppedRightBeforeTheLineIsKept_KeepsNothingWaiting()
+    {
+        await _h.Store.LoadAsync(Token);
+        using var stopped = new CancellationTokenSource();
+        await stopped.CancelAsync();
+
+        Assert.Equal((0, 0), await _h.Store.AddWaitingUnlessClearedAsync([Waiting(7)], _h.Store.ClearGeneration, stopped.Token, Token));
+
+        Assert.Empty(_h.Store.WaitingIn(Scope7));
+    }
+
+    // Issue #173: the delete of an entry this PC never kept is queued once, however often it is asked for; one of a download
+    // kept here is none, also when that download took over an entry whose delete had not been sent yet.
+    [Fact]
+    public async Task QueueServerDelete_QueuesEachEntryOnce_AndNoneForADownloadKeptHere()
+    {
+        await _h.Store.LoadAsync(Token);
+
+        await _h.Store.QueueServerDeleteAsync(Scope7, "dl_1", Token);
+        await _h.Store.QueueServerDeleteAsync(Scope7, "dl_1", Token);
+        Assert.Equal(["dl_1"], _h.Store.PendingDeletes(Scope7).Select(d => d.DownloadId));
+
+        await _h.AddAsync("dl_1", mediaItemId: "ep_1");
+        Assert.Empty(_h.Store.PendingDeletes(Scope7));
+        await _h.Store.QueueServerDeleteAsync(Scope7, "dl_1", Token);
+        await _h.Store.QueueServerDeleteAsync(Scope8, "dl_1", Token);
+
+        Assert.Empty(_h.Store.PendingDeletes(Scope7));
+        Assert.Equal(["dl_1"], _h.Store.PendingDeletes(Scope8).Select(d => d.DownloadId));
+        Assert.NotNull(_h.Find("dl_1"));
+    }
+
+    // Issue #173: a waiting episode's download that is not kept says why: its episode left the line, or its account's downloads
+    // were cleared; by its id only.
+    [Fact]
+    public async Task ADownloadNotKept_SaysWhetherItsEpisodeLeftTheLine_OrItsAccountWasCleared()
+    {
+        await _h.Store.AddWaitingUnlessClearedAsync([Waiting(7), Waiting(8)], _h.Store.ClearGeneration, Token);
+        long before = _h.Store.ClearGeneration;
+        await _h.Store.RemoveWaitingAsync(Scope7, w => w.EpisodeId == "ep_7", Token);
+
+        Assert.Null(await _h.Store.AddUnlessClearedAsync(Record("dl_7", "ep_7"), before, onlyWhileWaiting: true, Token));
+        _h.Store.MarkCleared("srv1", "1");
+        Assert.Null(await _h.Store.AddUnlessClearedAsync(Record("dl_8", "ep_8"), before, onlyWhileWaiting: true, Token));
+
+        Assert.Contains(_h.Logs.Lines, line => line.Contains("Download dl_7 is not kept: its episode left the line meanwhile", StringComparison.Ordinal));
+        Assert.Contains(_h.Logs.Lines, line => line.Contains("Download dl_8 is not kept: its account's downloads were cleared meanwhile", StringComparison.Ordinal));
+    }
+    // Review of #179: the store's first load tells its followers off the store's lock, so a follower that takes a lock of its
+    // own first and then reads the store (the waiting line's) cannot wait on a thread that waits on it.
+    [Fact]
+    public async Task TheFirstLoad_TellsItsFollowers_WithoutTheStoresLockHeld()
+    {
+        await _h.AddAsync("dl_1", mediaItemId: "ep_1");
+        var store = _h.UnreadStore();
+        bool? held = null;
+        store.Changed += (_, _) => held ??= store.HoldsLock;
+
+        await store.LoadAsync(Token);
+
+        Assert.False(held);
     }
 }

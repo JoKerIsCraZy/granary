@@ -17,6 +17,13 @@ release's section is what its update says it changes (docs/release.md).
   and time format (12-hour or 24-hour), as on Silo's web: with DD/MM/YYYY the day comes first in English dates too.
   Choose them in Settings → Accessibility → Date & time; they apply at once.
 
+### Fixed
+
+- **Downloads:** the download dialog downloads only for the profile it was opened in; after a profile switch, Download
+  starts nothing. Delete all episodes and Remove all downloads also take a download that arrived while you were asked.
+- **Server download limit:** waiting episodes start as soon as another download is ready on the server, also when that
+  happens while the season is being refused.
+
 ## [0.5.0] - 2026-11-17
 
 ### Added

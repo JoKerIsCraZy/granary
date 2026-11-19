@@ -100,6 +100,9 @@ public sealed partial class DownloadStore
     /// <summary>What the last load's look for download folders did.</summary>
     internal ScanCount LastScan { get; private set; } = new(0, 0, false);
 
+    /// <summary>For tests: the calling thread holds the store's lock, which no follower of <see cref="Changed"/> may find held.</summary>
+    internal bool HoldsLock => _gate.IsHeldByCurrentThread;
+
     private Snapshot Current
     {
         get
@@ -118,7 +121,10 @@ public sealed partial class DownloadStore
         {
             if (_load is null || _load.IsFaulted || _load.IsCanceled)
             {
-                _load = LoadOnceAsync();
+                // Started on the thread pool, never on this thread: a read that is done at once would otherwise raise Changed
+                // while this lock is held, and a handler that takes its own lock first (the waiting line's reads the store
+                // under the manager's) could then wait on a thread that waits on it.
+                _load = Task.Run(LoadOnceAsync, CancellationToken.None);
             }
             return _load.WaitAsync(cancellationToken);
         }
@@ -196,6 +202,7 @@ public sealed partial class DownloadStore
         string folder = DownloadPaths.Folder(_preferences.Folder, record.Scope, record.DownloadId);
         var stored = new StoredDownload(record, folder, FilesMissing: false);
         StoredDownload? kept;
+        NotKept why;
         await _writes.WaitAsync(cancellationToken);
         try
         {
@@ -203,7 +210,7 @@ public sealed partial class DownloadStore
             {
                 throw new InvalidOperationException("This download is kept already.");
             }
-            kept = await Task.Run(() => AddToDisk(stored, clearGeneration, onlyWhileWaiting), CancellationToken.None);
+            (kept, why) = await Task.Run(() => AddToDisk(stored, clearGeneration, onlyWhileWaiting), CancellationToken.None);
         }
         finally
         {
@@ -211,7 +218,14 @@ public sealed partial class DownloadStore
         }
         if (kept is null)
         {
-            _logger.LogInformation("Download {DownloadId} is not kept: its account's downloads were cleared meanwhile", record.DownloadId);
+            if (why == NotKept.LeftLine)
+            {
+                _logger.LogInformation("Download {DownloadId} is not kept: its episode left the line meanwhile", record.DownloadId);
+            }
+            else
+            {
+                _logger.LogInformation("Download {DownloadId} is not kept: its account's downloads were cleared meanwhile", record.DownloadId);
+            }
             return null;
         }
         Changed?.Invoke(this, EventArgs.Empty);
@@ -432,7 +446,9 @@ public sealed partial class DownloadStore
                 {
                     if (FolderWork.IsCompleted)
                     {
-                        FolderWork = FolderWorkAsync();
+                        // On the thread pool, as LoadAsync starts its load: work that is done at once raises Changed, never
+                        // under this lock.
+                        FolderWork = Task.Run(() => FolderWorkAsync(), CancellationToken.None);
                     }
                 }
             }

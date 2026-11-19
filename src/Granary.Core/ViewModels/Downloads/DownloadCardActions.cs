@@ -235,8 +235,9 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         // The line first: a delete that reaches the server frees a place, and would start one of them. A create of the line under
         // way then keeps nothing, unless its download was kept before: then it is among the series' as they are read here.
         await _downloads.DropWaitingAsync(scope, card.Id, CancellationToken.None);
-        IEnumerable<DownloadItem> now = _downloads.ActiveScope == scope ? EpisodesOf(card.Id) : [];
-        await _downloads.DeleteAllAsync(scope, [.. episodes.Concat(now).Select(e => e.DownloadId).Distinct(StringComparer.Ordinal)], CancellationToken.None);
+        // Read for the profile the question was asked in, whichever is active now.
+        await _downloads.DeleteAllAsync(scope,
+            [.. episodes.Select(e => e.DownloadId).Union(_downloads.DownloadIdsIn(scope, card.Id), StringComparer.Ordinal)], CancellationToken.None);
     }
 
     // What the transfer entry does, whatever its words.
