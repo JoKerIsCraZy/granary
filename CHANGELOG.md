@@ -9,7 +9,7 @@ release's section is what its update says it changes (docs/release.md).
 ### Fixed
 
 - **Downloads:** the download dialog downloads only for the profile it was opened in; after a profile switch, Download
-  starts nothing.
+  starts nothing. Delete all episodes and Remove all downloads also take a download that arrived while you were asked.
 - **Server download limit:** waiting episodes start as soon as another download is ready on the server, also when that
   happens while the season is being refused.
 

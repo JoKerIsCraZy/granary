@@ -1769,7 +1769,8 @@ client guide.
   its download only while its episode is still in line, asked in the store change that keeps it (`AddUnlessClearedAsync`
   with `onlyWhileWaiting`), so the download is either kept before the line went, and the deletes, which read the series'
   (or the profile's) downloads after it, take it along, or never kept, the server hearing the delete of the entry it
-  made (`QueueServerDeleteAsync`, which queues each entry's delete once, and none for a download kept here). The store logs whether such a
+  made (`QueueServerDeleteAsync`, which queues each entry's delete once, and none for a download kept here). That read is
+  for the profile the question was asked in (`DownloadIdsIn`), whichever is active by then. The store logs whether such a
   download was kept out because its episode left the line or because its account's downloads were cleared. The head is looked at again right before its create, too.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has

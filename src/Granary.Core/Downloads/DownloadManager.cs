@@ -151,6 +151,17 @@ public sealed partial class DownloadManager
         }
     }
 
+    /// <summary>
+    /// The ids of <paramref name="scope"/>'s downloads, of the series <paramref name="seriesId"/> alone when given, also when
+    /// another profile is active now: what a delete the viewer said yes to reads again in the profile it was asked in.
+    /// </summary>
+    public IReadOnlyList<string> DownloadIdsIn(DownloadScope scope, string? seriesId = null)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        return [.. _store.In(scope).Where(d => seriesId is null || string.Equals(d.Record.SeriesId, seriesId, StringComparison.Ordinal))
+            .Select(d => d.Record.DownloadId)];
+    }
+
     /// <summary>The active profile's download of a film or an episode, by its own id.</summary>
     public DownloadItem? ForItem(string mediaItemId) =>
         DownloadScope.Of(_session) is { } scope && _store.FindByItem(scope, mediaItemId) is { } download ? ItemOf(download, _queue.IsWaitingForUnmetered) : null;
