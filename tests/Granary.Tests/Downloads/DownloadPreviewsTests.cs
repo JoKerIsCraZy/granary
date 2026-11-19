@@ -64,8 +64,8 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
 
         Assert.Contains(DownloadPaths.Previews, FilesIn(stored));
-        Assert.Equal(SheetBytes, await File.ReadAllBytesAsync(Path.Combine(stored.Folder, DownloadPaths.PreviewSheet(0)), Token));
-        Assert.Equal(SheetBytes, await File.ReadAllBytesAsync(Path.Combine(stored.Folder, DownloadPaths.PreviewSheet(1)), Token));
+        Assert.Equal(SheetBytes, await File.ReadAllBytesAsync(Path.Combine(stored.Folder, SheetName(stored, 0)), Token));
+        Assert.Equal(SheetBytes, await File.ReadAllBytesAsync(Path.Combine(stored.Folder, SheetName(stored, 1)), Token));
         Assert.DoesNotContain(FilesIn(stored), name => name.EndsWith(".arriving", StringComparison.Ordinal) || name.EndsWith(".tmp", StringComparison.Ordinal));
         using var kept = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(stored.Folder, DownloadPaths.Previews), Token));
         Assert.Equal(1, kept.RootElement.GetProperty("revision").GetInt64());
@@ -113,6 +113,51 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         Assert.DoesNotContain(DownloadPaths.Previews, FilesIn(stored));
     }
 
+    // A new set that does not come whole leaves the one kept before as it was, readable and with all its sheets.
+    [Fact]
+    public async Task ANewSetThatBreaksOff_LeavesTheSetKeptBeforeWhole()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews();
+        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        string[] before = FilesIn(stored);
+        _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Json(HttpStatusCode.OK, Previews(columns: 20)));
+        _h.Silo.On(HttpMethod.Get, SecondSheet, () => Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)));
+
+        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+
+        Assert.Equal(before, FilesIn(stored));
+        Assert.NotNull(KeptPreviews.Read(stored, ManifestOf(stored), FilesOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
+    }
+
+    // A play that read the old set goes on reading its own sheets: the new set's are other files.
+    [Fact]
+    public async Task ANewSet_NeverOverwritesTheSheetsOfTheOneBefore()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews();
+        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        string old = SheetName(stored, 0);
+        _h.Silo.On(HttpMethod.Get, TrickplayPath, ScriptedSilo.Json(HttpStatusCode.OK, Previews(columns: 20)));
+
+        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+
+        Assert.NotEqual(old, SheetName(stored, 0));
+        Assert.DoesNotContain(old, FilesIn(stored));
+    }
+
+    [Fact]
+    public async Task AListWithAnEmptySheet_IsNotKept_AndTheRestOfTheFetchStands()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews(Previews().Replace("{ \"index\": 1, ", "null, { \"index\": 1, ", StringComparison.Ordinal));
+
+        var fetched = await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+
+        Assert.Equal("poster.jpg", fetched.ArtworkFiles["poster"]);
+        Assert.DoesNotContain(FilesIn(stored), name => name == DownloadPaths.Previews || name.StartsWith("tp-", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task ANotFound_KeepsASetOfTheSameBytes()
     {
@@ -124,7 +169,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
 
         Assert.Contains(DownloadPaths.Previews, FilesIn(stored));
-        Assert.Contains(DownloadPaths.PreviewSheet(1), FilesIn(stored));
+        Assert.Contains(SheetName(stored, 1), FilesIn(stored));
     }
 
     // A replaced revision leaves the old set in the folder; new bytes without previews do not keep it.
@@ -180,7 +225,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
 
         Assert.Contains(DownloadPaths.Previews, FilesIn(stored));
-        Assert.Contains(DownloadPaths.PreviewSheet(1), FilesIn(stored));
+        Assert.Contains(SheetName(stored, 1), FilesIn(stored));
     }
 
     [Fact]
@@ -229,8 +274,8 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
 
         Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Get, FirstSheetPath).Count);
-        Assert.Contains(DownloadPaths.PreviewSheet(0), FilesIn(stored));
-        Assert.DoesNotContain(DownloadPaths.PreviewSheet(1), FilesIn(stored));
+        Assert.Contains(SheetName(stored, 0), FilesIn(stored));
+        Assert.Single(FilesIn(stored), name => name.StartsWith("tp-", StringComparison.Ordinal));
         using var kept = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(stored.Folder, DownloadPaths.Previews), Token));
         Assert.Equal(20, kept.RootElement.GetProperty("tile_columns").GetInt32());
     }
@@ -296,7 +341,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         Assert.NotNull(trickplay);
         Assert.Equal(("4567", 10_000, 320, 180, 10, 10, 150), (trickplay.FileId, trickplay.IntervalMs, trickplay.Width, trickplay.Height, trickplay.Columns,
             trickplay.Rows, trickplay.Count));
-        Assert.Equal([Path.Combine(stored.Folder, "tp-0.jpg"), Path.Combine(stored.Folder, "tp-1.jpg")], trickplay.SheetFiles);
+        Assert.Equal([Path.Combine(stored.Folder, SheetName(stored, 0)), Path.Combine(stored.Folder, SheetName(stored, 1))], trickplay.SheetFiles);
         Assert.Equal(1, trickplay.TileAt(1000)!.Value.Sheet);
         Assert.Equal(DateTimeOffset.MaxValue, trickplay.ExpiresAt);
     }
@@ -306,6 +351,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
     [InlineData("file_id", "\"9999\"")] // another file of the title
     [InlineData("sheets", "3")] // a sheet that is not there
     [InlineData("tile_columns", "0")]
+    [InlineData("generation", "\"..\\\\x\"")] // not a name Granary makes
     public async Task AKeptSetThatDoesNotFitTheDownload_IsNotShown(string field, string value)
     {
         var stored = await _h.AddAsync("dl_1");
@@ -314,6 +360,22 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         string path = Path.Combine(stored.Folder, DownloadPaths.Previews);
         var json = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(path, Token))!.AsObject();
         json[field] = System.Text.Json.Nodes.JsonNode.Parse(value);
+        await File.WriteAllTextAsync(path, json.ToJsonString(), Token);
+
+        Assert.Null(KeptPreviews.Read(stored, ManifestOf(stored), FilesOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
+    }
+
+    // 65536 by 65536 tiles count to 0 in an int, which the seek bar would divide by.
+    [Fact]
+    public async Task AKeptSetWhoseGridAnIntCannotCount_IsNotShown()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        ServePreviews();
+        await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        string path = Path.Combine(stored.Folder, DownloadPaths.Previews);
+        var json = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(path, Token))!.AsObject();
+        json["tile_columns"] = 65536;
+        json["tile_rows"] = 65536;
         await File.WriteAllTextAsync(path, json.ToJsonString(), Token);
 
         Assert.Null(KeptPreviews.Read(stored, ManifestOf(stored), FilesOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
@@ -335,7 +397,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         var stored = await _h.AddAsync("dl_1");
         ServePreviews();
         await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
-        Assert.Contains(DownloadPaths.PreviewSheet(0), FilesIn(stored));
+        Assert.Contains(SheetName(stored, 0), FilesIn(stored));
 
         await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: true, Token);
 
@@ -358,6 +420,13 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
 
     private static Granary.Core.Api.Downloads.OfflineManifest ManifestOf(StoredDownload download) =>
         Granary.Core.Api.Downloads.OfflineManifest.Read(File.ReadAllBytes(Path.Combine(download.Folder, DownloadPaths.Manifest)));
+
+    // The name of the kept set's sheet at ordinal, after the generation its description names.
+    private static string SheetName(StoredDownload download, int ordinal)
+    {
+        using var kept = JsonDocument.Parse(File.ReadAllText(Path.Combine(download.Folder, DownloadPaths.Previews)));
+        return DownloadPaths.PreviewSheet(kept.RootElement.GetProperty("generation").GetString()!, ordinal);
+    }
 
     private static IReadOnlySet<string> FilesOf(StoredDownload download) => FilesIn(download).ToHashSet(StringComparer.OrdinalIgnoreCase);
 }

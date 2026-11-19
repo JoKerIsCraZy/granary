@@ -31,6 +31,9 @@ internal sealed record KeptPreviewsFile
 
     public int ThumbnailCount { get; init; }
 
+    /// <summary>The set's own part of its sheets' names (<see cref="DownloadPaths.PreviewSheet"/>), new for every set kept.</summary>
+    public string Generation { get; init => field = value ?? ""; } = "";
+
     /// <summary>How many sheets the set has; as many files are kept.</summary>
     public int Sheets { get; init; }
 
@@ -55,7 +58,7 @@ internal sealed record KeptPreviewsFile
 
     /// <summary>The same file, revision and layout as <paramref name="other"/>; what was kept of it may differ.</summary>
     public bool SameSetAs(KeptPreviewsFile other) =>
-        this with { Bytes = 0, TooLarge = false } == other with { Bytes = 0, TooLarge = false };
+        this with { Bytes = 0, TooLarge = false, Generation = "" } == other with { Bytes = 0, TooLarge = false, Generation = "" };
 }
 
 /// <summary>Reads the seek-bar previews kept with a download, for a play without the server.</summary>
@@ -87,14 +90,15 @@ public static class KeptPreviews
                 return null;
             }
             string? fileId = manifest.MediaFileId ?? download.Record.MediaFileId;
-            if (kept.TooLarge || kept.Revision != download.Record.Revision || fileId is null || kept.FileId != fileId || !IsDrawable(kept)
-                || Enumerable.Range(0, kept.Sheets).Any(i => !files.Contains(DownloadPaths.PreviewSheet(i))))
+            if (kept.TooLarge || !IsGeneration(kept.Generation) || kept.Revision != download.Record.Revision || fileId is null || kept.FileId != fileId || !IsDrawable(kept)
+                || Enumerable.Range(0, kept.Sheets).Any(i => !files.Contains(DownloadPaths.PreviewSheet(kept.Generation, i))))
             {
                 logger.LogInformation("The kept seek-bar previews of download {DownloadId} do not fit it; it plays without them", id);
                 return null;
             }
             return PlayerTrickplay.Local(kept.FileId, kept.IntervalMs, kept.ThumbnailWidth, kept.ThumbnailHeight, kept.TileColumns, kept.TileRows,
-                kept.ThumbnailCount, [.. Enumerable.Range(0, kept.Sheets).Select(i => Path.Combine(download.Folder, DownloadPaths.PreviewSheet(i)))]);
+                kept.ThumbnailCount,
+                [.. Enumerable.Range(0, kept.Sheets).Select(i => Path.Combine(download.Folder, DownloadPaths.PreviewSheet(kept.Generation, i)))]);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or UriFormatException)
         {
@@ -105,10 +109,17 @@ public static class KeptPreviews
         }
     }
 
-    /// <summary>A layout the seek bar can draw, of at least one and at most <see cref="MaxSheets"/> sheets.</summary>
+    /// <summary>
+    /// A layout the seek bar can draw, of at least one and at most <see cref="MaxSheets"/> sheets, whose grid of tiles a sheet
+    /// holds is counted in an <see cref="int"/> (<see cref="PlayerTrickplay.TileAt"/> divides by it).
+    /// </summary>
     internal static bool IsDrawable(KeptPreviewsFile set) =>
         set is { IntervalMs: > 0, ThumbnailWidth: > 0, ThumbnailHeight: > 0, TileColumns: > 0, TileRows: > 0, ThumbnailCount: > 0, Sheets: > 0 }
-        && set.Sheets <= MaxSheets && set.FileId.Length > 0;
+        && set.Sheets <= MaxSheets && set.FileId.Length > 0 && (long)set.TileColumns * set.TileRows <= int.MaxValue;
+
+    /// <summary>A generation a file name can carry: up to 32 letters and digits, as Granary makes them.</summary>
+    internal static bool IsGeneration(string generation) =>
+        generation.Length is > 0 and <= 32 && generation.All(char.IsAsciiLetterOrDigit);
 
     /// <summary>The kept set's description; null when there is none.</summary>
     /// <exception cref="JsonException">It does not read.</exception>

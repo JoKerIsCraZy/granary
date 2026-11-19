@@ -53,7 +53,7 @@ public sealed partial class DownloadAssets
                 logger.LogDebug("The file of download {DownloadId} has no seek-bar previews", record.DownloadId);
                 if (KeptSet(download) is { } kept && (kept.Revision != record.Revision || kept.FileId != fileId))
                 {
-                    CommitPreviews(download, null, []);
+                    PublishPreviews(download, null);
                 }
                 return;
             }
@@ -73,6 +73,12 @@ public sealed partial class DownloadAssets
         CancellationToken cancellationToken)
     {
         string id = download.Record.DownloadId;
+        // A list with an empty entry is no layout: leaving it out would shift the sheets after it.
+        if (listed.Sheets.Any(s => s is null))
+        {
+            logger.LogInformation("The seek-bar previews of download {DownloadId} cannot be kept: the server's list has an empty sheet", id);
+            return;
+        }
         var wanted = KeptPreviewsFile.Of(listed, download.Record.Revision);
         var sheets = listed.Sheets.OrderBy(s => s.Index).Select(s => ArtworkUrl.Resolve(server, s.Url)).ToList();
         if (!KeptPreviews.IsDrawable(wanted) || sheets.Any(s => s is null))
@@ -80,40 +86,47 @@ public sealed partial class DownloadAssets
             logger.LogInformation("The seek-bar previews of download {DownloadId} cannot be kept: the server's layout is not one Granary draws", id);
             return;
         }
-        if (KeptSet(download) is { } kept && kept.SameSetAs(wanted) && (kept.TooLarge || HasSheets(download, kept.Sheets)))
+        if (KeptSet(download) is { } kept && kept.SameSetAs(wanted) && (kept.TooLarge || HasSheets(download, kept)))
         {
             return;
         }
-        var staged = new List<string>();
+        // A generation of its own: its sheets are never another set's, so nothing a play shows or a set kept now is overwritten,
+        // and the set only counts once its description names it.
+        var set = wanted with { Generation = Guid.NewGuid().ToString("N")[..8] };
+        int fetched = 0;
+        bool published = false;
         try
         {
             using var client = clients.CreateClient(ArtworkLoader.HttpClientName);
             long bytes = 0;
-            for (int ordinal = 0; ordinal < sheets.Count; ordinal++)
+            for (; fetched < sheets.Count; fetched++)
             {
-                string target = Path.Combine(download.Folder, $"{DownloadPaths.PreviewSheet(ordinal)}.{Guid.NewGuid():N}.staged");
-                if (await FetchSheetAsync(client, sheets[ordinal]!, target, MaxPreviewBytes - bytes, cancellationToken).ConfigureAwait(false) is not { } size)
+                string target = Path.Combine(download.Folder, DownloadPaths.PreviewSheet(set.Generation, fetched));
+                if (await FetchSheetAsync(client, sheets[fetched]!, target, MaxPreviewBytes - bytes, cancellationToken).ConfigureAwait(false) is not { } size)
                 {
                     logger.LogInformation("The seek-bar previews of download {DownloadId} are larger than {Cap} bytes; they are not kept", id,
                         MaxPreviewBytes);
-                    CommitPreviews(download, wanted with { TooLarge = true }, []);
+                    PublishPreviews(download, wanted with { TooLarge = true });
                     return;
                 }
-                staged.Add(target);
                 bytes += size;
             }
-            CommitPreviews(download, wanted with { Bytes = bytes }, staged);
-            logger.LogInformation("Download {DownloadId} keeps {Sheets} seek-bar preview sheets ({Bytes} bytes)", id, staged.Count, bytes);
+            PublishPreviews(download, set with { Bytes = bytes });
+            published = true;
+            logger.LogInformation("Download {DownloadId} keeps {Sheets} seek-bar preview sheets ({Bytes} bytes)", id, fetched, bytes);
         }
         finally
         {
-            foreach (string left in staged)
+            if (!published)
             {
-                TryDelete(left);
+                // What came of a set that is not kept goes; the one kept before stays as it was.
+                for (int ordinal = 0; ordinal <= Math.Min(fetched, sheets.Count - 1); ordinal++)
+                {
+                    TryDelete(Path.Combine(download.Folder, DownloadPaths.PreviewSheet(set.Generation, ordinal)));
+                }
             }
         }
     }
-
     // One sheet into target; its size, or null when it would pass the bytes left of the cap. One that is not answered 200 ends
     // the set, as a stall does: a host that does not answer costs one wait, not one per sheet.
     private async Task<long?> FetchSheetAsync(HttpClient client, Uri sheet, string target, long left, CancellationToken cancellationToken)
@@ -146,33 +159,40 @@ public sealed partial class DownloadAssets
         }
     }
 
-    // The new set takes the old one's place: its description goes first, so a set half replaced is never taken for whole, and
-    // comes back last, once every sheet is in place. Sheets of the old set past the new one's go. Without a set, the old one goes.
-    private static void CommitPreviews(StoredDownload download, KeptPreviewsFile? set, IReadOnlyList<string> staged)
+    // The description is written whole, last: from then on it names the new set, or none (null), and a failure before leaves
+    // the set kept before as it was. Sheets of other generations go after, as far as they can: one a play still reads stays
+    // until the next set is kept, and is never taken for this one.
+    private void PublishPreviews(StoredDownload download, KeptPreviewsFile? set)
     {
         string description = Path.Combine(download.Folder, DownloadPaths.Previews);
-        File.Delete(description);
-        for (int ordinal = 0; ordinal < staged.Count; ordinal++)
+        if (set is null)
         {
-            string from = staged[ordinal];
-            SafeFile.WriteWhole(Path.Combine(download.Folder, DownloadPaths.PreviewSheet(ordinal)), temp => File.Move(from, temp));
+            File.Delete(description);
         }
-        var current = Enumerable.Range(0, staged.Count).Select(DownloadPaths.PreviewSheet).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        else
+        {
+            byte[] json = KeptPreviews.Write(set);
+            SafeFile.WriteWhole(description, temp => File.WriteAllBytes(temp, json));
+        }
+        var current = set is { TooLarge: false }
+            ? Enumerable.Range(0, set.Sheets).Select(ordinal => DownloadPaths.PreviewSheet(set.Generation, ordinal)).ToHashSet(StringComparer.OrdinalIgnoreCase)
+            : [];
         foreach (string file in Directory.EnumerateFiles(download.Folder, "tp-*.jpg"))
         {
             if (!current.Contains(Path.GetFileName(file)))
             {
-                File.Delete(file);
+                try
+                {
+                    File.Delete(file);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    logger.LogDebug("An older seek-bar preview sheet of download {DownloadId} stays ({Failure})", download.Record.DownloadId,
+                        DownloadLog.Failure(ex));
+                }
             }
         }
-        if (set is null)
-        {
-            return;
-        }
-        byte[] json = KeptPreviews.Write(set);
-        SafeFile.WriteWhole(description, temp => File.WriteAllBytes(temp, json));
     }
-
     // The set kept now; null when there is none or it does not read, which a fetch replaces.
     private KeptPreviewsFile? KeptSet(StoredDownload download)
     {
@@ -187,8 +207,8 @@ public sealed partial class DownloadAssets
         }
     }
 
-    private static bool HasSheets(StoredDownload download, int count) =>
-        Enumerable.Range(0, count).All(ordinal => File.Exists(Path.Combine(download.Folder, DownloadPaths.PreviewSheet(ordinal))));
+    private static bool HasSheets(StoredDownload download, KeptPreviewsFile set) =>
+        Enumerable.Range(0, set.Sheets).All(ordinal => File.Exists(Path.Combine(download.Folder, DownloadPaths.PreviewSheet(set.Generation, ordinal))));
 
     // The status, or the kind of failure: never an address, which carries its signature.
     private static string PreviewFailure(Exception ex) => ex switch

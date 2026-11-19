@@ -1416,8 +1416,8 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   describes itself), `manifest.json` as the server sent it, `media.part` while the file arrives, then `media.<container>`,
   the artwork as `<kind>.<ext>`, the subtitles as `sub-<reference>.<format>` (the reference made a name as a folder is
   from an id, so a file holds the same subtitle whatever its place in the manifest) and the seek-bar previews as
-  `trickplay.json` (their layout, the file and revision they were fetched for, the number of sheets) and `tp-<n>.jpg`,
-  one per sheet in the server's order; extensions are short plain names or a fallback, never what the server sent
+  `trickplay.json` (their layout, the file and revision they were fetched for, the number of sheets and the set's
+  generation) and `tp-<generation>-<n>.jpg`, one per sheet in the server's order; extensions are short plain names or a fallback, never what the server sent
   unchecked. A record's media file is used only when it is such a `media.<ext>` name.
 - **Root.** `<root>` is the downloads folder chosen when the download started (`IDownloadPreferences.Folder`, in
   `download-settings.json`; `downloads` in the data folder by default). Choosing another applies to new downloads only:
@@ -1654,8 +1654,10 @@ client guide.
   folder lacks and the subtitles whose revision changed. Last come the seek-bar previews (`DownloadAssets.Previews.cs`):
   the previews (11.4) of the manifest's `media_file_id`, read as the download's account and profile, their sheets
   fetched without credentials through the artwork client (signed addresses, possibly on another host; never logged).
-  The sheets arrive under staged names and replace the kept set only once all came: `trickplay.json` goes first and
-  comes back last, so a set half replaced is never read as whole. A set is fetched again when the download's revision,
+  Each set kept gets a generation of its own (8 hex digits) that its sheets are named after, so a new set never
+  overwrites the sheets of the one before, which a play may still read. Once all its sheets came, `trickplay.json` is
+  written whole and names it; only then do the older sheets go, as far as nothing holds them. A set that does not come
+  whole leaves the one kept before as it was. A list with an empty entry, or a grid an `int` cannot count, is not kept. A set is fetched again when the download's revision,
   the file or the server's layout differs from the kept one, or a sheet is missing; otherwise a refresh costs only the
   previews' read. A set over `MaxPreviewSetBytes` (64 MiB; a 2-hour film's takes a few) is not kept, and its
   `trickplay.json` says so, so it is not fetched again while the layout stays the same. The set is kept under the file

@@ -221,7 +221,7 @@ public sealed class LocalPlaybackPreviewTests : IAsyncDisposable
         Assert.Equal(1, changes);
         var trickplay = playback.Trickplay!;
         Assert.Equal(("4567", 10_000, 10, 90), (trickplay.FileId, trickplay.IntervalMs, trickplay.Columns, trickplay.Count));
-        Assert.Equal([Path.Combine(download.Folder, DownloadPaths.PreviewSheet(0))], trickplay.SheetFiles);
+        Assert.Equal([Path.Combine(download.Folder, DownloadPaths.PreviewSheet("g1", 0))], trickplay.SheetFiles);
         await _fixture.AdvanceAsync(TimeSpan.FromHours(2));
         Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
     }
@@ -274,9 +274,9 @@ public sealed class LocalPlaybackPreviewTests : IAsyncDisposable
     // The set as a fetch keeps it: one sheet of the file the download was made from, of the download's revision.
     private static void KeepPreviews(StoredDownload download, long revision = 1)
     {
-        File.WriteAllBytes(Path.Combine(download.Folder, DownloadPaths.PreviewSheet(0)), [0xFF, 0xD8, 0xFF, 0xE0, 1]);
+        File.WriteAllBytes(Path.Combine(download.Folder, DownloadPaths.PreviewSheet("g1", 0)), [0xFF, 0xD8, 0xFF, 0xE0, 1]);
         File.WriteAllText(Path.Combine(download.Folder, DownloadPaths.Previews), $$"""
-            { "revision": {{revision}}, "file_id": "4567", "interval_ms": 10000, "thumbnail_width": 320, "thumbnail_height": 180,
+            { "revision": {{revision}}, "generation": "g1", "file_id": "4567", "interval_ms": 10000, "thumbnail_width": 320, "thumbnail_height": 180,
               "tile_columns": 10, "tile_rows": 10, "thumbnail_count": 90, "sheets": 1, "bytes": 5 }
             """);
     }

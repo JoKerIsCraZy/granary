@@ -73,10 +73,10 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     public async Task WithoutTheServer_ThePlayerShowsThePreviewsKeptWithTheDownload()
     {
         var download = await _fixture.Harness.AddPlayableAsync();
-        await File.WriteAllBytesAsync(Path.Combine(download.Folder, DownloadPaths.PreviewSheet(0)), [0xFF, 0xD8, 0xFF, 0xE0, 1],
+        await File.WriteAllBytesAsync(Path.Combine(download.Folder, DownloadPaths.PreviewSheet("g1", 0)), [0xFF, 0xD8, 0xFF, 0xE0, 1],
             LocalPlaybackFixture.Token);
         await File.WriteAllTextAsync(Path.Combine(download.Folder, DownloadPaths.Previews), """
-            { "revision": 1, "file_id": "4567", "interval_ms": 10000, "thumbnail_width": 320, "thumbnail_height": 180,
+            { "revision": 1, "generation": "g1", "file_id": "4567", "interval_ms": 10000, "thumbnail_width": 320, "thumbnail_height": 180,
               "tile_columns": 10, "tile_rows": 10, "thumbnail_count": 90, "sheets": 1, "bytes": 5 }
             """, LocalPlaybackFixture.Token);
         _fixture.GoOffline();
@@ -86,7 +86,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         Frame(0);
 
         Assert.Equal(PlayerPhase.Playing, player.Phase);
-        Assert.Equal([Path.Combine(download.Folder, DownloadPaths.PreviewSheet(0))], player.Trickplay?.SheetFiles);
+        Assert.Equal([Path.Combine(download.Folder, DownloadPaths.PreviewSheet("g1", 0))], player.Trickplay?.SheetFiles);
     }
 
     [Fact]

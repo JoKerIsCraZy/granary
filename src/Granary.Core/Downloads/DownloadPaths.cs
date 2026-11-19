@@ -24,8 +24,12 @@ public static class DownloadPaths
     /// <summary>What the kept seek-bar previews are (<see cref="KeptPreviews"/>): their layout, revision and number of sheets.</summary>
     public const string Previews = "trickplay.json";
 
-    /// <summary>The kept previews' sheet at <paramref name="ordinal"/> in the server's order: <c>tp-0.jpg</c>.</summary>
-    public static string PreviewSheet(int ordinal) => string.Create(CultureInfo.InvariantCulture, $"tp-{ordinal}.jpg");
+    /// <summary>
+    /// The sheet at <paramref name="ordinal"/>, in the server's order, of the kept previews of <paramref name="generation"/>:
+    /// <c>tp-1a2b3c4d-0.jpg</c>. Each set kept has its own generation, so a new set never overwrites the one before's sheets.
+    /// </summary>
+    public static string PreviewSheet(string generation, int ordinal) =>
+        string.Create(CultureInfo.InvariantCulture, $"tp-{generation}-{ordinal}.jpg");
 
     private const int MaxPlainLength = 40;
     private const int HashDigits = 16;
