@@ -1,6 +1,6 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Granary.Core.Api;
@@ -615,17 +615,22 @@ public sealed class WaitingEpisodesTests : IAsyncDisposable
     {
         var manager = await LimitedAsync();
         Creates(Created("dl_2", "ep_2"), Created("dl_21", "ep_21"));
-        // The run's own reads only: its second look at the profile (the start's) sees profile 8.
-        var reads = new AsyncLocal<StrongBox<int>?>();
-        _h.Session.ReadingProfile = () => reads.Value is { } box && Interlocked.Increment(ref box.Value) == 2 ? "8" : null;
-        reads.Value = new StrongBox<int>();
+        // The start's own look at the profile, once, sees profile 8; every other read (the line's, the queue's) sees 7.
+        int once = 0;
+        _h.Session.ReadingProfile = () => IsInManagersStart() && Interlocked.Exchange(ref once, 1) == 0 ? "8" : null;
 
         await AdvanceAsync(TimeSpan.FromMinutes(1), manager);
         _h.Session.ReadingProfile = null;
 
+        Assert.Equal(1, once);
         Assert.Equal(2, CreatedEpisodes().Count);
         Assert.Equal(["ep_2", "ep_21"], Waiting());
     }
+
+    // A read made from the manager's StartAsync, whose async state machine is on the stack.
+    private static bool IsInManagersStart() =>
+        new StackTrace().GetFrames().Any(f => f.GetMethod()?.DeclaringType is { } type && type.DeclaringType == typeof(DownloadManager)
+            && type.Name.Contains("StartAsync", StringComparison.Ordinal));
 
     // Issue #173: a run bound to the profile a dialog was opened in sends nothing once another one is active.
     [Fact]
