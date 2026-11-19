@@ -119,7 +119,7 @@ public static class CoreServiceCollectionExtensions
         // Its date and time formats, read with it, applied to every date from then on and kept for the next start.
         services.AddSingleton(sp => new Texts.DateTimeFormatFile(Texts.DateTimeFormatFile.DefaultPath, sp.GetRequiredService<ILogger<Texts.DateTimeFormatFile>>()));
         services.AddSingleton(sp => new DateTimeFormatSetting(sp.GetRequiredService<ISessionManager>(), sp.GetRequiredService<IProfileSettings>(),
-            sp.GetRequiredService<Texts.DateTimeFormatFile>(), sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<DateTimeFormatSetting>>(),
+            sp.GetRequiredService<SettingsApi>(), sp.GetRequiredService<Texts.DateTimeFormatFile>(), sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<DateTimeFormatSetting>>(),
             Texts.DateText.Apply));
         AddThemeMusic(services);
         services.AddTransient<ImagesApi>();

@@ -53,7 +53,7 @@ public sealed class DateTimeFormatSettingTests : IDisposable
     private DateTimeFormatSetting Create(DateTimeFormatFile? file = null)
     {
         var api = new SettingsApi(_harness.Silo.Http);
-        return new(_harness.Session, new ProfileSettings(api, _harness.Session, _harness.Logs.For<ProfileSettings>()), file ?? KeptFile(),
+        return new(_harness.Session, new ProfileSettings(api, _harness.Session, _harness.Logs.For<ProfileSettings>()), api, file ?? KeptFile(),
             new ImmediateDispatcher(), _harness.Logs.For<DateTimeFormatSetting>(), _applied.Add);
     }
 
@@ -153,6 +153,45 @@ public sealed class DateTimeFormatSettingTests : IDisposable
         Assert.Equal(expected, _applied[^1]);
         Assert.Equal(expected, KeptFile().AtStart);
         Assert.Equal(2, _harness.Count(EffectivePath));
+    }
+
+    [Fact]
+    public async Task ASaveRefusedLater_GoesBack_AndTheNextChoiceIsStillSaved()
+    {
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, DatePath,
+            async () =>
+            {
+                await release.Task;
+                return await ScriptedSilo.Problem(500, "internal")();
+            },
+            ScriptedSilo.NoContent());
+        var setting = Create();
+        await setting.StartAsync();
+
+        var refused = setting.ChooseDateFormatAsync(DateTimePreferences.YearMonthDay);
+        release.SetResult();
+        await refused.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        Assert.Equal(DateTimePreferences.DayMonthYear, setting.Preferences.DateFormat);
+        Assert.Equal(2, _harness.Count(EffectivePath));
+
+        await setting.ChooseDateFormatAsync(DateTimePreferences.MonthDayYear)
+            .WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, _harness.Silo.SentTo(HttpMethod.Put, DatePath).Count);
+        Assert.Equal(DateTimePreferences.MonthDayYear, setting.Preferences.DateFormat);
+    }
+
+    [Fact]
+    public async Task AChoice_GoesOutAsTheProfileItWasMadeFor()
+    {
+        var setting = Create();
+        await setting.StartAsync();
+
+        await setting.ChooseTimeFormatAsync(DateTimePreferences.TwelveHours);
+
+        Assert.Equal("7", Assert.Single(_harness.Silo.SentTo(HttpMethod.Put, TimePath)).AsProfile);
     }
 
     [Fact]

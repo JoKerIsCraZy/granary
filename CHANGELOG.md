@@ -9,7 +9,7 @@ release's section is what its update says it changes (docs/release.md).
 ### Added
 
 - **Date and time formats:** dates and times follow your profile's date format (DD/MM/YYYY, MM/DD/YYYY or YYYY-MM-DD)
-  and time format (12-hour or 24-hour), as on Silo's web, so "Sep 12, 2013" becomes "12 Sept 2013" with DD/MM/YYYY.
+  and time format (12-hour or 24-hour), as on Silo's web: with DD/MM/YYYY the day comes first in English dates too.
   Choose them in Settings → Accessibility → Date & time; they apply at once.
 
 ## [0.5.0] - 2026-11-17

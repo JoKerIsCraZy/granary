@@ -26,6 +26,7 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
 
     private readonly ISessionManager _session;
     private readonly IProfileSettings _settings;
+    private readonly SettingsApi _api;
     private readonly DateTimeFormatFile _file;
     private readonly IUiDispatcher _dispatcher;
     private readonly ILogger<DateTimeFormatSetting> _logger;
@@ -45,11 +46,12 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
     private bool _saveFailed;
 
     /// <param name="apply">Where the formats in use go: <see cref="DateText.Apply"/> in the app.</param>
-    public DateTimeFormatSetting(ISessionManager session, IProfileSettings settings, DateTimeFormatFile file, IUiDispatcher dispatcher,
-        ILogger<DateTimeFormatSetting> logger, Action<DateTimePreferences> apply)
+    public DateTimeFormatSetting(ISessionManager session, IProfileSettings settings, SettingsApi api, DateTimeFormatFile file,
+        IUiDispatcher dispatcher, ILogger<DateTimeFormatSetting> logger, Action<DateTimePreferences> apply)
     {
         _session = session;
         _settings = settings;
+        _api = api;
         _file = file;
         _dispatcher = dispatcher;
         _logger = logger;
@@ -80,14 +82,14 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
             _following = true;
             _session.Changed += OnSessionChanged;
         }
-        return Working = LoadIfNewAsync();
+        return Working = LoadIfNewAsync(_saves);
     }
 
     /// <summary>Reads the formats again, as when the settings page opens: another device may have changed them.</summary>
     public Task RefreshAsync()
     {
         _loadedFor = null;
-        return Working = LoadIfNewAsync();
+        return Working = LoadIfNewAsync(_saves);
     }
 
     /// <summary>Chooses the date format, one of <see cref="DateTimePreferences.DateFormats"/>.</summary>
@@ -100,24 +102,29 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
 
     private Task ChooseAsync(string key, string value, DateTimePreferences next, Func<DateTimePreferences, DateTimePreferences> confirm)
     {
-        if (!IsReady || next == Preferences || _readFor != Owner() || _session.State != SessionState.Ready)
+        if (!IsReady || next == Preferences || _readFor != Owner()
+            || _session is not { State: SessionState.Ready, ActiveServer: { } server, ProfileId: { } profileId })
         {
             return Task.CompletedTask;
         }
         _choices++;
         Show(next);
         var owner = Owner();
+        var target = new WriteTarget(server.BaseUri, profileId);
         _savesQueued++;
-        return Working = _saves = SaveInTurnAsync(_saves, key, value, owner, confirm);
+        return Working = _saves = SaveInTurnAsync(_saves, key, value, owner, target, confirm);
     }
 
-    private async Task SaveInTurnAsync(Task previous, string key, string value, (string?, string?) owner,
+    // The server and profile a choice was made for: it goes out as that profile, refused unsent once another acts.
+    private readonly record struct WriteTarget(Uri Server, string ProfileId);
+
+    private async Task SaveInTurnAsync(Task previous, string key, string value, (string?, string?) owner, WriteTarget target,
         Func<DateTimePreferences, DateTimePreferences> confirm)
     {
         await previous.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ContinueOnCapturedContext);
         try
         {
-            await SaveAsync(key, value, owner, confirm);
+            await SaveAsync(key, value, owner, target, confirm);
         }
         finally
         {
@@ -143,10 +150,12 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
             Show(_confirmed);
         }
         _loadedFor = null;
-        await LoadIfNewAsync();
+        // This save is the last one on its way, so the read does not wait for it (it would wait for itself).
+        await LoadIfNewAsync(Task.CompletedTask);
     }
 
-    private async Task SaveAsync(string key, string value, (string?, string?) owner, Func<DateTimePreferences, DateTimePreferences> confirm)
+    private async Task SaveAsync(string key, string value, (string?, string?) owner, WriteTarget target,
+        Func<DateTimePreferences, DateTimePreferences> confirm)
     {
         if (_session.State != SessionState.Ready || owner != Owner())
         {
@@ -156,13 +165,13 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
         }
         try
         {
-            await _settings.SaveAsync(key, SettingValues.Json(value), clearDevice: false, CancellationToken.None);
+            await _api.SetValueAsProfileAsync(target.Server, key, SettingValues.Json(value), SettingScopes.Profile, target.ProfileId);
             if (owner == Owner() && _readFor == owner)
             {
                 _confirmed = confirm(_confirmed);
             }
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex) || ex is InvalidOperationException)
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex) || ex is ProfileChangedException or InvalidOperationException)
         {
             _logger.LogWarning("Saving the date and time formats failed: {Failure}", ApiFailureText.Describe(ex));
             _saveFailed = true;
@@ -170,7 +179,7 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
     }
 
     // The read waits for the choices on their way: the server's answer before one lands would put the old value back.
-    private Task LoadIfNewAsync()
+    private Task LoadIfNewAsync(Task saves)
     {
         var owner = Owner();
         if (_session is not { State: SessionState.Ready, ActiveServer: not null } || _session.ProfileId is null)
@@ -193,7 +202,7 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
             IsReady = false;
             LoadFailed = false;
         }
-        return LoadAsync(owner, ++_loads, _saves);
+        return LoadAsync(owner, ++_loads, saves);
     }
 
     private async Task LoadAsync((string? ServerId, string? ProfileId) owner, int load, Task saves)
@@ -248,5 +257,5 @@ public sealed partial class DateTimeFormatSetting : ObservableObject
     private (string? ServerId, string? ProfileId) Owner() => (_session.ActiveServer?.Id, _session.ProfileId);
 
     // Changed can come from a background thread (a sign-out by the authentication handler).
-    private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() => Working = LoadIfNewAsync());
+    private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() => Working = LoadIfNewAsync(_saves));
 }

@@ -140,7 +140,7 @@ public static class DateText
     {
         var (fields, hour) = Clock(skeleton, locale);
         return IcuDates.Format(locale.IcuName, fields, value, matchHourLength: fields.Contains("HH", StringComparison.Ordinal))
-            ?? Fallback(value, skeleton, locale, hour);
+            ?? Fallback(value, skeleton, locale, Preferences.TimeFormat == DateTimePreferences.Auto ? null : hour);
     }
 
     // The hour of a time's skeleton (j, the locale's): 12h and 24h set it, as the web's formatTime sets hourCycle; under
@@ -168,9 +168,9 @@ public static class DateText
     }
 
     /// <summary>Without ICU, .NET's own pattern nearest the fields: the same parts, in places in another shape.</summary>
+    /// <param name="hour">The clock chosen, <c>h</c> for 12h or <c>H</c> for 24h; null keeps the culture's own time patterns.</param>
     internal static string Fallback(DateTime value, string skeleton, FormatLocale locale, char? hour = null)
     {
-        hour ??= locale.HourCycle;
         string format = skeleton switch
         {
             NumericDate => "d",
@@ -181,7 +181,7 @@ public static class DateText
             WeekdayMonthDay => "ddd, " + locale.Culture.DateTimeFormat.MonthDayPattern,
             LongDay => "D",
             HourMinuteSecond => hour switch { 'H' => "HH:mm:ss", 'h' => "h:mm:ss tt", _ => "T" },
-            Hour => hour == 'h' ? "h tt" : "%H",
+            Hour => (hour ?? locale.HourCycle) == 'h' ? "h tt" : "%H",
             Weekday => "dddd",
             ShortWeekday => "ddd",
             Month => "MMMM",

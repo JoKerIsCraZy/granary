@@ -26,7 +26,7 @@ public sealed class DateTextPreferenceTests
         // The case reported: the app in English, its formats English (chosen on a Swiss German Windows), DD/MM/YYYY.
         using var _ = Show("en", "en", DateTimePreferences.DayMonthYear);
 
-        Assert.Equal("12 Sept 2013", DateText.MediumDate(Pilot));
+        Assert.Matches("^12 Sept? 2013$", DateText.MediumDate(Pilot));
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public sealed class DateTextPreferenceTests
         // Dates come out in German only once the language on screen is German too (localizedFormats).
         using var _ = Show("en", "de-CH", DateTimePreferences.DayMonthYear);
 
-        Assert.Equal("12 Sept 2013", DateText.MediumDate(Pilot));
+        Assert.Matches("^12 Sept? 2013$", DateText.MediumDate(Pilot));
     }
 
     [Theory]
@@ -51,15 +51,16 @@ public sealed class DateTextPreferenceTests
     }
 
     [Theory]
-    [InlineData(DateTimePreferences.Auto, "Sep 12, 2013")]
-    [InlineData(DateTimePreferences.DayMonthYear, "12 Sept 2013")]
-    [InlineData(DateTimePreferences.MonthDayYear, "Sep 12, 2013")]
-    [InlineData(DateTimePreferences.YearMonthDay, "2013-09-12")]
+    [InlineData(DateTimePreferences.Auto, "^Sep 12, 2013$")]
+    [InlineData(DateTimePreferences.DayMonthYear, "^12 Sept? 2013$")]
+    [InlineData(DateTimePreferences.MonthDayYear, "^Sep 12, 2013$")]
+    [InlineData(DateTimePreferences.YearMonthDay, "^2013-09-12$")]
     public void AMediumDate_FollowsTheDateFormat(string format, string expected)
     {
+        // British English abbreviates September "Sept" from CLDR 38 on, "Sep" before.
         using var _ = Show("en", "en", format);
 
-        Assert.Equal(expected, DateText.MediumDate(Pilot));
+        Assert.Matches(expected, DateText.MediumDate(Pilot));
     }
 
     [Theory]
@@ -91,16 +92,16 @@ public sealed class DateTextPreferenceTests
     }
 
     [Theory]
-    [InlineData(DateTimePreferences.Auto, "Sep 12")]
-    [InlineData(DateTimePreferences.DayMonthYear, "12 Sept")]
-    [InlineData(DateTimePreferences.MonthDayYear, "Sep 12")]
-    [InlineData(DateTimePreferences.YearMonthDay, "Sep 12")]
+    [InlineData(DateTimePreferences.Auto, "^Sep 12$")]
+    [InlineData(DateTimePreferences.DayMonthYear, "^12 Sept?$")]
+    [InlineData(DateTimePreferences.MonthDayYear, "^Sep 12$")]
+    [InlineData(DateTimePreferences.YearMonthDay, "^Sep 12$")]
     public void AFragment_TakesTheOrderOfTheDateFormat_AndIsoTheLocales(string format, string expected)
     {
         // The web's toLocaleDateString(preferredDateLocale(), { month: "short", day: "numeric" }).
         using var _ = Show("en", "en", format);
 
-        Assert.Equal(expected, DateText.Format(Pilot, DateText.MonthDay));
+        Assert.Matches(expected, DateText.Format(Pilot, DateText.MonthDay));
     }
 
     [Fact]

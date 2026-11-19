@@ -737,7 +737,8 @@ the profile alone (settings manifest, `scopes: ["profile"]`), default `auto`. A 
   that fails keeps the formats in use.
 - Write (Settings → Accessibility → Date & time, as the web's `DateTimeFormatProvider`): `PUT …/ui.date_format?scope=profile`
   or `…/ui.time_format?scope=profile` with the value, applied before it lands; a refused write goes back to what the
-  server has and reads the values again. The values carry no version, so the writes send no `If-Match`.
+  server has and reads the values again. Each goes out as the profile it was made for (`SettingsApi.SetValueAsProfileAsync`).
+  The values carry no version, so the writes send no `If-Match`.
 
 ## 7. Catalog
 

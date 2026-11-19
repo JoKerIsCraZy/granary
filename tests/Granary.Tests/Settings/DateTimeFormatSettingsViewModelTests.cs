@@ -42,7 +42,7 @@ public sealed class DateTimeFormatSettingsViewModelTests : IDisposable
     private async Task<DateTimeFormatSettingsViewModel> OpenAsync()
     {
         var api = new SettingsApi(_harness.Silo.Http);
-        var setting = new DateTimeFormatSetting(_harness.Session, new ProfileSettings(api, _harness.Session, _harness.Logs.For<ProfileSettings>()),
+        var setting = new DateTimeFormatSetting(_harness.Session, new ProfileSettings(api, _harness.Session, _harness.Logs.For<ProfileSettings>()), api,
             new DateTimeFormatFile(Path.Combine(_directory, "date-time-format.json"), _harness.Logs.For<DateTimeFormatFile>()),
             new ImmediateDispatcher(), _harness.Logs.For<DateTimeFormatSetting>(), _ => { });
         var page = new DateTimeFormatSettingsViewModel(setting, _clock);
