@@ -190,6 +190,18 @@ starts. All of them exist in v0.41.0-dev (`ThisMpv_KnowsEveryOptionGranaryKeepsW
 and start position go with each title (`loadfile` options), over the file's own. Everything else is the file's to
 change, `hwdec` included.
 
+**Read-ahead buffer** (`MpvReadAhead`; Settings → Playback → This PC, `read_ahead` in `playback-device.json`). Not one of
+Granary's kept options: each stream gets it as `loadfile` options as its title opens, so a change counts from the next
+title. Every choice sets `cache=yes`, `demuxer-max-bytes` and `demuxer-max-back-bytes` (Default 384 MiB ahead and
+64 MiB behind, then 150/50, 768/128, 1 GiB/192 MiB and 2 GiB/256 MiB) and `demuxer-readahead-secs=120`, as byte counts.
+With the cache on, mpv's `cache-secs` stands over `demuxer-readahead-secs` and is very high by default, so
+`demuxer-max-bytes` is the real limit. `demuxer-hysteresis-secs` stays at mpv's 0: mpv then tops the cache up all the time
+while it plays, not in bursts, so the connection never sits idle long enough for a proxy before the server (nginx's
+`send_timeout` of 60 s) to close it, which is what makes a large buffer safe; a mpv.conf that sets it has its way. The
+viewer's mpv.conf wins: any of the four it names, at the top, in a profile or in an include (the pre-scan's entries), is
+left out for the whole run of that mpv, and the log says so once. A file on this PC (a download, `--play`) gets none of
+them: mpv does not cache a local file by default, and the seek bar shows no cache for one.
+
 **The log** says once per start which file mpv read (`mpv started with …`), names the options of Granary's that the file
 sets (`mpv.conf sets vo; Granary keeps its own`, read from the file and its includes by mpv's rules for option names),
 and passes on mpv's own messages about the file (an unknown option, a shader it cannot open),
