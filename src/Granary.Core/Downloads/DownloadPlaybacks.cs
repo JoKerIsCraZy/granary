@@ -188,7 +188,7 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
                 logger.LogWarning("The manifest of download {DownloadId} is of another revision; the title streams", id);
                 return null;
             }
-            return new LocalMedia(download, manifest, files, KeptPreviews.Read(download, manifest, files, logger));
+            return new LocalMedia(download, manifest, files, KeptPreviews.Read(download, manifest, logger));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {

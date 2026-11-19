@@ -127,7 +127,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
 
         Assert.Equal(before, FilesIn(stored));
-        Assert.NotNull(KeptPreviews.Read(stored, ManifestOf(stored), FilesOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
+        Assert.NotNull(KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
     }
 
     // A play that read the old set goes on reading its own sheets: the new set's are other files.
@@ -196,7 +196,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
 
         await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
 
-        Assert.NotNull(KeptPreviews.Read(stored, ManifestOf(stored), FilesOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
+        Assert.NotNull(KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
     }
 
     [Theory]
@@ -290,7 +290,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         await Assets(maxPreviewBytes: SheetBytes.Length + 1).FetchAsync(ScriptedSilo.Base, stored, Token);
 
         Assert.DoesNotContain(FilesIn(stored), name => name.StartsWith("tp-", StringComparison.Ordinal) || name.EndsWith(".arriving", StringComparison.Ordinal));
-        Assert.Null(KeptPreviews.Read(stored, ManifestOf(stored), FilesOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
+        Assert.Null(KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
         int sheets = SheetRequests();
         Assert.Contains(_h.Logs.Lines, line => line.Contains("larger than", StringComparison.Ordinal));
 
@@ -336,7 +336,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         ServePreviews();
         await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
 
-        var trickplay = KeptPreviews.Read(stored, ManifestOf(stored), FilesOf(stored), _h.Logs.For<DownloadPreviewsTests>());
+        var trickplay = KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>());
 
         Assert.NotNull(trickplay);
         Assert.Equal(("4567", 10_000, 320, 180, 10, 10, 150), (trickplay.FileId, trickplay.IntervalMs, trickplay.Width, trickplay.Height, trickplay.Columns,
@@ -362,7 +362,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         json[field] = System.Text.Json.Nodes.JsonNode.Parse(value);
         await File.WriteAllTextAsync(path, json.ToJsonString(), Token);
 
-        Assert.Null(KeptPreviews.Read(stored, ManifestOf(stored), FilesOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
+        Assert.Null(KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
     }
 
     // 65536 by 65536 tiles count to 0 in an int, which the seek bar would divide by.
@@ -378,7 +378,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         json["tile_rows"] = 65536;
         await File.WriteAllTextAsync(path, json.ToJsonString(), Token);
 
-        Assert.Null(KeptPreviews.Read(stored, ManifestOf(stored), FilesOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
+        Assert.Null(KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
     }
 
     [Fact]
@@ -388,7 +388,7 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         await File.WriteAllTextAsync(Path.Combine(stored.Folder, DownloadPaths.Previews), "{ not json", Token);
         await File.WriteAllTextAsync(Path.Combine(stored.Folder, DownloadPaths.Manifest), DownloadPayloads.Manifest("dl_1"), Token);
 
-        Assert.Null(KeptPreviews.Read(stored, ManifestOf(stored), FilesOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
+        Assert.Null(KeptPreviews.Read(stored, ManifestOf(stored), _h.Logs.For<DownloadPreviewsTests>()));
     }
 
     [Fact]
@@ -427,6 +427,4 @@ public sealed class DownloadPreviewsTests : IAsyncDisposable
         using var kept = JsonDocument.Parse(File.ReadAllText(Path.Combine(download.Folder, DownloadPaths.Previews)));
         return DownloadPaths.PreviewSheet(kept.RootElement.GetProperty("generation").GetString()!, ordinal);
     }
-
-    private static IReadOnlySet<string> FilesOf(StoredDownload download) => FilesIn(download).ToHashSet(StringComparer.OrdinalIgnoreCase);
 }

@@ -69,19 +69,14 @@ public static class KeptPreviews
 
     /// <summary>
     /// The kept previews as a play shows them, their sheets the files in the folder; null when none are kept, or they do not fit
-    /// the download: another revision's, another file's, a sheet missing from <paramref name="files"/>, or a file that does not
+    /// the download: another revision's, another file's, a sheet missing from the folder, or a file that does not
     /// read. Never throws: a download plays without its previews.
     /// </summary>
-    public static PlayerTrickplay? Read(StoredDownload download, OfflineManifest manifest, IReadOnlySet<string> files, ILogger logger)
+    public static PlayerTrickplay? Read(StoredDownload download, OfflineManifest manifest, ILogger logger)
     {
         ArgumentNullException.ThrowIfNull(download);
         ArgumentNullException.ThrowIfNull(manifest);
-        ArgumentNullException.ThrowIfNull(files);
         ArgumentNullException.ThrowIfNull(logger);
-        if (!files.Contains(DownloadPaths.Previews))
-        {
-            return null;
-        }
         string id = download.Record.DownloadId;
         try
         {
@@ -91,7 +86,7 @@ public static class KeptPreviews
             }
             string? fileId = manifest.MediaFileId ?? download.Record.MediaFileId;
             if (kept.TooLarge || !IsGeneration(kept.Generation) || kept.Revision != download.Record.Revision || fileId is null || kept.FileId != fileId || !IsDrawable(kept)
-                || Enumerable.Range(0, kept.Sheets).Any(i => !files.Contains(DownloadPaths.PreviewSheet(kept.Generation, i))))
+                || Enumerable.Range(0, kept.Sheets).Any(i => !File.Exists(Path.Combine(download.Folder, DownloadPaths.PreviewSheet(kept.Generation, i)))))
             {
                 logger.LogInformation("The kept seek-bar previews of download {DownloadId} do not fit it; it plays without them", id);
                 return null;
