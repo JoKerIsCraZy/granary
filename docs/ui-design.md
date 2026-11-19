@@ -1672,9 +1672,9 @@ entry is chosen, and a controller's bumpers, which go from the chosen entry, do 
   pages follow it. The other groups' switches are off until the profile's choice is read, and a group the server does not
   keep is left out.
 - **Accessibility** (`AccessibilitySettingsView` on `AccessibilitySettingsViewModel`, the web's page of that name, an
-  eye in the sidebar): the web's page holds text size, weight, contrast and date and time formats beside the language;
-  Granary has only its Language group, so the page's line is the settings manifest's own ("Language of the app's menus,
-  buttons and messages. Separate from the audio, subtitle and metadata languages."). Language: "The language this app
+  eye in the sidebar): the web's page holds text size, weight and contrast beside the language and the date and time
+  formats; Granary has its Language and Date & time groups, so the page's line is the settings manifest's own ("Language
+  of the app's menus, buttons and messages. Separate from the audio, subtitle and metadata languages."). Language: "The language this app
   uses, saved for the active profile. Match device follows your PC's language." (the web says browser), with App
   language, a select of Match device, then each language Granary offers by its own name, in the web's order: English,
   Español, Deutsch, Français, Português (Brasil), 日本語, 简体中文. A language another Silo app chose that Granary does not
@@ -1693,6 +1693,15 @@ entry is chosen, and a controller's bumpers, which go from the chosen entry, do 
   Silo." instead of the group. The signed-out screens have no language menu: the web's (`AuthLanguagePicker`) switches
   at once; Granary's would apply only after a restart, and Silo's apps have none. They show the language of the last
   profile, kept on this PC, else Windows'.
+  **Date & time** follows ("Choose how dates and clock times are displayed across the app. Saved for the active
+  profile."): Date format, with Match device, DD/MM/YYYY, MM/DD/YYYY and YYYY-MM-DD as choice buttons, and Time format,
+  with Match device, 12-hour and 24-hour, the chosen one filled in the accent as the web's (the web's "Auto (browser)" is
+  the settings manifest's "Match device" here). A choice saves at once for the profile and applies at once: dates written
+  from then on follow it, and pages open already follow once they word their rows again. Under them, in 13 px muted,
+  "Preview: 12/09/2013 · 12 Sept 2013 · 15:04", today in the formats chosen. The buttons are off until the profile's
+  formats are read, which the page reads again each time it shows; a read that fails says "Couldn’t load preferences."
+  with Retry, in 13 px muted, and a server that knows neither setting offers no choice. A refused choice goes back to
+  what the server has, without a message, as on the web.
 - **Devices** (`DevicesSettingsView` on `DevicesViewModel`; the web's Signed-in sessions and Your Devices on one page,
   without the household view and the per-device settings editor): the title and its line with Refresh (outline) on the
   right, then what the last action did in 13 px muted text ("Session signed out", "Couldn't forget"). **Signed-in

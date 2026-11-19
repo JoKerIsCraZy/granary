@@ -1,18 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Settings → Accessibility, as on Silo's web (pages/settings/AccessibilitySettings.tsx): its Language group, the profile's
-    app language. The web's readability and date and time groups are its own; Granary has none of them.
+    app language, and its Date & time group, the profile's date and time formats. The web's readability groups are its own;
+    Granary has none of them.
 -->
 <UserControl
     x:Class="Granary.App.Views.Settings.AccessibilitySettingsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
+    xmlns:settings="using:Granary.Core.ViewModels.Settings"
     xmlns:t="using:Granary.Core.Texts">
 
     <!-- Its own copy: the view is made before it joins the page, whose resources it cannot see then. -->
     <UserControl.Resources>
-        <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- A date or time format: the chosen one filled in the accent, as the web's outline and default buttons. -->
+            <DataTemplate x:Key="FormatChoiceTemplate" x:DataType="settings:SettingsChoice">
+                <Button Content="{x:Bind Label}" Style="{StaticResource SiloSettingsChoiceButtonStyle}" Command="{x:Bind PickCommand}"
+                        Background="{x:Bind controls:BadgeSettingsLook.ChoiceFill(IsSelected), Mode=OneWay}"
+                        BorderBrush="{x:Bind controls:BadgeSettingsLook.ChoiceRing(IsSelected), Mode=OneWay}"
+                        Foreground="{x:Bind controls:BadgeSettingsLook.ChoiceText(IsSelected), Mode=OneWay}"
+                        AutomationProperties.Name="{x:Bind Label}"
+                        AutomationProperties.ItemStatus="{x:Bind controls:SettingsSwatches.Status(IsSelected), Mode=OneWay}" />
+            </DataTemplate>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <StackPanel>
@@ -47,6 +63,44 @@
                     <Button Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.TryAgainCommand}"
                             Visibility="{x:Bind ViewModel.OffersTryAgain, Mode=OneWay}" />
                 </StackPanel>
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <!-- The profile's date and time formats; they apply at once, so the preview shows them as chosen. -->
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('web.settings.accessibility.dateTimeTitle')}"
+                                Description="{x:Bind t:AppText.Get('web.settings.accessibility.dateTimeDescription')}">
+            <StackPanel Spacing="16">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.accessibility.dateFormat')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                               FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" />
+                    <ItemsControl ItemsSource="{x:Bind DateTime.DateChoices}" ItemTemplate="{StaticResource FormatChoiceTemplate}" IsTabStop="False"
+                                  IsEnabled="{x:Bind DateTime.CanChoose, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.accessibility.dateFormat')}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="8" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </StackPanel>
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.accessibility.timeFormat')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                               FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" />
+                    <ItemsControl ItemsSource="{x:Bind DateTime.TimeChoices}" ItemTemplate="{StaticResource FormatChoiceTemplate}" IsTabStop="False"
+                                  IsEnabled="{x:Bind DateTime.CanChoose, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.accessibility.timeFormat')}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="8" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </StackPanel>
+                <!-- The read failed: the choices wait, as one would overwrite a format not seen. -->
+                <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind DateTime.LoadFailed, Mode=OneWay}">
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.loadFailed')}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                               FontSize="13" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+                    <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind DateTime.RetryCommand}" />
+                </StackPanel>
+                <TextBlock Text="{x:Bind DateTime.Preview, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="13" TextWrapping="Wrap" />
             </StackPanel>
         </controls:SettingsGroup>
 

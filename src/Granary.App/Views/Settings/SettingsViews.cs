@@ -422,14 +422,16 @@ public sealed partial class TitlePagesSettingsView : UserControl, IDisposable
 }
 
 /// <summary>
-/// Settings → Accessibility; it reads the profile's app language again each time it is shown, coming back from another
-/// settings page too, as another device may have changed it, and lets go of it as the page leaves.
+/// Settings → Accessibility; it reads the profile's app language and date and time formats again each time it is shown,
+/// coming back from another settings page too, as another device may have changed them, and lets go of them as the page
+/// leaves.
 /// </summary>
 public sealed partial class AccessibilitySettingsView : UserControl, IDisposable
 {
     public AccessibilitySettingsView()
     {
         ViewModel = ActivatorUtilities.CreateInstance<AccessibilitySettingsViewModel>(App.Services);
+        DateTime = ActivatorUtilities.CreateInstance<DateTimeFormatSettingsViewModel>(App.Services);
         InitializeComponent();
         // Every time: the settings page keeps the view while it is open. A newer read drops an older one, and none puts back
         // a language over a choice (AppLanguageSetting).
@@ -438,13 +440,18 @@ public sealed partial class AccessibilitySettingsView : UserControl, IDisposable
 
     public AccessibilitySettingsViewModel ViewModel { get; }
 
+    /// <summary>The Date &amp; time group.</summary>
+    public DateTimeFormatSettingsViewModel DateTime { get; }
+
     public void Dispose()
     {
         Loaded -= OnLoaded;
         ViewModel.Dispose();
+        DateTime.Dispose();
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e) => await SettingsViewLoad.RunAsync(_ => ViewModel.LoadAsync());
+    private async void OnLoaded(object sender, RoutedEventArgs e) =>
+        await SettingsViewLoad.RunAsync(_ => Task.WhenAll(ViewModel.LoadAsync(), DateTime.LoadAsync()));
 }
 
 /// <summary>Settings → Servers; the page disposes it as it leaves, so the list stops following the servers.</summary>

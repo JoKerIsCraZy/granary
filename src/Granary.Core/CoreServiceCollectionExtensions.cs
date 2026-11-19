@@ -116,6 +116,11 @@ public static class CoreServiceCollectionExtensions
         // The profile's app language, read with every profile and kept on this PC for the next start (docs/architecture.md, "Texts").
         services.AddSingleton(sp => new Texts.AppLanguageFile(Texts.AppLanguageFile.DefaultPath, sp.GetRequiredService<ILogger<Texts.AppLanguageFile>>()));
         services.AddSingleton<AppLanguageSetting>();
+        // Its date and time formats, read with it, applied to every date from then on and kept for the next start.
+        services.AddSingleton(sp => new Texts.DateTimeFormatFile(Texts.DateTimeFormatFile.DefaultPath, sp.GetRequiredService<ILogger<Texts.DateTimeFormatFile>>()));
+        services.AddSingleton(sp => new DateTimeFormatSetting(sp.GetRequiredService<ISessionManager>(), sp.GetRequiredService<IProfileSettings>(),
+            sp.GetRequiredService<SettingsApi>(), sp.GetRequiredService<Texts.DateTimeFormatFile>(), sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<DateTimeFormatSetting>>(),
+            Texts.DateText.Apply));
         AddThemeMusic(services);
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();

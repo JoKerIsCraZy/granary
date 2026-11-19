@@ -941,6 +941,12 @@
       "value": "لغة قوائم التطبيق وأزراره ورسائله. منفصلة عن لغات الصوت والترجمة والبيانات الوصفية."
     }
   ],
+  "settingsManifest.ui.date_format.option.auto": [
+    {
+      "type": 0,
+      "value": "مطابقة الجهاز"
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -963,6 +969,12 @@
     {
       "type": 0,
       "value": "تكرار موسيقى الشارة"
+    }
+  ],
+  "settingsManifest.ui.time_format.option.auto": [
+    {
+      "type": 0,
+      "value": "مطابقة الجهاز"
     }
   ],
   "settingsManifest.ui.title_art.label": [
@@ -18196,6 +18208,50 @@
       "value": "تعذّر حفظ لغة التطبيق"
     }
   ],
+  "web.settings.accessibility.dateFormat": [
+    {
+      "type": 0,
+      "value": "تنسيق التاريخ"
+    }
+  ],
+  "web.settings.accessibility.dateTimeDescription": [
+    {
+      "type": 0,
+      "value": "اختر طريقة عرض التواريخ والأوقات في التطبيق. يُحفظ هذا الخيار للملف الشخصي النشط."
+    }
+  ],
+  "web.settings.accessibility.dateTimePreview": [
+    {
+      "type": 0,
+      "value": "معاينة: "
+    },
+    {
+      "type": 1,
+      "value": "short"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "medium"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.settings.accessibility.dateTimeTitle": [
+    {
+      "type": 0,
+      "value": "التاريخ والوقت"
+    }
+  ],
   "web.settings.accessibility.languageTitle": [
     {
       "type": 0,
@@ -18206,6 +18262,24 @@
     {
       "type": 0,
       "value": "مطابقة الجهاز"
+    }
+  ],
+  "web.settings.accessibility.time12h": [
+    {
+      "type": 0,
+      "value": "12 ساعة"
+    }
+  ],
+  "web.settings.accessibility.time24h": [
+    {
+      "type": 0,
+      "value": "24 ساعة"
+    }
+  ],
+  "web.settings.accessibility.timeFormat": [
+    {
+      "type": 0,
+      "value": "تنسيق الوقت"
     }
   ],
   "web.settings.accessibility.title": [
