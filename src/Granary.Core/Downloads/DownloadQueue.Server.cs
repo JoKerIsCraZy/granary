@@ -452,6 +452,8 @@ public sealed partial class DownloadQueue
                     ArtworkFiles = fetched.ArtworkFiles,
                     SubtitleRevisions = fetched.SubtitleRevisions,
                 }).ConfigureAwait(false);
+                // Then the seek-bar previews, within their own deadline; what does not come is tried at the next refresh.
+                await _assets.FetchPreviewsAsync(server, download, refresh.Token).ConfigureAwait(false);
             }
             catch (ManifestRevisionException)
             {
