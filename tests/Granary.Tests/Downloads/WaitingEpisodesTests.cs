@@ -332,6 +332,36 @@ public sealed class WaitingEpisodesTests : IAsyncDisposable
         Assert.Equal(2, CreatedEpisodes().Count);
     }
 
+    // CodeRabbit on #179: a cancel that comes after the run saw the limit's answer, right before the refused episodes go in
+    // line, ends the run as a stop, also when an episode of the series waited from before.
+    [Fact]
+    public async Task ACancelRightBeforeTheLineIsKept_EndsAsAStop_ThoughTheSeriesHadAWaitingEpisode()
+    {
+        await _h.Store.LoadAsync(Token);
+        await _h.Store.AddWaitingUnlessClearedAsync([new WaitingEpisode(Scope7, "sr_1", "Example Series", 2, "ep_21", 1, "Chapter Eleven", null, "original")],
+            _h.Store.ClearGeneration, Token);
+        _h.List();
+        var (held, gate) = ItemDetailFixture.Held();
+        Creates(Limit(), Created("dl_1", "ep_1"), held);
+        var time = new CancelOnReadTimeProvider(_h.Time);
+        var manager = new DownloadManager(_h.Store, _h.NewQueue(), _h.Api, _h.NewFeature(), _h.Session, new FakeDeviceProbe(),
+            new InMemoryPlaybackDevicePreferences(), time, _h.Logs.For<DownloadManager>(), _h.Playing);
+        await manager.WaitingRun;
+        using var cancel = new CancellationTokenSource();
+
+        var run = manager.StartSeriesAsync(Series, cancel.Token);
+        await Until(() => CreatedEpisodes().Count == 3, "the second episode's create was sent");
+        // The look at the line the first episode's download started is over; from here, the manager reads its clock first as
+        // it notes the refusal, after it looked at the cancel: the cancel comes then.
+        await manager.WaitingRun;
+        time.CancelOnNextRead = cancel;
+        gate.SetResult(await Limit()());
+        var result = await run;
+
+        Assert.Equal(new SeasonStartResult(Started: 1, AlreadyThere: 0, Failed: 1, ReachedLimit: true), result);
+        Assert.Equal(["ep_21"], Waiting());
+    }
+
     // Review 3: a wait the server names is kept to half an hour, a delay or a date alike, and the episodes wait all the same.
     [Theory]
     [InlineData(false)]
@@ -597,6 +627,32 @@ public sealed class WaitingEpisodesTests : IAsyncDisposable
         response.Headers.RetryAfter = new RetryConditionHeaderValue(date);
         return response;
     };
+
+    // The clock of the harness, which cancels a source at its next read once one is set.
+    private sealed class CancelOnReadTimeProvider(ManualTimeProvider time) : TimeProvider
+    {
+        private CancellationTokenSource? _cancelOnNextRead;
+
+        public CancellationTokenSource? CancelOnNextRead
+        {
+            set => Volatile.Write(ref _cancelOnNextRead, value);
+        }
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            Interlocked.Exchange(ref _cancelOnNextRead, null)?.Cancel();
+            return time.GetUtcNow();
+        }
+
+        public override long GetTimestamp() => time.GetTimestamp();
+
+        public override long TimestampFrequency => time.TimestampFrequency;
+
+        public override TimeZoneInfo LocalTimeZone => time.LocalTimeZone;
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
+            time.CreateTimer(callback, state, dueTime, period);
+    }
 
     // The clock of the harness, whose first timer fires a little before it is due, as after the wall clock stepped back.
     private sealed class EarlyOnceTimeProvider(ManualTimeProvider time, TimeSpan early) : TimeProvider

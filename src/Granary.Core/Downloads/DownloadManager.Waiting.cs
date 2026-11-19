@@ -119,27 +119,28 @@ public sealed partial class DownloadManager
     // again before it, unless a place frees. The wait is noted before the episodes go in line, so the store's change does not
     // ask at once, and its timer is set once they are in it. A run the viewer stopped (stopped) by the time they would go in
     // line keeps none of them, asked in the store's change itself. Answers how many of the series' episodes wait as that
-    // change left the line, counted in the change itself.
-    private async Task<int> KeepWaitingAsync(DownloadScope scope, string seriesId, string seriesTitle, string quality,
+    // change left the line, counted in the change itself, and how many of them it put there. Should the index then not be
+    // written, the episodes still wait in memory, and are counted as they are.
+    private async Task<(int Added, int Waiting)> KeepWaitingAsync(DownloadScope scope, string seriesId, string seriesTitle, string quality,
         IEnumerable<(int Season, SeasonEpisode Episode)> episodes, long clears, TimeSpan? retryAfter, long freed, CancellationToken stopped)
     {
         var wait = BeginRefusal(scope, retryAfter, freed);
         List<WaitingEpisode> line = [.. episodes.Select(e => new WaitingEpisode(scope, seriesId, seriesTitle, e.Season, e.Episode.EpisodeId,
             e.Episode.EpisodeNumber, e.Episode.Title, e.Episode.MediaFileId, quality))];
-        int waiting = 0;
         try
         {
-            (_, waiting) = await _store.AddWaitingUnlessClearedAsync(line, clears, stopped, CancellationToken.None).ConfigureAwait(false);
+            return await _store.AddWaitingUnlessClearedAsync(line, clears, stopped, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning("The episodes past the server's download limit could not be kept waiting ({Failure})", DownloadLog.Failure(ex));
+            var now = _store.WaitingIn(scope).Where(w => w.SeriesId == seriesId).ToList();
+            return (now.Count(w => line.Any(l => l.EpisodeId == w.EpisodeId)), now.Count);
         }
         finally
         {
             ArmRetry(wait);
         }
-        return waiting;
     }
 
     // A refusal for the limit (with the wait the server named), or a create without a clear answer: the next ask waits, longer

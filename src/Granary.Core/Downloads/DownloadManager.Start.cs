@@ -192,11 +192,12 @@ public sealed partial class DownloadManager
                     _logger.LogInformation("A season's or series' downloads stopped after {Count} episodes", started + there + failed + 1);
                     return new SeasonStartResult(started, there, failed + 1, ReachedLimit: true);
                 case DownloadStartResult.Limited:
-                    int waiting = await KeepWaitingAsync(scope, seriesId, seriesTitle, quality, all.Skip(i), clears, outcome.RetryAfter, freed,
-                        cancellationToken).ConfigureAwait(false);
-                    if (waiting == 0 && cancellationToken.IsCancellationRequested)
+                    var (added, waiting) = await KeepWaitingAsync(scope, seriesId, seriesTitle, quality, all.Skip(i), clears, outcome.RetryAfter,
+                        freed, cancellationToken).ConfigureAwait(false);
+                    if (added == 0 && cancellationToken.IsCancellationRequested)
                     {
-                        // Stopped just before they went in line, which then kept none: as a stop before the limit's answer.
+                        // Stopped just before they went in line, which then kept none of this run's: as a stop before the limit's
+                        // answer, whatever of the series waited from before.
                         _logger.LogInformation("A season's or series' downloads stopped after {Count} episodes", started + there + failed + 1);
                         return new SeasonStartResult(started, there, failed + 1, ReachedLimit: true);
                     }
