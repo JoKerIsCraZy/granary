@@ -9284,6 +9284,60 @@
       "value": "Collection supprimée"
     }
   ],
+  "web.common.toast.profiles.avatarRemoveFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de retirer l’avatar"
+    }
+  ],
+  "web.common.toast.profiles.avatarRemoved": [
+    {
+      "type": 0,
+      "value": "Avatar retiré"
+    }
+  ],
+  "web.common.toast.profiles.avatarUpdated": [
+    {
+      "type": 0,
+      "value": "Avatar mis à jour"
+    }
+  ],
+  "web.common.toast.profiles.avatarUploadFailed": [
+    {
+      "type": 0,
+      "value": "Impossible d’envoyer l’avatar"
+    }
+  ],
+  "web.common.toast.profiles.created": [
+    {
+      "type": 0,
+      "value": "Profil créé"
+    }
+  ],
+  "web.common.toast.profiles.deleteFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de supprimer"
+    }
+  ],
+  "web.common.toast.profiles.deleted": [
+    {
+      "type": 0,
+      "value": "Profil supprimé"
+    }
+  ],
+  "web.common.toast.profiles.saveFailed": [
+    {
+      "type": 0,
+      "value": "Impossible d’enregistrer le profil"
+    }
+  ],
+  "web.common.toast.profiles.updated": [
+    {
+      "type": 0,
+      "value": "Profil mis à jour"
+    }
+  ],
   "web.common.toast.subtitles.resetPreferenceFailed": [
     {
       "type": 0,
@@ -14216,6 +14270,594 @@
       "value": "Spectateurs"
     }
   ],
+  "web.profiles.editor.accessSection": [
+    {
+      "type": 0,
+      "value": "Accès"
+    }
+  ],
+  "web.profiles.editor.accessSectionHint": [
+    {
+      "type": 0,
+      "value": "Limites de contenu et visibilité des bibliothèques pour ce profil."
+    }
+  ],
+  "web.profiles.editor.advisoryAgeHelp": [
+    {
+      "type": 0,
+      "value": "Masque les titres qu’un service de conseil comme Common Sense Media recommande à un public plus âgé."
+    }
+  ],
+  "web.profiles.editor.advisoryAgeHelpFallback": [
+    {
+      "type": 0,
+      "value": "Masque les titres qu’un service de conseil comme Common Sense Media recommande à un public plus âgé. Les titres sans âge conseillé ne sont limités que par la classification du contenu."
+    }
+  ],
+  "web.profiles.editor.avatarAlt": [
+    {
+      "type": 0,
+      "value": "Avatar du profil"
+    }
+  ],
+  "web.profiles.editor.customUpload": [
+    {
+      "type": 0,
+      "value": "Image importée"
+    }
+  ],
+  "web.profiles.editor.customUploadSelected": [
+    {
+      "type": 0,
+      "value": "Image importée sélectionnée"
+    }
+  ],
+  "web.profiles.editor.description": [
+    {
+      "type": 0,
+      "value": "Définissez l’avatar, le nom, le PIN et les règles d’accès de ce profil."
+    }
+  ],
+  "web.profiles.editor.hideWithoutAge": [
+    {
+      "type": 0,
+      "value": "Masquer les titres sans âge conseillé"
+    }
+  ],
+  "web.profiles.editor.hideWithoutAgeHint": [
+    {
+      "type": 0,
+      "value": "Affiche uniquement les titres classés à cet âge ou en dessous. Les âges sont recherchés progressivement : ce profil peut donc voir peu de titres au début."
+    }
+  ],
+  "web.profiles.editor.initialsFallback": [
+    {
+      "type": 0,
+      "value": "Initiales par défaut"
+    }
+  ],
+  "web.profiles.editor.keepPin": [
+    {
+      "type": 0,
+      "value": "Conserver le PIN actuel"
+    }
+  ],
+  "web.profiles.editor.kids": [
+    {
+      "type": 0,
+      "value": "Profil enfant"
+    }
+  ],
+  "web.profiles.editor.kidsHint": [
+    {
+      "type": 0,
+      "value": "Applique par défaut une classification et des bibliothèques plus adaptées."
+    }
+  ],
+  "web.profiles.editor.librariesRequired": [
+    {
+      "type": 0,
+      "value": "Choisissez au moins une bibliothèque."
+    }
+  ],
+  "web.profiles.editor.maxAdvisoryAge": [
+    {
+      "type": 0,
+      "value": "Âge conseillé maximal"
+    }
+  ],
+  "web.profiles.editor.maxContentRating": [
+    {
+      "type": 0,
+      "value": "Classification maximale du contenu"
+    }
+  ],
+  "web.profiles.editor.maxPlaybackQuality": [
+    {
+      "type": 0,
+      "value": "Qualité de lecture maximale"
+    }
+  ],
+  "web.profiles.editor.moreOptions": [
+    {
+      "type": 0,
+      "value": "Plus d’options"
+    }
+  ],
+  "web.profiles.editor.name": [
+    {
+      "type": 0,
+      "value": "Nom"
+    }
+  ],
+  "web.profiles.editor.nameRequired": [
+    {
+      "type": 0,
+      "value": "Saisissez un nom de profil."
+    }
+  ],
+  "web.profiles.editor.newPin": [
+    {
+      "type": 0,
+      "value": "Nouveau PIN"
+    }
+  ],
+  "web.profiles.editor.pinInvalid": [
+    {
+      "type": 0,
+      "value": "Le PIN doit comporter exactement 4 chiffres."
+    }
+  ],
+  "web.profiles.editor.pinOptional": [
+    {
+      "type": 0,
+      "value": "PIN (facultatif)"
+    }
+  ],
+  "web.profiles.editor.pinPlaceholder": [
+    {
+      "type": 0,
+      "value": "4 chiffres"
+    }
+  ],
+  "web.profiles.editor.pinRemoved": [
+    {
+      "type": 0,
+      "value": "Le PIN sera supprimé"
+    }
+  ],
+  "web.profiles.editor.pinRemovedOnSave": [
+    {
+      "type": 0,
+      "value": "Le PIN sera supprimé à l’enregistrement"
+    }
+  ],
+  "web.profiles.editor.presets": [
+    {
+      "type": 0,
+      "value": "Avatars prédéfinis"
+    }
+  ],
+  "web.profiles.editor.presetsHint": [
+    {
+      "type": 0,
+      "value": "Choisissez un style DiceBear, générez des options amusantes en mode aléatoire ou laissez vide pour garder les initiales. Une image importée remplace les avatars prédéfinis."
+    }
+  ],
+  "web.profiles.editor.presetsShowing": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": ". "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " option affichée actuellement."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": ". "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " d’options affichées actuellement."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": ". "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " options affichées actuellement."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.editor.preview": [
+    {
+      "type": 0,
+      "value": "Aperçu"
+    }
+  ],
+  "web.profiles.editor.profileSection": [
+    {
+      "type": 0,
+      "value": "Profil"
+    }
+  ],
+  "web.profiles.editor.profileSectionHint": [
+    {
+      "type": 0,
+      "value": "Choisissez un avatar et les informations de base."
+    }
+  ],
+  "web.profiles.editor.removePin": [
+    {
+      "type": 0,
+      "value": "Supprimer le PIN"
+    }
+  ],
+  "web.profiles.editor.requestsAllowed": [
+    {
+      "type": 0,
+      "value": "Autoriser les demandes"
+    }
+  ],
+  "web.profiles.editor.requestsAllowedHint": [
+    {
+      "type": 0,
+      "value": "Permet à ce profil de parcourir les titres qui ne sont pas dans la bibliothèque et de les demander. Pour ces titres, la classification du contenu ne s’appuie que sur leur classification américaine, et la limite d’âge conseillé ne s’applique pas."
+    }
+  ],
+  "web.profiles.editor.restrictLibraries": [
+    {
+      "type": 0,
+      "value": "Restreindre les bibliothèques"
+    }
+  ],
+  "web.profiles.editor.restrictLibrariesHint": [
+    {
+      "type": 0,
+      "value": "Limitez ce profil à certaines bibliothèques."
+    }
+  ],
+  "web.profiles.editor.save": [
+    {
+      "type": 0,
+      "value": "Enregistrer le profil"
+    }
+  ],
+  "web.profiles.editor.saving": [
+    {
+      "type": 0,
+      "value": "Enregistrement…"
+    }
+  ],
+  "web.profiles.editor.titleEdit": [
+    {
+      "type": 0,
+      "value": "Modifier le profil"
+    }
+  ],
+  "web.profiles.editor.titleNew": [
+    {
+      "type": 0,
+      "value": "Nouveau profil"
+    }
+  ],
+  "web.profiles.editor.uploadsUnavailable": [
+    {
+      "type": 0,
+      "value": "Les images importées ne sont pas disponibles"
+    }
+  ],
+  "web.profiles.editor.uploadsUnavailableHint": [
+    {
+      "type": 0,
+      "value": "Configurez un stockage S3 privé pour les avatars afin d’autoriser l’importation d’avatars de profil."
+    }
+  ],
+  "web.profiles.helpers.access.advisoryAgeMax": [
+    {
+      "type": 0,
+      "value": "Âge conseillé "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": " ans max"
+    }
+  ],
+  "web.profiles.helpers.access.advisoryAgeMaxRatedOnly": [
+    {
+      "type": 0,
+      "value": "Âge conseillé "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": " ans max, titres classés uniquement"
+    }
+  ],
+  "web.profiles.helpers.access.allLibraries": [
+    {
+      "type": 0,
+      "value": "Toutes les bibliothèques"
+    }
+  ],
+  "web.profiles.helpers.access.anyQuality": [
+    {
+      "type": 0,
+      "value": "Toute qualité"
+    }
+  ],
+  "web.profiles.helpers.access.libraries": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " bibliothèque"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de bibliothèques"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " bibliothèques"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.helpers.access.noRequests": [
+    {
+      "type": 0,
+      "value": "Aucune demande"
+    }
+  ],
+  "web.profiles.helpers.access.quality": [
+    {
+      "type": 0,
+      "value": "Qualité "
+    },
+    {
+      "type": 1,
+      "value": "quality"
+    }
+  ],
+  "web.profiles.helpers.advisoryAge.agesAndUnder": [
+    {
+      "type": 6,
+      "value": "age",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "age_text"
+            },
+            {
+              "type": 0,
+              "value": " an et moins"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "age_text"
+            },
+            {
+              "type": 0,
+              "value": " ans et moins"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "age_text"
+            },
+            {
+              "type": 0,
+              "value": " ans et moins"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.helpers.advisoryAge.noLimit": [
+    {
+      "type": 0,
+      "value": "Aucune limite"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.botttsNeutral.label": [
+    {
+      "type": 0,
+      "value": "Bottts Neutral"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.botttsNeutral.summary": [
+    {
+      "type": 0,
+      "value": "Icônes mignonnes de robots modulaires"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.funEmoji.label": [
+    {
+      "type": 0,
+      "value": "Fun Emoji"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.funEmoji.summary": [
+    {
+      "type": 0,
+      "value": "Grands visages colorés, lisibles au premier coup d’œil"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.identicon.label": [
+    {
+      "type": 0,
+      "value": "Identicon"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.identicon.summary": [
+    {
+      "type": 0,
+      "value": "Motifs géométriques, techniques et très contrastés"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.initials.label": [
+    {
+      "type": 0,
+      "value": "Initiales"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.initials.summary": [
+    {
+      "type": 0,
+      "value": "Avatars épurés à base de lettres sur fonds vifs"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.pixelArtNeutral.label": [
+    {
+      "type": 0,
+      "value": "Pixel Art Neutral"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.pixelArtNeutral.summary": [
+    {
+      "type": 0,
+      "value": "Visages rétro en pixels, très variés"
+    }
+  ],
+  "web.profiles.helpers.contentRating.any": [
+    {
+      "type": 0,
+      "value": "Tout contenu"
+    }
+  ],
+  "web.profiles.helpers.contentRating.max": [
+    {
+      "type": 1,
+      "value": "rating"
+    },
+    {
+      "type": 0,
+      "value": " max"
+    }
+  ],
+  "web.profiles.helpers.quality.any": [
+    {
+      "type": 0,
+      "value": "Illimitée"
+    }
+  ],
+  "web.profiles.helpers.quality.anyDescription": [
+    {
+      "type": 0,
+      "value": "Autoriser toutes les résolutions"
+    }
+  ],
+  "web.profiles.helpers.quality.fourKDescription": [
+    {
+      "type": 0,
+      "value": "Autoriser la 4K et les versions inférieures"
+    }
+  ],
+  "web.profiles.helpers.quality.standard": [
+    {
+      "type": 0,
+      "value": "Standard"
+    }
+  ],
+  "web.profiles.helpers.quality.standardDescription": [
+    {
+      "type": 0,
+      "value": "Masquer les versions 4K et supérieures"
+    }
+  ],
   "web.profiles.libraries.count": [
     {
       "type": 6,
@@ -14260,6 +14902,30 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.libraryAccess.allLibraries": [
+    {
+      "type": 0,
+      "value": "Toutes les bibliothèques"
+    }
+  ],
+  "web.profiles.libraryAccess.disabled": [
+    {
+      "type": 0,
+      "value": "Désactivé"
+    }
+  ],
+  "web.profiles.libraryAccess.label": [
+    {
+      "type": 0,
+      "value": "Accès aux bibliothèques"
+    }
+  ],
+  "web.profiles.libraryAccess.primaryNote": [
+    {
+      "type": 0,
+      "value": "Le profil principal voit toutes les bibliothèques auxquelles le compte a accès. Il peut masquer des bibliothèques dans Paramètres → Bibliothèques."
     }
   ],
   "web.profiles.librarySelect.libraryFallback": [
@@ -14352,6 +15018,18 @@
       "value": "second"
     }
   ],
+  "web.profiles.picker.add": [
+    {
+      "type": 0,
+      "value": "Ajouter un profil"
+    }
+  ],
+  "web.profiles.picker.addNeedsPin": [
+    {
+      "type": 0,
+      "value": "L’ajout d’un profil nécessite le PIN du profil principal."
+    }
+  ],
   "web.profiles.picker.documentTitle": [
     {
       "type": 0,
@@ -14366,6 +15044,12 @@
     {
       "type": 0,
       "value": " (protégé par PIN)"
+    }
+  ],
+  "web.profiles.picker.primaryMissing": [
+    {
+      "type": 0,
+      "value": "Impossible de trouver le profil principal nécessaire pour gérer les profils."
     }
   ],
   "web.profiles.picker.title": [
@@ -17686,6 +18370,187 @@
     {
       "type": 0,
       "value": "Wi-Fi"
+    }
+  ],
+  "web.settings.profiles.badge.current": [
+    {
+      "type": 0,
+      "value": "Actuel"
+    }
+  ],
+  "web.settings.profiles.badge.kids": [
+    {
+      "type": 0,
+      "value": "Enfants"
+    }
+  ],
+  "web.settings.profiles.badge.pin": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.settings.profiles.badge.primary": [
+    {
+      "type": 0,
+      "value": "Principal"
+    }
+  ],
+  "web.settings.profiles.delete": [
+    {
+      "type": 0,
+      "value": "Supprimer"
+    }
+  ],
+  "web.settings.profiles.deleteDescription": [
+    {
+      "type": 0,
+      "value": "Supprimer le profil « "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " » ? Cette action est irréversible."
+    }
+  ],
+  "web.settings.profiles.deleteGuard.active": [
+    {
+      "type": 0,
+      "value": "Passez à un autre profil avant de supprimer celui-ci."
+    }
+  ],
+  "web.settings.profiles.deleteGuard.lastProfile": [
+    {
+      "type": 0,
+      "value": "Au moins un profil est requis."
+    }
+  ],
+  "web.settings.profiles.deleteGuard.primary": [
+    {
+      "type": 0,
+      "value": "Le profil principal ne peut être retiré qu’en supprimant le compte."
+    }
+  ],
+  "web.settings.profiles.deleteTitle": [
+    {
+      "type": 0,
+      "value": "Supprimer le profil"
+    }
+  ],
+  "web.settings.profiles.edit": [
+    {
+      "type": 0,
+      "value": "Modifier"
+    }
+  ],
+  "web.settings.profiles.empty.body": [
+    {
+      "type": 0,
+      "value": "Créez un profil pour gérer l’accès et l’identité de lecture."
+    }
+  ],
+  "web.settings.profiles.empty.title": [
+    {
+      "type": 0,
+      "value": "Aucun profil pour l’instant"
+    }
+  ],
+  "web.settings.profiles.limitReached": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Ce compte peut avoir "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " profil. Un admin peut augmenter la limite."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Ce compte peut avoir "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " de profils. Un admin peut augmenter la limite."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Ce compte peut avoir "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " profils. Un admin peut augmenter la limite."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.profiles.newProfile": [
+    {
+      "type": 0,
+      "value": "Nouveau profil"
+    }
+  ],
+  "web.settings.profiles.savedPinFailed": [
+    {
+      "type": 0,
+      "value": "Profil enregistré, mais la vérification du PIN a échoué"
+    }
+  ],
+  "web.settings.profiles.savedWithLockout": [
+    {
+      "type": 0,
+      "value": "Profil enregistré. "
+    },
+    {
+      "type": 1,
+      "value": "lockout"
+    }
+  ],
+  "web.settings.profiles.subtitle": [
+    {
+      "type": 0,
+      "value": "Gérez les noms de profil, les PIN et les règles d’accès."
+    }
+  ],
+  "web.settings.profiles.title": [
+    {
+      "type": 0,
+      "value": "Profils"
+    }
+  ],
+  "web.settings.profiles.use": [
+    {
+      "type": 0,
+      "value": "Utiliser"
     }
   ],
   "web.settings.resetButton.label": [

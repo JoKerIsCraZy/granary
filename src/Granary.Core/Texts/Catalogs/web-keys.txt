@@ -1255,6 +1255,15 @@ web.common.toast.collections.deleteFailed
 
 # More of the Collections page's words, as above under web.collections.admin.editCollection.
 web.common.toast.collections.deleted
+web.common.toast.profiles.avatarRemoveFailed
+web.common.toast.profiles.avatarRemoved
+web.common.toast.profiles.avatarUpdated
+web.common.toast.profiles.avatarUploadFailed
+web.common.toast.profiles.created
+web.common.toast.profiles.deleteFailed
+web.common.toast.profiles.deleted
+web.common.toast.profiles.saveFailed
+web.common.toast.profiles.updated
 
 # A title's page, in the words of the web's detail pages (pages/ItemDetail: the content pages, DetailHero, ActionBar,
 # MetadataBadges, the season and episode rows, ExtrasSection, TrailersSection, TrailerModal, the Version, Audio and Subs
@@ -2001,12 +2010,88 @@ web.player.watchTogether.viewerCount
 
 # More of the player's words, as above under bufferingQuality.autoLimited.
 web.player.watchTogether.viewersLabel
+web.profiles.editor.accessSection
+web.profiles.editor.accessSectionHint
+web.profiles.editor.advisoryAgeHelp
+web.profiles.editor.advisoryAgeHelpFallback
+web.profiles.editor.avatarAlt
+web.profiles.editor.customUpload
+web.profiles.editor.customUploadSelected
+web.profiles.editor.description
+web.profiles.editor.hideWithoutAge
+web.profiles.editor.hideWithoutAgeHint
+web.profiles.editor.initialsFallback
+web.profiles.editor.keepPin
+web.profiles.editor.kids
+web.profiles.editor.kidsHint
+web.profiles.editor.librariesRequired
+web.profiles.editor.maxAdvisoryAge
+web.profiles.editor.maxContentRating
+web.profiles.editor.maxPlaybackQuality
+web.profiles.editor.moreOptions
+web.profiles.editor.name
+web.profiles.editor.nameRequired
+web.profiles.editor.newPin
+web.profiles.editor.pinInvalid
+web.profiles.editor.pinOptional
+web.profiles.editor.pinPlaceholder
+web.profiles.editor.pinRemoved
+web.profiles.editor.pinRemovedOnSave
+web.profiles.editor.presets
+web.profiles.editor.presetsHint
+web.profiles.editor.presetsShowing
+web.profiles.editor.preview
+web.profiles.editor.profileSection
+web.profiles.editor.profileSectionHint
+web.profiles.editor.removePin
+web.profiles.editor.requestsAllowed
+web.profiles.editor.requestsAllowedHint
+web.profiles.editor.restrictLibraries
+web.profiles.editor.restrictLibrariesHint
+web.profiles.editor.save
+web.profiles.editor.saving
+web.profiles.editor.titleEdit
+web.profiles.editor.titleNew
+web.profiles.editor.uploadsUnavailable
+web.profiles.editor.uploadsUnavailableHint
+web.profiles.helpers.access.advisoryAgeMax
+web.profiles.helpers.access.advisoryAgeMaxRatedOnly
+web.profiles.helpers.access.allLibraries
+web.profiles.helpers.access.anyQuality
+web.profiles.helpers.access.libraries
+web.profiles.helpers.access.noRequests
+web.profiles.helpers.access.quality
+web.profiles.helpers.advisoryAge.agesAndUnder
+web.profiles.helpers.advisoryAge.noLimit
+web.profiles.helpers.avatar.style.botttsNeutral.label
+web.profiles.helpers.avatar.style.botttsNeutral.summary
+web.profiles.helpers.avatar.style.funEmoji.label
+web.profiles.helpers.avatar.style.funEmoji.summary
+web.profiles.helpers.avatar.style.identicon.label
+web.profiles.helpers.avatar.style.identicon.summary
+web.profiles.helpers.avatar.style.initials.label
+web.profiles.helpers.avatar.style.initials.summary
+web.profiles.helpers.avatar.style.pixelArtNeutral.label
+web.profiles.helpers.avatar.style.pixelArtNeutral.summary
+web.profiles.helpers.contentRating.any
+web.profiles.helpers.contentRating.max
+web.profiles.helpers.quality.any
+web.profiles.helpers.quality.anyDescription
+web.profiles.helpers.quality.fourKDescription
+web.profiles.helpers.quality.standard
+web.profiles.helpers.quality.standardDescription
 
 # More of the collection editor's words, as above under catalog.sort.author.
 web.profiles.libraries.count
+web.profiles.libraryAccess.allLibraries
+web.profiles.libraryAccess.disabled
+web.profiles.libraryAccess.label
+web.profiles.libraryAccess.primaryNote
 web.profiles.librarySelect.libraryFallback
 web.profiles.librarySelect.more
 web.profiles.librarySelect.pair
+web.profiles.picker.add
+web.profiles.picker.addNeedsPin
 
 # The profile picker and its PIN prompt, in the words of the web's Profiles page and ProfilePinDialog (a lockout as
 # components/profiles/pinLockout.ts): src/Granary.App/Views/ProfilePickerPage.xaml, PinPromptTitle, WrongPin and
@@ -2014,6 +2099,7 @@ web.profiles.librarySelect.pair
 # src/Granary.Core/ViewModels/ProfileItemViewModel.cs.
 web.profiles.picker.documentTitle
 web.profiles.picker.pinProtected
+web.profiles.picker.primaryMissing
 web.profiles.picker.title
 web.profiles.pin.incorrect
 web.profiles.pin.label
@@ -2449,6 +2535,26 @@ web.settings.playbackConnection.transport.cellular
 web.settings.playbackConnection.transport.ethernet
 web.settings.playbackConnection.transport.unknown
 web.settings.playbackConnection.transport.wifi
+web.settings.profiles.badge.current
+web.settings.profiles.badge.kids
+web.settings.profiles.badge.pin
+web.settings.profiles.badge.primary
+web.settings.profiles.delete
+web.settings.profiles.deleteDescription
+web.settings.profiles.deleteGuard.active
+web.settings.profiles.deleteGuard.lastProfile
+web.settings.profiles.deleteGuard.primary
+web.settings.profiles.deleteTitle
+web.settings.profiles.edit
+web.settings.profiles.empty.body
+web.settings.profiles.empty.title
+web.settings.profiles.limitReached
+web.settings.profiles.newProfile
+web.settings.profiles.savedPinFailed
+web.settings.profiles.savedWithLockout
+web.settings.profiles.subtitle
+web.settings.profiles.title
+web.settings.profiles.use
 web.settings.resetButton.label
 # Settings' search box at the top of its sidebar (src/Granary.App/Views/SettingsPage.xaml(.cs) and
 # src/Granary.Core/ViewModels/Settings/SettingsSearchViewModel.cs), as the web's SettingsSearchInput.tsx and SettingsSidebar.tsx.

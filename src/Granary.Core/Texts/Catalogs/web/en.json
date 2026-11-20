@@ -8610,6 +8610,60 @@
       "value": "Collection deleted"
     }
   ],
+  "web.common.toast.profiles.avatarRemoveFailed": [
+    {
+      "type": 0,
+      "value": "Failed to remove avatar"
+    }
+  ],
+  "web.common.toast.profiles.avatarRemoved": [
+    {
+      "type": 0,
+      "value": "Avatar removed"
+    }
+  ],
+  "web.common.toast.profiles.avatarUpdated": [
+    {
+      "type": 0,
+      "value": "Avatar updated"
+    }
+  ],
+  "web.common.toast.profiles.avatarUploadFailed": [
+    {
+      "type": 0,
+      "value": "Failed to upload avatar"
+    }
+  ],
+  "web.common.toast.profiles.created": [
+    {
+      "type": 0,
+      "value": "Profile created"
+    }
+  ],
+  "web.common.toast.profiles.deleteFailed": [
+    {
+      "type": 0,
+      "value": "Failed to delete"
+    }
+  ],
+  "web.common.toast.profiles.deleted": [
+    {
+      "type": 0,
+      "value": "Profile deleted"
+    }
+  ],
+  "web.common.toast.profiles.saveFailed": [
+    {
+      "type": 0,
+      "value": "Failed to save profile"
+    }
+  ],
+  "web.common.toast.profiles.updated": [
+    {
+      "type": 0,
+      "value": "Profile updated"
+    }
+  ],
   "web.common.toast.subtitles.resetPreferenceFailed": [
     {
       "type": 0,
@@ -13319,6 +13373,558 @@
       "value": "Viewers"
     }
   ],
+  "web.profiles.editor.accessSection": [
+    {
+      "type": 0,
+      "value": "Access"
+    }
+  ],
+  "web.profiles.editor.accessSectionHint": [
+    {
+      "type": 0,
+      "value": "Content limits and library visibility for this profile."
+    }
+  ],
+  "web.profiles.editor.advisoryAgeHelp": [
+    {
+      "type": 0,
+      "value": "Hides titles an advisory service such as Common Sense Media recommends for older viewers."
+    }
+  ],
+  "web.profiles.editor.advisoryAgeHelpFallback": [
+    {
+      "type": 0,
+      "value": "Hides titles an advisory service such as Common Sense Media recommends for older viewers. Titles without an advisory age are limited by the content rating alone."
+    }
+  ],
+  "web.profiles.editor.avatarAlt": [
+    {
+      "type": 0,
+      "value": "Profile avatar"
+    }
+  ],
+  "web.profiles.editor.customUpload": [
+    {
+      "type": 0,
+      "value": "Custom upload"
+    }
+  ],
+  "web.profiles.editor.customUploadSelected": [
+    {
+      "type": 0,
+      "value": "Custom upload selected"
+    }
+  ],
+  "web.profiles.editor.description": [
+    {
+      "type": 0,
+      "value": "Set the avatar, name, PIN, and access rules for this profile."
+    }
+  ],
+  "web.profiles.editor.hideWithoutAge": [
+    {
+      "type": 0,
+      "value": "Hide titles without an advisory age"
+    }
+  ],
+  "web.profiles.editor.hideWithoutAgeHint": [
+    {
+      "type": 0,
+      "value": "Shows only titles rated at or under this age. Ages are looked up over time, so this profile may see few titles at first."
+    }
+  ],
+  "web.profiles.editor.initialsFallback": [
+    {
+      "type": 0,
+      "value": "Initials fallback"
+    }
+  ],
+  "web.profiles.editor.keepPin": [
+    {
+      "type": 0,
+      "value": "Keep existing PIN"
+    }
+  ],
+  "web.profiles.editor.kids": [
+    {
+      "type": 0,
+      "value": "Kids profile"
+    }
+  ],
+  "web.profiles.editor.kidsHint": [
+    {
+      "type": 0,
+      "value": "Seeds a safer default rating and library setup."
+    }
+  ],
+  "web.profiles.editor.librariesRequired": [
+    {
+      "type": 0,
+      "value": "Choose at least one library."
+    }
+  ],
+  "web.profiles.editor.maxAdvisoryAge": [
+    {
+      "type": 0,
+      "value": "Maximum advisory age"
+    }
+  ],
+  "web.profiles.editor.maxContentRating": [
+    {
+      "type": 0,
+      "value": "Maximum content rating"
+    }
+  ],
+  "web.profiles.editor.maxPlaybackQuality": [
+    {
+      "type": 0,
+      "value": "Maximum playback quality"
+    }
+  ],
+  "web.profiles.editor.moreOptions": [
+    {
+      "type": 0,
+      "value": "More options"
+    }
+  ],
+  "web.profiles.editor.name": [
+    {
+      "type": 0,
+      "value": "Name"
+    }
+  ],
+  "web.profiles.editor.nameRequired": [
+    {
+      "type": 0,
+      "value": "Enter a profile name."
+    }
+  ],
+  "web.profiles.editor.newPin": [
+    {
+      "type": 0,
+      "value": "New PIN"
+    }
+  ],
+  "web.profiles.editor.pinInvalid": [
+    {
+      "type": 0,
+      "value": "PIN must be exactly 4 digits."
+    }
+  ],
+  "web.profiles.editor.pinOptional": [
+    {
+      "type": 0,
+      "value": "PIN (optional)"
+    }
+  ],
+  "web.profiles.editor.pinPlaceholder": [
+    {
+      "type": 0,
+      "value": "4 digits"
+    }
+  ],
+  "web.profiles.editor.pinRemoved": [
+    {
+      "type": 0,
+      "value": "PIN will be removed"
+    }
+  ],
+  "web.profiles.editor.pinRemovedOnSave": [
+    {
+      "type": 0,
+      "value": "PIN will be removed on save"
+    }
+  ],
+  "web.profiles.editor.presets": [
+    {
+      "type": 0,
+      "value": "Preset avatars"
+    }
+  ],
+  "web.profiles.editor.presetsHint": [
+    {
+      "type": 0,
+      "value": "Pick a DiceBear style, shuffle fun options, or leave it blank to keep initials. A custom upload overrides presets."
+    }
+  ],
+  "web.profiles.editor.presetsShowing": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": ". Showing "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " option right now."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": ". Showing "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " options right now."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.editor.preview": [
+    {
+      "type": 0,
+      "value": "Preview"
+    }
+  ],
+  "web.profiles.editor.profileSection": [
+    {
+      "type": 0,
+      "value": "Profile"
+    }
+  ],
+  "web.profiles.editor.profileSectionHint": [
+    {
+      "type": 0,
+      "value": "Choose an avatar and basic details."
+    }
+  ],
+  "web.profiles.editor.removePin": [
+    {
+      "type": 0,
+      "value": "Remove PIN"
+    }
+  ],
+  "web.profiles.editor.requestsAllowed": [
+    {
+      "type": 0,
+      "value": "Allow requests"
+    }
+  ],
+  "web.profiles.editor.requestsAllowedHint": [
+    {
+      "type": 0,
+      "value": "Lets this profile browse titles that are not in the library and request them. The content rating limits those titles by their US rating only, and the advisory-age limit does not apply to them."
+    }
+  ],
+  "web.profiles.editor.restrictLibraries": [
+    {
+      "type": 0,
+      "value": "Restrict libraries"
+    }
+  ],
+  "web.profiles.editor.restrictLibrariesHint": [
+    {
+      "type": 0,
+      "value": "Limit this profile to a specific set of libraries."
+    }
+  ],
+  "web.profiles.editor.save": [
+    {
+      "type": 0,
+      "value": "Save profile"
+    }
+  ],
+  "web.profiles.editor.saving": [
+    {
+      "type": 0,
+      "value": "Saving..."
+    }
+  ],
+  "web.profiles.editor.titleEdit": [
+    {
+      "type": 0,
+      "value": "Edit profile"
+    }
+  ],
+  "web.profiles.editor.titleNew": [
+    {
+      "type": 0,
+      "value": "New profile"
+    }
+  ],
+  "web.profiles.editor.uploadsUnavailable": [
+    {
+      "type": 0,
+      "value": "Custom uploads are unavailable"
+    }
+  ],
+  "web.profiles.editor.uploadsUnavailableHint": [
+    {
+      "type": 0,
+      "value": "Configure private S3 avatar storage to enable uploaded profile avatars."
+    }
+  ],
+  "web.profiles.helpers.access.advisoryAgeMax": [
+    {
+      "type": 0,
+      "value": "Advisory age "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": " max"
+    }
+  ],
+  "web.profiles.helpers.access.advisoryAgeMaxRatedOnly": [
+    {
+      "type": 0,
+      "value": "Advisory age "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": " max, rated titles only"
+    }
+  ],
+  "web.profiles.helpers.access.allLibraries": [
+    {
+      "type": 0,
+      "value": "All libraries"
+    }
+  ],
+  "web.profiles.helpers.access.anyQuality": [
+    {
+      "type": 0,
+      "value": "Any quality"
+    }
+  ],
+  "web.profiles.helpers.access.libraries": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " library"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " libraries"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.helpers.access.noRequests": [
+    {
+      "type": 0,
+      "value": "No requests"
+    }
+  ],
+  "web.profiles.helpers.access.quality": [
+    {
+      "type": 1,
+      "value": "quality"
+    },
+    {
+      "type": 0,
+      "value": " quality"
+    }
+  ],
+  "web.profiles.helpers.advisoryAge.agesAndUnder": [
+    {
+      "type": 6,
+      "value": "age",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Ages "
+            },
+            {
+              "type": 1,
+              "value": "age_text"
+            },
+            {
+              "type": 0,
+              "value": " and under"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Ages "
+            },
+            {
+              "type": 1,
+              "value": "age_text"
+            },
+            {
+              "type": 0,
+              "value": " and under"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.helpers.advisoryAge.noLimit": [
+    {
+      "type": 0,
+      "value": "No limit"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.botttsNeutral.label": [
+    {
+      "type": 0,
+      "value": "Bottts Neutral"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.botttsNeutral.summary": [
+    {
+      "type": 0,
+      "value": "Cute modular robot-style icons"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.funEmoji.label": [
+    {
+      "type": 0,
+      "value": "Fun Emoji"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.funEmoji.summary": [
+    {
+      "type": 0,
+      "value": "Big, colorful, instantly readable faces"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.identicon.label": [
+    {
+      "type": 0,
+      "value": "Identicon"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.identicon.summary": [
+    {
+      "type": 0,
+      "value": "Geometric, technical, high-contrast patterns"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.initials.label": [
+    {
+      "type": 0,
+      "value": "Initials"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.initials.summary": [
+    {
+      "type": 0,
+      "value": "Clean letter-based avatars with bold backgrounds"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.pixelArtNeutral.label": [
+    {
+      "type": 0,
+      "value": "Pixel Art Neutral"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.pixelArtNeutral.summary": [
+    {
+      "type": 0,
+      "value": "Retro pixel faces with lots of variation"
+    }
+  ],
+  "web.profiles.helpers.contentRating.any": [
+    {
+      "type": 0,
+      "value": "Any content"
+    }
+  ],
+  "web.profiles.helpers.contentRating.max": [
+    {
+      "type": 1,
+      "value": "rating"
+    },
+    {
+      "type": 0,
+      "value": " max"
+    }
+  ],
+  "web.profiles.helpers.quality.any": [
+    {
+      "type": 0,
+      "value": "Any"
+    }
+  ],
+  "web.profiles.helpers.quality.anyDescription": [
+    {
+      "type": 0,
+      "value": "Allow all resolutions"
+    }
+  ],
+  "web.profiles.helpers.quality.fourKDescription": [
+    {
+      "type": 0,
+      "value": "Allow 4K and lower versions"
+    }
+  ],
+  "web.profiles.helpers.quality.standard": [
+    {
+      "type": 0,
+      "value": "Standard"
+    }
+  ],
+  "web.profiles.helpers.quality.standardDescription": [
+    {
+      "type": 0,
+      "value": "Hide 4K and higher versions"
+    }
+  ],
   "web.profiles.libraries.count": [
     {
       "type": 6,
@@ -13351,6 +13957,30 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.libraryAccess.allLibraries": [
+    {
+      "type": 0,
+      "value": "All libraries"
+    }
+  ],
+  "web.profiles.libraryAccess.disabled": [
+    {
+      "type": 0,
+      "value": "Disabled"
+    }
+  ],
+  "web.profiles.libraryAccess.label": [
+    {
+      "type": 0,
+      "value": "Library Access"
+    }
+  ],
+  "web.profiles.libraryAccess.primaryNote": [
+    {
+      "type": 0,
+      "value": "The primary profile sees every library the account can access. It can hide libraries in Settings → Libraries."
     }
   ],
   "web.profiles.librarySelect.libraryFallback": [
@@ -13423,6 +14053,18 @@
       "value": "second"
     }
   ],
+  "web.profiles.picker.add": [
+    {
+      "type": 0,
+      "value": "Add profile"
+    }
+  ],
+  "web.profiles.picker.addNeedsPin": [
+    {
+      "type": 0,
+      "value": "Adding a profile needs the primary profile's PIN."
+    }
+  ],
   "web.profiles.picker.documentTitle": [
     {
       "type": 0,
@@ -13437,6 +14079,12 @@
     {
       "type": 0,
       "value": " (PIN protected)"
+    }
+  ],
+  "web.profiles.picker.primaryMissing": [
+    {
+      "type": 0,
+      "value": "Couldn't find the primary profile needed to manage profiles."
     }
   ],
   "web.profiles.picker.title": [
@@ -16445,6 +17093,172 @@
     {
       "type": 0,
       "value": "Wi-Fi"
+    }
+  ],
+  "web.settings.profiles.badge.current": [
+    {
+      "type": 0,
+      "value": "Current"
+    }
+  ],
+  "web.settings.profiles.badge.kids": [
+    {
+      "type": 0,
+      "value": "Kids"
+    }
+  ],
+  "web.settings.profiles.badge.pin": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.settings.profiles.badge.primary": [
+    {
+      "type": 0,
+      "value": "Primary"
+    }
+  ],
+  "web.settings.profiles.delete": [
+    {
+      "type": 0,
+      "value": "Delete"
+    }
+  ],
+  "web.settings.profiles.deleteDescription": [
+    {
+      "type": 0,
+      "value": "Delete profile \""
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "\"? This action cannot be undone."
+    }
+  ],
+  "web.settings.profiles.deleteGuard.active": [
+    {
+      "type": 0,
+      "value": "Switch to another profile before deleting this one."
+    }
+  ],
+  "web.settings.profiles.deleteGuard.lastProfile": [
+    {
+      "type": 0,
+      "value": "At least one profile is required."
+    }
+  ],
+  "web.settings.profiles.deleteGuard.primary": [
+    {
+      "type": 0,
+      "value": "The primary profile can only be removed by deleting the account."
+    }
+  ],
+  "web.settings.profiles.deleteTitle": [
+    {
+      "type": 0,
+      "value": "Delete profile"
+    }
+  ],
+  "web.settings.profiles.edit": [
+    {
+      "type": 0,
+      "value": "Edit"
+    }
+  ],
+  "web.settings.profiles.empty.body": [
+    {
+      "type": 0,
+      "value": "Create a profile to manage access and playback identity."
+    }
+  ],
+  "web.settings.profiles.empty.title": [
+    {
+      "type": 0,
+      "value": "No profiles yet"
+    }
+  ],
+  "web.settings.profiles.limitReached": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "This account can have "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " profile. An administrator can raise the limit."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "This account can have "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " profiles. An administrator can raise the limit."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.profiles.newProfile": [
+    {
+      "type": 0,
+      "value": "New profile"
+    }
+  ],
+  "web.settings.profiles.savedPinFailed": [
+    {
+      "type": 0,
+      "value": "Profile saved, but PIN verification failed"
+    }
+  ],
+  "web.settings.profiles.savedWithLockout": [
+    {
+      "type": 0,
+      "value": "Profile saved. "
+    },
+    {
+      "type": 1,
+      "value": "lockout"
+    }
+  ],
+  "web.settings.profiles.subtitle": [
+    {
+      "type": 0,
+      "value": "Manage profile names, PINs, and access rules."
+    }
+  ],
+  "web.settings.profiles.title": [
+    {
+      "type": 0,
+      "value": "Profiles"
+    }
+  ],
+  "web.settings.profiles.use": [
+    {
+      "type": 0,
+      "value": "Use"
     }
   ],
   "web.settings.resetButton.label": [
