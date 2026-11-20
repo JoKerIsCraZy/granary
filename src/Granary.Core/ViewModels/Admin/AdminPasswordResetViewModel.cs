@@ -195,7 +195,7 @@ public sealed partial class AdminPasswordResetViewModel(AdminUsersApi users, ILo
     {
         var fresh = await users.GetAsync(actor, _account.Id, cancellationToken);
         await users.UpdateAsync(actor, _account.Id, fresh.Version,
-            new AdminUserChange { Password = Password, RequirePasswordChange = MustChange ? true : null }, cancellationToken);
+            new AdminUserChange { Password = Password, RequirePasswordChange = MustChange }, cancellationToken);
         Password = "";
         Outcome = MustChange
             ? AppText.Get("web.admin.users.passwordResetDialog.passwordSetMustChange", ("username", _account.Username))

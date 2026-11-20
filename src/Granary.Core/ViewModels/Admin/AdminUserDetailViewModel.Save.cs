@@ -59,8 +59,16 @@ public sealed partial class AdminUserDetailViewModel
         try
         {
             await _users.UpdateAsync(actor, account.Id, _version, change);
-            await ReadAsync(keepDrafts: false);
+            // The version just sent is spent: nothing more goes until the account is read again.
+            _version = "";
             card.Saved = AppText.Get("web.admin.users.detail.access.card.saved");
+            bool savedSignIn = ReferenceEquals(card, SignInCard);
+            if (!await ReadAsync(keepSignIn: !savedSignIn, keepAccess: savedSignIn) && Account is not null)
+            {
+                // Saved, but not read again: Reload and review reads it before the next change.
+                card.HasConflict = true;
+                card.Error = AppText.Get("web.admin.users.detail.access.card.reloadFailed");
+            }
             return true;
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex))
@@ -81,7 +89,14 @@ public sealed partial class AdminUserDetailViewModel
     /// <summary>Reload and review: the account read again, the card's edits kept on it.</summary>
     internal async Task ReviewAsync(AdminEditCard card)
     {
-        await ReadAsync(keepDrafts: true);
-        card.Clear();
+        // A review that could not read the account leaves Reload and review where it is.
+        if (await ReadAsync(keepDrafts: true))
+        {
+            card.Clear();
+        }
+        else if (Account is not null)
+        {
+            card.Error = AppText.Get("web.admin.users.detail.access.card.reloadFailed");
+        }
     }
 }

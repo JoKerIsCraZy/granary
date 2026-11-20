@@ -18,7 +18,7 @@ public sealed class AdminUsersViewModelTests
     private async Task<AdminUsersViewModel> LoadedAsync()
     {
         var users = Create();
-        await users.LoadAsync();
+        await users.OpenAsync();
         return users;
     }
 
@@ -119,7 +119,7 @@ public sealed class AdminUsersViewModelTests
         Assert.Equal("Unknown group", users.Rows[0].GroupText);
 
         _silo.Map("api/v2/admin/users", _ => BrowseFakeSilo.Problem(500, "internal_error"));
-        await users.LoadAsync();
+        await users.OpenAsync();
         Assert.True(users.LoadFailed);
         // What was read before stays up.
         Assert.Equal(LibraryLoadState.Ready, users.State);

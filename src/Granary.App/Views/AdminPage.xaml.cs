@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 
 namespace Granary.App.Views;
@@ -154,6 +155,16 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
         }
     }
 
+    // Users picked while it is already picked, which changes no selection: from an account or the Invitations tab back to the
+    // list, as the web's sidebar link does.
+    private void OnUsersTapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (ReferenceEquals(ManagePages.SelectedItem, sender) && (_detail is not null || _users?.ShowsInvitations == true))
+        {
+            Open(AdminPages.Users);
+        }
+    }
+
     private Task ShowUsersAsync()
     {
         var users = _users ??= CreateUsers();
@@ -189,7 +200,7 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
             };
             Show(detail);
             var list = users.ViewModel;
-            await detail.OpenAsync(id, list.Capabilities, list.Groups, list.ViewerIsOwner);
+            await detail.OpenAsync(list.Actor, id, list.Capabilities, list.Groups, list.ViewerIsOwner);
         }
         catch (Exception ex)
         {

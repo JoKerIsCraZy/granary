@@ -78,7 +78,7 @@
                         <!-- The web's Users topic, with the one page of it Granary has. -->
                         <ListView x:Name="ManagePages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
                                   AutomationProperties.Name="{x:Bind ManageHeading}">
-                            <ListViewItem Tag="users" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.nav.page.users.label')}">
+                            <ListViewItem Tag="users" Tapped="OnUsersTapped" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.nav.page.users.label')}">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <FontIcon Glyph="&#xE716;" FontSize="14" />
                                     <TextBlock Text="{x:Bind t:AppText.Get('web.admin.shell.nav.page.users.label')}" FontSize="14" />

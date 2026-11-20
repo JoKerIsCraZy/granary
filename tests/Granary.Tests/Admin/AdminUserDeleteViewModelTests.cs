@@ -79,4 +79,17 @@ public sealed class AdminUserDeleteViewModelTests
         Assert.Equal([(HttpMethod.Put, "\"v1\"")], _writes);
         Assert.Equal("""{"enabled":false}""", _silo.To("api/v2/admin/users/3").Last().Body);
     }
+    [Fact]
+    public async Task AnAccountThatBecameTheOwner_CannotBeDeleted()
+    {
+        _silo.Map("api/v2/admin/users/3", request => request.Method == HttpMethod.Get
+            ? AdminUserPayloads.Versioned(AdminUserPayloads.User().Replace("\"is_owner\": false", "\"is_owner\": true", StringComparison.Ordinal))
+            : BrowseFakeSilo.NoContent());
+        var dialog = await StartedAsync();
+        dialog.Typed = "ana";
+
+        Assert.False(dialog.CanDelete);
+        Assert.False(await dialog.DeleteAsync(TestContext.Current.CancellationToken));
+        Assert.DoesNotContain(_silo.To("api/v2/admin/users/3"), request => request.Method == HttpMethod.Delete);
+    }
 }

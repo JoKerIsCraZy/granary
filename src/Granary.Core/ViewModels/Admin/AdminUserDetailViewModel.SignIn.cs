@@ -100,7 +100,8 @@ public sealed partial class AdminUserDetailViewModel
             return Task.CompletedTask;
         }
         string? validation = Username.Trim().Length == 0 ? AppText.Get("web.admin.users.detail.access.signIn.enterUsername")
-            : !EmailAddress.IsValid(Email) ? EmailAddress.InvalidText
+            // An address is checked only when it changes: an account may have none.
+            : Email != account.Email && !EmailAddress.IsValid(Email) ? EmailAddress.InvalidText
             : null;
         var change = new AdminUserChange
         {
@@ -116,26 +117,32 @@ public sealed partial class AdminUserDetailViewModel
     [RelayCommand]
     private void CancelSignIn()
     {
-        ResetSignIn(keepDrafts: false);
+        ResetSignIn(null);
         SignInCard.Clear();
     }
 
     [RelayCommand]
     private Task ReviewSignInAsync() => ReviewAsync(SignInCard);
 
-    private void ResetSignIn(bool keepDrafts)
+    // The fields edited on the account read before (null where untouched), to keep over a new read.
+    private sealed record SignInEdits(string? Username, string? Email, bool? IsAdminRole, bool? CanSignIn);
+
+    private SignInEdits? SignInDraft(AdminUser? before) => before is null ? null : new SignInEdits(
+        Username != before.Username ? Username : null,
+        Email != before.Email ? Email : null,
+        IsAdminRole != before.IsAdmin ? IsAdminRole : null,
+        CanSignIn != before.Enabled ? CanSignIn : null);
+
+    private void ResetSignIn(SignInEdits? edits)
     {
         if (Account is not { } account)
         {
             return;
         }
-        if (!keepDrafts || !HasSignInChanges)
-        {
-            Username = account.Username;
-            Email = account.Email;
-            IsAdminRole = account.IsAdmin;
-            CanSignIn = account.Enabled;
-        }
+        Username = edits?.Username ?? account.Username;
+        Email = edits?.Email ?? account.Email;
+        IsAdminRole = edits?.IsAdminRole ?? account.IsAdmin;
+        CanSignIn = edits?.CanSignIn ?? account.Enabled;
         OnPropertyChanged(nameof(HasSignInChanges));
         OnPropertyChanged(nameof(CanEditSignIn));
         OnPropertyChanged(nameof(CanChangeRole));

@@ -5123,6 +5123,12 @@
       "value": "Reload and review"
     }
   ],
+  "web.admin.users.detail.access.card.reloadFailed": [
+    {
+      "type": 0,
+      "value": "Could not reload this account."
+    }
+  ],
   "web.admin.users.detail.access.card.saveFailed": [
     {
       "type": 0,

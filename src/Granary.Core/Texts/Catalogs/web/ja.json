@@ -4736,6 +4736,12 @@
       "value": "再読み込みして確認"
     }
   ],
+  "web.admin.users.detail.access.card.reloadFailed": [
+    {
+      "type": 0,
+      "value": "このアカウントを再読み込みできませんでした。"
+    }
+  ],
   "web.admin.users.detail.access.card.saveFailed": [
     {
       "type": 0,

@@ -6607,6 +6607,12 @@
       "value": "إعادة التحميل والمراجعة"
     }
   ],
+  "web.admin.users.detail.access.card.reloadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة تحميل هذا الحساب."
+    }
+  ],
   "web.admin.users.detail.access.card.saveFailed": [
     {
       "type": 0,

@@ -5131,6 +5131,12 @@
       "value": "Neu laden und prüfen"
     }
   ],
+  "web.admin.users.detail.access.card.reloadFailed": [
+    {
+      "type": 0,
+      "value": "Dieses Konto konnte nicht neu geladen werden."
+    }
+  ],
   "web.admin.users.detail.access.card.saveFailed": [
     {
       "type": 0,

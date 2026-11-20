@@ -1908,8 +1908,11 @@ stream's commands on Activity and what Users does to accounts and invitations.
       libraries (the group's, or the server default without one, or chosen for the account from the server's libraries,
       with "This account won't see any library." when none is ticked), Marker editing and Metadata curation. Until the
       libraries are read the account's own stay as they are. Only the Owner changes an admin's, with the web's note.
-    A change by another administrator meanwhile keeps the edits and says so, with Reload and review; "Saved" after a
-    save. The web's other cards (playback, downloads, requests, the profile limit) and its Overview, Profiles,
+    A change by another administrator meanwhile keeps the edits and says so, with Reload and review, which keeps only
+    the fields edited here and shows the others as they are now; "Saved" after a save, which keeps the other card's
+    edits. A save the page could not read back says "Could not reload this account." with Reload and review, and nothing
+    more is saved until it read the account again. A group made after the list was read shows as "#12" rather than
+    No group. The web's other cards (playback, downloads, requests, the profile limit) and its Overview, Profiles,
     Activity, Downloads and Preferences tabs stay on the web; so does View as.
   - **Reset password** (`AdminPasswordResetDialog`, the web's): email a reset link (to the account's address, where
     email is set up), create a link to share (where the server has its public URL), or set a temporary password ("They
@@ -1919,7 +1922,8 @@ stream's commands on Activity and what Users does to accounts and invitations.
     same dialog with only the temporary password.
   - **Signed-in sessions** (where the server offers them; `AdminUserSessionsViewModel`, the web's admin
     LoginSessionsPanel): the browsers and apps signed in to the account, 50 at a time with Load more sessions, each with
-    its name, last seen, when it signed in and the address; Sign out on one, or Sign out everywhere, each asked first.
+    its name, last seen, when it signed in and the address; Sign out on one, or Sign out everywhere, each asked first. A
+    later page that fails says so and Load more sessions asks for it again.
     The Owner-only note for an account the viewer may not sign out.
   - **Tabs**: the web's line tabs under the header, Users and Invitations; its third, Invite Codes, stays on the web.
     The Invitations tab opens by itself where the admin area is asked for `invitations` (`AdminPages.Invitations`, the

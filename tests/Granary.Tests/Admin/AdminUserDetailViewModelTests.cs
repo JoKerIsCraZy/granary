@@ -24,6 +24,7 @@ public sealed class AdminUserDetailViewModelTests
     private string _account = AdminUserPayloads.User();
     private int _version = 1;
     private int _writeStatus = 204;
+    private int _readStatus = 200;
 
     public AdminUserDetailViewModelTests()
     {
@@ -32,7 +33,7 @@ public sealed class AdminUserDetailViewModelTests
         {
             if (request.Method == HttpMethod.Get)
             {
-                return AdminUserPayloads.Versioned(_account, $"\"v{_version}\"");
+                return _readStatus == 200 ? AdminUserPayloads.Versioned(_account, $"\"v{_version}\"") : BrowseFakeSilo.Problem(_readStatus, "dependency_unavailable");
             }
             string? body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
             _writes.Add((request.Method, request.Headers.TryGetValues("If-Match", out var tags) ? tags.Single() : null, body));
@@ -44,7 +45,7 @@ public sealed class AdminUserDetailViewModelTests
     {
         var detail = new AdminUserDetailViewModel(_session, new AdminUsersApi(_silo.Http), new AdminApi(_silo.Http), _confirmation,
             new ManualTimeProvider(AdminUserPayloads.Now), _silo.Logs.For<AdminUserDetailViewModel>());
-        await detail.OpenAsync("3", Capabilities, Groups, viewerIsOwner);
+        await detail.OpenAsync(AdminActors.Of(_session), "3", Capabilities, Groups, viewerIsOwner);
         return detail;
     }
 
@@ -199,5 +200,96 @@ public sealed class AdminUserDetailViewModelTests
 
         Assert.Equal(LibraryLoadState.Unavailable, detail.State);
         Assert.Null(detail.Header);
+    }
+    [Fact]
+    public async Task AGroupTheListDidNotKnow_StaysTheAccountsGroup()
+    {
+        _account = AdminUserPayloads.User(group: "\"12\"");
+        var detail = await OpenedAsync();
+        Assert.Equal("12", detail.SelectedGroup?.Value);
+        Assert.False(detail.HasAccessChanges);
+
+        detail.MetadataCuration = true;
+        await detail.SaveAccessCommand.ExecuteAsync(null);
+
+        Assert.Equal("""{"permissions":["marker_edit","metadata_curation"]}""", _writes[0].Body);
+    }
+
+    [Fact]
+    public async Task AfterAConflict_TheRetrySendsOnlyWhatWasEdited()
+    {
+        var detail = await OpenedAsync();
+        detail.Username = "ana2";
+        _writeStatus = 412;
+        await detail.SaveSignInCommand.ExecuteAsync(null);
+
+        // Meanwhile another administrator changed the address.
+        _account = AdminUserPayloads.User().Replace("ana@example.com", "ana.work@example.com", StringComparison.Ordinal);
+        _version = 2;
+        await detail.ReviewSignInCommand.ExecuteAsync(null);
+        Assert.Equal(("ana2", "ana.work@example.com"), (detail.Username, detail.Email));
+
+        _writeStatus = 204;
+        await detail.SaveSignInCommand.ExecuteAsync(null);
+        Assert.Equal(("\"v2\"", """{"username":"ana2"}"""), (_writes[^1].IfMatch, _writes[^1].Body));
+    }
+
+    [Fact]
+    public async Task SavingOneCard_KeepsTheOtherCardsEdits()
+    {
+        var detail = await OpenedAsync();
+        detail.Username = "ana2";
+        detail.MetadataCuration = true;
+
+        await detail.SaveSignInCommand.ExecuteAsync(null);
+
+        Assert.True(detail.MetadataCuration);
+        Assert.True(detail.HasAccessChanges);
+    }
+
+    [Fact]
+    public async Task ASaveWhoseRereadFails_WaitsForAReview_BeforeTheNext()
+    {
+        var detail = await OpenedAsync();
+        detail.Username = "ana2";
+        _readStatus = 503;
+
+        await detail.SaveSignInCommand.ExecuteAsync(null);
+        Assert.Single(_writes);
+        Assert.True(detail.SignInCard.HasConflict);
+        detail.Email = "ana2@example.com";
+        await detail.SaveSignInCommand.ExecuteAsync(null);
+        Assert.Single(_writes);
+
+        await detail.ReviewSignInCommand.ExecuteAsync(null);
+        Assert.True(detail.SignInCard.HasConflict);
+
+        _readStatus = 200;
+        _version = 2;
+        await detail.ReviewSignInCommand.ExecuteAsync(null);
+        Assert.False(detail.SignInCard.HasConflict);
+        await detail.SaveSignInCommand.ExecuteAsync(null);
+        Assert.Equal("\"v2\"", _writes[^1].IfMatch);
+    }
+
+    [Fact]
+    public async Task AnAccountWithoutEmail_SavesItsName()
+    {
+        _account = AdminUserPayloads.User().Replace("\"ana@example.com\"", "\"\"", StringComparison.Ordinal);
+        var detail = await OpenedAsync();
+        detail.Username = "ana2";
+
+        await detail.SaveSignInCommand.ExecuteAsync(null);
+
+        Assert.Equal("""{"username":"ana2"}""", _writes.Single().Body);
+    }
+
+    [Fact]
+    public async Task LibrariesInAnotherOrder_AreNoChange()
+    {
+        _account = AdminUserPayloads.User().Replace("\"library_ids\": null", "\"library_ids\": [\"6\", \"5\"]", StringComparison.Ordinal);
+        var detail = await OpenedAsync();
+
+        Assert.False(detail.HasAccessChanges);
     }
 }

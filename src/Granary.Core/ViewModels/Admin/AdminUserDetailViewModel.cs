@@ -72,11 +72,15 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
         ? AdminUserHeader.For(account, GroupName(account.AccessGroupId), Capabilities, ViewerId, ViewerIsOwner, _time.GetUtcNow())
         : null;
 
-    /// <summary>Opens an account, with what the list read: what the server offers, its groups, and whether the viewer is its Owner.</summary>
-    public async Task OpenAsync(string id, AdminUserCapabilities capabilities, IReadOnlyList<AdminAccessGroup> groups, bool viewerIsOwner)
+    /// <summary>
+    /// Opens an account, with what the list read: the account and profile it acts as, what the server offers, its groups, and
+    /// whether the viewer is its Owner.
+    /// </summary>
+    public async Task OpenAsync(AdminActor? actor, string id, AdminUserCapabilities capabilities, IReadOnlyList<AdminAccessGroup> groups,
+        bool viewerIsOwner)
     {
         _id = id;
-        _actor = AdminActors.Of(_session);
+        _actor = actor;
         Capabilities = capabilities;
         Groups = groups;
         ViewerIsOwner = viewerIsOwner;
@@ -95,11 +99,17 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
     /// <summary>Reads the account again, as after another administrator changed it.</summary>
     public Task ReloadAsync() => ReadAsync(keepDrafts: true);
 
-    internal async Task ReadAsync(bool keepDrafts)
+    internal Task<bool> ReadAsync(bool keepDrafts) => ReadAsync(keepDrafts, keepDrafts);
+
+    /// <summary>
+    /// Reads the account. A card that keeps its drafts keeps only the fields edited on the account read before, so a change
+    /// another administrator made to a field nobody touched here shows, and is not sent back. False when it was not read.
+    /// </summary>
+    internal async Task<bool> ReadAsync(bool keepSignIn, bool keepAccess)
     {
         if (_actor is not { } actor || _id.Length == 0)
         {
-            return;
+            return false;
         }
         _load?.Cancel();
         var load = _load = new CancellationTokenSource();
@@ -108,13 +118,17 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
             var read = await _users.GetAsync(actor, _id, load.Token);
             if (load.Token.IsCancellationRequested)
             {
-                return;
+                return false;
             }
+            var before = Account;
+            var signIn = keepSignIn ? SignInDraft(before) : null;
+            var access = keepAccess ? AccessDraft(before) : null;
             _version = read.Version;
             Account = read.Value;
-            ResetSignIn(keepDrafts);
-            ResetAccess(keepDrafts);
+            ResetSignIn(signIn);
+            ResetAccess(access);
             State = LibraryLoadState.Ready;
+            return true;
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex) && !load.Token.IsCancellationRequested)
         {
@@ -129,10 +143,12 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
             {
                 State = LibraryLoadState.Error;
             }
+            return false;
         }
         catch (Exception) when (load.Token.IsCancellationRequested)
         {
             // A newer read, or the page left.
+            return false;
         }
     }
 

@@ -21,6 +21,8 @@ public sealed partial class AdminUserSessionsViewModel(AdminUsersApi users, ICon
 {
     private AdminUser _account = new();
     private string? _cursor;
+    // Counts the list's renewals: a page asked for before one (a sign-out everywhere, a fresh start) is dropped.
+    private int _generation;
     // The account and profile this was opened as: everything it sends goes only as them.
     private AdminActor? _actor;
 
@@ -63,6 +65,7 @@ public sealed partial class AdminUserSessionsViewModel(AdminUsersApi users, ICon
 
     private async Task ReadFirstAsync()
     {
+        _generation++;
         Sessions.Clear();
         _cursor = null;
         State = LibraryLoadState.Loading;
@@ -115,6 +118,7 @@ public sealed partial class AdminUserSessionsViewModel(AdminUsersApi users, ICon
         try
         {
             await users.SignOutEverywhereAsync(actor, _account.Id);
+            _generation++;
             Sessions.Clear();
             HasMore = false;
             OnPropertyChanged(nameof(IsEmpty));
@@ -133,9 +137,14 @@ public sealed partial class AdminUserSessionsViewModel(AdminUsersApi users, ICon
         {
             return;
         }
+        int generation = _generation;
         try
         {
             var page = await users.ListLoginSessionsAsync(actor, _account.Id, _cursor);
+            if (generation != _generation)
+            {
+                return;
+            }
             var now = time.GetUtcNow();
             var known = Sessions.Select(row => row.Id).ToHashSet(StringComparer.Ordinal);
             foreach (var item in page.Items.Where(item => known.Add(item.Id)))
@@ -149,9 +158,22 @@ public sealed partial class AdminUserSessionsViewModel(AdminUsersApi users, ICon
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
+            if (generation != _generation)
+            {
+                return;
+            }
             logger.LogWarning(ex, "Could not read an account's sessions");
-            State = Sessions.Count > 0 ? LibraryLoadState.Ready : LibraryLoadState.Error;
-            HasMore = false;
+            if (Sessions.Count > 0)
+            {
+                // A later page failed: the ones shown stay, and Load more tries the same page again.
+                State = LibraryLoadState.Ready;
+                Say(AdminFailures.DescribeLoad(ex), isError: true);
+            }
+            else
+            {
+                State = LibraryLoadState.Error;
+                HasMore = false;
+            }
         }
         OnPropertyChanged(nameof(IsEmpty));
     }

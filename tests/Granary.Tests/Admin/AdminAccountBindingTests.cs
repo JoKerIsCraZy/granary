@@ -78,7 +78,7 @@ public sealed class AdminAccountBindingTests
     {
         var list = new AdminUsersViewModel(_session, new AdminUsersApi(_silo.Http), new ManualTimeProvider(AdminUserPayloads.Now),
             _silo.Logs.For<AdminUsersViewModel>());
-        await list.LoadAsync();
+        await list.OpenAsync();
         _silo.Map("api/v2/admin/users", request => request.Method == HttpMethod.Post
             ? BrowseFakeSilo.Json("""{ "id": "9" }""", HttpStatusCode.Created)
             : BrowseFakeSilo.Json("""{ "items": [], "page": { "has_more": false } }"""));
@@ -88,7 +88,7 @@ public sealed class AdminAccountBindingTests
         Assert.True(await form.SaveAsync(TestContext.Current.CancellationToken));
 
         var detail = Detail();
-        await detail.OpenAsync("3", Capabilities, [], viewerIsOwner: true);
+        await detail.OpenAsync(AdminActors.Of(_session), "3", Capabilities, [], viewerIsOwner: true);
         detail.Username = "ana2";
         await detail.SaveSignInCommand.ExecuteAsync(null);
         await detail.DisableCommand.ExecuteAsync(null);
@@ -132,7 +132,7 @@ public sealed class AdminAccountBindingTests
     public async Task AfterASwitch_AnAccountsChange_IsNotSent_AndSaysSo()
     {
         var detail = Detail();
-        await detail.OpenAsync("3", Capabilities, [], viewerIsOwner: true);
+        await detail.OpenAsync(AdminActors.Of(_session), "3", Capabilities, [], viewerIsOwner: true);
         AnotherAccountSignsIn();
 
         detail.Username = "ana2";
@@ -193,7 +193,7 @@ public sealed class AdminAccountBindingTests
         await tab.OpenAsync(viewerIsOwner: true);
         var list = new AdminUsersViewModel(_session, new AdminUsersApi(_silo.Http), new ManualTimeProvider(AdminUserPayloads.Now),
             _silo.Logs.For<AdminUsersViewModel>());
-        await list.LoadAsync();
+        await list.OpenAsync();
         AnotherAccountSignsIn();
 
         var invite = new AdminNewInvitationViewModel(new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
@@ -209,5 +209,20 @@ public sealed class AdminAccountBindingTests
 
         Assert.Equal(0, Writes());
         Assert.Equal((LibraryErrors.Denied, LibraryErrors.Denied), (invite.Error, form.Error));
+    }
+    [Fact]
+    public async Task ARefreshAfterASwitch_KeepsTheAccountTheListWasOpenedAs()
+    {
+        var list = new AdminUsersViewModel(_session, new AdminUsersApi(_silo.Http), new ManualTimeProvider(AdminUserPayloads.Now),
+            _silo.Logs.For<AdminUsersViewModel>());
+        await list.OpenAsync();
+        AnotherAccountSignsIn();
+        int before = _silo.Requests.Count;
+
+        await list.LoadAsync();
+
+        Assert.Equal("1", list.Actor?.AccountId);
+        Assert.Equal(before, _silo.Requests.Count);
+        Assert.True(list.LoadFailed);
     }
 }

@@ -30,21 +30,29 @@ public sealed partial class AdminUserDetailView : UserControl
 
     public AdminUserSessionsViewModel Sessions { get; }
 
-    /// <summary>Opens the account with what the list read.</summary>
-    public async Task OpenAsync(string id, AdminUserCapabilities capabilities, IReadOnlyList<AdminAccessGroup> groups, bool viewerIsOwner)
+    /// <summary>Opens the account with what the list read, as the account and profile the list was opened as.</summary>
+    public async Task OpenAsync(AdminActor? actor, string id, AdminUserCapabilities capabilities, IReadOnlyList<AdminAccessGroup> groups,
+        bool viewerIsOwner)
     {
         try
         {
-            await ViewModel.OpenAsync(id, capabilities, groups, viewerIsOwner);
-            if (capabilities.LoginSessions && ViewModel.Account is { } account && ViewModel.Header is { } header)
-            {
-                SessionsCard.Visibility = Visibility.Visible;
-                await Sessions.OpenAsync(ViewModel.Actor, account, header.Manageable && capabilities.Available);
-            }
+            await ViewModel.OpenAsync(actor, id, capabilities, groups, viewerIsOwner);
+            await OpenSessionsAsync();
         }
         catch (Exception ex)
         {
             Log(ex, "The account could not be shown");
+        }
+    }
+
+    // The account's sign-ins, once the account itself was read: after opening, or after a retry that read it.
+    private async Task OpenSessionsAsync()
+    {
+        if (ViewModel.Capabilities.LoginSessions && SessionsCard.Visibility != Visibility.Visible && ViewModel.Account is { } account
+            && ViewModel.Header is { } header)
+        {
+            SessionsCard.Visibility = Visibility.Visible;
+            await Sessions.OpenAsync(ViewModel.Actor, account, header.Manageable && ViewModel.Capabilities.Available);
         }
     }
 
@@ -109,6 +117,7 @@ public sealed partial class AdminUserDetailView : UserControl
         try
         {
             await ViewModel.ReloadAsync();
+            await OpenSessionsAsync();
         }
         catch (Exception ex)
         {

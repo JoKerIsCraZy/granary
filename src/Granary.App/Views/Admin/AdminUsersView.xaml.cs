@@ -58,7 +58,7 @@ public sealed partial class AdminUsersView : UserControl
         _active = true;
         try
         {
-            await ViewModel.LoadAsync();
+            await ViewModel.OpenAsync();
             if (_active && ShowsInvitations)
             {
                 await Invitations().ActivateAsync(ViewModel.ViewerIsOwner, ViewModel.Groups);

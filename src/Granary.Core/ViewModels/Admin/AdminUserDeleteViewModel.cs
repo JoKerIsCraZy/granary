@@ -51,7 +51,8 @@ public sealed partial class AdminUserDeleteViewModel(AdminUsersApi users, ILogge
 
     public bool OffersDisable => DisableOffered && Account is { Enabled: true };
 
-    public bool CanDelete => Account is not null && !IsBusy && !HasConflict && Typed == Account.Username;
+    /// <summary>The name typed, and never the Owner: ownership can have moved to this account since the list was read.</summary>
+    public bool CanDelete => Account is { IsOwner: false } && !IsBusy && !HasConflict && Typed == Account.Username;
 
     public bool CanDisable => !IsBusy && !HasConflict;
 
@@ -118,7 +119,7 @@ public sealed partial class AdminUserDeleteViewModel(AdminUsersApi users, ILogge
     private async Task<bool> RunAsync(Func<AdminActor, AdminUser, Task> action, string fallbackKey, bool requireName)
     {
         if (_actor is not { } actor || Account is not { } account || IsBusy || HasConflict
-            || (requireName && Typed != account.Username))
+            || (requireName && (Typed != account.Username || account.IsOwner)))
         {
             return false;
         }

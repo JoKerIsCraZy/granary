@@ -109,4 +109,18 @@ public sealed class AdminPasswordResetViewModelTests
     {
         Assert.Equal(fits, AdminPasswordResetViewModel.Fits(password));
     }
+    [Fact]
+    public async Task ATemporaryPassword_WithoutTheChange_ClearsAnEarlierRequirement()
+    {
+        _silo.Map("api/v2/admin/users/3", request => request.Method == HttpMethod.Get
+            ? AdminUserPayloads.Versioned(AdminUserPayloads.User(), "\"v7\"")
+            : BrowseFakeSilo.NoContent());
+        var dialog = Started(new AdminUserCapabilities(), Ana, passwordOnly: true);
+        dialog.Password = "margin fossil";
+        dialog.MustChange = false;
+
+        await dialog.RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("""{"password":"margin fossil","require_password_change":false}""", _silo.To("api/v2/admin/users/3").Last().Body);
+    }
 }

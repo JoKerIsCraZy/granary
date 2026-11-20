@@ -5514,6 +5514,12 @@
       "value": "Volver a cargar y revisar"
     }
   ],
+  "web.admin.users.detail.access.card.reloadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo volver a cargar esta cuenta."
+    }
+  ],
   "web.admin.users.detail.access.card.saveFailed": [
     {
       "type": 0,

@@ -107,7 +107,7 @@ public sealed partial class AdminUserDetailViewModel
     [RelayCommand]
     private void CancelAccess()
     {
-        ResetAccess(keepDrafts: false);
+        ResetAccess(null);
         AccessCard.Clear();
     }
 
@@ -118,7 +118,7 @@ public sealed partial class AdminUserDetailViewModel
 
     private bool LibrariesChanged(AdminUser account) => _librariesRead
         && (ChoosesLibraries != account.LibraryIds is not null
-            || (ChoosesLibraries && !ChosenIds().SequenceEqual(account.LibraryIds ?? [], StringComparer.Ordinal)));
+            || (ChoosesLibraries && !ChosenIds().ToHashSet(StringComparer.Ordinal).SetEquals(account.LibraryIds ?? [])));
 
     private static string? GroupOf(AdminUser account) => account.IsAdmin ? null : account.AccessGroupId;
 
@@ -126,31 +126,47 @@ public sealed partial class AdminUserDetailViewModel
 
     private List<string> ChosenIds() => [.. Libraries.Where(library => library.IsChecked).Select(library => library.Id)];
 
-    private void ResetAccess(bool keepDrafts)
+    // The parts edited on the account read before (null where untouched), to keep over a new read.
+    private sealed record AccessEdits(bool GroupEdited, string? Group, bool LibrariesEdited, IReadOnlyList<string>? Libraries, bool? MarkerEdit,
+        bool? MetadataCuration);
+
+    private AccessEdits? AccessDraft(AdminUser? before) => before is null ? null : new AccessEdits(
+        GroupOf(before) != SelectedValue, SelectedValue,
+        LibrariesChanged(before), ChoosesLibraries ? ChosenIds() : null,
+        MarkerEdit != Has(before, AdminPermissions.MarkerEdit) ? MarkerEdit : null,
+        MetadataCuration != Has(before, AdminPermissions.MetadataCuration) ? MetadataCuration : null);
+
+    private void ResetAccess(AccessEdits? edits)
     {
-        if (Account is not { } account || (keepDrafts && HasAccessChanges))
+        if (Account is not { } account)
         {
             NotifyAccess();
             return;
         }
+        var libraries = edits is { LibrariesEdited: true } ? edits.Libraries : account.LibraryIds;
+        string? group = edits is { GroupEdited: true } ? edits.Group : account.AccessGroupId;
         GroupChoices = [new(AdminGroupFilter.None, AppText.Get("web.admin.users.detail.access.library.noGroup")),
-            .. Groups.Select(group => new AdminGroupFilter(group.Id, group.Name))];
-        SelectedGroup = GroupChoices.FirstOrDefault(choice => choice.Value == account.AccessGroupId) ?? GroupChoices[0];
-        ChoosesLibraries = account.LibraryIds is not null;
-        MarkerEdit = Has(account, AdminPermissions.MarkerEdit);
-        MetadataCuration = Has(account, AdminPermissions.MetadataCuration);
-        ShowLibraries(account);
+            .. Groups.Select(known => new AdminGroupFilter(known.Id, known.Name)),
+            // A group made after the list read its groups stays the account's, never quietly No group.
+            .. account.AccessGroupId is { } own && Groups.All(known => known.Id != own)
+                ? [new AdminGroupFilter(own, AppText.Get("web.admin.users.detail.header.groupIdFallback", ("id", own)))]
+                : Array.Empty<AdminGroupFilter>()];
+        SelectedGroup = GroupChoices.FirstOrDefault(choice => choice.Value == group) ?? GroupChoices[0];
+        ChoosesLibraries = libraries is not null;
+        MarkerEdit = edits?.MarkerEdit ?? Has(account, AdminPermissions.MarkerEdit);
+        MetadataCuration = edits?.MetadataCuration ?? Has(account, AdminPermissions.MetadataCuration);
+        ShowLibraries(libraries);
         NotifyAccess();
     }
 
-    private void ShowLibraries(AdminUser account)
+    private void ShowLibraries(IReadOnlyList<string>? own)
     {
         foreach (var library in Libraries)
         {
             library.PropertyChanged -= OnLibraryTicked;
         }
         Libraries.Clear();
-        var own = account.LibraryIds ?? [];
+        own ??= [];
         foreach (var library in _libraries.OrderBy(library => library.SortOrder).ThenBy(library => library.Name, StringComparer.CurrentCulture))
         {
             var choice = new AdminLibraryChoice(library.Id, library.Name) { IsChecked = own.Contains(library.Id) };
@@ -188,7 +204,7 @@ public sealed partial class AdminUserDetailViewModel
             _librariesRead = true;
             if (Account is { } account)
             {
-                ShowLibraries(account);
+                ShowLibraries(account.LibraryIds);
             }
             NotifyAccess();
         }

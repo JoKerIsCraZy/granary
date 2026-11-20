@@ -5526,6 +5526,12 @@
       "value": "Recharger et vérifier"
     }
   ],
+  "web.admin.users.detail.access.card.reloadFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de recharger ce compte."
+    }
+  ],
   "web.admin.users.detail.access.card.saveFailed": [
     {
       "type": 0,

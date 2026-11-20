@@ -71,4 +71,35 @@ public sealed class AdminUserSessionsViewModelTests
         Assert.Empty(sessions.Sessions);
         Assert.Equal("ana is signed out everywhere", sessions.Notice);
     }
+    [Fact]
+    public async Task APageAskedForBeforeSigningOutEverywhere_IsDropped()
+    {
+        var page = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map("api/v2/admin/users/3/login-sessions", (request, _) => request.Method == HttpMethod.Delete
+            ? Task.FromResult(BrowseFakeSilo.Json("""{ "revoked": 2 }"""))
+            : request.RequestUri!.Query.Contains("cursor=n1") ? page.Task : Task.FromResult(BrowseFakeSilo.Json(Sessions)));
+        var sessions = await OpenedAsync();
+
+        var more = sessions.LoadMoreCommand.ExecuteAsync(null);
+        await sessions.SignOutEverywhereCommand.ExecuteAsync(null);
+        page.SetResult(BrowseFakeSilo.Json(Sessions.Replace("6f1c2a1e", "7a2d3b2f", StringComparison.Ordinal)));
+        await more;
+
+        Assert.Empty(sessions.Sessions);
+    }
+
+    [Fact]
+    public async Task ALaterPageThatFails_CanBeAskedForAgain()
+    {
+        _silo.Map("api/v2/admin/users/3/login-sessions", request => request.RequestUri!.Query.Contains("cursor=n1")
+            ? BrowseFakeSilo.Problem(503, "dependency_unavailable")
+            : BrowseFakeSilo.Json(Sessions));
+        var sessions = await OpenedAsync();
+
+        await sessions.LoadMoreCommand.ExecuteAsync(null);
+
+        Assert.Single(sessions.Sessions);
+        Assert.True(sessions.HasMore);
+        Assert.True(sessions.NoticeIsError);
+    }
 }

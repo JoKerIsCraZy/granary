@@ -5538,6 +5538,12 @@
       "value": "Recarregar e revisar"
     }
   ],
+  "web.admin.users.detail.access.card.reloadFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível recarregar esta conta."
+    }
+  ],
   "web.admin.users.detail.access.card.saveFailed": [
     {
       "type": 0,

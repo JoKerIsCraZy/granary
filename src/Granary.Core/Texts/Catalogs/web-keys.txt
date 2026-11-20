@@ -739,6 +739,7 @@ web.admin.users.deleteDialog.title
 # src/Granary.Core/ViewModels/Admin (AdminUserDetailViewModel*, AdminPasswordResetViewModel, AdminUserSessionsViewModel).
 web.admin.users.detail.access.card.conflict
 web.admin.users.detail.access.card.reloadAndReview
+web.admin.users.detail.access.card.reloadFailed
 web.admin.users.detail.access.card.saveFailed
 web.admin.users.detail.access.card.saved
 web.admin.users.detail.access.card.saving

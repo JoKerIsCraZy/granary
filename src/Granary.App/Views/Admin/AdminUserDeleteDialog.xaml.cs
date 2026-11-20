@@ -89,7 +89,20 @@ public sealed partial class AdminUserDeleteDialog : ContentDialog
     // Not while a request runs: its answer decides what the page shows next.
     private void OnClosing(ContentDialog sender, ContentDialogClosingEventArgs args) => args.Cancel = _running;
 
-    private async void OnReloadClick(object sender, RoutedEventArgs e) => await ViewModel.ReloadAsync();
+    // Read again after a conflict; the name to type is the account's name now, which another administrator may have changed.
+    private async void OnReloadClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await ViewModel.ReloadAsync();
+            AdminInlines.Fill(ConfirmLabel, "web.admin.users.deleteDialog.confirmLabel", ("username", ViewModel.Account?.Username ?? ""));
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape.
+            App.Services.GetRequiredService<ILogger<AdminUserDeleteDialog>>().LogError(ex, "The account could not be read again");
+        }
+    }
 }
 
 /// <summary>What the delete dialog did to the account.</summary>

@@ -66,15 +66,23 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     /// <summary>The viewer is the server's Owner, as the list says.</summary>
     public bool ViewerIsOwner { get; private set; }
 
-    /// <summary>Reads the accounts, the groups and what the server offers, all at once.</summary>
+    /// <summary>
+    /// Opens the page as the account and profile signed in now, and reads it. Its refreshes and dialogs keep acting as them.
+    /// </summary>
+    public Task OpenAsync()
+    {
+        _actor = _session.State == SessionState.Ready ? AdminActors.Of(_session) : null;
+        return LoadAsync();
+    }
+
+    /// <summary>Reads the accounts, the groups and what the server offers, all at once, as the page was opened.</summary>
     [RelayCommand]
     public async Task LoadAsync()
     {
-        if (_session.State != SessionState.Ready || AdminActors.Of(_session) is not { } actor)
+        if (_actor is not { } actor)
         {
             return;
         }
-        _actor = actor;
         _load?.Cancel();
         var load = _load = new CancellationTokenSource();
         var token = load.Token;
@@ -102,6 +110,11 @@ public sealed partial class AdminUsersViewModel : ObservableObject
         {
             _logger.LogWarning(ex, "Could not read the accounts");
             await Task.WhenAll(capabilities, groups);
+            if (token.IsCancellationRequested)
+            {
+                // A newer read took over while this one waited.
+                return;
+            }
             LoadFailed = true;
             // A list read before stays up under the failure, as the web's query keeps its data.
             State = _accounts.Count > 0 ? LibraryLoadState.Ready : LibraryLoadState.Error;
