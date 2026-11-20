@@ -19,6 +19,8 @@ public sealed partial class AdminInvitationsView : UserControl
 {
     private IReadOnlyList<AdminAccessGroup> _groups = [];
     private bool _inviting;
+    // Counts the tab's visits: Invite someone opens its dialog only while the visit it was asked in lasts.
+    private int _visit;
 
     public AdminInvitationsView()
     {
@@ -49,6 +51,7 @@ public sealed partial class AdminInvitationsView : UserControl
 
     public void Deactivate()
     {
+        _visit++;
         ViewModel.Deactivate();
         InviteDialog.Hide();
         ResendDialog.Hide();
@@ -78,10 +81,6 @@ public sealed partial class AdminInvitationsView : UserControl
 
     public bool EmailChoosable(bool emailDelivery, bool saving) => emailDelivery && !saving;
 
-    public string ResentMessage(InvitationDelivery? resent) => resent is null ? "" : AdminInvitationRow.DeliveryMessage(resent);
-
-    public string ResentLink(InvitationDelivery? resent) => resent?.ClaimUrl ?? "";
-
     private static Brush Resource(string key) => (Brush)Application.Current.Resources[key];
 
     private AdminInvitationRow? RowOf(object sender) =>
@@ -93,13 +92,22 @@ public sealed partial class AdminInvitationsView : UserControl
         {
             return;
         }
+        int visit = _visit;
         try
         {
             await Form.StartAsync(ViewModel.Actor, ViewModel.Capabilities, _groups, ViewModel.ViewerIsOwner);
+            if (visit != _visit || XamlRoot is null)
+            {
+                // The tab was left while the libraries were read.
+                return;
+            }
             InviteCopyResult.Text = "";
             InviteDialog.XamlRoot = XamlRoot;
             await InviteDialog.ShowAsync();
-            if (Form.HasResult)
+            // The link is forgotten as the dialog closes, before the history is read.
+            bool made = Form.HasResult;
+            Form.Clear();
+            if (made)
             {
                 await ViewModel.RestartAsync();
             }
@@ -161,7 +169,7 @@ public sealed partial class AdminInvitationsView : UserControl
 
     private void OnCopyInviteClick(object sender, RoutedEventArgs e) => InviteCopyResult.Text = CopyText(Form.ClaimUrl);
 
-    private void OnCopyResentClick(object sender, RoutedEventArgs e) => ResendCopyResult.Text = CopyText(ResentLink(ViewModel.Resent));
+    private void OnCopyResentClick(object sender, RoutedEventArgs e) => ResendCopyResult.Text = CopyText(ViewModel.ResentLink);
 
     private static string CopyText(string link) =>
         AppText.Get(link.Length > 0 && SecretClipboard.Copy(link) ? "web.admin.settings.invitations.copied" : "web.admin.settings.invitations.copyFailed");

@@ -325,9 +325,9 @@
         <ContentDialog x:Name="ResendDialog" Title="{x:Bind t:AppText.Get('web.admin.settings.invitations.resend.title')}"
                        CloseButtonText="{x:Bind t:AppText.Get('common.done')}" DefaultButton="Close">
             <StackPanel MinWidth="400" MaxWidth="520" Spacing="12">
-                <TextBlock Text="{x:Bind ResentMessage(ViewModel.Resent), Mode=OneWay}" FontSize="13" TextWrapping="Wrap" />
+                <TextBlock Text="{x:Bind ViewModel.ResentMessage, Mode=OneWay}" FontSize="13" TextWrapping="Wrap" />
                 <Border Style="{StaticResource AdminSecretBoxStyle}">
-                    <TextBlock Text="{x:Bind ResentLink(ViewModel.Resent), Mode=OneWay}" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" />
+                    <TextBlock Text="{x:Bind ViewModel.ResentLink, Mode=OneWay}" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" />
                 </Border>
                 <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.resend.finePrint')}" Style="{StaticResource AdminHintTextStyle}" />
                 <StackPanel Orientation="Horizontal" Spacing="10">

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
+using Granary.Core.Api;
 using Granary.Core.Api.Admin;
 using Granary.Core.Auth;
 using Granary.Core.Texts;
@@ -61,7 +62,14 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
 
     /// <summary>The result of a new link, for its dialog; null when none.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ResentMessage), nameof(ResentLink))]
     public partial InvitationDelivery? Resent { get; private set; }
+
+    /// <summary>What the new link's delivery did, as the web's deliveryMessage; empty without one.</summary>
+    public string ResentMessage => Resent is { } resent ? AdminInvitationRow.DeliveryMessage(resent) : "";
+
+    /// <summary>The new link, shown once; empty once it is forgotten.</summary>
+    public string ResentLink => Resent?.ClaimUrl ?? "";
 
     /// <summary>The server has no public URL, which every link is built on: nothing new can be made.</summary>
     [ObservableProperty]
@@ -146,13 +154,15 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
         {
             return false;
         }
+        // The visit this resend belongs to: leaving the tab cancels it, also when the tab is opened again meanwhile.
+        var visit = _load.Token;
         IsBlocked = true;
         Resent = null;
         ActionError = "";
         try
         {
             var resent = await invitations.ResendAsync(actor, row.Id, delivery);
-            if (_load.IsCancellationRequested)
+            if (visit.IsCancellationRequested)
             {
                 // The tab left meanwhile: the link is not shown, and the next visit reads the history afresh.
                 return false;
@@ -196,7 +206,8 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
         {
             logger.LogWarning(ex, "Could not revoke an invitation");
             ActionError = AdminFailures.Describe(ex, AppText.Get("web.admin.settings.invitations.revokeFailed"));
-            IsBlocked = false;
+            // Without an answer it may still have been revoked: the rows wait for Reload history. A refusal is final.
+            IsBlocked = ex is not (SiloApiException or ProfileChangedException);
         }
     }
 

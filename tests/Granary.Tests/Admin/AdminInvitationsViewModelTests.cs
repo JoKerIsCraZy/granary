@@ -347,4 +347,32 @@ public sealed class AdminInvitationsViewModelTests
         Assert.DoesNotContain("ana@example.com", logs, StringComparison.Ordinal);
         Assert.DoesNotContain("elena", logs, StringComparison.Ordinal);
     }
+    [Fact]
+    public async Task ARevokeWithoutAnAnswer_HoldsTheRows_UntilTheHistoryIsReadAgain()
+    {
+        _silo.Map("api/v2/admin/invitations/1", _ => throw new HttpRequestException("no answer"));
+        var tab = await OpenedAsync();
+
+        await tab.RevokeCommand.ExecuteAsync(tab.Rows[0]);
+
+        Assert.True(tab.IsBlocked);
+        await tab.RestartCommand.ExecuteAsync(null);
+        Assert.False(tab.IsBlocked);
+    }
+
+    [Fact]
+    public async Task ANewLinkThatArrivesAfterLeaving_IsNotShown_AlsoWhenTheTabOpensAgain()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map("api/v2/admin/invitations/1/resend", (_, _) => answer.Task);
+        var tab = await OpenedAsync();
+
+        var resend = tab.ResendAsync(tab.Rows[0], InvitationDeliveries.Link);
+        tab.Deactivate();
+        await tab.OpenAsync(viewerIsOwner: true);
+        answer.SetResult(Created("1", "not_requested", ""));
+
+        Assert.False(await resend);
+        Assert.Equal(("", ""), (tab.ResentLink, tab.ResentMessage));
+    }
 }
