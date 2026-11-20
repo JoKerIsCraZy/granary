@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Admin → Users → Invite Codes, as the web's (pages/admin-settings/InviteCodesTab.tsx and InviteCodeList.tsx;
+    docs/ui-design.md, Admin): + Create Code on the right, the note on public signups (muted with its link while they are on,
+    the amber notice while off), the codes in the web's table (Code with Copy, Label, Usage, Status with its switch, Created,
+    and Add Uses and Delete), Load more. What an action did shows in a line above the table, where the web shows a toast.
+    A code is a secret: it is shown and copied through SecretClipboard, never logged.
+-->
+<UserControl
+    x:Class="Granary.App.Views.Admin.AdminInviteCodesView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Granary.App.Views.Admin"
+    xmlns:admin="using:Granary.Core.ViewModels.Admin"
+    xmlns:t="using:Granary.Core.Texts"
+    AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.tab.inviteCodes')}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ms-appx:///Themes/AdminForms.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- TableHead: h-10, px-3, text-sm medium in the foreground. -->
+            <Style x:Key="CodeHeadStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Margin" Value="12,0" />
+            </Style>
+            <!-- TableCell: p-2 px-3, text-sm. -->
+            <Style x:Key="CodeCellStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Margin" Value="12,8" />
+                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <StackPanel Spacing="24">
+            <!-- + Create Code, size sm, on the right. -->
+            <Button HorizontalAlignment="Right" Style="{StaticResource AdminSmallPrimaryButtonStyle}" Click="OnCreateClick">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <FontIcon Glyph="&#xE710;" FontSize="14" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.create.button')}" />
+                </StackPanel>
+            </Button>
+
+            <!-- Public signups on: the muted note with its link. Off: the amber notice. Neither until known. -->
+            <TextBlock x:Name="SignupsOnText" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap"
+                       Visibility="{x:Bind ViewModel.SignupsOnShown, Mode=OneWay}" />
+            <Border Style="{StaticResource AdminWarningCardStyle}" Visibility="{x:Bind ViewModel.SignupsOffShown, Mode=OneWay}">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Glyph="&#xE7BA;" FontSize="14" Foreground="{StaticResource AdminAmberBrush}" VerticalAlignment="Top" Margin="0,2,0,0" />
+                    <TextBlock x:Name="SignupsOffText" Grid.Column="1" FontSize="13" TextWrapping="Wrap" />
+                </Grid>
+            </Border>
+
+            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.loading')}" FontSize="14"
+                       Visibility="{x:Bind ViewModel.IsFirstLoad, Mode=OneWay}" />
+            <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind ViewModel.LoadFailed, Mode=OneWay}">
+                <TextBlock Text="{x:Bind ViewModel.LoadFailedText}" FontSize="14" VerticalAlignment="Center" />
+                <Button Style="{StaticResource AdminPrimaryButtonStyle}" Command="{x:Bind ViewModel.RestartCommand}" Content="{x:Bind ViewModel.ReloadText}" />
+            </StackPanel>
+            <TextBlock Text="{x:Bind ViewModel.Message, Mode=OneWay}" FontSize="14" TextWrapping="Wrap" Visibility="{x:Bind ViewModel.HasMessage, Mode=OneWay}"
+                       Foreground="{x:Bind local:AdminInviteCodesView.MessageBrush(ViewModel.MessageIsError), Mode=OneWay}" />
+
+            <!-- The web's Table: a heading row, then a row a code, each with a hairline under it. -->
+            <StackPanel>
+                <Grid Height="40" BorderBrush="{StaticResource AdminCardBorderBrush}" BorderThickness="0,0,0,1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.4*" />
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="128" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.table.code')}" Style="{StaticResource CodeHeadStyle}" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.table.label')}" Style="{StaticResource CodeHeadStyle}" />
+                    <TextBlock Grid.Column="2" Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.table.usage')}" Style="{StaticResource CodeHeadStyle}" />
+                    <TextBlock Grid.Column="3" Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.table.status')}" Style="{StaticResource CodeHeadStyle}" />
+                    <TextBlock Grid.Column="4" Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.table.created')}" Style="{StaticResource CodeHeadStyle}" />
+                    <TextBlock Grid.Column="5" Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.table.actions')}" Style="{StaticResource CodeHeadStyle}" />
+                </Grid>
+                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.empty')}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
+                           HorizontalAlignment="Center" Margin="0,8" Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" />
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Rows}" IsTabStop="False" IsEnabled="{x:Bind ViewModel.RowsEnabled, Mode=OneWay}"
+                              AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.tab.inviteCodes')}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="admin:AdminInviteCodeRow">
+                            <Grid BorderBrush="{StaticResource AdminCardBorderBrush}" BorderThickness="0,0,0,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.4*" />
+                                    <ColumnDefinition Width="1.2*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="1.2*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="128" />
+                                </Grid.ColumnDefinitions>
+                                <!-- The code in a muted chip (font-mono text-xs), Copy beside it. -->
+                                <StackPanel Orientation="Horizontal" Spacing="6" Margin="12,8" VerticalAlignment="Center">
+                                    <Border Background="{StaticResource SiloSurfaceRaisedBrush}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind Code}" FontFamily="Consolas" FontSize="12" IsTextSelectionEnabled="False" />
+                                    </Border>
+                                    <Button Style="{StaticResource AdminRowIconButtonStyle}" Width="24" Height="24" Click="OnCopyClick" Tag="{x:Bind Id}"
+                                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.watchProviders.auth.copyCode')}"
+                                            ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.settings.watchProviders.auth.copyCode')}">
+                                        <FontIcon Glyph="&#xE8C8;" FontSize="12" />
+                                    </Button>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Text="{x:Bind LabelText}" Style="{StaticResource CodeCellStyle}"
+                                           Foreground="{x:Bind local:AdminInviteCodesView.LabelBrush(HasLabel)}" />
+                                <TextBlock Grid.Column="2" Text="{x:Bind UsageText}" Style="{StaticResource CodeCellStyle}"
+                                           Foreground="{x:Bind local:AdminInviteCodesView.UsageBrush(IsUsedUp)}" />
+                                <!-- The switch and the badge: outline Active, secondary Disabled. -->
+                                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" Margin="12,8" VerticalAlignment="Center">
+                                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind Enabled}" Toggled="OnToggled" Tag="{x:Bind Id}"
+                                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.table.status')}" />
+                                    <Border Style="{StaticResource AdminWebBadgeStyle}" Background="{x:Bind local:AdminInviteCodesView.StatusFill(Enabled)}"
+                                            BorderBrush="{x:Bind local:AdminInviteCodesView.StatusBorder(Enabled)}">
+                                        <TextBlock Text="{x:Bind StatusText}" Style="{StaticResource AdminWebBadgeTextStyle}" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Grid.Column="4" Text="{x:Bind CreatedText}" Style="{StaticResource CodeCellStyle}" FontSize="12"
+                                           Foreground="{StaticResource SiloMutedBrush}" />
+                                <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" Margin="12,8" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource AdminRowIconButtonStyle}" Click="OnTopUpClick" Tag="{x:Bind Id}"
+                                            AutomationProperties.Name="{x:Bind TopUpName}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.topUpForm.submit')}">
+                                        <FontIcon Glyph="&#xECC8;" FontSize="12" />
+                                    </Button>
+                                    <Button Style="{StaticResource AdminRowIconButtonStyle}" Click="OnDeleteClick" Tag="{x:Bind Id}"
+                                            AutomationProperties.Name="{x:Bind DeleteName}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.delete.confirm')}">
+                                        <FontIcon Glyph="&#xE74D;" FontSize="12" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <Button Style="{StaticResource AdminPrimaryButtonStyle}" Command="{x:Bind ViewModel.LoadMoreCommand}"
+                    Content="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.loadMore')}" Visibility="{x:Bind ViewModel.HasMore, Mode=OneWay}" />
+        </StackPanel>
+
+        <!-- Create Invite Code: Code, Label, Max uses (space-y-4, each space-y-2) and the full-width Create. -->
+        <ContentDialog x:Name="CreateDialog" Closing="OnDialogClosing">
+            <Grid x:Name="CreateRoot" Width="478" Padding="0,0,16,0" KeyDown="OnCreateKeyDown">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid ColumnSpacing="12" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.create.title')}" Style="{StaticResource AdminDialogTitleStyle}"
+                               AutomationProperties.HeadingLevel="Level2" />
+                    <Button Grid.Column="1" Style="{StaticResource AdminDialogCloseButtonStyle}" Margin="0,-8,-8,0" Click="OnCloseCreateClick"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.ui.close')}">
+                        <FontIcon Glyph="&#xE711;" FontSize="14" />
+                    </Button>
+                </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-16,0" Padding="0,0,16,0">
+                <StackPanel Spacing="16">
+                <TextBlock Text="{x:Bind ViewModel.FormError, Mode=OneWay}" Style="{StaticResource AdminErrorTextStyle}"
+                           Visibility="{x:Bind local:AdminUsersView.Shown(ViewModel.FormError), Mode=OneWay}" />
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.code')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                    <TextBox Style="{StaticResource AdminTextBoxStyle}" Text="{x:Bind ViewModel.NewCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             CharacterCasing="Upper" MaxLength="128" PlaceholderText="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.codePlaceholder')}"
+                             AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.code')}" />
+                </StackPanel>
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.label')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                    <TextBox Style="{StaticResource AdminTextBoxStyle}" MaxLength="512" Text="{x:Bind ViewModel.NewLabel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.labelPlaceholder')}"
+                             AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.label')}" />
+                </StackPanel>
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.maxUses')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                    <TextBox Style="{StaticResource AdminTextBoxStyle}" Text="{x:Bind ViewModel.NewMaxUses, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             InputScope="Number" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.maxUses')}" />
+                </StackPanel>
+                </StackPanel>
+                </ScrollViewer>
+                <Button Grid.Row="2" Margin="0,16,0,0" Style="{StaticResource AdminPrimaryButtonStyle}" HorizontalAlignment="Stretch" Click="OnCreateSubmitClick"
+                        Content="{x:Bind ViewModel.CreateText, Mode=OneWay}" IsEnabled="{x:Bind CanCreate(ViewModel.IsCreating, ViewModel.HasNewCode), Mode=OneWay}" />
+            </Grid>
+        </ContentDialog>
+
+        <!-- Top Up Invite Code: what it has, Additional uses and the full-width Add Uses. -->
+        <ContentDialog x:Name="TopUpDialog" Closing="OnDialogClosing">
+            <Grid x:Name="TopUpRoot" Width="478" Padding="0,0,16,0" KeyDown="OnTopUpKeyDown">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid ColumnSpacing="12" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.topUp.title')}" Style="{StaticResource AdminDialogTitleStyle}"
+                                   AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock Text="{x:Bind ViewModel.TopUpDescription, Mode=OneWay}" Style="{StaticResource AdminDialogDescriptionStyle}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Style="{StaticResource AdminDialogCloseButtonStyle}" Margin="0,-8,-8,0" Click="OnCloseTopUpClick"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.ui.close')}">
+                        <FontIcon Glyph="&#xE711;" FontSize="14" />
+                    </Button>
+                </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-16,0" Padding="0,0,16,0">
+                <StackPanel Spacing="16">
+                <TextBlock Text="{x:Bind ViewModel.FormError, Mode=OneWay}" Style="{StaticResource AdminErrorTextStyle}"
+                           Visibility="{x:Bind local:AdminUsersView.Shown(ViewModel.FormError), Mode=OneWay}" />
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.topUpForm.additionalUses')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                    <TextBox Style="{StaticResource AdminTextBoxStyle}" Text="{x:Bind ViewModel.AdditionalUses, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             InputScope="Number" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.topUpForm.additionalUses')}" />
+                </StackPanel>
+                </StackPanel>
+                </ScrollViewer>
+                <Button Grid.Row="2" Margin="0,16,0,0" Style="{StaticResource AdminPrimaryButtonStyle}" HorizontalAlignment="Stretch" Click="OnTopUpSubmitClick"
+                        Content="{x:Bind ViewModel.TopUpText, Mode=OneWay}" IsEnabled="{x:Bind local:AdminUsersView.Not(ViewModel.IsToppingUp), Mode=OneWay}" />
+            </Grid>
+        </ContentDialog>
+    </Grid>
+</UserControl>

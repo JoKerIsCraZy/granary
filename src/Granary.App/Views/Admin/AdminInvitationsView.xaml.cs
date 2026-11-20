@@ -29,8 +29,13 @@ public sealed partial class AdminInvitationsView : UserControl
         ViewModel = App.Services.GetRequiredService<AdminInvitationsViewModel>();
         Form = App.Services.GetRequiredService<AdminNewInvitationViewModel>();
         InitializeComponent();
-        // The web's notice names its Email settings page; the words stand as they are, without the link.
-        AdminInlines.Fill(EmailSetupText, "web.admin.settings.invitations.create.emailSetup");
+        AdminDialogs.Dress(InviteDialog, AdminDialogs.Default, InviteRoot);
+        AdminDialogs.Dress(ResendDialog, AdminDialogs.Default, ResendRoot);
+        // The web's notice links to its Email settings, which open in the server's web app.
+        AdminInlines.Fill(EmailSetupText, "web.admin.settings.invitations.create.emailSetup",
+            () => AdminWebLinks.Open(ViewModel.Actor?.Server, AdminWebLinks.EmailSettings));
+        AdminInlines.Fill(PublicUrlText, "web.admin.settings.invitations.publicUrlMissing",
+            () => AdminWebLinks.Open(ViewModel.Actor?.Server, AdminWebLinks.GeneralSettings));
     }
 
     public AdminInvitationsViewModel ViewModel { get; }
@@ -77,10 +82,6 @@ public sealed partial class AdminInvitationsView : UserControl
     /// <summary>An email whose delivery is not confirmed in the web's amber.</summary>
     public static Brush DeliveryForeground(bool unconfirmed) =>
         unconfirmed ? new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(0xFF, 0xF5, 0x9E, 0x0B)) : Resource("SiloForegroundBrush");
-
-    public string SubmitText(bool hasResult, string submit) => hasResult ? "" : submit;
-
-    public string CloseText(bool hasResult) => AppText.Get(hasResult ? "common.done" : "common.cancel");
 
     public bool EmailChoosable(bool emailDelivery, bool saving) => emailDelivery && !saving;
 
@@ -131,17 +132,19 @@ public sealed partial class AdminInvitationsView : UserControl
         }
     }
 
+    private void OnInviteCloseClick(object sender, RoutedEventArgs e) => InviteDialog.Hide();
+
+    private void OnResendCloseClick(object sender, RoutedEventArgs e) => ResendDialog.Hide();
+
     // Invite stays on the dialog: made, it shows the link; failed, the reason and Reload history.
-    private async void OnInviteSubmitClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    private async void OnInviteSubmitClick(object sender, RoutedEventArgs e)
     {
-        args.Cancel = true;
         if (_inviting || Form.HasResult)
         {
             return;
         }
         _inviting = true;
         int visit = _visit;
-        var deferral = args.GetDeferral();
         try
         {
             await Form.SaveAsync();
@@ -158,7 +161,6 @@ public sealed partial class AdminInvitationsView : UserControl
         finally
         {
             _inviting = false;
-            deferral.Complete();
         }
     }
 

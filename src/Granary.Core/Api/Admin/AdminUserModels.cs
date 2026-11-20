@@ -84,7 +84,10 @@ public sealed record AdminUserCapabilities
     public bool LoginSessions { get; init; }
 }
 
-/// <summary>An access group of <c>GET /api/v2/admin/access-groups</c>: its name, and whether new accounts join it.</summary>
+/// <summary>
+/// An access group of <c>GET /api/v2/admin/access-groups</c>: its name, whether new accounts join it, and the policy its
+/// members take where they do not override it.
+/// </summary>
 public sealed record AdminAccessGroup
 {
     public string Id { get; init => field = value ?? ""; } = "";
@@ -92,7 +95,98 @@ public sealed record AdminAccessGroup
     public string Name { get; init => field = value ?? ""; } = "";
 
     public bool IsDefault { get; init; }
+
+    /// <summary>Null for every library, empty for none.</summary>
+    public IReadOnlyList<string>? LibraryIds { get; init; }
+
+    public string? MaxPlaybackQuality { get; init; }
+
+    public int MaxStreams { get; init; }
+
+    public int MaxTranscodes { get; init; }
+
+    public int MaxRemoteStreamBitrateKbps { get; init; }
+
+    public int MaxLocalStreamBitrateKbps { get; init; }
+
+    public int MaxProfiles { get; init; }
+
+    public bool TranscodeAllowed { get; init; }
+
+    public bool AudioTranscodeAllowed { get; init; }
+
+    public bool DownloadAllowed { get; init; }
+
+    public bool DownloadTranscodeAllowed { get; init; }
+
+    public bool RequestsAllowed { get; init; }
+
+    /// <summary>What a member's unset fields resolve to.</summary>
+    public AdminPolicyValues Policy => new()
+    {
+        LibraryIds = LibraryIds,
+        MaxPlaybackQuality = MaxPlaybackQuality ?? "",
+        MaxStreams = MaxStreams,
+        MaxTranscodes = MaxTranscodes,
+        MaxRemoteStreamBitrateKbps = MaxRemoteStreamBitrateKbps,
+        MaxLocalStreamBitrateKbps = MaxLocalStreamBitrateKbps,
+        MaxProfiles = MaxProfiles,
+        TranscodeAllowed = TranscodeAllowed,
+        AudioTranscodeAllowed = AudioTranscodeAllowed,
+        DownloadAllowed = DownloadAllowed,
+        DownloadTranscodeAllowed = DownloadTranscodeAllowed,
+        RequestsAllowed = RequestsAllowed,
+    };
 }
+
+/// <summary>
+/// A resolved access policy: what an account's fields come to where it does not override them, from its group or the
+/// server's built-in layers. 0 is unlimited for the limits; an empty quality has no ceiling.
+/// </summary>
+public sealed record AdminPolicyValues
+{
+    /// <summary>Null for every library, empty for none.</summary>
+    public IReadOnlyList<string>? LibraryIds { get; init; }
+
+    public string MaxPlaybackQuality { get; init => field = value ?? ""; } = "";
+
+    public int MaxStreams { get; init; }
+
+    public int MaxTranscodes { get; init; }
+
+    public int MaxRemoteStreamBitrateKbps { get; init; }
+
+    public int MaxLocalStreamBitrateKbps { get; init; }
+
+    public int MaxProfiles { get; init; }
+
+    public bool TranscodeAllowed { get; init; }
+
+    public bool AudioTranscodeAllowed { get; init; }
+
+    public bool DownloadAllowed { get; init; }
+
+    public bool DownloadTranscodeAllowed { get; init; }
+
+    public bool RequestsAllowed { get; init; }
+}
+
+/// <summary>
+/// The server's built-in policy layers (<c>GET /api/v2/admin/users/policy-defaults</c>): what an admin account's unset fields
+/// resolve to, and a regular account's without an access group.
+/// </summary>
+public sealed record AdminPolicyDefaults
+{
+    public AdminPolicyValues? Admin { get; init; }
+
+    public AdminPolicyValues? Ungrouped { get; init; }
+}
+
+/// <summary>
+/// The server-wide switches the Users pages show beside what they govern, from the administrator settings: public signups
+/// (the header's pill, the invite codes' note) and the two download switches (the note beside an account's downloads).
+/// </summary>
+public sealed record AdminServerSwitches(bool SignupsEnabled, bool DownloadsEnabled, bool DownloadConversionEnabled);
 
 public sealed record AdminAccessGroupCollection
 {
@@ -102,8 +196,9 @@ public sealed record AdminAccessGroupCollection
 }
 
 /// <summary>
-/// A new account (<c>POST /api/v2/admin/users</c>). Its policy is left to its group. The password is a secret: it is sent,
-/// never shown in a log, so this is a class whose text names nothing.
+/// A new account (<c>POST /api/v2/admin/users</c>), as the web's Create User sends it: a policy field is sent only where
+/// the dialog overrides it (a null is left out and inherits; 0, an empty quality and no libraries are overrides). The
+/// password is a secret: it is sent, never shown in a log, so this is a class whose text names nothing.
 /// </summary>
 public sealed class AdminUserDraft
 {
@@ -124,6 +219,31 @@ public sealed class AdminUserDraft
 
     /// <summary>Left out to let the server place the account in its default group.</summary>
     public string? AccessGroupId { get; init; }
+
+    /// <summary>The account's own libraries; left out, its group's.</summary>
+    public IReadOnlyList<string>? LibraryIds { get; init; }
+
+    public string? MaxPlaybackQuality { get; init; }
+
+    public int? MaxStreams { get; init; }
+
+    public int? MaxTranscodes { get; init; }
+
+    public int? MaxRemoteStreamBitrateKbps { get; init; }
+
+    public int? MaxLocalStreamBitrateKbps { get; init; }
+
+    public int? MaxProfiles { get; init; }
+
+    public bool? TranscodeAllowed { get; init; }
+
+    public bool? AudioTranscodeAllowed { get; init; }
+
+    public bool? DownloadAllowed { get; init; }
+
+    public bool? DownloadTranscodeAllowed { get; init; }
+
+    public bool? RequestsAllowed { get; init; }
 }
 
 /// <summary>The answer to a new account: its id.</summary>

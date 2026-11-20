@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Admin → Users, as the web's (pages/AdminUsers.tsx; docs/ui-design.md, Admin): every account in a table that searches,
-    filters by group, sorts by its headings and shows a page at a time; Add User, and an account's Edit and Delete. Its
-    Invitations tab is AdminInvitationsView.
+    filters by group, sorts by its headings and shows a page at a time; the header's signups badge, Access Groups and Add
+    User; an account's Edit and Delete. Its Invitations tab is AdminInvitationsView, its Invite Codes tab
+    AdminInviteCodesView.
 -->
 <UserControl
     x:Class="Granary.App.Views.Admin.AdminUsersView"
@@ -22,8 +23,11 @@
     </UserControl.Resources>
 
     <Grid>
-        <StackPanel Spacing="20">
-            <!-- The web's PageHeader: title, subtitle, and Add User. -->
+        <StackPanel Spacing="24">
+            <!--
+                The web's PageHeader: title and subtitle; on the right (gap-2) the "Public signups on →" badge linking to the
+                web's sign-in settings, Access Groups (outline, size sm) leading to the web's page, and + Add User (size sm).
+            -->
             <Grid ColumnSpacing="16">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -34,13 +38,43 @@
                                AutomationProperties.HeadingLevel="Level1" />
                     <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.subtitle')}" Style="{StaticResource SiloSettingsMutedTextStyle}" TextWrapping="Wrap" />
                 </StackPanel>
-                <Button Grid.Column="1" Style="{StaticResource SiloPrimaryButtonStyle}" VerticalAlignment="Center" Click="OnAddUserClick"
-                        IsEnabled="{x:Bind ViewModel.IsAvailable, Mode=OneWay}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE710;" FontSize="12" />
-                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.addUser')}" />
-                    </StackPanel>
-                </Button>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <HyperlinkButton Padding="0" VerticalAlignment="Center" Click="OnSignupsClick" Visibility="{x:Bind ViewModel.SignupsKnown, Mode=OneWay}"
+                                     AutomationProperties.Name="{x:Bind SignupsText(ViewModel.SignupsOn), Mode=OneWay}">
+                        <Grid>
+                            <!-- On: the web's outline badge in emerald. -->
+                            <Border Style="{StaticResource AdminWebBadgeStyle}" Background="{StaticResource AdminEmeraldFillBrush}" BorderBrush="{StaticResource AdminEmeraldBorderBrush}"
+                                    Visibility="{x:Bind ViewModel.SignupsOn, Mode=OneWay}">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.signupsOn')}" Style="{StaticResource AdminWebBadgeTextStyle}"
+                                               Foreground="{StaticResource AdminEmeraldBrush}" />
+                                    <FontIcon Glyph="&#xE72A;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource AdminEmeraldBrush}" />
+                                </StackPanel>
+                            </Border>
+                            <!-- Off: its secondary badge. -->
+                            <Border Style="{StaticResource AdminWebBadgeStyle}" Background="{StaticResource AdminAccentBrush}" BorderBrush="{StaticResource AdminAccentBrush}"
+                                    Visibility="{x:Bind local:AdminUsersView.Hidden(ViewModel.SignupsOn), Mode=OneWay}">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.signupsOff')}" Style="{StaticResource AdminWebBadgeTextStyle}"
+                                               Foreground="{StaticResource AdminSecondaryForegroundBrush}" />
+                                    <FontIcon Glyph="&#xE72A;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource AdminSecondaryForegroundBrush}" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </HyperlinkButton>
+                    <Button Style="{StaticResource AdminSmallOutlineButtonStyle}" Click="OnAccessGroupsClick">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <FontIcon Glyph="&#xE9E9;" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.accessGroupsLink')}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource AdminSmallPrimaryButtonStyle}" Click="OnAddUserClick" IsEnabled="{x:Bind ViewModel.IsAvailable, Mode=OneWay}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.addUser')}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
 
             <TextBlock x:Name="ActionError" Style="{StaticResource AdminErrorTextStyle}" Visibility="Collapsed" />
@@ -52,19 +86,25 @@
             <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.unavailable')}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                        Visibility="{x:Bind local:AdminUsersView.Hidden(ViewModel.IsAvailable), Mode=OneWay}" />
 
-            <!-- The web's line tabs: Users and Invitations. Its third, Invite Codes, stays on the web. -->
-            <Grid>
-                <Border Height="1" VerticalAlignment="Bottom" Background="{StaticResource SiloBorderBrush}" />
-                <StackPanel Orientation="Horizontal" Spacing="4" XYFocusKeyboardNavigation="Enabled"
-                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.title')}">
-                    <RadioButton x:Name="UsersTab" GroupName="AdminUsersTabs" Style="{StaticResource SiloLineTabStyle}"
+            <!-- The web's line tabs across the page (each trigger flex-1): Users, Invitations, Invite Codes; their content pt-4. -->
+            <StackPanel Spacing="16">
+                <Grid XYFocusKeyboardNavigation="Enabled" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.title')}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.ColumnSpan="3" Height="1" VerticalAlignment="Bottom" Background="{StaticResource AdminCardBorderBrush}" />
+                    <RadioButton x:Name="UsersTab" GroupName="AdminUsersTabs" Style="{StaticResource AdminLineTabStyle}" HorizontalAlignment="Stretch"
                                  Content="{x:Bind t:AppText.Get('web.admin.users.list.tab.users')}" Checked="OnTabChecked" />
-                    <RadioButton x:Name="InvitationsTab" GroupName="AdminUsersTabs" Style="{StaticResource SiloLineTabStyle}"
-                                 Content="{x:Bind t:AppText.Get('web.admin.users.list.tab.invitations')}" Checked="OnTabChecked" />
-                </StackPanel>
-            </Grid>
+                    <RadioButton x:Name="InvitationsTab" Grid.Column="1" GroupName="AdminUsersTabs" Style="{StaticResource AdminLineTabStyle}"
+                                 HorizontalAlignment="Stretch" Content="{x:Bind t:AppText.Get('web.admin.users.list.tab.invitations')}" Checked="OnTabChecked" />
+                    <RadioButton x:Name="InviteCodesTab" Grid.Column="2" GroupName="AdminUsersTabs" Style="{StaticResource AdminLineTabStyle}"
+                                 HorizontalAlignment="Stretch" Content="{x:Bind t:AppText.Get('web.admin.users.list.tab.inviteCodes')}" Checked="OnTabChecked" />
+                </Grid>
 
             <ContentControl x:Name="InvitationsHost" IsTabStop="False" HorizontalContentAlignment="Stretch" Visibility="Collapsed" />
+            <ContentControl x:Name="InviteCodesHost" IsTabStop="False" HorizontalContentAlignment="Stretch" Visibility="Collapsed" />
 
             <StackPanel x:Name="UsersPanel" Spacing="16">
                 <!-- The search and the group filter. -->
@@ -217,98 +257,169 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
+            </StackPanel>
         </StackPanel>
 
-        <!-- The web's Create User dialog: the account, then its access. Its limits are the group's until changed on its page. -->
-        <ContentDialog x:Name="CreateDialog" Title="{x:Bind t:AppText.Get('web.admin.users.list.createDialogTitle')}"
-                       PrimaryButtonText="{x:Bind local:AdminUsersView.SaveText(NewUser.IsSaving), Mode=OneWay}"
-                       CloseButtonText="{x:Bind t:AppText.Get('common.cancel')}" DefaultButton="Primary"
-                       IsPrimaryButtonEnabled="{x:Bind local:AdminUsersView.Not(NewUser.IsSaving), Mode=OneWay}"
-                       PrimaryButtonClick="OnCreateClick" Closing="OnCreateClosing">
-            <ScrollViewer MaxHeight="560" VerticalScrollBarVisibility="Auto">
-                <StackPanel MinWidth="440" MaxWidth="560" Spacing="14" Padding="0,0,12,0">
-                    <TextBlock Text="{x:Bind NewUser.Error, Mode=OneWay}" Style="{StaticResource AdminErrorTextStyle}"
-                               Visibility="{x:Bind local:AdminUsersView.Shown(NewUser.Error), Mode=OneWay}" />
-                    <CheckBox IsChecked="{x:Bind NewUser.CreateDefaultProfile, Mode=TwoWay}" Content="{x:Bind NewUser.DefaultProfileText, Mode=OneWay}" />
+        <!--
+            The web's Create User dialog (components/admin/users/CreateUserForm.tsx), sm:max-w-2xl: the title with its X, the
+            "Create a default profile" checkbox, the line tabs Account, Access and Limits over a body that scrolls, and one
+            full-width Save under a hairline. No Cancel: the X and Esc close it.
+        -->
+        <ContentDialog x:Name="CreateDialog" Closing="OnCreateClosing" Closed="OnCreateClosed">
+            <Grid x:Name="CreateForm" Width="638" Padding="0,0,16,0" KeyDown="OnCreateKeyDown">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.tab.account')}" FontFamily="{StaticResource SiloFontSemiBold}" FontSize="14"
-                               AutomationProperties.HeadingLevel="Level3" />
-                    <Grid ColumnSpacing="12" RowSpacing="12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <TextBox Header="{x:Bind t:AppText.Get('web.admin.users.list.create.username')}" Text="{x:Bind NewUser.Username, Mode=TwoWay}" />
-                        <TextBox Grid.Column="1" Header="{x:Bind t:AppText.Get('web.admin.users.list.create.email')}" Text="{x:Bind NewUser.Email, Mode=TwoWay}"
-                                 InputScope="EmailSmtpAddress" />
-                        <StackPanel Grid.Row="1" Spacing="6">
-                            <PasswordBox Header="{x:Bind t:AppText.Get('web.admin.users.list.create.password')}"
-                                         Password="{x:Bind NewUser.Password, Mode=TwoWay}" />
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.requirePasswordChange')}" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center" />
-                                <ToggleSwitch Grid.Column="1" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind NewUser.RequirePasswordChange, Mode=TwoWay}"
-                                              IsEnabled="{x:Bind NewUser.CanRequireChange, Mode=OneWay}"
-                                              AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.requirePasswordChange')}" />
-                            </Grid>
-                        </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6">
-                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.role')}" FontSize="13" />
-                            <RadioButton GroupName="NewUserRole" Content="{x:Bind t:AppText.Get('web.admin.users.list.create.role.user')}"
-                                         IsChecked="{x:Bind NewUser.IsUserRole, Mode=TwoWay}" />
-                            <RadioButton GroupName="NewUserRole" Content="{x:Bind t:AppText.Get('web.admin.users.list.create.role.admin')}"
-                                         IsChecked="{x:Bind NewUser.IsAdminRole, Mode=TwoWay}" IsEnabled="{x:Bind NewUser.CanGrantAdmin, Mode=OneWay}" />
-                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.adminOwnerOnly')}" Style="{StaticResource AdminHintTextStyle}"
-                                       Visibility="{x:Bind NewUser.IsAdminLocked, Mode=OneWay}" />
-                        </StackPanel>
-                    </Grid>
+                <!-- DialogHeader: the title (text-lg semibold) and the X; gap-4 to what follows. -->
+                <Grid Margin="0,0,0,16" ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.createDialogTitle')}" Style="{StaticResource AdminDialogTitleStyle}"
+                               AutomationProperties.HeadingLevel="Level2" />
+                    <Button Grid.Column="1" Style="{StaticResource AdminDialogCloseButtonStyle}" Margin="0,-8,-8,0" Click="OnCreateCloseClick"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.ui.close')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.ui.close')}">
+                        <FontIcon Glyph="&#xE711;" FontSize="14" />
+                    </Button>
+                </Grid>
 
-                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.tab.access')}" FontFamily="{StaticResource SiloFontSemiBold}" FontSize="14"
-                               AutomationProperties.HeadingLevel="Level3" />
-                    <StackPanel Spacing="6">
-                        <ComboBox Header="{x:Bind t:AppText.Get('web.admin.users.list.create.group')}" Style="{StaticResource SiloSettingsComboBoxStyle}"
-                                  Width="Auto" HorizontalAlignment="Stretch" ItemsSource="{x:Bind NewUser.GroupChoices, Mode=OneWay}"
-                                  SelectedItem="{x:Bind NewUser.SelectedGroupChoice, Mode=TwoWay}" IsEnabled="{x:Bind NewUser.CanPickGroup, Mode=OneWay}" />
-                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.adminNoGroups')}" Style="{StaticResource AdminHintTextStyle}"
-                                   Visibility="{x:Bind NewUser.IsGroupHintShown, Mode=OneWay}" />
+                <TextBlock Grid.Row="1" Text="{x:Bind NewUser.Error, Mode=OneWay}" Style="{StaticResource AdminErrorTextStyle}" Margin="0,0,0,12"
+                           Visibility="{x:Bind local:AdminUsersView.Shown(NewUser.Error), Mode=OneWay}" />
+
+                <!-- The checkbox, mb-3. -->
+                <CheckBox Grid.Row="2" Margin="0,0,0,12" MinHeight="0" Padding="8,0,0,0" FontSize="14" IsChecked="{x:Bind NewUser.CreateDefaultProfile, Mode=TwoWay}"
+                          Content="{x:Bind NewUser.DefaultProfileText, Mode=OneWay}" />
+
+                <!-- TabsList variant="line": w-full, justify-start, a hairline under it, pb-1, mb-4. -->
+                <Grid Grid.Row="3" Margin="0,0,0,16">
+                    <Border Height="1" VerticalAlignment="Bottom" Background="{StaticResource AdminCardBorderBrush}" />
+                    <StackPanel Orientation="Horizontal" Spacing="0" XYFocusKeyboardNavigation="Enabled"
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.createDialogTitle')}">
+                        <RadioButton x:Name="AccountTab" GroupName="CreateUserTabs" Style="{StaticResource AdminDialogTabStyle}" Margin="0,0,8,0"
+                                     Content="{x:Bind t:AppText.Get('web.admin.users.list.create.tab.account')}"
+                                     IsChecked="{x:Bind local:AdminUsersView.IsTab(NewUser.SelectedTab, 0), Mode=OneWay}" Checked="OnCreateTabChecked" Tag="0" />
+                        <RadioButton x:Name="AccessTab" GroupName="CreateUserTabs" Style="{StaticResource AdminDialogTabStyle}" Margin="0,0,8,0"
+                                     Content="{x:Bind t:AppText.Get('web.admin.users.list.create.tab.access')}"
+                                     IsChecked="{x:Bind local:AdminUsersView.IsTab(NewUser.SelectedTab, 1), Mode=OneWay}" Checked="OnCreateTabChecked" Tag="1" />
+                        <RadioButton x:Name="LimitsTab" GroupName="CreateUserTabs" Style="{StaticResource AdminDialogTabStyle}"
+                                     Content="{x:Bind t:AppText.Get('web.admin.users.list.create.tab.limits')}"
+                                     IsChecked="{x:Bind local:AdminUsersView.IsTab(NewUser.SelectedTab, 2), Mode=OneWay}" Checked="OnCreateTabChecked" Tag="2" />
                     </StackPanel>
-                    <Border BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12,8">
-                        <Grid ColumnSpacing="12">
+                </Grid>
+
+                <!--
+                    Only the tab's body scrolls (max-h-[70vh] on the form), its scrollbar in a 16 px gutter of its own. It keeps
+                    one height while the window has room, so the dialog does not change height between tabs (AdminDialogs).
+                -->
+                <ScrollViewer x:Name="CreateBody" Grid.Row="4" VerticalScrollBarVisibility="Auto" Margin="0,0,-16,0" Padding="0,0,16,0">
+                    <Grid>
+                        <!-- Account: Username | Email, Password (with the switch under it) | Role; grid gap-3, each field space-y-2. -->
+                        <Grid ColumnSpacing="12" RowSpacing="12" VerticalAlignment="Top"
+                              Visibility="{x:Bind local:AdminUsersView.TabShown(NewUser.SelectedTab, 0), Mode=OneWay}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.markerEdit')}" FontSize="13" />
-                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.markerEditHelp')}" Style="{StaticResource AdminHintTextStyle}" />
-                            </StackPanel>
-                            <ToggleSwitch Grid.Column="1" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind NewUser.MarkerEdit, Mode=TwoWay}"
-                                          OnContent="" OffContent="" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.markerEdit')}" />
-                        </Grid>
-                    </Border>
-                    <Border BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12,8">
-                        <Grid ColumnSpacing="12">
-                            <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.metadataCuration')}" FontSize="13" />
-                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.metadataCurationHelp')}" Style="{StaticResource AdminHintTextStyle}" />
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.username')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                                <TextBox Style="{StaticResource AdminTextBoxStyle}" Text="{x:Bind NewUser.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.username')}" />
                             </StackPanel>
-                            <ToggleSwitch Grid.Column="1" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind NewUser.MetadataCuration, Mode=TwoWay}"
-                                          OnContent="" OffContent="" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.metadataCuration')}" />
+                            <StackPanel Grid.Column="1" Spacing="8">
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.email')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                                <TextBox Style="{StaticResource AdminTextBoxStyle}" Text="{x:Bind NewUser.Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         InputScope="EmailSmtpAddress" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.email')}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Spacing="8">
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.password')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                                <PasswordBox Style="{StaticResource AdminPasswordBoxStyle}" Password="{x:Bind NewUser.Password, Mode=TwoWay}"
+                                             AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.password')}" />
+                                <!-- The switch on the left, its text-xs label beside it (gap-2). -->
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" HorizontalAlignment="Left"
+                                                  IsOn="{x:Bind NewUser.RequirePasswordChangeShown, Mode=TwoWay}" IsEnabled="{x:Bind NewUser.CanRequireChange, Mode=OneWay}"
+                                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.requirePasswordChange')}" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.requirePasswordChange')}" FontSize="12" TextWrapping="Wrap"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="8">
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.role')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                                <ComboBox Style="{StaticResource AdminSelectStyle}" SelectedIndex="{x:Bind NewUser.RoleIndex, Mode=TwoWay}"
+                                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.role')}">
+                                    <ComboBoxItem Content="{x:Bind t:AppText.Get('web.admin.users.list.create.role.user')}" />
+                                    <ComboBoxItem Content="{x:Bind t:AppText.Get('web.admin.users.list.create.role.admin')}"
+                                                  IsEnabled="{x:Bind NewUser.CanGrantAdmin, Mode=OneWay}" />
+                                </ComboBox>
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.adminOwnerOnly')}" Style="{StaticResource AdminHintTextStyle}"
+                                           Visibility="{x:Bind NewUser.IsAdminLocked, Mode=OneWay}" />
+                            </StackPanel>
                         </Grid>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
+
+                        <!-- Access: the group (w-full), the two permission cards, then the policy's access fields; space-y-4. -->
+                        <StackPanel Spacing="16" VerticalAlignment="Top" Visibility="{x:Bind local:AdminUsersView.TabShown(NewUser.SelectedTab, 1), Mode=OneWay}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.group')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                                <ComboBox Style="{StaticResource AdminFullSelectStyle}" ItemsSource="{x:Bind NewUser.GroupChoices, Mode=OneWay}"
+                                          SelectedItem="{x:Bind NewUser.SelectedGroupChoice, Mode=TwoWay}" IsEnabled="{x:Bind NewUser.CanPickGroup, Mode=OneWay}"
+                                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.group')}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.adminNoGroups')}" Style="{StaticResource AdminHintTextStyle}"
+                                           Visibility="{x:Bind NewUser.IsGroupHintShown, Mode=OneWay}" />
+                            </StackPanel>
+                            <Border Style="{StaticResource AdminFieldCardStyle}">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.markerEdit')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.markerEditHelp')}" Style="{StaticResource AdminHintTextStyle}" />
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Column="1" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind NewUser.MarkerEdit, Mode=TwoWay}"
+                                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.markerEdit')}" />
+                                </Grid>
+                            </Border>
+                            <Border Style="{StaticResource AdminFieldCardStyle}">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.metadataCuration')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.metadataCurationHelp')}" Style="{StaticResource AdminHintTextStyle}" />
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Column="1" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind NewUser.MetadataCuration, Mode=TwoWay}"
+                                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.metadataCuration')}" />
+                                </Grid>
+                            </Border>
+                            <local:AdminPolicyFieldsView x:Name="AccessFields" Policy="{x:Bind NewUser.Policy}" />
+                        </StackPanel>
+
+                        <!-- Limits: the policy's limit fields. -->
+                        <local:AdminPolicyFieldsView x:Name="LimitFields" Policy="{x:Bind NewUser.Policy}" ShowsLimits="True" VerticalAlignment="Top"
+                                                     Visibility="{x:Bind local:AdminUsersView.TabShown(NewUser.SelectedTab, 2), Mode=OneWay}" />
+                    </Grid>
+                </ScrollViewer>
+
+                <!-- A hairline (mt-4 pt-4) and the one full-width Save. -->
+                <Border Grid.Row="5" Margin="0,16,0,0" Padding="0,16,0,0" BorderBrush="{StaticResource AdminCardBorderBrush}" BorderThickness="0,1,0,0">
+                    <Button Style="{StaticResource AdminPrimaryButtonStyle}" HorizontalAlignment="Stretch" Click="OnCreateSaveClick"
+                            Content="{x:Bind NewUser.SaveText, Mode=OneWay}" IsEnabled="{x:Bind local:AdminUsersView.Not(NewUser.IsSaving), Mode=OneWay}" />
+                </Border>
+            </Grid>
         </ContentDialog>
     </Grid>
 </UserControl>

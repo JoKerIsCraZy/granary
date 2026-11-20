@@ -51,6 +51,15 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     [ObservableProperty]
     public partial bool GroupsFailed { get; private set; }
 
+    /// <summary>Public signups, for the header's pill: null until read, which shows none, as the web's.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SignupsKnown), nameof(SignupsOn))]
+    public partial bool? SignupsEnabled { get; private set; }
+
+    public bool SignupsKnown => SignupsEnabled is not null;
+
+    public bool SignupsOn => SignupsEnabled == true;
+
     /// <summary>What the server offers, for the pages and dialogs of the area; empty until read.</summary>
     public AdminUserCapabilities Capabilities { get; private set; } = new();
 
@@ -86,6 +95,7 @@ public sealed partial class AdminUsersViewModel : ObservableObject
             Capabilities = new AdminUserCapabilities();
             IsAvailable = false;
             ViewerIsOwner = false;
+            SignupsEnabled = null;
             LoadFailed = false;
             State = LibraryLoadState.Idle;
             Apply();
@@ -111,10 +121,11 @@ public sealed partial class AdminUsersViewModel : ObservableObject
         }
         var capabilities = ReadCapabilitiesAsync(actor, token);
         var groups = ReadGroupsAsync(actor, token);
+        var switches = ReadSignupsAsync(actor, token);
         try
         {
             var accounts = await _users.ListAllAsync(actor, token);
-            await Task.WhenAll(capabilities, groups);
+            await Task.WhenAll(capabilities, groups, switches);
             if (token.IsCancellationRequested)
             {
                 return;
@@ -128,7 +139,7 @@ public sealed partial class AdminUsersViewModel : ObservableObject
         catch (Exception ex) when (AdminFailures.IsExpected(ex) && !token.IsCancellationRequested)
         {
             _logger.LogWarning(ex, "Could not read the accounts");
-            await Task.WhenAll(capabilities, groups);
+            await Task.WhenAll(capabilities, groups, switches);
             if (token.IsCancellationRequested)
             {
                 // A newer read took over while this one waited.
@@ -163,6 +174,23 @@ public sealed partial class AdminUsersViewModel : ObservableObject
         {
             await ReadGroupsAsync(actor, _load?.Token ?? CancellationToken.None);
             Apply();
+        }
+    }
+
+    private async Task ReadSignupsAsync(AdminActor actor, CancellationToken token)
+    {
+        try
+        {
+            var switches = await _users.GetServerSwitchesAsync(actor, token);
+            if (!token.IsCancellationRequested)
+            {
+                SignupsEnabled = switches.SignupsEnabled;
+            }
+        }
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
+        {
+            // The pill stays away, as the web's while the settings are unknown.
+            _logger.LogWarning(ex, "Could not read whether public signups are on");
         }
     }
 

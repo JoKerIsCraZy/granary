@@ -21,6 +21,7 @@ public sealed partial class AdminPasswordResetDialog : ContentDialog
     {
         ViewModel = App.Services.GetRequiredService<AdminPasswordResetViewModel>();
         InitializeComponent();
+        AdminDialogs.Dress(this, AdminDialogs.Default, ResetRoot);
     }
 
     public AdminPasswordResetViewModel ViewModel { get; }
@@ -41,8 +42,6 @@ public sealed partial class AdminPasswordResetDialog : ContentDialog
 
     public string PrimaryText(bool isDone, string action) => isDone ? AppText.Get("common.done") : action;
 
-    public string CloseText(bool isDone) => isDone ? "" : AppText.Get("common.cancel");
-
     public bool PrimaryEnabled(bool isDone, bool canRun) => isDone || canRun;
 
     public bool EnabledWhen(bool can, bool canChoose) => can && canChoose;
@@ -51,20 +50,21 @@ public sealed partial class AdminPasswordResetDialog : ContentDialog
 
     public double PasswordOpacity(bool isPassword) => isPassword ? 1 : 0.5;
 
+    private void OnCloseClick(object sender, RoutedEventArgs e) => Hide();
+
     // Done closes; otherwise the chosen way runs and the dialog stays to show its answer.
-    private async void OnPrimaryClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    private async void OnPrimaryClick(object sender, RoutedEventArgs e)
     {
         if (ViewModel.IsDone)
         {
+            Hide();
             return;
         }
-        args.Cancel = true;
         if (_running)
         {
             return;
         }
         _running = true;
-        var deferral = args.GetDeferral();
         try
         {
             await ViewModel.RunAsync();
@@ -76,7 +76,6 @@ public sealed partial class AdminPasswordResetDialog : ContentDialog
         finally
         {
             _running = false;
-            deferral.Complete();
         }
     }
 

@@ -1851,6 +1851,46 @@
       }
     }
   ],
+  "web.admin.common.downloadAccess.conversionOff": [
+    {
+      "type": 0,
+      "value": "لا يُعدّ الخادم نسخًا ملائمة للأجهزة، لذا يكون كل تنزيل هو الملف الأصلي. فعّل ذلك في "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "الإعدادات ← التنزيلات"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.common.downloadAccess.serverOff": [
+    {
+      "type": 0,
+      "value": "التنزيلات معطّلة على الخادم بأكمله، لذا لا يمكن لأحد التنزيل. فعّلها في "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "الإعدادات ← التنزيلات"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
   "web.admin.common.serverActivity.connecting": [
     {
       "type": 0,
@@ -5291,6 +5331,58 @@
       "value": "لا تدعم هذه الجلسة الإيقاف المؤقت أو الاستئناف أو الرسائل أثناء التشغيل. لا يزال بإمكان «إيقاف» و«إنهاء» إنهاء التشغيل."
     }
   ],
+  "web.admin.settings.hooks.inviteCodes.createFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر إنشاء رمز الدعوة"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.created": [
+    {
+      "type": 0,
+      "value": "تم إنشاء رمز الدعوة"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.deleteFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حذف رمز الدعوة"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.deleted": [
+    {
+      "type": 0,
+      "value": "تم حذف رمز الدعوة"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.topUpFailed": [
+    {
+      "type": 0,
+      "value": "تحقق من الحد الأقصى الحالي لاستخدامات الرمز قبل إعادة محاولة الزيادة. "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.topUpUnconfirmed": [
+    {
+      "type": 0,
+      "value": "تعذّر تأكيد النتيجة."
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.toppedUp": [
+    {
+      "type": 0,
+      "value": "تمت زيادة استخدامات رمز الدعوة"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.updateFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحديث رمز الدعوة"
+    }
+  ],
   "web.admin.settings.invitations.capabilitiesFailed": [
     {
       "type": 0,
@@ -5931,6 +6023,322 @@
     {
       "type": 0,
       "value": "الحالة"
+    }
+  ],
+  "web.admin.settings.inviteCodes.copied": [
+    {
+      "type": 0,
+      "value": "تم النسخ إلى الحافظة"
+    }
+  ],
+  "web.admin.settings.inviteCodes.copyFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر النسخ إلى الحافظة"
+    }
+  ],
+  "web.admin.settings.inviteCodes.create.button": [
+    {
+      "type": 0,
+      "value": "إنشاء رمز"
+    }
+  ],
+  "web.admin.settings.inviteCodes.create.title": [
+    {
+      "type": 0,
+      "value": "إنشاء رمز دعوة"
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.confirm": [
+    {
+      "type": 0,
+      "value": "حذف"
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.description": [
+    {
+      "type": 0,
+      "value": "هل تريد حذف رمز الدعوة «"
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": "»؟ لا يمكن التراجع عن هذا الإجراء."
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.title": [
+    {
+      "type": 0,
+      "value": "حذف رمز الدعوة"
+    }
+  ],
+  "web.admin.settings.inviteCodes.deleteLabel": [
+    {
+      "type": 0,
+      "value": "حذف رمز الدعوة "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.empty": [
+    {
+      "type": 0,
+      "value": "لا توجد رموز دعوة بعد. أنشئ رمزًا للبدء."
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.code": [
+    {
+      "type": 0,
+      "value": "الرمز"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.codePlaceholder": [
+    {
+      "type": 0,
+      "value": "مثال: BETA2026"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.create": [
+    {
+      "type": 0,
+      "value": "إنشاء"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.creating": [
+    {
+      "type": 0,
+      "value": "جارٍ الإنشاء..."
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.label": [
+    {
+      "type": 0,
+      "value": "التسمية"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.labelPlaceholder": [
+    {
+      "type": 0,
+      "value": "مثال: المختبرون التجريبيون"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.maxUses": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى للاستخدامات"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.maxUsesInvalid": [
+    {
+      "type": 0,
+      "value": "يجب أن يكون الحد الأقصى للاستخدامات رقمًا موجبًا"
+    }
+  ],
+  "web.admin.settings.inviteCodes.loadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل رموز الدعوة. "
+    },
+    {
+      "type": 8,
+      "value": "button",
+      "children": [
+        {
+          "type": 0,
+          "value": "إعادة المحاولة"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.loadMore": [
+    {
+      "type": 0,
+      "value": "تحميل المزيد"
+    }
+  ],
+  "web.admin.settings.inviteCodes.loading": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل رموز الدعوة..."
+    }
+  ],
+  "web.admin.settings.inviteCodes.signupsOff": [
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 0,
+          "value": "التسجيل العام معطّل"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " — لن تعمل هذه الرموز حتى تفعّله. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "إعداد التسجيل العام"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.signupsOn": [
+    {
+      "type": 0,
+      "value": "لا تعمل الرموز إلا عندما يكون التسجيل العام مفعّلًا. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "إعداد التسجيل العام"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.status.active": [
+    {
+      "type": 0,
+      "value": "نشط"
+    }
+  ],
+  "web.admin.settings.inviteCodes.status.disabled": [
+    {
+      "type": 0,
+      "value": "معطّل"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.actions": [
+    {
+      "type": 0,
+      "value": "الإجراءات"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.code": [
+    {
+      "type": 0,
+      "value": "الرمز"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.created": [
+    {
+      "type": 0,
+      "value": "تاريخ الإنشاء"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.label": [
+    {
+      "type": 0,
+      "value": "التسمية"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.status": [
+    {
+      "type": 0,
+      "value": "الحالة"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.usage": [
+    {
+      "type": 0,
+      "value": "الاستخدام"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUp.description": [
+    {
+      "type": 0,
+      "value": "أضف استخدامات إضافية إلى "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": ". الاستخدام الحالي "
+    },
+    {
+      "type": 1,
+      "value": "used"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "max"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUp.title": [
+    {
+      "type": 0,
+      "value": "زيادة استخدامات رمز الدعوة"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.adding": [
+    {
+      "type": 0,
+      "value": "جارٍ الإضافة..."
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.additionalUses": [
+    {
+      "type": 0,
+      "value": "الاستخدامات الإضافية"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.invalid": [
+    {
+      "type": 0,
+      "value": "يجب أن تكون الاستخدامات الإضافية رقمًا موجبًا"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.submit": [
+    {
+      "type": 0,
+      "value": "إضافة استخدامات"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpLabel": [
+    {
+      "type": 0,
+      "value": "زيادة استخدامات رمز الدعوة "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.usageCount": [
+    {
+      "type": 1,
+      "value": "used"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "max"
     }
   ],
   "web.admin.shell.mobileHeader.eyebrow": [
@@ -6961,6 +7369,12 @@
       "value": "كلمة مرور مؤقتة"
     }
   ],
+  "web.admin.users.list.accessGroupsLink": [
+    {
+      "type": 0,
+      "value": "مجموعات الوصول"
+    }
+  ],
   "web.admin.users.list.addUser": [
     {
       "type": 0,
@@ -7139,6 +7553,12 @@
     {
       "type": 0,
       "value": "الحساب"
+    }
+  ],
+  "web.admin.users.list.create.tab.limits": [
+    {
+      "type": 0,
+      "value": "الحدود"
     }
   ],
   "web.admin.users.list.create.username": [
@@ -7347,6 +7767,18 @@
       "value": "البحث باسم المستخدم أو البريد الإلكتروني..."
     }
   ],
+  "web.admin.users.list.signupsOff": [
+    {
+      "type": 0,
+      "value": "التسجيل العام معطّل"
+    }
+  ],
+  "web.admin.users.list.signupsOn": [
+    {
+      "type": 0,
+      "value": "التسجيل العام مفعّل"
+    }
+  ],
   "web.admin.users.list.status.active": [
     {
       "type": 0,
@@ -7369,6 +7801,12 @@
     {
       "type": 0,
       "value": "الدعوات"
+    }
+  ],
+  "web.admin.users.list.tab.inviteCodes": [
+    {
+      "type": 0,
+      "value": "رموز الدعوة"
     }
   ],
   "web.admin.users.list.tab.users": [
@@ -17043,6 +17481,204 @@
       "value": "إيقاف التشغيل"
     }
   ],
+  "web.player.bitrateLimit.choosePlaceholder": [
+    {
+      "type": 0,
+      "value": "اختر حدًا"
+    }
+  ],
+  "web.player.bitrateLimit.custom": [
+    {
+      "type": 0,
+      "value": "مخصص"
+    }
+  ],
+  "web.player.bitrateLimit.customAria": [
+    {
+      "type": 1,
+      "value": "label"
+    },
+    {
+      "type": 0,
+      "value": " بوحدة Mbps"
+    }
+  ],
+  "web.player.bitrateLimit.customPlaceholder": [
+    {
+      "type": 0,
+      "value": "مثال: 1.5"
+    }
+  ],
+  "web.player.bitrateLimit.invalid": [
+    {
+      "type": 6,
+      "value": "places",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "أدخل قيمة أكبر من "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps، مثل 8 أو 1.5 (حتى "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " منزلة عشرية)."
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "أدخل قيمة أكبر من "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps، مثل 8 أو 1.5 (حتى منزلة عشرية واحدة)."
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "أدخل قيمة أكبر من "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps، مثل 8 أو 1.5 (حتى منزلتين عشريتين)."
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "أدخل قيمة أكبر من "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps، مثل 8 أو 1.5 (حتى "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " منازل عشرية)."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "أدخل قيمة أكبر من "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps، مثل 8 أو 1.5 (حتى "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " منزلة عشرية)."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "أدخل قيمة أكبر من "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps، مثل 8 أو 1.5 (حتى "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " منزلة عشرية)."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.bitrateLimit.lowWarning": [
+    {
+      "type": 0,
+      "value": "دون "
+    },
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps، يُحوَّل ترميز البث إلى جودة منخفضة جدًا."
+    }
+  ],
+  "web.player.bitrateLimit.unit": [
+    {
+      "type": 0,
+      "value": "Mbps"
+    }
+  ],
+  "web.player.bitrateLimit.unlimited": [
+    {
+      "type": 0,
+      "value": "غير محدود"
+    }
+  ],
+  "web.player.bitrateLimit.value": [
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
   "web.player.bufferingStatus": [
     {
       "type": 0,
@@ -19544,6 +20180,12 @@
       "value": "second"
     }
   ],
+  "web.profiles.noLibraries": [
+    {
+      "type": 0,
+      "value": "لا توجد مكتبات متاحة."
+    }
+  ],
   "web.profiles.picker.add": [
     {
       "type": 0,
@@ -19720,6 +20362,246 @@
     {
       "type": 0,
       "value": "جارٍ التحقق..."
+    }
+  ],
+  "web.profiles.userPolicy.adminDefault": [
+    {
+      "type": 0,
+      "value": "افتراضي المسؤول"
+    }
+  ],
+  "web.profiles.userPolicy.adminLimitHelp": [
+    {
+      "type": 0,
+      "value": "أدخل عددًا صحيحًا، أو أوقف «تجاوز» لاستخدام القيمة الافتراضية للمسؤول."
+    }
+  ],
+  "web.profiles.userPolicy.adminLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "أدخل عددًا صحيحًا لا يقل عن "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": "، أو أوقف «تجاوز» لاستخدام القيمة الافتراضية للمسؤول."
+    }
+  ],
+  "web.profiles.userPolicy.adminQuality": [
+    {
+      "type": 0,
+      "value": "يستخدم الحد الأقصى الافتراضي للجودة لدى المسؤول."
+    }
+  ],
+  "web.profiles.userPolicy.adminValue": [
+    {
+      "type": 0,
+      "value": "افتراضي المسؤول: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.allowed": [
+    {
+      "type": 0,
+      "value": "مسموح"
+    }
+  ],
+  "web.profiles.userPolicy.audioTranscoding": [
+    {
+      "type": 0,
+      "value": "تحويل ترميز الصوت"
+    }
+  ],
+  "web.profiles.userPolicy.audioTranscodingHint": [
+    {
+      "type": 0,
+      "value": "تحويل الصوت دون ترميز الفيديو."
+    }
+  ],
+  "web.profiles.userPolicy.downloadTranscodes": [
+    {
+      "type": 0,
+      "value": "تنزيل النسخ المحوّلة الترميز"
+    }
+  ],
+  "web.profiles.userPolicy.downloads": [
+    {
+      "type": 0,
+      "value": "التنزيلات"
+    }
+  ],
+  "web.profiles.userPolicy.groupAllLibraries": [
+    {
+      "type": 0,
+      "value": "الوراثة من المجموعة"
+    }
+  ],
+  "web.profiles.userPolicy.groupLimitHelp": [
+    {
+      "type": 0,
+      "value": "أدخل عددًا صحيحًا، أو أوقف «تجاوز» لوراثة القيمة."
+    }
+  ],
+  "web.profiles.userPolicy.groupLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "أدخل عددًا صحيحًا لا يقل عن "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": "، أو أوقف «تجاوز» لوراثة القيمة."
+    }
+  ],
+  "web.profiles.userPolicy.groupQuality": [
+    {
+      "type": 0,
+      "value": "يستخدم الحد الأقصى للجودة في مجموعة الوصول."
+    }
+  ],
+  "web.profiles.userPolicy.groupUnknown": [
+    {
+      "type": 0,
+      "value": "موروث من المجموعة"
+    }
+  ],
+  "web.profiles.userPolicy.groupValue": [
+    {
+      "type": 0,
+      "value": "موروث: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.maxLocalBitrate": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى لمعدل البت للبث المحلي"
+    }
+  ],
+  "web.profiles.userPolicy.maxPlaybackQuality": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى لجودة التشغيل"
+    }
+  ],
+  "web.profiles.userPolicy.maxProfiles": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى للملفات الشخصية"
+    }
+  ],
+  "web.profiles.userPolicy.maxRemoteBitrate": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى لمعدل البت للبث عن بُعد"
+    }
+  ],
+  "web.profiles.userPolicy.maxStreams": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى للبث"
+    }
+  ],
+  "web.profiles.userPolicy.maxTranscodes": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى لتحويل الترميز"
+    }
+  ],
+  "web.profiles.userPolicy.mediaRequests": [
+    {
+      "type": 0,
+      "value": "طلبات الوسائط"
+    }
+  ],
+  "web.profiles.userPolicy.mediaRequestsHint": [
+    {
+      "type": 0,
+      "value": "طلب أفلام ومسلسلات جديدة عند تفعيل الطلبات."
+    }
+  ],
+  "web.profiles.userPolicy.notAllowed": [
+    {
+      "type": 0,
+      "value": "غير مسموح"
+    }
+  ],
+  "web.profiles.userPolicy.override": [
+    {
+      "type": 0,
+      "value": "تجاوز"
+    }
+  ],
+  "web.profiles.userPolicy.serverDefault": [
+    {
+      "type": 0,
+      "value": "افتراضي الخادم"
+    }
+  ],
+  "web.profiles.userPolicy.serverLimitHelp": [
+    {
+      "type": 0,
+      "value": "أدخل عددًا صحيحًا، أو أوقف «تجاوز» لاستخدام القيمة الافتراضية للخادم."
+    }
+  ],
+  "web.profiles.userPolicy.serverLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "أدخل عددًا صحيحًا لا يقل عن "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": "، أو أوقف «تجاوز» لاستخدام القيمة الافتراضية للخادم."
+    }
+  ],
+  "web.profiles.userPolicy.serverQuality": [
+    {
+      "type": 0,
+      "value": "يستخدم الحد الأقصى الافتراضي للجودة في الخادم."
+    }
+  ],
+  "web.profiles.userPolicy.serverValue": [
+    {
+      "type": 0,
+      "value": "افتراضي الخادم: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.unlimited": [
+    {
+      "type": 0,
+      "value": "غير محدود"
+    }
+  ],
+  "web.profiles.userPolicy.videoTranscoding": [
+    {
+      "type": 0,
+      "value": "تحويل ترميز الفيديو"
+    }
+  ],
+  "web.profiles.userPolicy.zeroUnlimited": [
+    {
+      "type": 0,
+      "value": "0 = غير محدود"
     }
   ],
   "web.recommendations.emptyBody": [
@@ -25393,6 +26275,12 @@
     {
       "type": 0,
       "value": "بلا حد"
+    }
+  ],
+  "web.settings.watchProviders.auth.copyCode": [
+    {
+      "type": 0,
+      "value": "نسخ الرمز"
     }
   ],
   "web.shell.pageBack.goBack": [

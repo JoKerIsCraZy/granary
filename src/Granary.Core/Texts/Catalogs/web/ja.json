@@ -1623,6 +1623,46 @@
       }
     }
   ],
+  "web.admin.common.downloadAccess.conversionOff": [
+    {
+      "type": 0,
+      "value": "サーバーがデバイスに適したコピーを準備していないため、ダウンロードはすべて元のファイルになります。"
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "設定 → ダウンロード"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "でオンにしてください。"
+    }
+  ],
+  "web.admin.common.downloadAccess.serverOff": [
+    {
+      "type": 0,
+      "value": "サーバー全体でダウンロードがオフになっているため、誰もダウンロードできません。"
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "設定 → ダウンロード"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "でオンにしてください。"
+    }
+  ],
   "web.admin.common.serverActivity.connecting": [
     {
       "type": 0,
@@ -3492,6 +3532,58 @@
       "value": "このセッションは、ライブでの一時停止、再開、メッセージに対応していません。「停止」と「強制終了」で再生を終了することはできます。"
     }
   ],
+  "web.admin.settings.hooks.inviteCodes.createFailed": [
+    {
+      "type": 0,
+      "value": "招待コードを作成できませんでした"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.created": [
+    {
+      "type": 0,
+      "value": "招待コードを作成しました"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.deleteFailed": [
+    {
+      "type": 0,
+      "value": "招待コードを削除できませんでした"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.deleted": [
+    {
+      "type": 0,
+      "value": "招待コードを削除しました"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.topUpFailed": [
+    {
+      "type": 0,
+      "value": "使用回数を追加し直す前に、コードの現在の最大使用回数を確認してください。"
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.topUpUnconfirmed": [
+    {
+      "type": 0,
+      "value": "結果を確認できませんでした。"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.toppedUp": [
+    {
+      "type": 0,
+      "value": "招待コードの使用回数を追加しました"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.updateFailed": [
+    {
+      "type": 0,
+      "value": "招待コードを更新できませんでした"
+    }
+  ],
   "web.admin.settings.invitations.capabilitiesFailed": [
     {
       "type": 0,
@@ -4124,6 +4216,326 @@
     {
       "type": 0,
       "value": "状態"
+    }
+  ],
+  "web.admin.settings.inviteCodes.copied": [
+    {
+      "type": 0,
+      "value": "クリップボードにコピーしました"
+    }
+  ],
+  "web.admin.settings.inviteCodes.copyFailed": [
+    {
+      "type": 0,
+      "value": "クリップボードにコピーできませんでした"
+    }
+  ],
+  "web.admin.settings.inviteCodes.create.button": [
+    {
+      "type": 0,
+      "value": "コードを作成"
+    }
+  ],
+  "web.admin.settings.inviteCodes.create.title": [
+    {
+      "type": 0,
+      "value": "招待コードを作成"
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.confirm": [
+    {
+      "type": 0,
+      "value": "削除"
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.description": [
+    {
+      "type": 0,
+      "value": "招待コード「"
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": "」を削除しますか？この操作は元に戻せません。"
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.title": [
+    {
+      "type": 0,
+      "value": "招待コードを削除"
+    }
+  ],
+  "web.admin.settings.inviteCodes.deleteLabel": [
+    {
+      "type": 0,
+      "value": "招待コード"
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": "を削除"
+    }
+  ],
+  "web.admin.settings.inviteCodes.empty": [
+    {
+      "type": 0,
+      "value": "招待コードはまだありません。作成して始めましょう。"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.code": [
+    {
+      "type": 0,
+      "value": "コード"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.codePlaceholder": [
+    {
+      "type": 0,
+      "value": "例：BETA2026"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.create": [
+    {
+      "type": 0,
+      "value": "作成"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.creating": [
+    {
+      "type": 0,
+      "value": "作成中…"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.label": [
+    {
+      "type": 0,
+      "value": "ラベル"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.labelPlaceholder": [
+    {
+      "type": 0,
+      "value": "例：ベータテスター"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.maxUses": [
+    {
+      "type": 0,
+      "value": "最大使用回数"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.maxUsesInvalid": [
+    {
+      "type": 0,
+      "value": "最大使用回数は正の数で指定してください"
+    }
+  ],
+  "web.admin.settings.inviteCodes.loadFailed": [
+    {
+      "type": 0,
+      "value": "招待コードを読み込めませんでした。"
+    },
+    {
+      "type": 8,
+      "value": "button",
+      "children": [
+        {
+          "type": 0,
+          "value": "再試行"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.loadMore": [
+    {
+      "type": 0,
+      "value": "さらに読み込む"
+    }
+  ],
+  "web.admin.settings.inviteCodes.loading": [
+    {
+      "type": 0,
+      "value": "招待コードを読み込み中…"
+    }
+  ],
+  "web.admin.settings.inviteCodes.signupsOff": [
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 0,
+          "value": "公開登録はオフです"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "。オンにするまで、これらのコードは使用できません。"
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "公開登録の設定"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.signupsOn": [
+    {
+      "type": 0,
+      "value": "コードは公開登録がオンの間だけ使用できます。"
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "公開登録の設定"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.status.active": [
+    {
+      "type": 0,
+      "value": "有効"
+    }
+  ],
+  "web.admin.settings.inviteCodes.status.disabled": [
+    {
+      "type": 0,
+      "value": "無効"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.actions": [
+    {
+      "type": 0,
+      "value": "操作"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.code": [
+    {
+      "type": 0,
+      "value": "コード"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.created": [
+    {
+      "type": 0,
+      "value": "作成日"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.label": [
+    {
+      "type": 0,
+      "value": "ラベル"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.status": [
+    {
+      "type": 0,
+      "value": "状態"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.usage": [
+    {
+      "type": 0,
+      "value": "使用状況"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUp.description": [
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": "に使用回数を追加します。現在の使用状況は"
+    },
+    {
+      "type": 1,
+      "value": "used"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "max"
+    },
+    {
+      "type": 0,
+      "value": "です。"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUp.title": [
+    {
+      "type": 0,
+      "value": "招待コードの使用回数を追加"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.adding": [
+    {
+      "type": 0,
+      "value": "追加中…"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.additionalUses": [
+    {
+      "type": 0,
+      "value": "追加する使用回数"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.invalid": [
+    {
+      "type": 0,
+      "value": "追加する使用回数は正の数で指定してください"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.submit": [
+    {
+      "type": 0,
+      "value": "使用回数を追加"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpLabel": [
+    {
+      "type": 0,
+      "value": "招待コード"
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": "の使用回数を追加"
+    }
+  ],
+  "web.admin.settings.inviteCodes.usageCount": [
+    {
+      "type": 1,
+      "value": "used"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "max"
     }
   ],
   "web.admin.shell.mobileHeader.eyebrow": [
@@ -5090,6 +5502,12 @@
       "value": "仮パスワード"
     }
   ],
+  "web.admin.users.list.accessGroupsLink": [
+    {
+      "type": 0,
+      "value": "アクセスグループ"
+    }
+  ],
   "web.admin.users.list.addUser": [
     {
       "type": 0,
@@ -5270,6 +5688,12 @@
       "value": "アカウント"
     }
   ],
+  "web.admin.users.list.create.tab.limits": [
+    {
+      "type": 0,
+      "value": "制限"
+    }
+  ],
   "web.admin.users.list.create.username": [
     {
       "type": 0,
@@ -5427,6 +5851,18 @@
       "value": "ユーザー名またはメールアドレスで検索…"
     }
   ],
+  "web.admin.users.list.signupsOff": [
+    {
+      "type": 0,
+      "value": "一般登録オフ"
+    }
+  ],
+  "web.admin.users.list.signupsOn": [
+    {
+      "type": 0,
+      "value": "一般登録オン"
+    }
+  ],
   "web.admin.users.list.status.active": [
     {
       "type": 0,
@@ -5449,6 +5885,12 @@
     {
       "type": 0,
       "value": "招待"
+    }
+  ],
+  "web.admin.users.list.tab.inviteCodes": [
+    {
+      "type": 0,
+      "value": "招待コード"
     }
   ],
   "web.admin.users.list.tab.users": [
@@ -13190,6 +13632,95 @@
       "value": "再生を停止"
     }
   ],
+  "web.player.bitrateLimit.choosePlaceholder": [
+    {
+      "type": 0,
+      "value": "上限を選択"
+    }
+  ],
+  "web.player.bitrateLimit.custom": [
+    {
+      "type": 0,
+      "value": "カスタム"
+    }
+  ],
+  "web.player.bitrateLimit.customAria": [
+    {
+      "type": 1,
+      "value": "label"
+    },
+    {
+      "type": 0,
+      "value": "（Mbps）"
+    }
+  ],
+  "web.player.bitrateLimit.customPlaceholder": [
+    {
+      "type": 0,
+      "value": "例：1.5"
+    }
+  ],
+  "web.player.bitrateLimit.invalid": [
+    {
+      "type": 6,
+      "value": "places",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbpsより大きい値を入力してください（例：8、1.5。小数点以下"
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "桁まで）。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.bitrateLimit.lowWarning": [
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps未満では、ストリームは非常に低い画質にトランスコードされます。"
+    }
+  ],
+  "web.player.bitrateLimit.unit": [
+    {
+      "type": 0,
+      "value": "Mbps"
+    }
+  ],
+  "web.player.bitrateLimit.unlimited": [
+    {
+      "type": 0,
+      "value": "無制限"
+    }
+  ],
+  "web.player.bitrateLimit.value": [
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
   "web.player.bufferingStatus": [
     {
       "type": 0,
@@ -14920,6 +15451,12 @@
       "value": "second"
     }
   ],
+  "web.profiles.noLibraries": [
+    {
+      "type": 0,
+      "value": "利用できるライブラリがありません。"
+    }
+  ],
   "web.profiles.picker.add": [
     {
       "type": 0,
@@ -15024,6 +15561,234 @@
     {
       "type": 0,
       "value": "確認中…"
+    }
+  ],
+  "web.profiles.userPolicy.adminDefault": [
+    {
+      "type": 0,
+      "value": "管理者のデフォルト"
+    }
+  ],
+  "web.profiles.userPolicy.adminLimitHelp": [
+    {
+      "type": 0,
+      "value": "整数を入力するか、「上書き」をオフにして管理者のデフォルトを使用してください。"
+    }
+  ],
+  "web.profiles.userPolicy.adminLimitHelpMin": [
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": "以上の整数を入力するか、「上書き」をオフにして管理者のデフォルトを使用してください。"
+    }
+  ],
+  "web.profiles.userPolicy.adminQuality": [
+    {
+      "type": 0,
+      "value": "管理者のデフォルトの画質上限を使用します。"
+    }
+  ],
+  "web.profiles.userPolicy.adminValue": [
+    {
+      "type": 0,
+      "value": "管理者のデフォルト："
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.allowed": [
+    {
+      "type": 0,
+      "value": "許可"
+    }
+  ],
+  "web.profiles.userPolicy.audioTranscoding": [
+    {
+      "type": 0,
+      "value": "音声のトランスコード"
+    }
+  ],
+  "web.profiles.userPolicy.audioTranscodingHint": [
+    {
+      "type": 0,
+      "value": "映像をエンコードせずに音声を変換します。"
+    }
+  ],
+  "web.profiles.userPolicy.downloadTranscodes": [
+    {
+      "type": 0,
+      "value": "トランスコード版のダウンロード"
+    }
+  ],
+  "web.profiles.userPolicy.downloads": [
+    {
+      "type": 0,
+      "value": "ダウンロード"
+    }
+  ],
+  "web.profiles.userPolicy.groupAllLibraries": [
+    {
+      "type": 0,
+      "value": "グループから継承"
+    }
+  ],
+  "web.profiles.userPolicy.groupLimitHelp": [
+    {
+      "type": 0,
+      "value": "整数を入力するか、「上書き」をオフにして継承してください。"
+    }
+  ],
+  "web.profiles.userPolicy.groupLimitHelpMin": [
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": "以上の整数を入力するか、「上書き」をオフにして継承してください。"
+    }
+  ],
+  "web.profiles.userPolicy.groupQuality": [
+    {
+      "type": 0,
+      "value": "アクセスグループの画質上限を使用します。"
+    }
+  ],
+  "web.profiles.userPolicy.groupUnknown": [
+    {
+      "type": 0,
+      "value": "グループから継承"
+    }
+  ],
+  "web.profiles.userPolicy.groupValue": [
+    {
+      "type": 0,
+      "value": "継承："
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.maxLocalBitrate": [
+    {
+      "type": 0,
+      "value": "ローカルストリームの最大ビットレート"
+    }
+  ],
+  "web.profiles.userPolicy.maxPlaybackQuality": [
+    {
+      "type": 0,
+      "value": "最大再生画質"
+    }
+  ],
+  "web.profiles.userPolicy.maxProfiles": [
+    {
+      "type": 0,
+      "value": "最大プロフィール数"
+    }
+  ],
+  "web.profiles.userPolicy.maxRemoteBitrate": [
+    {
+      "type": 0,
+      "value": "リモートストリームの最大ビットレート"
+    }
+  ],
+  "web.profiles.userPolicy.maxStreams": [
+    {
+      "type": 0,
+      "value": "最大ストリーム数"
+    }
+  ],
+  "web.profiles.userPolicy.maxTranscodes": [
+    {
+      "type": 0,
+      "value": "最大トランスコード数"
+    }
+  ],
+  "web.profiles.userPolicy.mediaRequests": [
+    {
+      "type": 0,
+      "value": "メディアリクエスト"
+    }
+  ],
+  "web.profiles.userPolicy.mediaRequestsHint": [
+    {
+      "type": 0,
+      "value": "リクエストが有効な場合、新しい映画やシリーズをリクエストできます。"
+    }
+  ],
+  "web.profiles.userPolicy.notAllowed": [
+    {
+      "type": 0,
+      "value": "不許可"
+    }
+  ],
+  "web.profiles.userPolicy.override": [
+    {
+      "type": 0,
+      "value": "上書き"
+    }
+  ],
+  "web.profiles.userPolicy.serverDefault": [
+    {
+      "type": 0,
+      "value": "サーバーのデフォルト"
+    }
+  ],
+  "web.profiles.userPolicy.serverLimitHelp": [
+    {
+      "type": 0,
+      "value": "整数を入力するか、「上書き」をオフにしてサーバーのデフォルトを使用してください。"
+    }
+  ],
+  "web.profiles.userPolicy.serverLimitHelpMin": [
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": "以上の整数を入力するか、「上書き」をオフにしてサーバーのデフォルトを使用してください。"
+    }
+  ],
+  "web.profiles.userPolicy.serverQuality": [
+    {
+      "type": 0,
+      "value": "サーバーのデフォルトの画質上限を使用します。"
+    }
+  ],
+  "web.profiles.userPolicy.serverValue": [
+    {
+      "type": 0,
+      "value": "サーバーのデフォルト："
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.unlimited": [
+    {
+      "type": 0,
+      "value": "無制限"
+    }
+  ],
+  "web.profiles.userPolicy.videoTranscoding": [
+    {
+      "type": 0,
+      "value": "映像のトランスコード"
+    }
+  ],
+  "web.profiles.userPolicy.zeroUnlimited": [
+    {
+      "type": 0,
+      "value": "0＝無制限"
     }
   ],
   "web.recommendations.emptyBody": [
@@ -19063,6 +19828,12 @@
     {
       "type": 0,
       "value": "制限なし"
+    }
+  ],
+  "web.settings.watchProviders.auth.copyCode": [
+    {
+      "type": 0,
+      "value": "コードをコピー"
     }
   ],
   "web.shell.pageBack.goBack": [

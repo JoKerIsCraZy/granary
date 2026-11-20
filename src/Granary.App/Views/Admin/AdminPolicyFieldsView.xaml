@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    An account's own policy, as the web's components/UserPolicyFields.tsx lays it out; Part picks which half shows.
+    Access (PolicyAccessFields): Library Access (LibraryAccessSelector.tsx), the note of a server-wide download switch
+    (admin/DownloadsServerNotice.tsx), Downloads and Download Transcodes side by side, Media Requests.
+    Limits (PolicyLimitFields): Max Streams, Max Transcodes and the two bitrate caps two a row (StreamBitrateLimitInput.tsx),
+    Video and Audio Transcoding, Max Playback Quality, Max Profiles.
+    A yes-or-no field is the web's BooleanPolicyRow: a bordered card, its name and line, a menu at least 160 px wide on the
+    right. A limit is its PolicyOverrideField: the name with Override and a switch on the right, then the default in a
+    dashed box, or the box to type in.
+-->
+<UserControl
+    x:Class="Granary.App.Views.Admin.AdminPolicyFieldsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Granary.App.Views.Admin"
+    xmlns:admin="using:Granary.Core.ViewModels.Admin"
+    xmlns:t="using:Granary.Core.Texts">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ms-appx:///Themes/AdminForms.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="SwitchRowTemplate" x:DataType="admin:AdminPolicySwitchField">
+                <Border Style="{StaticResource AdminFieldCardStyle}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="{x:Bind Label}" Style="{StaticResource AdminFieldLabelStyle}" />
+                            <TextBlock Text="{x:Bind Description}" Style="{StaticResource AdminHintTextStyle}" Visibility="{x:Bind HasDescription}" />
+                        </StackPanel>
+                        <ComboBox Grid.Column="1" Style="{StaticResource AdminSelectStyle}" MinWidth="160" VerticalAlignment="Center"
+                                  ItemsSource="{x:Bind Options}" SelectedIndex="{x:Bind SelectedIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind Label}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="admin:AdminPolicyOption">
+                                    <TextBlock Text="{x:Bind Text, Mode=OneWay}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+
+            <!--
+                The same card in half a row: the web's row wraps there (flex-wrap; the name at least 128 px, the menu at least
+                160), so the name and line sit on top and the menu below them on the left (gap-y-2).
+            -->
+            <DataTemplate x:Key="SwitchCardTemplate" x:DataType="admin:AdminPolicySwitchField">
+                <Border Style="{StaticResource AdminFieldCardStyle}">
+                    <StackPanel Spacing="8">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{x:Bind Label}" Style="{StaticResource AdminFieldLabelStyle}" />
+                            <TextBlock Text="{x:Bind Description}" Style="{StaticResource AdminHintTextStyle}" Visibility="{x:Bind HasDescription}" />
+                        </StackPanel>
+                        <ComboBox Style="{StaticResource AdminSelectStyle}" MinWidth="160" ItemsSource="{x:Bind Options}"
+                                  SelectedIndex="{x:Bind SelectedIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind Label}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="admin:AdminPolicyOption">
+                                    <TextBlock Text="{x:Bind Text, Mode=OneWay}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+
+            <DataTemplate x:Key="LimitFieldTemplate" x:DataType="admin:AdminPolicyLimitField">
+                <StackPanel Spacing="4">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Label}" Style="{StaticResource AdminFieldLabelStyle}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('web.profiles.userPolicy.override')}" FontSize="12"
+                                   Foreground="{StaticResource SiloMutedBrush}" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="2" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind IsOverridden, Mode=TwoWay}"
+                                      AutomationProperties.Name="{x:Bind local:AdminPolicyFieldsView.OverrideName(Label)}" />
+                    </Grid>
+                    <Grid Visibility="{x:Bind IsInherited, Mode=OneWay}">
+                        <Rectangle Style="{StaticResource AdminDashedBoxStyle}" StrokeDashArray="4,3" />
+                        <TextBlock Text="{x:Bind DefaultText, Mode=OneWay}" Style="{StaticResource AdminDashedTextStyle}" />
+                    </Grid>
+                    <StackPanel Spacing="4" Visibility="{x:Bind IsOverridden, Mode=OneWay}">
+                        <TextBox Style="{StaticResource AdminTextBoxStyle}" Text="{x:Bind Draft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 InputScope="Number" AutomationProperties.Name="{x:Bind Label}" />
+                        <TextBlock Text="{x:Bind Help, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}" Visibility="{x:Bind HasHelp, Mode=OneWay}" />
+                    </StackPanel>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate x:Key="BitrateFieldTemplate" x:DataType="admin:AdminPolicyBitrateField">
+                <StackPanel Spacing="4">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Label}" Style="{StaticResource AdminFieldLabelStyle}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('web.profiles.userPolicy.override')}" FontSize="12"
+                                   Foreground="{StaticResource SiloMutedBrush}" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="2" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind IsOverridden, Mode=TwoWay}"
+                                      AutomationProperties.Name="{x:Bind local:AdminPolicyFieldsView.OverrideName(Label)}" />
+                    </Grid>
+                    <Grid Visibility="{x:Bind IsInherited, Mode=OneWay}">
+                        <Rectangle Style="{StaticResource AdminDashedBoxStyle}" StrokeDashArray="4,3" />
+                        <TextBlock Text="{x:Bind DefaultText, Mode=OneWay}" Style="{StaticResource AdminDashedTextStyle}" />
+                    </Grid>
+                    <StackPanel Spacing="4" Visibility="{x:Bind IsOverridden, Mode=OneWay}">
+                        <!-- The menu is w-full, or w-32 (128) beside the Custom box. -->
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="{x:Bind local:AdminPolicyFieldsView.MenuWidth(IsCustom), Mode=OneWay}" />
+                                <ColumnDefinition Width="{x:Bind local:AdminPolicyFieldsView.BoxWidth(IsCustom), Mode=OneWay}" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Style="{StaticResource AdminFullSelectStyle}" ItemsSource="{x:Bind Options}"
+                                      SelectedIndex="{x:Bind SelectedIndex, Mode=TwoWay}"
+                                      PlaceholderText="{x:Bind t:AppText.Get('web.player.bitrateLimit.choosePlaceholder')}" AutomationProperties.Name="{x:Bind Label}" />
+                            <Grid Grid.Column="1" Visibility="{x:Bind IsCustom, Mode=OneWay}">
+                                <TextBox Style="{StaticResource AdminTextBoxStyle}" Padding="12,7,56,6"
+                                         Text="{x:Bind CustomDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" InputScope="Number"
+                                         PlaceholderText="{x:Bind t:AppText.Get('web.player.bitrateLimit.customPlaceholder')}" AutomationProperties.Name="{x:Bind CustomName}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.player.bitrateLimit.unit')}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" IsHitTestVisible="False" />
+                            </Grid>
+                        </Grid>
+                        <TextBlock Text="{x:Bind InvalidText, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}"
+                                   Visibility="{x:Bind local:AdminPolicyFieldsView.Has(InvalidText), Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind LowWarning, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}" Foreground="{StaticResource SiloWarningBrush}"
+                                   Visibility="{x:Bind local:AdminPolicyFieldsView.Has(LowWarning), Mode=OneWay}" />
+                    </StackPanel>
+                </StackPanel>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- The Access tab's part. -->
+        <StackPanel x:Name="AccessPart" Spacing="16">
+            <StackPanel Spacing="8">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.profiles.libraryAccess.label')}" Style="{StaticResource AdminFieldLabelStyle}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind Policy.InheritLibrariesText, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                               VerticalAlignment="Center" />
+                    <ToggleSwitch Grid.Column="2" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind Policy.InheritLibraries, Mode=TwoWay}"
+                                  AutomationProperties.Name="{x:Bind Policy.InheritLibrariesText, Mode=OneWay}" />
+                </Grid>
+                <TextBlock Text="{x:Bind Policy.LibraryHint, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}"
+                           Visibility="{x:Bind Policy.InheritLibraries, Mode=OneWay}" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.profiles.noLibraries')}" Style="{StaticResource AdminHintTextStyle}"
+                           Visibility="{x:Bind Policy.HasNoLibraries, Mode=OneWay}" />
+                <ItemsControl ItemsSource="{x:Bind Policy.Libraries}" IsTabStop="False" Visibility="{x:Bind Policy.ChoosesLibraries, Mode=OneWay}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Spacing="6" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="admin:AdminLibraryChoice">
+                            <Border BorderBrush="{StaticResource AdminCardBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="12,2">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind Name}" FontSize="14" TextTrimming="CharacterEllipsis" />
+                                        <Border BorderBrush="{StaticResource AdminCardBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="4,0"
+                                                VerticalAlignment="Center" Visibility="{x:Bind IsDisabled}">
+                                            <TextBlock Text="{x:Bind t:AppText.Get('web.profiles.libraryAccess.disabled')}" FontSize="10"
+                                                       FontFamily="{StaticResource SiloFontMedium}" />
+                                        </Border>
+                                        <TextBlock Text="{x:Bind local:AdminPolicyFieldsView.Kind(Type)}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Column="1" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind IsChecked, Mode=TwoWay}"
+                                                  AutomationProperties.Name="{x:Bind Name}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- The web's DownloadsServerNotice: an info icon and the muted line, its link to Settings → Downloads. -->
+            <Grid ColumnSpacing="8" Visibility="{x:Bind Policy.HasDownloadsNotice, Mode=OneWay}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource AdminInfoIconBrush}" VerticalAlignment="Top" Margin="0,1,0,0" />
+                <TextBlock x:Name="DownloadsNotice" Grid.Column="1" Style="{StaticResource AdminHintTextStyle}" />
+            </Grid>
+
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ContentControl Content="{x:Bind Policy.Downloads, Mode=OneWay}" ContentTemplate="{StaticResource SwitchCardTemplate}" IsTabStop="False"
+                                HorizontalContentAlignment="Stretch" />
+                <ContentControl Grid.Column="1" Content="{x:Bind Policy.DownloadTranscodes, Mode=OneWay}" ContentTemplate="{StaticResource SwitchCardTemplate}"
+                                IsTabStop="False" HorizontalContentAlignment="Stretch" />
+            </Grid>
+            <ContentControl Content="{x:Bind Policy.Requests, Mode=OneWay}" ContentTemplate="{StaticResource SwitchRowTemplate}" IsTabStop="False"
+                            HorizontalContentAlignment="Stretch" />
+        </StackPanel>
+
+        <!-- The Limits tab's part. -->
+        <StackPanel x:Name="LimitsPart" Spacing="16" Visibility="Collapsed">
+            <Grid ColumnSpacing="12" RowSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <ContentControl Content="{x:Bind Policy.MaxStreams, Mode=OneWay}" ContentTemplate="{StaticResource LimitFieldTemplate}" IsTabStop="False"
+                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" />
+                <ContentControl Grid.Column="1" Content="{x:Bind Policy.MaxTranscodes, Mode=OneWay}" ContentTemplate="{StaticResource LimitFieldTemplate}"
+                                IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" />
+                <ContentControl Grid.Row="1" Content="{x:Bind Policy.MaxRemoteBitrate, Mode=OneWay}" ContentTemplate="{StaticResource BitrateFieldTemplate}"
+                                IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" />
+                <ContentControl Grid.Row="1" Grid.Column="1" Content="{x:Bind Policy.MaxLocalBitrate, Mode=OneWay}"
+                                ContentTemplate="{StaticResource BitrateFieldTemplate}" IsTabStop="False" HorizontalContentAlignment="Stretch"
+                                VerticalContentAlignment="Top" />
+            </Grid>
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ContentControl Content="{x:Bind Policy.VideoTranscoding, Mode=OneWay}" ContentTemplate="{StaticResource SwitchCardTemplate}" IsTabStop="False"
+                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                <ContentControl Grid.Column="1" Content="{x:Bind Policy.AudioTranscoding, Mode=OneWay}" ContentTemplate="{StaticResource SwitchCardTemplate}"
+                                IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+            </Grid>
+            <StackPanel Spacing="4">
+                <TextBlock Text="{x:Bind t:AppText.Get('web.profiles.userPolicy.maxPlaybackQuality')}" Style="{StaticResource AdminFieldLabelStyle}" />
+                <ComboBox Style="{StaticResource AdminFullSelectStyle}" ItemsSource="{x:Bind Policy.QualityOptions}"
+                          SelectedIndex="{x:Bind Policy.QualityIndex, Mode=TwoWay}"
+                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.profiles.userPolicy.maxPlaybackQuality')}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="admin:AdminPolicyOption">
+                            <TextBlock Text="{x:Bind Text, Mode=OneWay}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock Text="{x:Bind Policy.QualityHint, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}" />
+            </StackPanel>
+            <ContentControl Content="{x:Bind Policy.MaxProfiles, Mode=OneWay}" ContentTemplate="{StaticResource LimitFieldTemplate}" IsTabStop="False"
+                            HorizontalContentAlignment="Stretch" />
+        </StackPanel>
+    </Grid>
+</UserControl>

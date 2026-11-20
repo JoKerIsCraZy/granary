@@ -13,4 +13,7 @@ public static class AdminPages
 
     /// <summary>Users on its Invitations tab, as the web's <c>/admin/users?tab=invitations</c>.</summary>
     public const string Invitations = "invitations";
+
+    /// <summary>Users on its Invite Codes tab, as the web's <c>/admin/users?tab=invite-codes</c>.</summary>
+    public const string InviteCodes = "invite-codes";
 }

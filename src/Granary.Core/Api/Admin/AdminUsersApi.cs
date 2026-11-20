@@ -32,6 +32,27 @@ public sealed class AdminUsersApi(SiloHttp http)
         http.GetAsAccountProfileAsync(actor.Server, "api/v2/admin/users/capabilities", actor.AccountId, actor.ProfileId,
             AdminJsonContext.Default.AdminUserCapabilities, cancellationToken);
 
+    /// <summary>The server's built-in policy layers, which an admin's or an ungrouped account's unset fields resolve to.</summary>
+    public Task<AdminPolicyDefaults> GetPolicyDefaultsAsync(AdminActor actor, CancellationToken cancellationToken = default) =>
+        http.GetAsAccountProfileAsync(actor.Server, "api/v2/admin/users/policy-defaults", actor.AccountId, actor.ProfileId,
+            AdminJsonContext.Default.AdminPolicyDefaults, cancellationToken);
+
+    /// <summary>
+    /// Public signups and the two download switches, from the administrator settings as the web's Users pages read them
+    /// (<c>useAdminServerSettings</c>, values the text "true"). Only these three are taken from the answer; nothing of it is
+    /// kept or logged.
+    /// </summary>
+    public async Task<AdminServerSwitches> GetServerSwitchesAsync(AdminActor actor, CancellationToken cancellationToken = default)
+    {
+        var settings = await http.GetAsAccountProfileAsync(actor.Server, "api/v2/admin/settings/effective", actor.AccountId, actor.ProfileId,
+            AdminJsonContext.Default.JsonObject, cancellationToken);
+        return new AdminServerSwitches(IsOn(settings, "signup.enabled"), IsOn(settings, "download.enabled"),
+            IsOn(settings, "download.transcode_enabled"));
+    }
+
+    private static bool IsOn(System.Text.Json.Nodes.JsonObject settings, string key) =>
+        settings[key] is System.Text.Json.Nodes.JsonValue value && value.TryGetValue(out string? text) && text == "true";
+
     /// <summary>One account and the version a change or delete must name.</summary>
     public Task<Versioned<AdminUser>> GetAsync(AdminActor actor, string id, CancellationToken cancellationToken = default) =>
         http.GetVersionedAsAccountProfileAsync(actor.Server, UserPath(id), actor.AccountId, actor.ProfileId, AdminJsonContext.Default.AdminUser,

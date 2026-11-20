@@ -36,8 +36,23 @@ public sealed partial class AdminNewInvitationViewModel(AdminInvitationsApi invi
     public partial string EmailError { get; private set; } = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsUserRole), nameof(CanPickGroup))]
+    [NotifyPropertyChangedFor(nameof(IsUserRole), nameof(CanPickGroup), nameof(RoleIndex))]
     public partial bool IsAdminRole { get; set; }
+
+    /// <summary>The role menu: 0 User, 1 Admin (the Owner only).</summary>
+    public int RoleIndex
+    {
+        get => IsAdminRole ? 1 : 0;
+        // A menu clears its choice when its items change; and only the Owner invites an admin.
+        set
+        {
+            if (value >= 0)
+            {
+                IsAdminRole = value == 1 && CanGrantAdmin;
+            }
+            OnPropertyChanged();
+        }
+    }
 
     [ObservableProperty]
     public partial bool CanGrantAdmin { get; private set; }

@@ -336,6 +336,14 @@ web.admin.backups.restore.caveat.restart
 # An administrator's role on Admin → Dashboard's Users, as the web's accountRoleLabel (lib/accountOwner.ts): Role in
 # src/Granary.Core/ViewModels/Admin/AdminText.cs.
 web.admin.common.accounts.role
+# Admin → Users as the web lays it out (src/Granary.App/Views/Admin: AdminUsersView, AdminInviteCodesView, AdminPolicyAccessFields,
+# AdminPolicyLimitFields; src/Granary.Core/ViewModels/Admin: AdminNewUserViewModel, AdminPolicyForm, AdminPolicyFields,
+# AdminInviteCodesViewModel): the header's signups pill and Access Groups, the Invite Codes tab, and Create User's Access and
+# Limits tabs, in the words of pages/AdminUsers.tsx, pages/admin-settings/InviteCodesTab.tsx and InviteCodeList.tsx,
+# hooks/queries/admin/inviteCodes.ts, components/UserPolicyFields.tsx, StreamBitrateLimitInput.tsx, LibraryAccessSelector.tsx,
+# admin/DownloadsServerNotice.tsx and lib/playback-quality.ts.
+web.admin.common.downloadAccess.conversionOff
+web.admin.common.downloadAccess.serverOff
 
 # The activity indicator at the top right of every page an administrator sees, in the words of the web's ServerActivity
 # (components/ServerActivity.tsx): src/Granary.App/Controls/ServerActivityButton.xaml(.cs) and ServerActivityViewModel.cs,
@@ -532,6 +540,15 @@ web.admin.sessions.playback.toast.stopFallback
 web.admin.sessions.playback.toast.stopSent
 web.admin.sessions.playback.toast.terminateReceipt
 web.admin.sessions.playback.unsupportedControl
+# More of Admin → Users' words, as above under web.admin.common.downloadAccess.conversionOff.
+web.admin.settings.hooks.inviteCodes.createFailed
+web.admin.settings.hooks.inviteCodes.created
+web.admin.settings.hooks.inviteCodes.deleteFailed
+web.admin.settings.hooks.inviteCodes.deleted
+web.admin.settings.hooks.inviteCodes.topUpFailed
+web.admin.settings.hooks.inviteCodes.topUpUnconfirmed
+web.admin.settings.hooks.inviteCodes.toppedUp
+web.admin.settings.hooks.inviteCodes.updateFailed
 
 # Admin → Users → Invitations, in the words of the web's Invitations tab (pages/admin-settings/InvitationsTab.tsx,
 # InvitationList.tsx, CreateInvitationForm.tsx, InvitationDisplay.tsx, invitationRules.ts):
@@ -631,6 +648,45 @@ web.admin.settings.invitations.table.delivery
 web.admin.settings.invitations.table.recipient
 web.admin.settings.invitations.table.role
 web.admin.settings.invitations.table.status
+# More of Admin → Users' words, as above under web.admin.common.downloadAccess.conversionOff.
+web.admin.settings.inviteCodes.copied
+web.admin.settings.inviteCodes.copyFailed
+web.admin.settings.inviteCodes.create.button
+web.admin.settings.inviteCodes.create.title
+web.admin.settings.inviteCodes.delete.confirm
+web.admin.settings.inviteCodes.delete.description
+web.admin.settings.inviteCodes.delete.title
+web.admin.settings.inviteCodes.deleteLabel
+web.admin.settings.inviteCodes.empty
+web.admin.settings.inviteCodes.form.code
+web.admin.settings.inviteCodes.form.codePlaceholder
+web.admin.settings.inviteCodes.form.create
+web.admin.settings.inviteCodes.form.creating
+web.admin.settings.inviteCodes.form.label
+web.admin.settings.inviteCodes.form.labelPlaceholder
+web.admin.settings.inviteCodes.form.maxUses
+web.admin.settings.inviteCodes.form.maxUsesInvalid
+web.admin.settings.inviteCodes.loadFailed
+web.admin.settings.inviteCodes.loadMore
+web.admin.settings.inviteCodes.loading
+web.admin.settings.inviteCodes.signupsOff
+web.admin.settings.inviteCodes.signupsOn
+web.admin.settings.inviteCodes.status.active
+web.admin.settings.inviteCodes.status.disabled
+web.admin.settings.inviteCodes.table.actions
+web.admin.settings.inviteCodes.table.code
+web.admin.settings.inviteCodes.table.created
+web.admin.settings.inviteCodes.table.label
+web.admin.settings.inviteCodes.table.status
+web.admin.settings.inviteCodes.table.usage
+web.admin.settings.inviteCodes.topUp.description
+web.admin.settings.inviteCodes.topUp.title
+web.admin.settings.inviteCodes.topUpForm.adding
+web.admin.settings.inviteCodes.topUpForm.additionalUses
+web.admin.settings.inviteCodes.topUpForm.invalid
+web.admin.settings.inviteCodes.topUpForm.submit
+web.admin.settings.inviteCodes.topUpLabel
+web.admin.settings.inviteCodes.usageCount
 
 # The admin area's own sidebar, in the words of the web's AdminSidebar and admin navigation (components/AdminSidebar.tsx,
 # lib/adminNavigation.ts): src/Granary.App/Views/AdminPage.xaml and AdminSidebarViewModel.cs.
@@ -793,6 +849,8 @@ web.admin.users.detail.header.setPassword
 web.admin.users.detail.header.status.active
 web.admin.users.detail.header.status.disabled
 web.admin.users.detail.header.temporaryPassword
+# More of Admin → Users' words, as above under web.admin.common.downloadAccess.conversionOff.
+web.admin.users.list.accessGroupsLink
 web.admin.users.list.addUser
 web.admin.users.list.adminGroupNone
 web.admin.users.list.column.actions
@@ -823,6 +881,8 @@ web.admin.users.list.create.saveFailed
 web.admin.users.list.create.saving
 web.admin.users.list.create.tab.access
 web.admin.users.list.create.tab.account
+# More of Admin → Users' words, as above under web.admin.common.downloadAccess.conversionOff.
+web.admin.users.list.create.tab.limits
 web.admin.users.list.create.username
 web.admin.users.list.createDialogTitle
 web.admin.users.list.deleteAria
@@ -842,11 +902,16 @@ web.admin.users.list.pageSizeOption
 web.admin.users.list.previousPage
 web.admin.users.list.reload
 web.admin.users.list.searchPlaceholder
+# More of Admin → Users' words, as above under web.admin.common.downloadAccess.conversionOff.
+web.admin.users.list.signupsOff
+web.admin.users.list.signupsOn
 web.admin.users.list.status.active
 web.admin.users.list.status.disabled
 web.admin.users.list.subtitle
 # The tabs of Admin → Users (pages/AdminUsers.tsx): src/Granary.App/Views/Admin/AdminUsersView.xaml.
 web.admin.users.list.tab.invitations
+# More of Admin → Users' words, as above under web.admin.common.downloadAccess.conversionOff.
+web.admin.users.list.tab.inviteCodes
 web.admin.users.list.tab.users
 web.admin.users.list.title
 web.admin.users.list.unavailable
@@ -2119,6 +2184,16 @@ web.player.bar.returnTitle
 web.player.bar.skipBackTitle
 web.player.bar.skipForwardTitle
 web.player.bar.stopTitle
+# More of Admin → Users' words, as above under web.admin.common.downloadAccess.conversionOff.
+web.player.bitrateLimit.choosePlaceholder
+web.player.bitrateLimit.custom
+web.player.bitrateLimit.customAria
+web.player.bitrateLimit.customPlaceholder
+web.player.bitrateLimit.invalid
+web.player.bitrateLimit.lowWarning
+web.player.bitrateLimit.unit
+web.player.bitrateLimit.unlimited
+web.player.bitrateLimit.value
 web.player.bufferingStatus
 web.player.chaptersMenu.heading
 
@@ -2387,6 +2462,8 @@ web.profiles.libraryAccess.primaryNote
 web.profiles.librarySelect.libraryFallback
 web.profiles.librarySelect.more
 web.profiles.librarySelect.pair
+# More of Admin → Users' words, as above under web.admin.common.downloadAccess.conversionOff.
+web.profiles.noLibraries
 web.profiles.picker.add
 web.profiles.picker.addFormFailed
 web.profiles.picker.addNeedsPin
@@ -2405,6 +2482,41 @@ web.profiles.pin.lockedLater
 web.profiles.pin.lockedMinutes
 web.profiles.pin.title
 web.profiles.pin.verifying
+# More of Admin → Users' words, as above under web.admin.common.downloadAccess.conversionOff.
+web.profiles.userPolicy.adminDefault
+web.profiles.userPolicy.adminLimitHelp
+web.profiles.userPolicy.adminLimitHelpMin
+web.profiles.userPolicy.adminQuality
+web.profiles.userPolicy.adminValue
+web.profiles.userPolicy.allowed
+web.profiles.userPolicy.audioTranscoding
+web.profiles.userPolicy.audioTranscodingHint
+web.profiles.userPolicy.downloadTranscodes
+web.profiles.userPolicy.downloads
+web.profiles.userPolicy.groupAllLibraries
+web.profiles.userPolicy.groupLimitHelp
+web.profiles.userPolicy.groupLimitHelpMin
+web.profiles.userPolicy.groupQuality
+web.profiles.userPolicy.groupUnknown
+web.profiles.userPolicy.groupValue
+web.profiles.userPolicy.maxLocalBitrate
+web.profiles.userPolicy.maxPlaybackQuality
+web.profiles.userPolicy.maxProfiles
+web.profiles.userPolicy.maxRemoteBitrate
+web.profiles.userPolicy.maxStreams
+web.profiles.userPolicy.maxTranscodes
+web.profiles.userPolicy.mediaRequests
+web.profiles.userPolicy.mediaRequestsHint
+web.profiles.userPolicy.notAllowed
+web.profiles.userPolicy.override
+web.profiles.userPolicy.serverDefault
+web.profiles.userPolicy.serverLimitHelp
+web.profiles.userPolicy.serverLimitHelpMin
+web.profiles.userPolicy.serverQuality
+web.profiles.userPolicy.serverValue
+web.profiles.userPolicy.unlimited
+web.profiles.userPolicy.videoTranscoding
+web.profiles.userPolicy.zeroUnlimited
 
 # For You and a row of it in full, as the web's Recommendations and RecommendationsSection pages:
 # src/Granary.App/Views/ForYouPage.xaml(.cs), RecommendationSectionPage.xaml, and ForYouViewModel.cs and
@@ -3043,6 +3155,8 @@ web.settings.value.custom
 web.settings.value.episodes
 web.settings.value.milliseconds
 web.settings.value.noLimit
+# More of Admin → Users' words, as above under web.admin.common.downloadAccess.conversionOff.
+web.settings.watchProviders.auth.copyCode
 
 # The shell, in the words of the web's sidebar (components/AppSidebar.tsx), with its section names upper-cased at
 # display as its CSS does, and its page back button (PageBack): src/Granary.App/MainWindow.xaml(.cs),

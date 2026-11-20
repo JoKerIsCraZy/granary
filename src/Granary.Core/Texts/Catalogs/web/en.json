@@ -1675,6 +1675,46 @@
       }
     }
   ],
+  "web.admin.common.downloadAccess.conversionOff": [
+    {
+      "type": 0,
+      "value": "The server isn't preparing device-friendly copies, so every download is the original file. Turn it on in "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Settings → Downloads"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.common.downloadAccess.serverOff": [
+    {
+      "type": 0,
+      "value": "Downloads are turned off for the whole server, so nobody can download. Turn them on in "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Settings → Downloads"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
   "web.admin.common.serverActivity.connecting": [
     {
       "type": 0,
@@ -3855,6 +3895,58 @@
       "value": "This session does not support live pause, resume, or messages. Stop and Terminate can still end playback."
     }
   ],
+  "web.admin.settings.hooks.inviteCodes.createFailed": [
+    {
+      "type": 0,
+      "value": "Failed to create invite code"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.created": [
+    {
+      "type": 0,
+      "value": "Invite code created"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.deleteFailed": [
+    {
+      "type": 0,
+      "value": "Failed to delete invite code"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.deleted": [
+    {
+      "type": 0,
+      "value": "Invite code deleted"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.topUpFailed": [
+    {
+      "type": 0,
+      "value": "Check the code’s current maximum uses before retrying the top-up. "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.topUpUnconfirmed": [
+    {
+      "type": 0,
+      "value": "The result could not be confirmed."
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.toppedUp": [
+    {
+      "type": 0,
+      "value": "Invite code topped up"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.updateFailed": [
+    {
+      "type": 0,
+      "value": "Failed to update invite code"
+    }
+  ],
   "web.admin.settings.invitations.capabilitiesFailed": [
     {
       "type": 0,
@@ -4495,6 +4587,322 @@
     {
       "type": 0,
       "value": "Status"
+    }
+  ],
+  "web.admin.settings.inviteCodes.copied": [
+    {
+      "type": 0,
+      "value": "Copied to clipboard"
+    }
+  ],
+  "web.admin.settings.inviteCodes.copyFailed": [
+    {
+      "type": 0,
+      "value": "Failed to copy to clipboard"
+    }
+  ],
+  "web.admin.settings.inviteCodes.create.button": [
+    {
+      "type": 0,
+      "value": "Create Code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.create.title": [
+    {
+      "type": 0,
+      "value": "Create Invite Code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.confirm": [
+    {
+      "type": 0,
+      "value": "Delete"
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.description": [
+    {
+      "type": 0,
+      "value": "Delete invite code \""
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": "\"? This action cannot be undone."
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.title": [
+    {
+      "type": 0,
+      "value": "Delete invite code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.deleteLabel": [
+    {
+      "type": 0,
+      "value": "Delete invite code "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.empty": [
+    {
+      "type": 0,
+      "value": "No invite codes yet. Create one to get started."
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.code": [
+    {
+      "type": 0,
+      "value": "Code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.codePlaceholder": [
+    {
+      "type": 0,
+      "value": "e.g. BETA2026"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.create": [
+    {
+      "type": 0,
+      "value": "Create"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.creating": [
+    {
+      "type": 0,
+      "value": "Creating..."
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.label": [
+    {
+      "type": 0,
+      "value": "Label"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.labelPlaceholder": [
+    {
+      "type": 0,
+      "value": "e.g. Beta testers"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.maxUses": [
+    {
+      "type": 0,
+      "value": "Max uses"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.maxUsesInvalid": [
+    {
+      "type": 0,
+      "value": "Max uses must be a positive number"
+    }
+  ],
+  "web.admin.settings.inviteCodes.loadFailed": [
+    {
+      "type": 0,
+      "value": "Unable to load invite codes. "
+    },
+    {
+      "type": 8,
+      "value": "button",
+      "children": [
+        {
+          "type": 0,
+          "value": "Retry"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.loadMore": [
+    {
+      "type": 0,
+      "value": "Load more"
+    }
+  ],
+  "web.admin.settings.inviteCodes.loading": [
+    {
+      "type": 0,
+      "value": "Loading invite codes..."
+    }
+  ],
+  "web.admin.settings.inviteCodes.signupsOff": [
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 0,
+          "value": "Public signups are off"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " — these codes won't work until you enable them. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Public signups setting"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.signupsOn": [
+    {
+      "type": 0,
+      "value": "Codes only work while public signups are on. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Public signups setting"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.status.active": [
+    {
+      "type": 0,
+      "value": "Active"
+    }
+  ],
+  "web.admin.settings.inviteCodes.status.disabled": [
+    {
+      "type": 0,
+      "value": "Disabled"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.actions": [
+    {
+      "type": 0,
+      "value": "Actions"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.code": [
+    {
+      "type": 0,
+      "value": "Code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.created": [
+    {
+      "type": 0,
+      "value": "Created"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.label": [
+    {
+      "type": 0,
+      "value": "Label"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.status": [
+    {
+      "type": 0,
+      "value": "Status"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.usage": [
+    {
+      "type": 0,
+      "value": "Usage"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUp.description": [
+    {
+      "type": 0,
+      "value": "Add extra uses to "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": ". Current usage is "
+    },
+    {
+      "type": 1,
+      "value": "used"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "max"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUp.title": [
+    {
+      "type": 0,
+      "value": "Top Up Invite Code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.adding": [
+    {
+      "type": 0,
+      "value": "Adding..."
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.additionalUses": [
+    {
+      "type": 0,
+      "value": "Additional uses"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.invalid": [
+    {
+      "type": 0,
+      "value": "Additional uses must be a positive number"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.submit": [
+    {
+      "type": 0,
+      "value": "Add Uses"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpLabel": [
+    {
+      "type": 0,
+      "value": "Top up invite code "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.usageCount": [
+    {
+      "type": 1,
+      "value": "used"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "max"
     }
   ],
   "web.admin.shell.mobileHeader.eyebrow": [
@@ -5477,6 +5885,12 @@
       "value": "Temporary password"
     }
   ],
+  "web.admin.users.list.accessGroupsLink": [
+    {
+      "type": 0,
+      "value": "Access Groups"
+    }
+  ],
   "web.admin.users.list.addUser": [
     {
       "type": 0,
@@ -5657,6 +6071,12 @@
       "value": "Account"
     }
   ],
+  "web.admin.users.list.create.tab.limits": [
+    {
+      "type": 0,
+      "value": "Limits"
+    }
+  ],
   "web.admin.users.list.create.username": [
     {
       "type": 0,
@@ -5825,6 +6245,18 @@
       "value": "Search by username or email..."
     }
   ],
+  "web.admin.users.list.signupsOff": [
+    {
+      "type": 0,
+      "value": "Public signups off"
+    }
+  ],
+  "web.admin.users.list.signupsOn": [
+    {
+      "type": 0,
+      "value": "Public signups on"
+    }
+  ],
   "web.admin.users.list.status.active": [
     {
       "type": 0,
@@ -5847,6 +6279,12 @@
     {
       "type": 0,
       "value": "Invitations"
+    }
+  ],
+  "web.admin.users.list.tab.inviteCodes": [
+    {
+      "type": 0,
+      "value": "Invite Codes"
     }
   ],
   "web.admin.users.list.tab.users": [
@@ -14139,6 +14577,126 @@
       "value": "Stop playback"
     }
   ],
+  "web.player.bitrateLimit.choosePlaceholder": [
+    {
+      "type": 0,
+      "value": "Choose a limit"
+    }
+  ],
+  "web.player.bitrateLimit.custom": [
+    {
+      "type": 0,
+      "value": "Custom"
+    }
+  ],
+  "web.player.bitrateLimit.customAria": [
+    {
+      "type": 1,
+      "value": "label"
+    },
+    {
+      "type": 0,
+      "value": " in Mbps"
+    }
+  ],
+  "web.player.bitrateLimit.customPlaceholder": [
+    {
+      "type": 0,
+      "value": "e.g. 1.5"
+    }
+  ],
+  "web.player.bitrateLimit.invalid": [
+    {
+      "type": 6,
+      "value": "places",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Enter a value above "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps, such as 8 or 1.5 (up to "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " decimal place)."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Enter a value above "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps, such as 8 or 1.5 (up to "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " decimal places)."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.bitrateLimit.lowWarning": [
+    {
+      "type": 0,
+      "value": "Below "
+    },
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps, streams are transcoded to very low quality."
+    }
+  ],
+  "web.player.bitrateLimit.unit": [
+    {
+      "type": 0,
+      "value": "Mbps"
+    }
+  ],
+  "web.player.bitrateLimit.unlimited": [
+    {
+      "type": 0,
+      "value": "Unlimited"
+    }
+  ],
+  "web.player.bitrateLimit.value": [
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
   "web.player.bufferingStatus": [
     {
       "type": 0,
@@ -16051,6 +16609,12 @@
       "value": "second"
     }
   ],
+  "web.profiles.noLibraries": [
+    {
+      "type": 0,
+      "value": "No libraries available."
+    }
+  ],
   "web.profiles.picker.add": [
     {
       "type": 0,
@@ -16171,6 +16735,246 @@
     {
       "type": 0,
       "value": "Verifying..."
+    }
+  ],
+  "web.profiles.userPolicy.adminDefault": [
+    {
+      "type": 0,
+      "value": "Admin default"
+    }
+  ],
+  "web.profiles.userPolicy.adminLimitHelp": [
+    {
+      "type": 0,
+      "value": "Enter a whole number, or turn Override off to use the admin default."
+    }
+  ],
+  "web.profiles.userPolicy.adminLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "Enter a whole number of at least "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": ", or turn Override off to use the admin default."
+    }
+  ],
+  "web.profiles.userPolicy.adminQuality": [
+    {
+      "type": 0,
+      "value": "Uses the admin default quality ceiling."
+    }
+  ],
+  "web.profiles.userPolicy.adminValue": [
+    {
+      "type": 0,
+      "value": "Admin default: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.allowed": [
+    {
+      "type": 0,
+      "value": "Allowed"
+    }
+  ],
+  "web.profiles.userPolicy.audioTranscoding": [
+    {
+      "type": 0,
+      "value": "Audio Transcoding"
+    }
+  ],
+  "web.profiles.userPolicy.audioTranscodingHint": [
+    {
+      "type": 0,
+      "value": "Audio conversion without video encoding."
+    }
+  ],
+  "web.profiles.userPolicy.downloadTranscodes": [
+    {
+      "type": 0,
+      "value": "Download Transcodes"
+    }
+  ],
+  "web.profiles.userPolicy.downloads": [
+    {
+      "type": 0,
+      "value": "Downloads"
+    }
+  ],
+  "web.profiles.userPolicy.groupAllLibraries": [
+    {
+      "type": 0,
+      "value": "Inherit from group"
+    }
+  ],
+  "web.profiles.userPolicy.groupLimitHelp": [
+    {
+      "type": 0,
+      "value": "Enter a whole number, or turn Override off to inherit."
+    }
+  ],
+  "web.profiles.userPolicy.groupLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "Enter a whole number of at least "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": ", or turn Override off to inherit."
+    }
+  ],
+  "web.profiles.userPolicy.groupQuality": [
+    {
+      "type": 0,
+      "value": "Uses the access group's quality ceiling."
+    }
+  ],
+  "web.profiles.userPolicy.groupUnknown": [
+    {
+      "type": 0,
+      "value": "Inherited from group"
+    }
+  ],
+  "web.profiles.userPolicy.groupValue": [
+    {
+      "type": 0,
+      "value": "Inherited: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.maxLocalBitrate": [
+    {
+      "type": 0,
+      "value": "Max local stream bitrate"
+    }
+  ],
+  "web.profiles.userPolicy.maxPlaybackQuality": [
+    {
+      "type": 0,
+      "value": "Max Playback Quality"
+    }
+  ],
+  "web.profiles.userPolicy.maxProfiles": [
+    {
+      "type": 0,
+      "value": "Max Profiles"
+    }
+  ],
+  "web.profiles.userPolicy.maxRemoteBitrate": [
+    {
+      "type": 0,
+      "value": "Max remote stream bitrate"
+    }
+  ],
+  "web.profiles.userPolicy.maxStreams": [
+    {
+      "type": 0,
+      "value": "Max Streams"
+    }
+  ],
+  "web.profiles.userPolicy.maxTranscodes": [
+    {
+      "type": 0,
+      "value": "Max Transcodes"
+    }
+  ],
+  "web.profiles.userPolicy.mediaRequests": [
+    {
+      "type": 0,
+      "value": "Media Requests"
+    }
+  ],
+  "web.profiles.userPolicy.mediaRequestsHint": [
+    {
+      "type": 0,
+      "value": "Request new movies and series when requests are enabled."
+    }
+  ],
+  "web.profiles.userPolicy.notAllowed": [
+    {
+      "type": 0,
+      "value": "Not allowed"
+    }
+  ],
+  "web.profiles.userPolicy.override": [
+    {
+      "type": 0,
+      "value": "Override"
+    }
+  ],
+  "web.profiles.userPolicy.serverDefault": [
+    {
+      "type": 0,
+      "value": "Server default"
+    }
+  ],
+  "web.profiles.userPolicy.serverLimitHelp": [
+    {
+      "type": 0,
+      "value": "Enter a whole number, or turn Override off to use the server default."
+    }
+  ],
+  "web.profiles.userPolicy.serverLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "Enter a whole number of at least "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": ", or turn Override off to use the server default."
+    }
+  ],
+  "web.profiles.userPolicy.serverQuality": [
+    {
+      "type": 0,
+      "value": "Uses the server default quality ceiling."
+    }
+  ],
+  "web.profiles.userPolicy.serverValue": [
+    {
+      "type": 0,
+      "value": "Server default: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.unlimited": [
+    {
+      "type": 0,
+      "value": "Unlimited"
+    }
+  ],
+  "web.profiles.userPolicy.videoTranscoding": [
+    {
+      "type": 0,
+      "value": "Video Transcoding"
+    }
+  ],
+  "web.profiles.userPolicy.zeroUnlimited": [
+    {
+      "type": 0,
+      "value": "0 = unlimited"
     }
   ],
   "web.recommendations.emptyBody": [
@@ -20577,6 +21381,12 @@
     {
       "type": 0,
       "value": "No limit"
+    }
+  ],
+  "web.settings.watchProviders.auth.copyCode": [
+    {
+      "type": 0,
+      "value": "Copy code"
     }
   ],
   "web.shell.pageBack.goBack": [

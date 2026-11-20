@@ -49,13 +49,14 @@ internal static class AdminUserPayloads
           "password_reset_email": false, "ownership_transfer": true, "login_sessions": true }
         """;
 
-    /// <summary>A server answering Users: two pages of accounts, the groups and the capabilities.</summary>
+    /// <summary>A server answering Users: two pages of accounts, the groups, the capabilities and its switches (signups on).</summary>
     public static BrowseFakeSilo Silo()
     {
         var silo = new BrowseFakeSilo();
         silo.Map("api/v2/admin/users", request => BrowseFakeSilo.Json(request.RequestUri!.Query.Contains("cursor=c1") ? UsersPage2 : Users));
         silo.Map("api/v2/admin/access-groups", Groups);
         silo.Map("api/v2/admin/users/capabilities", Capabilities);
+        silo.Map("api/v2/admin/settings/effective", """{ "signup.enabled": "true", "download.enabled": "true", "download.transcode_enabled": "true" }""");
         return silo;
     }
 

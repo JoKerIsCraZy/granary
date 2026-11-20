@@ -83,7 +83,7 @@ public sealed class AdminAccountBindingTests
         _silo.Map("api/v2/admin/users", request => request.Method == HttpMethod.Post
             ? BrowseFakeSilo.Json("""{ "id": "9" }""", HttpStatusCode.Created)
             : BrowseFakeSilo.Json("""{ "items": [], "page": { "has_more": false } }"""));
-        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
+        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), new AdminApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
         form.Start(AdminActors.Of(_session), Capabilities, [], groupsKnown: false, viewerIsOwner: true);
         (form.Username, form.Email, form.Password) = ("bo", "bo@example.com", "margin fossil");
         Assert.True(await form.SaveAsync(TestContext.Current.CancellationToken));
@@ -201,7 +201,7 @@ public sealed class AdminAccountBindingTests
             _silo.Logs.For<AdminNewInvitationViewModel>());
         await invite.StartAsync(tab.Actor, tab.Capabilities, [], viewerIsOwner: true);
         invite.IsEmail = false;
-        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
+        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), new AdminApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
         form.Start(list.Actor, Capabilities, [], groupsKnown: false, viewerIsOwner: true);
         (form.Username, form.Email, form.Password) = ("bo", "bo@example.com", "margin fossil");
 
