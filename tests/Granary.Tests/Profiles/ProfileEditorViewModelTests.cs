@@ -405,6 +405,39 @@ public sealed class ProfileEditorViewModelTests
     }
 
     [Fact]
+    public async Task LeavingKids_ClearsAQualityThisClientDoesNotKnow()
+    {
+        ScriptLibraries();
+        _silo.On(HttpMethod.Patch, ProfilesPath + "/p-kid", ScriptedSilo.Json(HttpStatusCode.OK, """{"id":"p-kid","name":"Mila","is_primary":false,"has_pin":false,"is_child":false}"""));
+        var editor = Editor(Kid with { MaxPlaybackQuality = "4320p" });
+        await editor.LoadLibrariesAsync(Ct);
+
+        editor.IsChild = false;
+        await editor.SaveAsync(Ct);
+
+        Assert.Contains("\"max_playback_quality\":null", Assert.Single(_silo.SentTo(HttpMethod.Patch, ProfilesPath + "/p-kid")).Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task APictureSavedBefore_StaysWhenAnotherImageIsStagedAndRemoved()
+    {
+        _silo.On(HttpMethod.Put, ProfilesPath + "/p-owner/avatar", ScriptedSilo.Json(HttpStatusCode.OK,
+            """{"id":"p-owner","name":"Elena Moreau","is_primary":true,"has_pin":true,"is_child":false,"avatar_source":"upload"}"""));
+        _silo.On(HttpMethod.Patch, ProfilesPath + "/p-owner", ScriptedSilo.Problem(500, "internal_error"),
+            ScriptedSilo.Json(HttpStatusCode.OK, """{"id":"p-owner","name":"Elena Moreau","is_primary":true,"has_pin":true,"is_child":false}"""));
+        var editor = Editor(Owner with { Avatar = "preset:dicebear:identicon:cosmic-otter" });
+        editor.ChoosePicture(Png, "a.png");
+        editor.Pin = "2580";
+        await editor.SaveAsync(Ct);
+
+        editor.ChoosePicture(Png, "b.png");
+        editor.RemoveNewPicture();
+        await editor.SaveAsync(Ct);
+
+        Assert.DoesNotContain("\"avatar\"", _silo.SentTo(HttpMethod.Patch, ProfilesPath + "/p-owner")[1].Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task LibrariesThatCouldNotBeRead_KeepSayingSo_AndCanBeReadAgain()
     {
         _silo.On(HttpMethod.Get, "api/v2/user/libraries", ScriptedSilo.NetworkError(), ScriptedSilo.Json(HttpStatusCode.OK, LibrariesJson));

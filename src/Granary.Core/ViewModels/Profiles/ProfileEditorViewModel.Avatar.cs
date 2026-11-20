@@ -146,7 +146,7 @@ public sealed partial class ProfileEditorViewModel
         }
         PictureError = "";
         _pictureName = string.IsNullOrWhiteSpace(fileName) ? "avatar" : Path.GetFileName(fileName);
-        _pictureSaved = false;
+        // A picture saved before stays recorded: a new image staged and then removed again leaves it as it is.
         NewPicture = image;
         RemoveUploadedPicture = true;
         return true;

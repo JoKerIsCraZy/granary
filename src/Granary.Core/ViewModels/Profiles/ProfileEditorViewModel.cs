@@ -211,6 +211,8 @@ public sealed partial class ProfileEditorViewModel : ObservableObject
                 SelectedAdvisoryAge = AdvisoryAges[0];
                 RequireAdvisoryAge = false;
                 SelectedPlaybackCeiling = PlaybackCeilings[0];
+                // Also when it already showed no limit: a stored value this client does not know goes too.
+                _qualityChanged = true;
                 LibraryRestrictionsEnabled = false;
                 SetAllLibraries(false);
                 RequestsAllowed = true;
