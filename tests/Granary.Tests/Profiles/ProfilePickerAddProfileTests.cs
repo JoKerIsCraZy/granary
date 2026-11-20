@@ -81,6 +81,26 @@ public sealed class ProfilePickerAddProfileTests : IDisposable
         Assert.NotNull(_picker.Editor);
     }
 
+    // A PIN check that answers after the picker ended opens nothing: no editor, no proof kept.
+    [Fact]
+    public async Task APinCheckThatAnswersAfterThePickersEnd_OpensNoEditor()
+    {
+        await LoadAsync();
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.On(HttpMethod.Post, ProfilesPath + "/p-owner/verify-pin", () => answer.Task);
+        _picker.AddProfileCommand.Execute(null);
+        var check = _picker.SubmitPinCommand.ExecuteAsync("2580");
+
+        _picker.Dispose();
+        answer.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{"valid":true,"profile_token":"pvt_owner"}""", System.Text.Encoding.UTF8, "application/json"),
+        });
+        await check;
+
+        Assert.Null(_picker.Editor);
+    }
+
     // The editor holds the primary profile's proof: it never outlives the picker, whatever its dialog still does.
     [Fact]
     public async Task ThePickersEnd_DropsAnOpenEditor()

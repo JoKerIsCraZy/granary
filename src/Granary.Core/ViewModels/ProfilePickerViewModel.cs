@@ -487,6 +487,8 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     {
         _disposed = true;
         _session.Changed -= OnSessionChanged;
+        // A PIN check still on its way opens nothing once its answer comes.
+        ClosePinPrompt();
         // Add profile's editor holds the primary profile's proof: it goes with the picker, whatever its dialog still does.
         Editor = null;
     }
