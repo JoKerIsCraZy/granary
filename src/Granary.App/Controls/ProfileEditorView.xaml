@@ -176,6 +176,8 @@
                 </ItemsControl>
                 <TextBlock Text="{x:Bind ViewModel.LibrariesError, Mode=OneWay}" Foreground="{ThemeResource SystemFillColorCriticalBrush}" FontSize="13"
                            Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.LibrariesError), Mode=OneWay}" AutomationProperties.LiveSetting="Assertive" />
+                <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                        Command="{x:Bind ViewModel.RetryLibrariesCommand}" Visibility="{x:Bind ViewModel.HasLibrariesLoadError, Mode=OneWay}" />
             </StackPanel>
 
             <StackPanel Spacing="2" Visibility="{x:Bind ViewModel.ShowsRequests}">

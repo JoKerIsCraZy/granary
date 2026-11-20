@@ -336,6 +336,95 @@ public sealed class ProfileEditorViewModelTests
     }
 
     [Fact]
+    public async Task ThePinSaidBack_IsTheOneSent_AndCannotBeTypedWhileTheSaveRuns()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.OnCancellable(HttpMethod.Patch, ProfilesPath + "/p-owner", _ => answer.Task);
+        var editor = Editor(Owner);
+        editor.Pin = "2580";
+
+        var saving = editor.SaveAsync(Ct);
+        Assert.False(editor.CanTypePin);
+        editor.Pin = "1111";
+        answer.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{"id":"p-owner","name":"Elena Moreau","is_primary":true,"has_pin":true,"is_child":false}""",
+                System.Text.Encoding.UTF8, "application/json"),
+        });
+        var saved = await saving;
+
+        Assert.Equal("2580", saved?.NewPin);
+        Assert.Contains("\"pin\":\"2580\"", Assert.Single(_silo.Sent).Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ANewImageForAnUploadedPicture_LeavesTheOldOneUntilTheUploadWent()
+    {
+        _silo.On(HttpMethod.Patch, ProfilesPath + "/p-owner", ScriptedSilo.Json(HttpStatusCode.OK, """{"id":"p-owner","name":"Elena Moreau","is_primary":true,"has_pin":true,"is_child":false}"""));
+        _silo.On(HttpMethod.Put, ProfilesPath + "/p-owner/avatar", ScriptedSilo.Problem(503, "dependency_unavailable"));
+        var editor = Editor(Owner with { Avatar = "upload:x", AvatarSource = "upload", AvatarUrl = "/avatars/p-owner.webp" });
+        editor.ChoosePicture(Png, "elena.png");
+
+        var saved = await editor.SaveAsync(Ct);
+
+        Assert.DoesNotContain("\"avatar\"", _silo.SentTo(HttpMethod.Patch, ProfilesPath + "/p-owner").Single().Body, StringComparison.Ordinal);
+        Assert.Equal("Failed to upload avatar", saved?.Notice);
+    }
+
+    [Fact]
+    public async Task APictureSentFirst_ThatWentThrough_IsSaid_WhenTheUpdateFails_AndNotSentAgain()
+    {
+        _silo.On(HttpMethod.Put, ProfilesPath + "/p-owner/avatar", ScriptedSilo.Json(HttpStatusCode.OK,
+            """{"id":"p-owner","name":"Elena Moreau","is_primary":true,"has_pin":true,"is_child":false,"avatar_source":"upload"}"""));
+        _silo.On(HttpMethod.Patch, ProfilesPath + "/p-owner", ScriptedSilo.Problem(500, "internal_error"),
+            ScriptedSilo.Json(HttpStatusCode.OK, """{"id":"p-owner","name":"Elena Moreau","is_primary":true,"has_pin":true,"is_child":false}"""));
+        var editor = Editor(Owner);
+        editor.ChoosePicture(Png, "elena.png");
+        editor.Pin = "2580";
+
+        Assert.Null(await editor.SaveAsync(Ct));
+        Assert.Equal("Failed to save profile · Avatar updated", editor.Status);
+        Assert.NotNull(await editor.SaveAsync(Ct));
+
+        Assert.Single(_silo.SentTo(HttpMethod.Put, ProfilesPath + "/p-owner/avatar"));
+        Assert.DoesNotContain("\"avatar\"", _silo.SentTo(HttpMethod.Patch, ProfilesPath + "/p-owner")[1].Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LimitsThisClientDoesNotKnow_AreKeptByAnUnrelatedEdit()
+    {
+        _silo.On(HttpMethod.Patch, ProfilesPath + "/p-owner", ScriptedSilo.Json(HttpStatusCode.OK, """{"id":"p-owner","name":"Elena Moreau","is_primary":true,"has_pin":true,"is_child":false}"""));
+        var editor = Editor(Owner with { MaxContentRating = "NC-17", MaxPlaybackQuality = "4320p" });
+
+        editor.Name = "Elena";
+        await editor.SaveAsync(Ct);
+
+        string body = Assert.Single(_silo.Sent).Body!;
+        Assert.Contains("\"max_content_rating\":\"NC-17\"", body, StringComparison.Ordinal);
+        Assert.Contains("\"max_playback_quality\":\"4320p\"", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LibrariesThatCouldNotBeRead_KeepSayingSo_AndCanBeReadAgain()
+    {
+        _silo.On(HttpMethod.Get, "api/v2/user/libraries", ScriptedSilo.NetworkError(), ScriptedSilo.Json(HttpStatusCode.OK, LibrariesJson));
+        var editor = Editor();
+        await editor.LoadLibrariesAsync(Ct);
+        editor.Name = "Leo";
+        editor.LibraryRestrictionsEnabled = true;
+
+        Assert.Null(await editor.SaveAsync(Ct));
+        Assert.True(editor.HasLibrariesLoadError);
+        Assert.NotEqual("Choose at least one library.", editor.LibrariesError);
+        Assert.NotEqual("", editor.LibrariesError);
+
+        await editor.RetryLibrariesCommand.ExecuteAsync(null);
+
+        Assert.False(editor.HasLibrariesLoadError);
+        Assert.Equal(2, editor.Libraries.Count);
+    }
+
+    [Fact]
     public void AServersOwnPreset_IsDrawnFromUnderItsBasePath()
     {
         var editor = Editor(Kid with { Avatar = "preset:avatar-3" });

@@ -82,6 +82,8 @@ public sealed partial class ProfilesSettingsViewModel : ObservableObject
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server, Account.Id: { } accountId, ProfileId: { } profileId })
         {
             _target = null;
+            // A load still running belongs to the session before: it no longer ends the loading.
+            IsLoading = false;
             Show(null, null);
             return;
         }
@@ -95,7 +97,8 @@ public sealed partial class ProfilesSettingsViewModel : ObservableObject
                 return;
             }
             _target = (server, accountId, profileId);
-            Show(household, server.BaseUri);
+            // Read for a server, account and profile no longer in use: shown to none.
+            Show(Target() is null ? null : household, server.BaseUri);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
@@ -104,6 +107,8 @@ public sealed partial class ProfilesSettingsViewModel : ObservableObject
                 return;
             }
             _logger.LogWarning("Settings → Profiles could not read the household: {Failure}", ApiFailureText.Describe(ex));
+            // The rows as read before may be out of date: none is offered for an edit until a read goes through.
+            Show(null, null);
             Status = LibraryErrors.Describe(ex);
             HasLoadError = true;
         }

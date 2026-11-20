@@ -81,7 +81,11 @@ public sealed partial class ProfileEditorView : UserControl
             }
         };
         dialog.Opened += (_, _) => view.NameBox.Focus(FocusState.Programmatic);
-        _ = editor.LoadLibrariesAsync();
+        // Cancel and Escape wait for a save that runs, so what it saved is handled; only a close from outside does not.
+        dialog.Closing += (_, args) => args.Cancel = editor.IsSaving && !close.IsCancellationRequested;
+        // The libraries' read stops with the dialog, so nothing goes out as the editor's profile once it is closed.
+        using var open = CancellationTokenSource.CreateLinkedTokenSource(close);
+        _ = editor.LoadLibrariesAsync(open.Token);
         using var closing = close.Register(dialog.Hide);
         try
         {
@@ -90,6 +94,7 @@ public sealed partial class ProfileEditorView : UserControl
                 return null;
             }
             await dialog.ShowAsync();
+            open.Cancel();
         }
         catch (Exception ex) when (ex is InvalidOperationException or COMException)
         {

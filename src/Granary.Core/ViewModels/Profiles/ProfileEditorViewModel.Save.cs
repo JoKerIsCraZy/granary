@@ -23,10 +23,14 @@ public sealed partial class ProfileEditorViewModel
         {
             bool hadUpload = Profile is { AvatarSource: "upload" };
             bool keepsUpload = hadUpload && !RemoveUploadedPicture && NewPicture is null && SelectedPreset is null;
-            bool deletesUpload = hadUpload && RemoveUploadedPicture && NewPicture is null && SelectedPreset is null;
-            // A PIN change ends the profile's proofs, the one a picture would go with among them: the picture goes first then,
-            // and the update leaves the avatar as the picture's call left it.
-            bool pictureFirst = Profile is not null && (ClearPin || Pin.Length > 0) && (NewPicture is not null || deletesUpload);
+            bool deletesUpload = hadUpload && !_pictureSaved && RemoveUploadedPicture && NewPicture is null && SelectedPreset is null;
+            // What is sent, and the PIN said back, as they are now: an edit while the save runs changes neither.
+            string pin = ClearPin ? "" : Pin;
+            bool clearsPin = ClearPin;
+            var update = Profile is null ? null : BuildUpdate(keepsUpload, deletesUpload);
+            var create = Profile is null ? BuildCreate() : null;
+            // A PIN change ends the profile's proofs, the one a picture would go with among them: the picture goes first then.
+            bool pictureFirst = update is not null && (clearsPin || pin.Length > 0) && (NewPicture is not null || deletesUpload);
             string notice = "";
             Profile? pictured = null;
             if (pictureFirst)
@@ -36,15 +40,20 @@ public sealed partial class ProfileEditorViewModel
             Profile saved;
             try
             {
-                saved = Profile is { } profile
-                    ? await _profiles.UpdateAsync(_target.Server, profile.Id, BuildUpdate(keepsUpload || pictureFirst, deletesUpload), _target.Manager,
-                        cancellationToken)
-                    : await _profiles.CreateAsync(_target.Server, BuildCreate(), _target.Manager, cancellationToken);
+                saved = update is not null
+                    ? await _profiles.UpdateAsync(_target.Server, Profile!.Id, update, _target.Manager, cancellationToken)
+                    : await _profiles.CreateAsync(_target.Server, create!, _target.Manager, cancellationToken);
             }
             catch (Exception ex) when (ProfileWriteText.IsRefusal(ex, cancellationToken))
             {
                 _logger.LogWarning("A profile could not be saved: {Failure}", ApiFailureText.Describe(ex));
                 Status = ProfileWriteText.Describe(ex, "web.common.toast.profiles.saveFailed");
+                if (pictureFirst && notice.Length == 0)
+                {
+                    // The picture went through before: said, and not sent again with the next try.
+                    Status += " · " + AppText.Get(deletesUpload ? "web.common.toast.profiles.avatarRemoved" : "web.common.toast.profiles.avatarUpdated");
+                    PictureSaved();
+                }
                 return null;
             }
             if (!pictureFirst)
@@ -52,7 +61,7 @@ public sealed partial class ProfileEditorViewModel
                 (pictured, notice) = await SavePictureAsync(saved.Id, deletesUpload, cancellationToken);
                 saved = pictured ?? saved;
             }
-            return new ProfileEditorSaved(saved, IsNew, ClearPin ? "" : Pin, ClearPin, notice);
+            return new ProfileEditorSaved(saved, IsNew, pin, clearsPin, notice);
         }
         finally
         {
@@ -104,7 +113,7 @@ public sealed partial class ProfileEditorViewModel
             MaxAdvisoryAge = age,
             RequireAdvisoryAge = age is not null && household.RequireAdvisoryAgeSupported && RequireAdvisoryAge ? true : null,
             RequestsAllowed = household.RequestsAllowedSupported && !RequestsAllowed ? false : null,
-            MaxPlaybackQuality = ProfileAccess.WireValue(SelectedPlaybackCeiling.Value),
+            MaxPlaybackQuality = PlaybackQualityToSend(),
             LibraryRestrictionsEnabled = ShowsLibraryChoices,
             AllowedLibraryIds = AllowedLibraryIds(),
         };
@@ -124,7 +133,7 @@ public sealed partial class ProfileEditorViewModel
             // Cleared with the limit, so a stored flag does not come back with the next one.
             RequireAdvisoryAge = household.MaxAdvisoryAgeSupported && household.RequireAdvisoryAgeSupported ? age is not null && RequireAdvisoryAge : null,
             RequestsAllowed = household.RequestsAllowedSupported ? RequestsAllowed : null,
-            MaxPlaybackQuality = ProfileAccess.WireValue(SelectedPlaybackCeiling.Value),
+            MaxPlaybackQuality = PlaybackQualityToSend(),
             LibraryRestrictionsEnabled = ShowsLibraryChoices,
             AllowedLibraryIds = AllowedLibraryIds(),
         };

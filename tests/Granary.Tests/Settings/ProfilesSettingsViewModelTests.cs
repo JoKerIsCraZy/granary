@@ -311,6 +311,60 @@ public sealed class ProfilesSettingsViewModelTests
     }
 
     [Fact]
+    public async Task ARefreshThatFails_OffersTheOldRowsForNoEdit()
+    {
+        _silo.On(HttpMethod.Get, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.OK, HouseholdJson), ScriptedSilo.NetworkError());
+        var page = Create();
+        await page.LoadAsync(Ct);
+        var row = page.Profiles[1];
+
+        await page.RefreshCommand.ExecuteAsync(null);
+
+        Assert.True(page.HasLoadError);
+        Assert.Empty(page.Profiles);
+        Assert.Null(page.CreateEditor(row));
+        Assert.False(page.CanAdd);
+    }
+
+    [Fact]
+    public async Task AHouseholdReadForAProfileNoLongerActing_IsNotShown()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.OnCancellable(HttpMethod.Get, ProfilesPath, _ => answer.Task);
+        var page = Create();
+
+        var loading = page.LoadAsync(Ct);
+        _session.ProfileId = "p-kid";
+        answer.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(HouseholdJson, System.Text.Encoding.UTF8, "application/json"),
+        });
+        await loading;
+
+        Assert.Empty(page.Profiles);
+        Assert.False(page.CanAdd);
+    }
+
+    [Fact]
+    public async Task ALoadForASessionWithoutAProfile_EndsTheLoadingOfAnOlderOne()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.OnCancellable(HttpMethod.Get, ProfilesPath, _ => answer.Task);
+        var page = Create();
+
+        var loading = page.LoadAsync(Ct);
+        _session.State = SessionState.ProfileRequired;
+        await page.LoadAsync(Ct);
+        answer.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(HouseholdJson, System.Text.Encoding.UTF8, "application/json"),
+        });
+        await loading;
+
+        Assert.False(page.IsLoading);
+    }
+
+    [Fact]
     public async Task AnAccountWithoutProfiles_ShowsTheEmptyList()
     {
         _silo.On(HttpMethod.Get, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.OK, """{"items": [], "avatar_upload_enabled": false}"""));

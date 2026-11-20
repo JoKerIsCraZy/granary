@@ -11,6 +11,16 @@ public sealed partial class ProfileEditorViewModel
 {
     private string _pictureName = "";
 
+    // The picture went through on a save whose update then did not: the next save leaves it as it is.
+    private bool _pictureSaved;
+
+    private void PictureSaved()
+    {
+        _pictureSaved = true;
+        NewPicture = null;
+        RemoveUploadedPicture = false;
+    }
+
     public IReadOnlyList<ProfileAvatarStyle> Styles { get; }
 
     /// <summary>The style whose pictures show.</summary>
@@ -113,6 +123,7 @@ public sealed partial class ProfileEditorViewModel
         {
             return;
         }
+        _pictureSaved = false;
         RemoveUploadedPicture = true;
         SelectedPreset = SelectedPreset?.Id == preset.Id ? null : preset;
     }
@@ -135,6 +146,7 @@ public sealed partial class ProfileEditorViewModel
         }
         PictureError = "";
         _pictureName = string.IsNullOrWhiteSpace(fileName) ? "avatar" : Path.GetFileName(fileName);
+        _pictureSaved = false;
         NewPicture = image;
         RemoveUploadedPicture = true;
         return true;
@@ -158,13 +170,16 @@ public sealed partial class ProfileEditorViewModel
     /// <summary>Delete image: the profile's uploaded picture goes with the save.</summary>
     public void DeleteUploadedPicture()
     {
+        _pictureSaved = false;
         NewPicture = null;
         RemoveUploadedPicture = true;
     }
 
     // The update's avatar: left out while the uploaded picture stays or goes through its own call, as the web's handleSubmit.
+    // A new image is left out too: it replaces the picture through its own call, and one that fails leaves the old picture, not
+    // none. So is a picture already saved by a try that failed after it.
     private Change<string> AvatarChange(bool keepsUpload, bool deletesUpload) =>
-        keepsUpload || deletesUpload ? Change<string>.Keep
+        keepsUpload || deletesUpload || NewPicture is not null || _pictureSaved ? Change<string>.Keep
         : SelectedPreset is { } preset ? Change<string>.To(ProfileAvatarPresets.Reference(preset.Id))
         : Change<string>.Clear;
 

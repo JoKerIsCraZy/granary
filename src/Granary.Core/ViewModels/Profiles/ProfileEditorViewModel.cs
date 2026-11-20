@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Profiles;
@@ -58,6 +59,11 @@ public sealed partial class ProfileEditorViewModel : ObservableObject
     private bool _requestsTouched;
     private bool _applyingKids;
 
+    // The playback ceiling as stored, sent back as it is while the choice stays the one it opened on: a value this client
+    // reads as no limit (a newer one) is not cleared by an unrelated edit.
+    private readonly string? _storedQuality;
+    private bool _qualityChanged;
+
     public ProfileEditorViewModel(ProfilesApi profiles, ProfileEditorTarget target, Profile? profile, ILogger logger)
     {
         ArgumentNullException.ThrowIfNull(target);
@@ -66,7 +72,12 @@ public sealed partial class ProfileEditorViewModel : ObservableObject
         _logger = logger;
         Profile = profile;
         IsPrimary = profile?.IsPrimary ?? target.Household.Items.Count == 0;
-        ContentRatings = ProfileAccess.ContentRatings();
+        // A ceiling the list lacks (set by a newer client) stays offered as it is stored, so an unrelated edit keeps it.
+        var ratings = ProfileAccess.ContentRatings();
+        ContentRatings = profile?.MaxContentRating is { Length: > 0 } stored && ratings.All(c => c.Value != stored)
+            ? [.. ratings, new ProfileChoice<string>(stored, stored)]
+            : ratings;
+        _storedQuality = profile?.MaxPlaybackQuality;
         AdvisoryAges = ProfileAccess.AdvisoryAges();
         PlaybackCeilings = ProfileAccess.PlaybackCeilings();
         Styles = ProfileAvatarPresets.Styles();
@@ -81,6 +92,7 @@ public sealed partial class ProfileEditorViewModel : ObservableObject
         // The primary profile sees every library the account can; a limit an older server stored on it goes with the next save.
         LibraryRestrictionsEnabled = !IsPrimary && (profile?.LibraryRestrictionsEnabled ?? false);
         RequestsAllowed = profile?.MayRequest ?? true;
+        _qualityChanged = false;
         _applyingKids = false;
 
         InitializeAvatar();
@@ -134,7 +146,8 @@ public sealed partial class ProfileEditorViewModel : ObservableObject
     /// <summary>Remove PIN / Keep existing PIN shows: the profile has a PIN.</summary>
     public bool CanClearPin => Profile?.HasPin == true;
 
-    public bool CanTypePin => !ClearPin;
+    // Not while a save runs: the PIN said back is the one sent.
+    public bool CanTypePin => !ClearPin && !IsSaving;
 
     public string PinLabel => AppText.Get(ClearPin ? "web.profiles.editor.pinRemoved"
         : Profile?.HasPin == true ? "web.profiles.editor.newPin" : "web.profiles.editor.pinOptional");
@@ -226,6 +239,13 @@ public sealed partial class ProfileEditorViewModel : ObservableObject
     [ObservableProperty]
     public partial ProfileChoice<PlaybackCeiling> SelectedPlaybackCeiling { get; set; }
 
+    partial void OnSelectedPlaybackCeilingChanged(ProfileChoice<PlaybackCeiling> value) => _qualityChanged = true;
+
+    // What the ceiling is sent as: the stored value while it was not changed here, else the choice's.
+    private string? PlaybackQualityToSend() => !_qualityChanged && !string.IsNullOrEmpty(_storedQuality)
+        ? _storedQuality
+        : ProfileAccess.WireValue(SelectedPlaybackCeiling.Value);
+
     /// <summary>The advisory-age limit shows: the server reports it takes one.</summary>
     public bool ShowsAdvisoryAge => _target.Household.MaxAdvisoryAgeSupported;
 
@@ -263,7 +283,7 @@ public sealed partial class ProfileEditorViewModel : ObservableObject
 
     /// <summary>A save runs.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SaveLabel), nameof(IsIdle))]
+    [NotifyPropertyChangedFor(nameof(SaveLabel), nameof(IsIdle), nameof(CanTypePin))]
     public partial bool IsSaving { get; private set; }
 
     public bool IsIdle => !IsSaving;
@@ -282,6 +302,8 @@ public sealed partial class ProfileEditorViewModel : ObservableObject
             return;
         }
         var allowed = ProfileAccess.LibraryIds(Profile?.AllowedLibraryIds).ToHashSet(StringComparer.Ordinal);
+        HasLibrariesLoadError = false;
+        LibrariesError = "";
         try
         {
             var libraries = await _profiles.ListLibrariesAsync(_target.Server, _target.Manager, cancellationToken);
@@ -292,12 +314,27 @@ public sealed partial class ProfileEditorViewModel : ObservableObject
                 Libraries.Add(new ProfileLibraryChoice(library) { IsChecked = chosen });
             }
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex) && !cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The editor closed.
+        }
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             _logger.LogWarning("The profile editor could not read the libraries: {Failure}", ApiFailureText.Describe(ex));
-            LibrariesError = LibraryErrors.Describe(ex);
+            _librariesLoadError = LibraryErrors.Describe(ex);
+            LibrariesError = _librariesLoadError;
+            HasLibrariesLoadError = true;
         }
     }
+
+    private string _librariesLoadError = "";
+
+    /// <summary>The libraries could not be read: a limit cannot be chosen, and the editor offers Retry.</summary>
+    [ObservableProperty]
+    public partial bool HasLibrariesLoadError { get; private set; }
+
+    [RelayCommand]
+    private Task RetryLibrariesAsync() => LoadLibrariesAsync();
 
     private void SetAllLibraries(bool isChecked)
     {
@@ -314,7 +351,10 @@ public sealed partial class ProfileEditorViewModel : ObservableObject
         NameError = Name.Trim().Length == 0 ? AppText.Get("web.profiles.editor.nameRequired")
             : NameIsTaken() ? AppText.Get("granary.profiles.editor.nameTaken") : "";
         PinError = !ClearPin && Pin.Length > 0 && Pin.Length != PinLength ? AppText.Get("web.profiles.editor.pinInvalid") : "";
-        LibrariesError = ShowsLibraryChoices && !Libraries.Any(l => l.IsChecked) ? AppText.Get("web.profiles.editor.librariesRequired") : "";
+        // A list that could not be read keeps saying so, rather than asking for a library it does not show.
+        LibrariesError = !ShowsLibraryChoices ? ""
+            : HasLibrariesLoadError ? _librariesLoadError
+            : !Libraries.Any(l => l.IsChecked) ? AppText.Get("web.profiles.editor.librariesRequired") : "";
         Status = IsNew && !_target.Household.HasRoom && _target.Household.MaxProfiles is { } limit
             ? AppText.Get("web.settings.profiles.limitReached", ("count", limit))
             : "";

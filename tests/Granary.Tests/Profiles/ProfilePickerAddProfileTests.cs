@@ -150,6 +150,33 @@ public sealed class ProfilePickerAddProfileTests : IDisposable
     }
 
     [Fact]
+    public async Task AnotherAccount_OnTheSameServer_TakesTheOpenEditorAway()
+    {
+        await LoadAsync(HouseholdJson.Replace("\"is_primary\": true, \"has_pin\": true", "\"is_primary\": true, \"has_pin\": false", StringComparison.Ordinal));
+        _picker.AddProfileCommand.Execute(null);
+        Assert.NotNull(_picker.Editor);
+
+        _session.Account = new Account("2", "someone", "", "user", [], true, false, null);
+        _session.RaiseChanged();
+
+        Assert.Null(_picker.Editor);
+        Assert.False(_picker.IsPinPromptOpen);
+    }
+
+    [Fact]
+    public async Task AProofThatCannotBeSentBack_OpensNoEditor_AndSaysSo()
+    {
+        await LoadAsync();
+        _silo.On(HttpMethod.Post, ProfilesPath + "/p-owner/verify-pin", ScriptedSilo.Json(HttpStatusCode.OK, """{"valid":true,"profile_token":"pvt with space"}"""));
+
+        _picker.AddProfileCommand.Execute(null);
+        await _picker.SubmitPinCommand.ExecuteAsync("2580");
+
+        Assert.Null(_picker.Editor);
+        Assert.Equal("Couldn't open the new profile form. Try again.", _picker.Status);
+    }
+
+    [Fact]
     public async Task PickingAProfile_StillAsksForItsOwnPin_WithoutTheAddLine()
     {
         await LoadAsync();

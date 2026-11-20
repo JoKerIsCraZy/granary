@@ -45,6 +45,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     // The server the last load asked (null: none was active), and the server the shown list came from.
     private bool _hasLoaded;
     private string? _requestedServerId;
+    private string? _requestedAccountId;
     private string? _listServerId;
     private bool _disposed;
 
@@ -166,7 +167,18 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             Status = AppText.Get("web.profiles.picker.addFormFailed");
             return;
         }
-        var lent = ManagingProfile.Lent(server.BaseUri, accountId, primaryId, token);
+        ManagingProfile lent;
+        try
+        {
+            lent = ManagingProfile.Lent(server.BaseUri, accountId, primaryId, token);
+        }
+        catch (HttpRequestException)
+        {
+            // A proof the server sent that cannot go back as a header.
+            _logger.LogWarning("The primary profile's PIN check answered with a proof that cannot be sent");
+            Status = AppText.Get("web.profiles.picker.addFormFailed");
+            return;
+        }
         Editor = new ProfileEditorViewModel(_profiles, new ProfileEditorTarget(server.BaseUri, lent, household), null, _logger);
     }
 
@@ -287,6 +299,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         var server = _session.ActiveServer;
         _hasLoaded = true;
         _requestedServerId = server?.Id;
+        _requestedAccountId = _session.Account?.Id;
         if (server is null)
         {
             IsLoading = false;
@@ -423,7 +436,8 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     // to the old one.
     private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() =>
     {
-        if (_disposed || !_hasLoaded || _session.ActiveServer?.Id == _requestedServerId)
+        // Another account on the same server counts as another server: its profiles, PINs and proofs are not the old ones.
+        if (_disposed || !_hasLoaded || (_session.ActiveServer?.Id == _requestedServerId && _session.Account?.Id == _requestedAccountId))
         {
             return;
         }
@@ -435,6 +449,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         ShowList([], null);
         SetStatus("", isLoadError: false);
         _requestedServerId = _session.ActiveServer?.Id;
+        _requestedAccountId = _session.Account?.Id;
         if (_session.State == SessionState.ProfileRequired)
         {
             LoadCommand.Execute(null);
