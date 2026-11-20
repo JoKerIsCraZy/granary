@@ -108,6 +108,8 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<RequestsApi>();
         services.AddTransient<BrandingApi>();
         services.AddTransient<AdminApi>();
+        services.AddTransient<AdminUsersApi>();
+        services.AddTransient<AdminInvitationsApi>();
         services.AddSingleton<ServerAccent>();
         services.AddSingleton<CardOverlaySettings>();
         services.AddSingleton<CardPresentationSettings>();
@@ -264,6 +266,14 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ServerActivityViewModel>();
         services.AddTransient<AdminDashboardViewModel>();
         services.AddTransient<AdminActivityViewModel>();
+        services.AddTransient<AdminUsersViewModel>();
+        services.AddTransient<AdminNewUserViewModel>();
+        services.AddTransient<AdminUserDeleteViewModel>();
+        services.AddTransient<AdminUserDetailViewModel>();
+        services.AddTransient<AdminPasswordResetViewModel>();
+        services.AddTransient<AdminUserSessionsViewModel>();
+        services.AddTransient<AdminInvitationsViewModel>();
+        services.AddTransient<AdminNewInvitationViewModel>();
         return services;
     }
 

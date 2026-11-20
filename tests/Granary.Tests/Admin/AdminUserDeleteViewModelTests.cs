@@ -1,0 +1,132 @@
+using Granary.Core.Api.Admin;
+using Granary.Core.ViewModels.Admin;
+using Granary.Tests.Browse;
+using Granary.Tests.Fakes;
+
+namespace Granary.Tests.Admin;
+
+/// <summary>Deleting an account: its name typed first, at the version read when the dialog opened.</summary>
+public sealed class AdminUserDeleteViewModelTests
+{
+    private readonly BrowseFakeSilo _silo = AdminUserPayloads.Silo();
+    private readonly FakeSessionManager _session = AdminUserPayloads.OwnerSession();
+    private readonly List<(HttpMethod Method, string? IfMatch)> _writes = [];
+    private int _reads;
+    private int _writeStatus = 204;
+
+    public AdminUserDeleteViewModelTests()
+    {
+        _silo.Map("api/v2/admin/users/3", request =>
+        {
+            if (request.Method == HttpMethod.Get)
+            {
+                return AdminUserPayloads.Versioned(AdminUserPayloads.User(), ++_reads == 1 ? "\"v1\"" : "\"v2\"");
+            }
+            _writes.Add((request.Method, request.Headers.TryGetValues("If-Match", out var tags) ? tags.Single() : null));
+            return _writeStatus == 204 ? BrowseFakeSilo.NoContent() : BrowseFakeSilo.Problem(_writeStatus, "precondition_failed");
+        });
+    }
+
+    private async Task<AdminUserDeleteViewModel> StartedAsync()
+    {
+        var dialog = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
+        Assert.True(await dialog.StartAsync(AdminActors.Of(_session), "3", viewerIsOwner: true, TestContext.Current.CancellationToken));
+        return dialog;
+    }
+
+    [Fact]
+    public async Task Delete_WaitsForTheName_ThenSendsTheVersion()
+    {
+        var dialog = await StartedAsync();
+        Assert.Equal("Delete ana?", dialog.Title);
+
+        dialog.Typed = "Ana";
+        Assert.False(dialog.CanDelete);
+        Assert.False(await dialog.DeleteAsync(TestContext.Current.CancellationToken));
+        dialog.Typed = "ana";
+        Assert.True(await dialog.DeleteAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal([(HttpMethod.Delete, "\"v1\"")], _writes);
+    }
+
+    [Fact]
+    public async Task AChangeMeanwhile_BlocksUntilReadAgain()
+    {
+        var dialog = await StartedAsync();
+        dialog.Typed = "ana";
+        _writeStatus = 412;
+
+        Assert.False(await dialog.DeleteAsync(TestContext.Current.CancellationToken));
+        Assert.True(dialog.HasConflict);
+        Assert.Equal("The user changed. Reload before trying again.", dialog.Error);
+        Assert.False(dialog.CanDelete);
+
+        await dialog.ReloadAsync(TestContext.Current.CancellationToken);
+        _writeStatus = 204;
+        Assert.True(await dialog.DeleteAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("\"v2\"", _writes[^1].IfMatch);
+    }
+
+    [Fact]
+    public async Task DisableInstead_DisablesAtTheVersion()
+    {
+        var dialog = await StartedAsync();
+        dialog.DisableOffered = true;
+        Assert.True(dialog.OffersDisable);
+
+        Assert.True(await dialog.DisableAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal([(HttpMethod.Put, "\"v1\"")], _writes);
+        Assert.Equal("""{"enabled":false}""", _silo.To("api/v2/admin/users/3").Last().Body);
+    }
+    [Fact]
+    public async Task AnAccountThatBecameTheOwner_CannotBeDeleted()
+    {
+        _silo.Map("api/v2/admin/users/3", request => request.Method == HttpMethod.Get
+            ? AdminUserPayloads.Versioned(AdminUserPayloads.User().Replace("\"is_owner\": false", "\"is_owner\": true", StringComparison.Ordinal))
+            : BrowseFakeSilo.NoContent());
+        var dialog = await StartedAsync();
+        dialog.Typed = "ana";
+
+        Assert.False(dialog.CanDelete);
+        Assert.False(await dialog.DeleteAsync(TestContext.Current.CancellationToken));
+        Assert.DoesNotContain(_silo.To("api/v2/admin/users/3"), request => request.Method == HttpMethod.Delete);
+    }
+    [Fact]
+    public async Task AnAccountTheViewerMayNotManage_CannotBeDeleted()
+    {
+        _silo.Map("api/v2/admin/users/3", _ => AdminUserPayloads.Versioned(AdminUserPayloads.User(role: "admin", group: "null")));
+        var dialog = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
+        Assert.True(await dialog.StartAsync(AdminActors.Of(_session), "3", viewerIsOwner: false, TestContext.Current.CancellationToken));
+        dialog.Typed = "ana";
+
+        Assert.False(dialog.CanDelete);
+        Assert.False(await dialog.DeleteAsync(TestContext.Current.CancellationToken));
+        Assert.DoesNotContain(_silo.To("api/v2/admin/users/3"), request => request.Method == HttpMethod.Delete);
+    }
+
+    [Fact]
+    public async Task TheViewersOwnAccount_CannotBeDeleted()
+    {
+        _silo.Map("api/v2/admin/users/1", _ => AdminUserPayloads.Versioned(AdminUserPayloads.User(id: "1", username: "elena", role: "admin", group: "null")));
+        var dialog = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
+        Assert.True(await dialog.StartAsync(AdminActors.Of(_session), "1", viewerIsOwner: true, TestContext.Current.CancellationToken));
+        dialog.Typed = "elena";
+
+        Assert.False(dialog.CanDelete);
+    }
+    [Fact]
+    public async Task AnOwner_IsNotOfferedDisableInstead()
+    {
+        _silo.Map("api/v2/admin/users/3", request => request.Method == HttpMethod.Get
+            ? AdminUserPayloads.Versioned(AdminUserPayloads.User().Replace("\"is_owner\": false", "\"is_owner\": true", StringComparison.Ordinal))
+            : BrowseFakeSilo.NoContent());
+        var dialog = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>()) { DisableOffered = true };
+        Assert.True(await dialog.StartAsync(AdminActors.Of(_session), "3", viewerIsOwner: true, TestContext.Current.CancellationToken));
+
+        Assert.False(dialog.OffersDisable);
+        Assert.False(dialog.CanDisable);
+        Assert.False(await dialog.DisableAsync(TestContext.Current.CancellationToken));
+        Assert.DoesNotContain(_silo.To("api/v2/admin/users/3"), request => request.Method == HttpMethod.Put);
+    }
+}

@@ -5291,6 +5291,648 @@
       "value": "لا تدعم هذه الجلسة الإيقاف المؤقت أو الاستئناف أو الرسائل أثناء التشغيل. لا يزال بإمكان «إيقاف» و«إنهاء» إنهاء التشغيل."
     }
   ],
+  "web.admin.settings.invitations.capabilitiesFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل إمكانات الدعوات. "
+    },
+    {
+      "type": 8,
+      "value": "button",
+      "children": [
+        {
+          "type": 0,
+          "value": "إعادة تحميل الإمكانات"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.claimLink.copy": [
+    {
+      "type": 0,
+      "value": "نسخ الرابط"
+    }
+  ],
+  "web.admin.settings.invitations.copied": [
+    {
+      "type": 0,
+      "value": "تم النسخ إلى الحافظة"
+    }
+  ],
+  "web.admin.settings.invitations.copyFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر نسخ الرابط. حدّده وانسخه يدويًا، أو حاول مرة أخرى."
+    }
+  ],
+  "web.admin.settings.invitations.create.accessGroup": [
+    {
+      "type": 0,
+      "value": "مجموعة الوصول"
+    }
+  ],
+  "web.admin.settings.invitations.create.creating": [
+    {
+      "type": 0,
+      "value": "جارٍ الإنشاء..."
+    }
+  ],
+  "web.admin.settings.invitations.create.defaultGroup": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (افتراضية)"
+    }
+  ],
+  "web.admin.settings.invitations.create.deliveryQuestion": [
+    {
+      "type": 0,
+      "value": "كيف سيحصل المدعو على الدعوة؟"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailHint": [
+    {
+      "type": 0,
+      "value": "يصبح هذا العنوان الوجهة واسم المستخدم لتسجيل الدخول معًا."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailLabel": [
+    {
+      "type": 0,
+      "value": "عنوان البريد الإلكتروني"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOption": [
+    {
+      "type": 0,
+      "value": "إرسال بريد إلكتروني"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOptionBody": [
+    {
+      "type": 0,
+      "value": "نرسل الرابط بالبريد الإلكتروني. يمكنك نسخه أيضًا."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOptionUnavailable": [
+    {
+      "type": 0,
+      "value": "البريد الإلكتروني غير مُعدّ على هذا الخادم."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailSetup": [
+    {
+      "type": 0,
+      "value": "لإرسال الدعوات بالبريد الإلكتروني، اضبط خادم البريد في "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "إعدادات البريد الإلكتروني"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.create.expiry": [
+    {
+      "type": 0,
+      "value": "تنتهي صلاحية الرابط خلال 7 أيام · استخدام واحد"
+    }
+  ],
+  "web.admin.settings.invitations.create.failed": [
+    {
+      "type": 0,
+      "value": "تعذّر إنشاء الدعوة."
+    }
+  ],
+  "web.admin.settings.invitations.create.finePrintEmail": [
+    {
+      "type": 0,
+      "value": "يعمل الرابط مرة واحدة وتنتهي صلاحيته خلال 7 أيام. إعادة الإرسال لاحقًا تُنشئ رابطًا جديدًا وتُبطل هذا الرابط."
+    }
+  ],
+  "web.admin.settings.invitations.create.finePrintLink": [
+    {
+      "type": 0,
+      "value": "يعمل الرابط مرة واحدة وتنتهي صلاحيته خلال 7 أيام. يمكن لأي شخص لديه الرابط استخدامه. ألغِه من السجل إذا وصل إلى الشخص الخطأ."
+    }
+  ],
+  "web.admin.settings.invitations.create.inheritGroup": [
+    {
+      "type": 0,
+      "value": "الوراثة من مجموعة الوصول"
+    }
+  ],
+  "web.admin.settings.invitations.create.libraryHint": [
+    {
+      "type": 0,
+      "value": "يتبع الحساب المُنشأ عند القبول نطاق المكتبات الخاص بالمجموعة المحددة."
+    }
+  ],
+  "web.admin.settings.invitations.create.linkOption": [
+    {
+      "type": 0,
+      "value": "إنشاء رابط"
+    }
+  ],
+  "web.admin.settings.invitations.create.linkOptionBody": [
+    {
+      "type": 0,
+      "value": "تشارك الرابط بنفسك، في محادثة مثلًا."
+    }
+  ],
+  "web.admin.settings.invitations.create.noDefaultProfile": [
+    {
+      "type": 0,
+      "value": "لا يستطيع هذا الخادم إنشاء ملف شخصي افتراضي بشكل ذري. عطّل خيار الملف الشخصي لإنشاء دعوة بلا ملف شخصي."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteHintEmail": [
+    {
+      "type": 0,
+      "value": "تظهر في البريد الإلكتروني وفي صفحة الدعوة. نص عادي."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteHintLink": [
+    {
+      "type": 0,
+      "value": "تظهر في صفحة الدعوة وفي سجل دعواتك لتمييز الروابط بعضها من بعض."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteLabel": [
+    {
+      "type": 0,
+      "value": "ملاحظة (اختيارية)"
+    }
+  ],
+  "web.admin.settings.invitations.create.notePlaceholder": [
+    {
+      "type": 0,
+      "value": "مرحبًا — أعدّ حسابك متى شئت."
+    }
+  ],
+  "web.admin.settings.invitations.create.ownerOnly": [
+    {
+      "type": 0,
+      "value": "مالك الخادم وحده يمكنه دعوة مسؤول."
+    }
+  ],
+  "web.admin.settings.invitations.create.personalNoteLabel": [
+    {
+      "type": 0,
+      "value": "ملاحظة شخصية (اختيارية)"
+    }
+  ],
+  "web.admin.settings.invitations.create.profileHintEmail": [
+    {
+      "type": 0,
+      "value": "يُسمّى بالجزء الذي يسبق @. يمكن للمدعو إعادة تسميته لاحقًا."
+    }
+  ],
+  "web.admin.settings.invitations.create.profileHintLink": [
+    {
+      "type": 0,
+      "value": "يُسمّى بالجزء الذي يسبق @ في البريد الإلكتروني الذي يُدخله المدعو. يمكنه إعادة تسميته لاحقًا."
+    }
+  ],
+  "web.admin.settings.invitations.create.profileLabel": [
+    {
+      "type": 0,
+      "value": "إنشاء أول ملف شخصي للمدعو"
+    }
+  ],
+  "web.admin.settings.invitations.create.reloadBeforeRetry": [
+    {
+      "type": 0,
+      "value": "أعد تحميل السجل قبل أي محاولة مقصودة أخرى؛ فقد تكون الدعوة موجودة بالفعل."
+    }
+  ],
+  "web.admin.settings.invitations.create.reloadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة تحميل سجل الدعوات. حاول مرة أخرى قبل إنشاء دعوة أخرى."
+    }
+  ],
+  "web.admin.settings.invitations.create.role": [
+    {
+      "type": 0,
+      "value": "الدور"
+    }
+  ],
+  "web.admin.settings.invitations.create.roleAdmin": [
+    {
+      "type": 0,
+      "value": "مسؤول"
+    }
+  ],
+  "web.admin.settings.invitations.create.roleUser": [
+    {
+      "type": 0,
+      "value": "مستخدم"
+    }
+  ],
+  "web.admin.settings.invitations.create.sending": [
+    {
+      "type": 0,
+      "value": "جارٍ الإرسال..."
+    }
+  ],
+  "web.admin.settings.invitations.create.serverDefault": [
+    {
+      "type": 0,
+      "value": "الإعداد الافتراضي للخادم"
+    }
+  ],
+  "web.admin.settings.invitations.create.submitEmail": [
+    {
+      "type": 0,
+      "value": "إرسال الدعوة"
+    }
+  ],
+  "web.admin.settings.invitations.create.submitLink": [
+    {
+      "type": 0,
+      "value": "إنشاء رابط"
+    }
+  ],
+  "web.admin.settings.invitations.create.tourHint": [
+    {
+      "type": 0,
+      "value": "تستعرض ما يمكن لهذا الخادم فعله، متجاوزةً كل ما هو معطّل."
+    }
+  ],
+  "web.admin.settings.invitations.create.tourLabel": [
+    {
+      "type": 0,
+      "value": "عرض جولة الميزات عند أول تسجيل دخول"
+    }
+  ],
+  "web.admin.settings.invitations.delivery.failed": [
+    {
+      "type": 0,
+      "value": "تم إنشاء الدعوة، لكن إرسال البريد الإلكتروني فشل أو غير مؤكد. يظل هذا الرابط فعّالًا؛ أرسله بنفسك."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.linkCreated": [
+    {
+      "type": 0,
+      "value": "تم إنشاء رابط الدعوة. شاركه مع الشخص الذي تدعوه. سيُدخل عنوان بريده الإلكتروني ويختار كلمة مرور."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.newLinkForEmail": [
+    {
+      "type": 0,
+      "value": "تم إنشاء رابط جديد لـ "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". لم يُرسَل أي بريد إلكتروني؛ شارك هذا الرابط مع المدعو بنفسك."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.notConfigured": [
+    {
+      "type": 0,
+      "value": "البريد الإلكتروني غير مُعدّ. تم إنشاء الدعوة؛ أرسل هذا الرابط بنفسك."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.sent": [
+    {
+      "type": 0,
+      "value": "تم إرسال البريد الإلكتروني إلى "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". وصوله إلى المستلم غير مضمون. يمكنك نسخ الرابط أدناه."
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailSent": [
+    {
+      "type": 0,
+      "value": "تم إرسال البريد"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailUnconfirmed": [
+    {
+      "type": 0,
+      "value": "البريد غير مؤكد"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailUnconfirmedTitle": [
+    {
+      "type": 0,
+      "value": "فشل البريد الإلكتروني أو أن وصوله غير مؤكد. لا يزال الرابط يعمل."
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.link": [
+    {
+      "type": 0,
+      "value": "تم إنشاء رابط"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.unknownTitle": [
+    {
+      "type": 0,
+      "value": "أُنشئت قبل بدء تسجيل طريقة الإرسال"
+    }
+  ],
+  "web.admin.settings.invitations.empty": [
+    {
+      "type": 0,
+      "value": "لا توجد دعوات بعد. ادعُ شخصًا للبدء."
+    }
+  ],
+  "web.admin.settings.invitations.historyFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل سجل الدعوات. "
+    },
+    {
+      "type": 1,
+      "value": "error"
+    }
+  ],
+  "web.admin.settings.invitations.intro": [
+    {
+      "type": 0,
+      "value": "ادعُ شخصًا عبر البريد الإلكتروني، أو أنشئ رابطًا لتشاركه بنفسك. يصبح عنوان بريده الإلكتروني اسم المستخدم الخاص به."
+    }
+  ],
+  "web.admin.settings.invitations.invite.button": [
+    {
+      "type": 0,
+      "value": "دعوة شخص"
+    }
+  ],
+  "web.admin.settings.invitations.invite.description": [
+    {
+      "type": 0,
+      "value": "اختر صلاحيات وصوله وطريقة حصوله على رابط الدعوة."
+    }
+  ],
+  "web.admin.settings.invitations.invite.title": [
+    {
+      "type": 0,
+      "value": "دعوة شخص"
+    }
+  ],
+  "web.admin.settings.invitations.loadMore": [
+    {
+      "type": 0,
+      "value": "تحميل المزيد"
+    }
+  ],
+  "web.admin.settings.invitations.loading": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل الدعوات..."
+    }
+  ],
+  "web.admin.settings.invitations.loadingCapabilities": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل إمكانات الدعوات..."
+    }
+  ],
+  "web.admin.settings.invitations.notConfigured": [
+    {
+      "type": 0,
+      "value": "الدعوات غير مهيأة على هذا الخادم."
+    }
+  ],
+  "web.admin.settings.invitations.publicUrlMissing": [
+    {
+      "type": 0,
+      "value": "اضبط عنوان URL العام لـ Silo لإنشاء روابط الدعوة. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "الإعدادات العامة"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.reloadHistory": [
+    {
+      "type": 0,
+      "value": "إعادة تحميل السجل"
+    }
+  ],
+  "web.admin.settings.invitations.resend.creating": [
+    {
+      "type": 0,
+      "value": "جارٍ إنشاء دعوة جديدة..."
+    }
+  ],
+  "web.admin.settings.invitations.resend.description": [
+    {
+      "type": 0,
+      "value": "يُبطل الرابط البديل الرابط السابق."
+    }
+  ],
+  "web.admin.settings.invitations.resend.finePrint": [
+    {
+      "type": 0,
+      "value": "يعمل الرابط مرة واحدة. توقف أي رابط سابق عن العمل."
+    }
+  ],
+  "web.admin.settings.invitations.resend.title": [
+    {
+      "type": 0,
+      "value": "رابط دعوة جديد"
+    }
+  ],
+  "web.admin.settings.invitations.resend.uncertain": [
+    {
+      "type": 0,
+      "value": "قد تكون النتيجة غير مؤكدة. أعد تحميل السجل قبل إعادة الإرسال مرة أخرى عن قصد."
+    }
+  ],
+  "web.admin.settings.invitations.resendFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة إرسال الدعوة. أعد تحميل السجل قبل المتابعة."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.confirm": [
+    {
+      "type": 0,
+      "value": "إلغاء"
+    }
+  ],
+  "web.admin.settings.invitations.revoke.emailDescription": [
+    {
+      "type": 0,
+      "value": "هل تريد إلغاء الدعوة المرسلة إلى "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": "؟ سيتوقف رابطها عن العمل."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.linkDescription": [
+    {
+      "type": 0,
+      "value": "هل تريد إلغاء دعوة الرابط هذه؟ سيتوقف الرابط عن العمل."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.title": [
+    {
+      "type": 0,
+      "value": "إلغاء الدعوة"
+    }
+  ],
+  "web.admin.settings.invitations.revokeFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر إلغاء الدعوة."
+    }
+  ],
+  "web.admin.settings.invitations.row.copyNewLink": [
+    {
+      "type": 0,
+      "value": "نسخ رابط جديد دون إرساله بالبريد الإلكتروني"
+    }
+  ],
+  "web.admin.settings.invitations.row.emailNewLink": [
+    {
+      "type": 0,
+      "value": "إرسال رابط جديد بالبريد الإلكتروني"
+    }
+  ],
+  "web.admin.settings.invitations.row.expires": [
+    {
+      "type": 0,
+      "value": "تنتهي في "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.admin.settings.invitations.row.invitedBy": [
+    {
+      "type": 0,
+      "value": "دعاه "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.admin.settings.invitations.row.joinedByLink": [
+    {
+      "type": 0,
+      "value": "انضم عبر الرابط"
+    }
+  ],
+  "web.admin.settings.invitations.row.linkInvitation": [
+    {
+      "type": 0,
+      "value": "دعوة برابط"
+    }
+  ],
+  "web.admin.settings.invitations.row.note": [
+    {
+      "type": 0,
+      "value": "«"
+    },
+    {
+      "type": 1,
+      "value": "note"
+    },
+    {
+      "type": 0,
+      "value": "»"
+    }
+  ],
+  "web.admin.settings.invitations.row.replaceLink": [
+    {
+      "type": 0,
+      "value": "الاستبدال برابط جديد"
+    }
+  ],
+  "web.admin.settings.invitations.row.revokeLink": [
+    {
+      "type": 0,
+      "value": "إلغاء هذا الرابط"
+    }
+  ],
+  "web.admin.settings.invitations.status.accepted": [
+    {
+      "type": 0,
+      "value": "مقبولة"
+    }
+  ],
+  "web.admin.settings.invitations.status.expired": [
+    {
+      "type": 0,
+      "value": "منتهية الصلاحية"
+    }
+  ],
+  "web.admin.settings.invitations.status.pending": [
+    {
+      "type": 0,
+      "value": "معلّقة"
+    }
+  ],
+  "web.admin.settings.invitations.status.revoked": [
+    {
+      "type": 0,
+      "value": "ملغاة"
+    }
+  ],
+  "web.admin.settings.invitations.table.created": [
+    {
+      "type": 0,
+      "value": "تاريخ الإنشاء"
+    }
+  ],
+  "web.admin.settings.invitations.table.delivery": [
+    {
+      "type": 0,
+      "value": "طريقة الإرسال"
+    }
+  ],
+  "web.admin.settings.invitations.table.recipient": [
+    {
+      "type": 0,
+      "value": "المستلم"
+    }
+  ],
+  "web.admin.settings.invitations.table.role": [
+    {
+      "type": 0,
+      "value": "الدور"
+    }
+  ],
+  "web.admin.settings.invitations.table.status": [
+    {
+      "type": 0,
+      "value": "الحالة"
+    }
+  ],
   "web.admin.shell.mobileHeader.eyebrow": [
     {
       "type": 0,
@@ -5307,6 +5949,18 @@
     {
       "type": 0,
       "value": "لوحة التحكم"
+    }
+  ],
+  "web.admin.shell.nav.page.users.label": [
+    {
+      "type": 0,
+      "value": "المستخدمون"
+    }
+  ],
+  "web.admin.shell.nav.section.manage": [
+    {
+      "type": 0,
+      "value": "الإدارة"
     }
   ],
   "web.admin.shell.nav.section.monitor": [
@@ -5839,6 +6493,1330 @@
       "value": "مزامنة مزودي المشاهدة"
     }
   ],
+  "web.admin.users.deleteDialog.confirm": [
+    {
+      "type": 0,
+      "value": "حذف الحساب"
+    }
+  ],
+  "web.admin.users.deleteDialog.confirmLabel": [
+    {
+      "type": 0,
+      "value": "اكتب "
+    },
+    {
+      "type": 8,
+      "value": "code",
+      "children": [
+        {
+          "type": 1,
+          "value": "username"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " للتأكيد"
+    }
+  ],
+  "web.admin.users.deleteDialog.conflict": [
+    {
+      "type": 0,
+      "value": "تغيّر المستخدم. أعد التحميل قبل المحاولة مرة أخرى."
+    }
+  ],
+  "web.admin.users.deleteDialog.deleteFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حذف المستخدم."
+    }
+  ],
+  "web.admin.users.deleteDialog.description": [
+    {
+      "type": 0,
+      "value": "يؤدي هذا إلى إزالة الحساب وملفاته الشخصية وسجل المشاهدة والتفضيلات المحفوظة. لا يمكن التراجع عن ذلك."
+    }
+  ],
+  "web.admin.users.deleteDialog.disableFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تعطيل المستخدم."
+    }
+  ],
+  "web.admin.users.deleteDialog.disableHint": [
+    {
+      "type": 0,
+      "value": "أتريد الاحتفاظ بالسجل؟ "
+    },
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 0,
+          "value": "عطّل"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " الحساب بدلًا من ذلك. يمنع ذلك تسجيل الدخول ويحتفظ بكل شيء."
+    }
+  ],
+  "web.admin.users.deleteDialog.disableInstead": [
+    {
+      "type": 0,
+      "value": "التعطيل بدلًا من ذلك"
+    }
+  ],
+  "web.admin.users.deleteDialog.reload": [
+    {
+      "type": 0,
+      "value": "إعادة تحميل المستخدم الحالي"
+    }
+  ],
+  "web.admin.users.deleteDialog.reloadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة تحميل المستخدم."
+    }
+  ],
+  "web.admin.users.deleteDialog.title": [
+    {
+      "type": 0,
+      "value": "حذف "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "؟"
+    }
+  ],
+  "web.admin.users.detail.access.card.conflict": [
+    {
+      "type": 0,
+      "value": "غيّر مسؤول آخر هذا الحساب بعد أن بدأت. تم الاحتفاظ بتعديلاتك."
+    }
+  ],
+  "web.admin.users.detail.access.card.reloadAndReview": [
+    {
+      "type": 0,
+      "value": "إعادة التحميل والمراجعة"
+    }
+  ],
+  "web.admin.users.detail.access.card.reloadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة تحميل هذا الحساب."
+    }
+  ],
+  "web.admin.users.detail.access.card.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ هذا الحساب."
+    }
+  ],
+  "web.admin.users.detail.access.card.saved": [
+    {
+      "type": 0,
+      "value": "تم الحفظ"
+    }
+  ],
+  "web.admin.users.detail.access.card.saving": [
+    {
+      "type": 0,
+      "value": "جارٍ الحفظ..."
+    }
+  ],
+  "web.admin.users.detail.access.library.accessGroup": [
+    {
+      "type": 0,
+      "value": "مجموعة الوصول"
+    }
+  ],
+  "web.admin.users.detail.access.library.adminDescription": [
+    {
+      "type": 0,
+      "value": "لا يستخدم المسؤولون مجموعات الوصول. القيم غير المعيّنة تتبع الإعداد الافتراضي للخادم."
+    }
+  ],
+  "web.admin.users.detail.access.library.chooseForAccount": [
+    {
+      "type": 0,
+      "value": "الاختيار لهذا الحساب"
+    }
+  ],
+  "web.admin.users.detail.access.library.libraries": [
+    {
+      "type": 0,
+      "value": "المكتبات"
+    }
+  ],
+  "web.admin.users.detail.access.library.markerEdit": [
+    {
+      "type": 0,
+      "value": "تعديل العلامات"
+    }
+  ],
+  "web.admin.users.detail.access.library.markerEditDescription": [
+    {
+      "type": 0,
+      "value": "علامات المقدمة والملخص وشارة النهاية والمعاينة"
+    }
+  ],
+  "web.admin.users.detail.access.library.metadataCuration": [
+    {
+      "type": 0,
+      "value": "تنظيم البيانات الوصفية"
+    }
+  ],
+  "web.admin.users.detail.access.library.metadataCurationDescription": [
+    {
+      "type": 0,
+      "value": "تعديل البيانات الوصفية وتحديثها وإعادة مطابقتها"
+    }
+  ],
+  "web.admin.users.detail.access.library.noGroup": [
+    {
+      "type": 0,
+      "value": "بلا مجموعة"
+    }
+  ],
+  "web.admin.users.detail.access.library.noLibraryWarning": [
+    {
+      "type": 0,
+      "value": "لن يرى هذا الحساب أي مكتبة."
+    }
+  ],
+  "web.admin.users.detail.access.library.useGroupLibraries": [
+    {
+      "type": 0,
+      "value": "استخدام مكتبات المجموعة"
+    }
+  ],
+  "web.admin.users.detail.access.library.useServerDefault": [
+    {
+      "type": 0,
+      "value": "استخدام الإعداد الافتراضي للخادم"
+    }
+  ],
+  "web.admin.users.detail.access.role.admin": [
+    {
+      "type": 0,
+      "value": "مسؤول"
+    }
+  ],
+  "web.admin.users.detail.access.role.user": [
+    {
+      "type": 0,
+      "value": "مستخدم"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.adminLeavesGroup": [
+    {
+      "type": 0,
+      "value": "لا يستخدم المسؤولون مجموعات الوصول. سيؤدي الحفظ إلى إزالة هذا الحساب من "
+    },
+    {
+      "type": 1,
+      "value": "group"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.canSignIn": [
+    {
+      "type": 0,
+      "value": "يمكنه تسجيل الدخول"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.cannotDisableSelf": [
+    {
+      "type": 0,
+      "value": "لا يمكنك تعطيل حسابك الخاص."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.email": [
+    {
+      "type": 0,
+      "value": "البريد الإلكتروني"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.enterUsername": [
+    {
+      "type": 0,
+      "value": "أدخل اسم مستخدم."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownRole": [
+    {
+      "type": 0,
+      "value": "لا يمكنك تغيير دورك الخاص."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerGrantsAdmin": [
+    {
+      "type": 0,
+      "value": "يمكن لمالك الخادم وحده منح صلاحية المسؤول"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerGrantsAdminRole": [
+    {
+      "type": 0,
+      "value": "يمكن لمالك الخادم وحده منح دور المسؤول."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerStaysEnabled": [
+    {
+      "type": 0,
+      "value": "يبقى مالك الخادم مسؤولًا مفعّلًا."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.role": [
+    {
+      "type": 0,
+      "value": "الدور"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.username": [
+    {
+      "type": 0,
+      "value": "اسم المستخدم"
+    }
+  ],
+  "web.admin.users.detail.access.tab.ownerOnlyNote": [
+    {
+      "type": 0,
+      "value": "يمكن لمالك الخادم وحده تغيير وصول المسؤول وحدوده."
+    }
+  ],
+  "web.admin.users.detail.common.cardTitle.library": [
+    {
+      "type": 0,
+      "value": "الوصول إلى المكتبات"
+    }
+  ],
+  "web.admin.users.detail.common.cardTitle.signin": [
+    {
+      "type": 0,
+      "value": "تسجيل الدخول والدور"
+    }
+  ],
+  "web.admin.users.detail.header.adminNotice": [
+    {
+      "type": 0,
+      "value": "لا يمكن تغيير حساب مسؤول آخر إلا لمالك الخادم. يمكنك عرضه."
+    }
+  ],
+  "web.admin.users.detail.header.breadcrumb": [
+    {
+      "type": 0,
+      "value": "مسار التنقل"
+    }
+  ],
+  "web.admin.users.detail.header.breadcrumbUsers": [
+    {
+      "type": 0,
+      "value": "المستخدمون"
+    }
+  ],
+  "web.admin.users.detail.header.deleteAccount": [
+    {
+      "type": 0,
+      "value": "حذف الحساب…"
+    }
+  ],
+  "web.admin.users.detail.header.disableAccount": [
+    {
+      "type": 0,
+      "value": "تعطيل الحساب"
+    }
+  ],
+  "web.admin.users.detail.header.disabledNotice": [
+    {
+      "type": 0,
+      "value": "لا يمكن لهذا الحساب تسجيل الدخول. يُحتفظ بملفاته الشخصية وسجلّه."
+    }
+  ],
+  "web.admin.users.detail.header.enableAccount": [
+    {
+      "type": 0,
+      "value": "تفعيل الحساب"
+    }
+  ],
+  "web.admin.users.detail.header.externalSignIn": [
+    {
+      "type": 0,
+      "value": "تسجيل الدخول الخارجي"
+    }
+  ],
+  "web.admin.users.detail.header.group": [
+    {
+      "type": 0,
+      "value": "المجموعة: "
+    },
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 1,
+          "value": "name"
+        }
+      ]
+    }
+  ],
+  "web.admin.users.detail.header.groupIdFallback": [
+    {
+      "type": 0,
+      "value": "#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.users.detail.header.joined": [
+    {
+      "type": 0,
+      "value": "انضم في "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.admin.users.detail.header.lastActive": [
+    {
+      "type": 0,
+      "value": "آخر نشاط: "
+    },
+    {
+      "type": 1,
+      "value": "when"
+    }
+  ],
+  "web.admin.users.detail.header.makeOwner": [
+    {
+      "type": 0,
+      "value": "تعيين كمالك"
+    }
+  ],
+  "web.admin.users.detail.header.moreActions": [
+    {
+      "type": 0,
+      "value": "مزيد من الإجراءات"
+    }
+  ],
+  "web.admin.users.detail.header.noActivity": [
+    {
+      "type": 0,
+      "value": "لا يوجد نشاط مسجّل"
+    }
+  ],
+  "web.admin.users.detail.header.ownerNotice": [
+    {
+      "type": 0,
+      "value": "هذا هو مالك الخادم. لا يستطيع تغيير هذا الحساب إلا المالك."
+    }
+  ],
+  "web.admin.users.detail.header.passwordSignIn": [
+    {
+      "type": 0,
+      "value": "تسجيل الدخول بكلمة المرور"
+    }
+  ],
+  "web.admin.users.detail.header.resetPassword": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين كلمة المرور"
+    }
+  ],
+  "web.admin.users.detail.header.setPassword": [
+    {
+      "type": 0,
+      "value": "تعيين كلمة المرور"
+    }
+  ],
+  "web.admin.users.detail.header.status.active": [
+    {
+      "type": 0,
+      "value": "نشط"
+    }
+  ],
+  "web.admin.users.detail.header.status.disabled": [
+    {
+      "type": 0,
+      "value": "معطّل"
+    }
+  ],
+  "web.admin.users.detail.header.temporaryPassword": [
+    {
+      "type": 0,
+      "value": "كلمة مرور مؤقتة"
+    }
+  ],
+  "web.admin.users.list.addUser": [
+    {
+      "type": 0,
+      "value": "إضافة مستخدم"
+    }
+  ],
+  "web.admin.users.list.adminGroupNone": [
+    {
+      "type": 0,
+      "value": "—"
+    }
+  ],
+  "web.admin.users.list.column.actions": [
+    {
+      "type": 0,
+      "value": "الإجراءات"
+    }
+  ],
+  "web.admin.users.list.column.created": [
+    {
+      "type": 0,
+      "value": "تاريخ الإنشاء"
+    }
+  ],
+  "web.admin.users.list.column.email": [
+    {
+      "type": 0,
+      "value": "البريد الإلكتروني"
+    }
+  ],
+  "web.admin.users.list.column.group": [
+    {
+      "type": 0,
+      "value": "المجموعة"
+    }
+  ],
+  "web.admin.users.list.column.lastActive": [
+    {
+      "type": 0,
+      "value": "آخر نشاط"
+    }
+  ],
+  "web.admin.users.list.column.role": [
+    {
+      "type": 0,
+      "value": "الدور"
+    }
+  ],
+  "web.admin.users.list.column.status": [
+    {
+      "type": 0,
+      "value": "الحالة"
+    }
+  ],
+  "web.admin.users.list.column.username": [
+    {
+      "type": 0,
+      "value": "اسم المستخدم"
+    }
+  ],
+  "web.admin.users.list.create.adminNoGroups": [
+    {
+      "type": 0,
+      "value": "لا يمكن لحسابات المسؤولين الانضمام إلى المجموعات."
+    }
+  ],
+  "web.admin.users.list.create.adminOwnerOnly": [
+    {
+      "type": 0,
+      "value": "يمكن لمالك الخادم وحده منح دور المسؤول."
+    }
+  ],
+  "web.admin.users.list.create.defaultGroup": [
+    {
+      "type": 0,
+      "value": "المجموعة الافتراضية"
+    }
+  ],
+  "web.admin.users.list.create.defaultProfile": [
+    {
+      "type": 0,
+      "value": "إنشاء ملف شخصي افتراضي"
+    }
+  ],
+  "web.admin.users.list.create.defaultProfileUnavailable": [
+    {
+      "type": 0,
+      "value": "إنشاء ملف شخصي افتراضي (غير متاح؛ ألغِ التحديد لإنشاء الحساب فقط)"
+    }
+  ],
+  "web.admin.users.list.create.email": [
+    {
+      "type": 0,
+      "value": "البريد الإلكتروني"
+    }
+  ],
+  "web.admin.users.list.create.group": [
+    {
+      "type": 0,
+      "value": "المجموعة"
+    }
+  ],
+  "web.admin.users.list.create.markerEdit": [
+    {
+      "type": 0,
+      "value": "تعديل العلامات"
+    }
+  ],
+  "web.admin.users.list.create.markerEditHelp": [
+    {
+      "type": 0,
+      "value": "تعديل علامات المقدمة والملخص وشارة النهاية والمعاينة ضمن المكتبات المخصصة."
+    }
+  ],
+  "web.admin.users.list.create.metadataCuration": [
+    {
+      "type": 0,
+      "value": "تنظيم البيانات الوصفية"
+    }
+  ],
+  "web.admin.users.list.create.metadataCurationHelp": [
+    {
+      "type": 0,
+      "value": "تعديل البيانات الوصفية وتحديثها وإعادة مطابقتها ضمن المكتبات المخصصة."
+    }
+  ],
+  "web.admin.users.list.create.password": [
+    {
+      "type": 0,
+      "value": "كلمة المرور"
+    }
+  ],
+  "web.admin.users.list.create.requirePasswordChange": [
+    {
+      "type": 0,
+      "value": "طلب التغيير عند أول تسجيل دخول"
+    }
+  ],
+  "web.admin.users.list.create.role": [
+    {
+      "type": 0,
+      "value": "الدور"
+    }
+  ],
+  "web.admin.users.list.create.role.admin": [
+    {
+      "type": 0,
+      "value": "مسؤول"
+    }
+  ],
+  "web.admin.users.list.create.role.user": [
+    {
+      "type": 0,
+      "value": "مستخدم"
+    }
+  ],
+  "web.admin.users.list.create.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ المستخدم."
+    }
+  ],
+  "web.admin.users.list.create.saving": [
+    {
+      "type": 0,
+      "value": "جارٍ الحفظ..."
+    }
+  ],
+  "web.admin.users.list.create.tab.access": [
+    {
+      "type": 0,
+      "value": "الوصول"
+    }
+  ],
+  "web.admin.users.list.create.tab.account": [
+    {
+      "type": 0,
+      "value": "الحساب"
+    }
+  ],
+  "web.admin.users.list.create.username": [
+    {
+      "type": 0,
+      "value": "اسم المستخدم"
+    }
+  ],
+  "web.admin.users.list.createDialogTitle": [
+    {
+      "type": 0,
+      "value": "إنشاء مستخدم"
+    }
+  ],
+  "web.admin.users.list.deleteAria": [
+    {
+      "type": 0,
+      "value": "حذف "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    }
+  ],
+  "web.admin.users.list.deleteTooltip": [
+    {
+      "type": 0,
+      "value": "حذف المستخدم"
+    }
+  ],
+  "web.admin.users.list.editAria": [
+    {
+      "type": 0,
+      "value": "تعديل "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    }
+  ],
+  "web.admin.users.list.editTooltip": [
+    {
+      "type": 0,
+      "value": "تعديل المستخدم"
+    }
+  ],
+  "web.admin.users.list.groupFilterAll": [
+    {
+      "type": 0,
+      "value": "كل المجموعات"
+    }
+  ],
+  "web.admin.users.list.groupFilterLabel": [
+    {
+      "type": 0,
+      "value": "التصفية حسب مجموعة الوصول"
+    }
+  ],
+  "web.admin.users.list.groupsLoadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل مجموعات الوصول، لذا أسماء المجموعات وعوامل تصفيتها غير متاحة."
+    }
+  ],
+  "web.admin.users.list.lastActiveNever": [
+    {
+      "type": 0,
+      "value": "أبدًا"
+    }
+  ],
+  "web.admin.users.list.loadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل المستخدمين."
+    }
+  ],
+  "web.admin.users.list.nextPage": [
+    {
+      "type": 0,
+      "value": "التالي"
+    }
+  ],
+  "web.admin.users.list.noGroup": [
+    {
+      "type": 0,
+      "value": "بلا مجموعة"
+    }
+  ],
+  "web.admin.users.list.noMatches": [
+    {
+      "type": 0,
+      "value": "لا يوجد مستخدمون يطابقون بحثك أو عامل التصفية."
+    }
+  ],
+  "web.admin.users.list.pageRange": [
+    {
+      "type": 0,
+      "value": "عرض "
+    },
+    {
+      "type": 1,
+      "value": "from"
+    },
+    {
+      "type": 0,
+      "value": "-"
+    },
+    {
+      "type": 1,
+      "value": "to"
+    },
+    {
+      "type": 0,
+      "value": " من "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    }
+  ],
+  "web.admin.users.list.pageSizeOption": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " صف"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "صف واحد"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "صفان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " صفوف"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " صفًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " صف"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.users.list.previousPage": [
+    {
+      "type": 0,
+      "value": "السابق"
+    }
+  ],
+  "web.admin.users.list.reload": [
+    {
+      "type": 0,
+      "value": "إعادة تحميل المستخدمين"
+    }
+  ],
+  "web.admin.users.list.searchPlaceholder": [
+    {
+      "type": 0,
+      "value": "البحث باسم المستخدم أو البريد الإلكتروني..."
+    }
+  ],
+  "web.admin.users.list.status.active": [
+    {
+      "type": 0,
+      "value": "نشط"
+    }
+  ],
+  "web.admin.users.list.status.disabled": [
+    {
+      "type": 0,
+      "value": "معطّل"
+    }
+  ],
+  "web.admin.users.list.subtitle": [
+    {
+      "type": 0,
+      "value": "إدارة الوصول والإعدادات الافتراضية وآلية الدعوة للأشخاص الذين يستخدمون Silo."
+    }
+  ],
+  "web.admin.users.list.tab.invitations": [
+    {
+      "type": 0,
+      "value": "الدعوات"
+    }
+  ],
+  "web.admin.users.list.tab.users": [
+    {
+      "type": 0,
+      "value": "المستخدمون"
+    }
+  ],
+  "web.admin.users.list.title": [
+    {
+      "type": 0,
+      "value": "المستخدمون"
+    }
+  ],
+  "web.admin.users.list.unavailable": [
+    {
+      "type": 0,
+      "value": "إدارة المستخدمين غير متاحة."
+    }
+  ],
+  "web.admin.users.list.unknownGroup": [
+    {
+      "type": 0,
+      "value": "مجموعة غير معروفة"
+    }
+  ],
+  "web.admin.users.list.userLoadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل المستخدم."
+    }
+  ],
+  "web.admin.users.page.accountChanged": [
+    {
+      "type": 0,
+      "value": "تغيّر الحساب. حاول مرة أخرى."
+    }
+  ],
+  "web.admin.users.page.allUsers": [
+    {
+      "type": 0,
+      "value": "كل المستخدمين"
+    }
+  ],
+  "web.admin.users.page.changeFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تغيير الحساب."
+    }
+  ],
+  "web.admin.users.page.disableConfirm": [
+    {
+      "type": 0,
+      "value": "تعطيل الحساب"
+    }
+  ],
+  "web.admin.users.page.disableDescription": [
+    {
+      "type": 0,
+      "value": "لن يتمكن من تسجيل الدخول حتى تعيد تفعيل الحساب. ستبقى ملفاته الشخصية وسجله وتنزيلاته محفوظة."
+    }
+  ],
+  "web.admin.users.page.disableTitle": [
+    {
+      "type": 0,
+      "value": "تعطيل "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "؟"
+    }
+  ],
+  "web.admin.users.page.disabled": [
+    {
+      "type": 0,
+      "value": "تم تعطيل "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    }
+  ],
+  "web.admin.users.page.enabled": [
+    {
+      "type": 0,
+      "value": "تم تفعيل "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    }
+  ],
+  "web.admin.users.page.loadFailedDescription": [
+    {
+      "type": 0,
+      "value": "حدث خطأ أثناء تحميل الحساب. حاول مرة أخرى بعد قليل."
+    }
+  ],
+  "web.admin.users.page.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل هذا المستخدم"
+    }
+  ],
+  "web.admin.users.page.notFoundDescription": [
+    {
+      "type": 0,
+      "value": "ربما حُذف الحساب، أو قد يكون الرابط خاطئًا."
+    }
+  ],
+  "web.admin.users.page.notFoundTitle": [
+    {
+      "type": 0,
+      "value": "لم يُعثر على المستخدم"
+    }
+  ],
+  "web.admin.users.page.ownerTransferred": [
+    {
+      "type": 0,
+      "value": "أصبح "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " الآن مالك الخادم"
+    }
+  ],
+  "web.admin.users.page.transferConfirm": [
+    {
+      "type": 0,
+      "value": "تعيينه مالكًا"
+    }
+  ],
+  "web.admin.users.page.transferDescription": [
+    {
+      "type": 0,
+      "value": "سيصبح "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " الحساب الوحيد الذي يمكنه إدارة المسؤولين، وستبقى أنت مسؤولًا. يمكن لـ"
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " وحده إعادة نقل الملكية."
+    }
+  ],
+  "web.admin.users.page.transferFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر نقل الملكية."
+    }
+  ],
+  "web.admin.users.page.transferTitle": [
+    {
+      "type": 0,
+      "value": "تعيين "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " مالكًا للخادم؟"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.copyFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر نسخ الرابط. حدّده وانسخه يدويًا."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.copyLink": [
+    {
+      "type": 0,
+      "value": "نسخ الرابط"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.description": [
+    {
+      "type": 0,
+      "value": "اختر طريقة عودته إلى الحساب. يؤدي كل خيار إلى تسجيل خروجه من جميع الأجهزة."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailAction": [
+    {
+      "type": 0,
+      "value": "إرسال الرابط بالبريد الإلكتروني"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHint": [
+    {
+      "type": 0,
+      "value": "يُرسل إلى "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". يعمل مرة واحدة وتنتهي صلاحيته خلال 24 ساعة."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintDisabled": [
+    {
+      "type": 0,
+      "value": "فعّل الحساب لإرسال رابط إعادة تعيين إليه."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintNoAddress": [
+    {
+      "type": 0,
+      "value": "لا يملك هذا الحساب عنوان بريد إلكتروني، لذا شارك رابطًا بدلًا من ذلك."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintNoMail": [
+    {
+      "type": 0,
+      "value": "اضبط البريد الإلكتروني في الإعدادات لإرسال روابط إعادة التعيين."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailOption": [
+    {
+      "type": 0,
+      "value": "إرسال رابط إعادة التعيين بالبريد الإلكتروني"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailSent": [
+    {
+      "type": 0,
+      "value": "أُرسل رابط إعادة التعيين إلى "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". تنتهي صلاحيته في "
+    },
+    {
+      "type": 1,
+      "value": "expires"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailUnconfirmed": [
+    {
+      "type": 0,
+      "value": "لم يؤكد خادم البريد التسليم. أعد الإرسال، أو أنشئ رابطًا للمشاركة."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.issueFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر إنشاء رابط إعادة التعيين."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkAction": [
+    {
+      "type": 0,
+      "value": "إنشاء الرابط"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkCopied": [
+    {
+      "type": 0,
+      "value": "تم نسخ الرابط"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHint": [
+    {
+      "type": 0,
+      "value": "انسخه وأرسله بنفسك."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHintDisabled": [
+    {
+      "type": 0,
+      "value": "فعّل الحساب لإنشاء رابط إعادة تعيين."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHintNoUrl": [
+    {
+      "type": 0,
+      "value": "اضبط عنوان URL العام لـSilo لإنشاء روابط إعادة التعيين. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "الإعدادات العامة"
+        }
+      ]
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkOption": [
+    {
+      "type": 0,
+      "value": "إنشاء رابط للمشاركة"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkShare": [
+    {
+      "type": 0,
+      "value": "شارك هذا الرابط مع "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " فقط. يمكن لأي شخص يملكه تعيين كلمة مرور الحساب حتى تنتهي صلاحيته في "
+    },
+    {
+      "type": 1,
+      "value": "expires"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.methodGroup": [
+    {
+      "type": 0,
+      "value": "طريقة عودته إلى الحساب"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.mustChange": [
+    {
+      "type": 0,
+      "value": "يجب عليه اختيار كلمة مرور جديدة عند تسجيل الدخول التالي"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordAction": [
+    {
+      "type": 0,
+      "value": "تعيين كلمة المرور"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordLabel": [
+    {
+      "type": 0,
+      "value": "كلمة المرور المؤقتة"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordOption": [
+    {
+      "type": 0,
+      "value": "تعيين كلمة مرور مؤقتة"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordOptionHint": [
+    {
+      "type": 0,
+      "value": "اكتب كلمة مرور الآن وأبلغه بها."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordRules": [
+    {
+      "type": 0,
+      "value": "عدد الأحرف "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": " على الأقل، ولا يتجاوز الحجم "
+    },
+    {
+      "type": 1,
+      "value": "max"
+    },
+    {
+      "type": 0,
+      "value": " بايت بترميز UTF-8."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordSet": [
+    {
+      "type": 0,
+      "value": "تم تعيين كلمة المرور. سُجّل خروج "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " من كل الأجهزة."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordSetMustChange": [
+    {
+      "type": 0,
+      "value": "تم تعيين كلمة المرور. سُجّل خروج "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " من كل الأجهزة. يجب عليه اختيار كلمة مرور جديدة عند تسجيل الدخول التالي."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.setFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تعيين كلمة المرور."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.title": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين كلمة المرور لـ"
+    },
+    {
+      "type": 1,
+      "value": "username"
+    }
+  ],
   "web.audiobooks.duration.hours": [
     {
       "type": 1,
@@ -5901,6 +7879,12 @@
     {
       "type": 0,
       "value": "كلمة المرور المؤقتة"
+    }
+  ],
+  "web.auth.invalidEmail": [
+    {
+      "type": 0,
+      "value": "أدخل عنوان بريد إلكتروني صالحًا، مثل name@example.com"
     }
   ],
   "web.auth.login.device.continueOnPhone": [
@@ -21887,6 +23871,60 @@
       "value": "البحث في الإعدادات"
     }
   ],
+  "web.settings.sessions.admin.empty": [
+    {
+      "type": 0,
+      "value": "لا توجد عمليات تسجيل دخول نشطة لهذا الحساب."
+    }
+  ],
+  "web.settings.sessions.admin.ownerOnly": [
+    {
+      "type": 0,
+      "value": "لا يمكن إلا لمالك الخادم تسجيل خروج مسؤول آخر أو المالك."
+    }
+  ],
+  "web.settings.sessions.adminDescription": [
+    {
+      "type": 0,
+      "value": "المتصفحات والتطبيقات المسجّل دخولها إلى حساب "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.settings.sessions.confirm.adminClientDescription": [
+    {
+      "type": 0,
+      "value": "سيفقد هذا العميل على حساب "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " إمكانية الوصول عند طلبه المصادق عليه التالي. تبقى جلساته الأخرى وكلمة المرور دون تغيير."
+    }
+  ],
+  "web.settings.sessions.confirm.allTitle": [
+    {
+      "type": 0,
+      "value": "تسجيل خروج "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " من كل مكان؟"
+    }
+  ],
   "web.settings.sessions.confirm.clientDescription": [
     {
       "type": 0,
@@ -21911,6 +23949,12 @@
     {
       "type": 0,
       "value": "قد يستمر تشغيل فيديو قيد التشغيل حتى طلبه التالي. تُحفظ إعدادات الجهاز المحفوظة."
+    }
+  ],
+  "web.settings.sessions.confirm.sessionTitle": [
+    {
+      "type": 0,
+      "value": "تسجيل الخروج من هذه الجلسة؟"
     }
   ],
   "web.settings.sessions.confirm.signingOut": [
@@ -21941,6 +23985,12 @@
     {
       "type": 0,
       "value": "جهاز غير معروف"
+    }
+  ],
+  "web.settings.sessions.footnoteAdmin": [
+    {
+      "type": 0,
+      "value": "يسجّل «آخر نشاط» النشاط المصادق عليه، ويُحدَّث مرة واحدة في الدقيقة على الأكثر. قد لا يكون للجلسات الأقدم نشاط مسجّل بعد. لا يغيّر تسجيل الخروج كلمة المرور ولا إعدادات الجهاز المحفوظة. تبقى الحسابات الأخرى مسجّلة الدخول."
     }
   ],
   "web.settings.sessions.lastSeen.active": [
@@ -22391,6 +24441,12 @@
       "value": "User-Agent"
     }
   ],
+  "web.settings.sessions.signOutEverywhere": [
+    {
+      "type": 0,
+      "value": "تسجيل الخروج من كل مكان"
+    }
+  ],
   "web.settings.sessions.signOutFailed": [
     {
       "type": 0,
@@ -22401,6 +24457,20 @@
     {
       "type": 0,
       "value": "تم تسجيل الخروج من الجلسة"
+    }
+  ],
+  "web.settings.sessions.signedOutEverywhere": [
+    {
+      "type": 0,
+      "value": "تم تسجيل خروج "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " من كل مكان"
     }
   ],
   "web.settings.sessions.title": [

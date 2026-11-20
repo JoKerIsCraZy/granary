@@ -30,7 +30,7 @@ public sealed partial class PlayerPage
         }
     }
 
-    private void OnPartyInviteClick(object sender, RoutedEventArgs e) => ViewModel.Party?.CopyInvite(RoomClipboard.Copy);
+    private void OnPartyInviteClick(object sender, RoutedEventArgs e) => ViewModel.Party?.CopyInvite(SecretClipboard.Copy);
 
     // The question gives focus back to End when it closes: the page takes it, or a focused End would hold the controls
     // up for good.

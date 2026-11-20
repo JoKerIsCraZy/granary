@@ -4234,6 +4234,648 @@
       "value": "Esta sesión no admite pausar, reanudar ni enviar mensajes en directo. Detener y Terminar aún pueden finalizar la reproducción."
     }
   ],
+  "web.admin.settings.invitations.capabilitiesFailed": [
+    {
+      "type": 0,
+      "value": "No se pudieron cargar las funciones de invitación. "
+    },
+    {
+      "type": 8,
+      "value": "button",
+      "children": [
+        {
+          "type": 0,
+          "value": "Volver a cargar funciones"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.claimLink.copy": [
+    {
+      "type": 0,
+      "value": "Copiar enlace"
+    }
+  ],
+  "web.admin.settings.invitations.copied": [
+    {
+      "type": 0,
+      "value": "Copiado al portapapeles"
+    }
+  ],
+  "web.admin.settings.invitations.copyFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo copiar el enlace. Selecciónalo y cópialo manualmente, o vuelve a intentarlo."
+    }
+  ],
+  "web.admin.settings.invitations.create.accessGroup": [
+    {
+      "type": 0,
+      "value": "Grupo de acceso"
+    }
+  ],
+  "web.admin.settings.invitations.create.creating": [
+    {
+      "type": 0,
+      "value": "Creando..."
+    }
+  ],
+  "web.admin.settings.invitations.create.defaultGroup": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (predeterminado)"
+    }
+  ],
+  "web.admin.settings.invitations.create.deliveryQuestion": [
+    {
+      "type": 0,
+      "value": "¿Cómo debería recibirla?"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailHint": [
+    {
+      "type": 0,
+      "value": "Será tanto el destino como su nombre de usuario para iniciar sesión."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailLabel": [
+    {
+      "type": 0,
+      "value": "Dirección de correo electrónico"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOption": [
+    {
+      "type": 0,
+      "value": "Enviar correo"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOptionBody": [
+    {
+      "type": 0,
+      "value": "Enviamos el enlace por correo. También puedes copiarlo."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOptionUnavailable": [
+    {
+      "type": 0,
+      "value": "El correo electrónico no está configurado en este servidor."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailSetup": [
+    {
+      "type": 0,
+      "value": "Para enviar invitaciones por correo, configura el servidor de correo en la "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "configuración de correo electrónico"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.create.expiry": [
+    {
+      "type": 0,
+      "value": "El enlace caduca en 7 días · un solo uso"
+    }
+  ],
+  "web.admin.settings.invitations.create.failed": [
+    {
+      "type": 0,
+      "value": "No se pudo crear la invitación."
+    }
+  ],
+  "web.admin.settings.invitations.create.finePrintEmail": [
+    {
+      "type": 0,
+      "value": "El enlace funciona una vez y caduca en 7 días. Si lo reenvías más adelante, se genera un enlace nuevo y este deja de funcionar."
+    }
+  ],
+  "web.admin.settings.invitations.create.finePrintLink": [
+    {
+      "type": 0,
+      "value": "El enlace funciona una vez y caduca en 7 días. Cualquiera que tenga el enlace puede usarlo. Revócalo desde el historial si llega a la persona equivocada."
+    }
+  ],
+  "web.admin.settings.invitations.create.inheritGroup": [
+    {
+      "type": 0,
+      "value": "Heredar del grupo de acceso"
+    }
+  ],
+  "web.admin.settings.invitations.create.libraryHint": [
+    {
+      "type": 0,
+      "value": "La cuenta que se crea al aceptar sigue el acceso a bibliotecas del grupo seleccionado."
+    }
+  ],
+  "web.admin.settings.invitations.create.linkOption": [
+    {
+      "type": 0,
+      "value": "Crear enlace"
+    }
+  ],
+  "web.admin.settings.invitations.create.linkOptionBody": [
+    {
+      "type": 0,
+      "value": "Tú compartes el enlace, por ejemplo, en un chat."
+    }
+  ],
+  "web.admin.settings.invitations.create.noDefaultProfile": [
+    {
+      "type": 0,
+      "value": "Este servidor no puede crear un perfil predeterminado de forma atómica. Desactiva la opción de perfil para crear una invitación sin perfil."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteHintEmail": [
+    {
+      "type": 0,
+      "value": "Aparece en el correo y en la página de invitación. Texto sin formato."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteHintLink": [
+    {
+      "type": 0,
+      "value": "Se muestra en la página de invitación y en tu historial de invitaciones para que puedas distinguir los enlaces."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteLabel": [
+    {
+      "type": 0,
+      "value": "Nota (opcional)"
+    }
+  ],
+  "web.admin.settings.invitations.create.notePlaceholder": [
+    {
+      "type": 0,
+      "value": "Hola: configúralo cuando quieras."
+    }
+  ],
+  "web.admin.settings.invitations.create.ownerOnly": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede invitar a un administrador."
+    }
+  ],
+  "web.admin.settings.invitations.create.personalNoteLabel": [
+    {
+      "type": 0,
+      "value": "Nota personal (opcional)"
+    }
+  ],
+  "web.admin.settings.invitations.create.profileHintEmail": [
+    {
+      "type": 0,
+      "value": "Se nombra con la parte anterior a la @. Podrá cambiarle el nombre más adelante."
+    }
+  ],
+  "web.admin.settings.invitations.create.profileHintLink": [
+    {
+      "type": 0,
+      "value": "Se nombra con la parte anterior a la @ del correo que introduzca. Podrá cambiarle el nombre más adelante."
+    }
+  ],
+  "web.admin.settings.invitations.create.profileLabel": [
+    {
+      "type": 0,
+      "value": "Crear su primer perfil"
+    }
+  ],
+  "web.admin.settings.invitations.create.reloadBeforeRetry": [
+    {
+      "type": 0,
+      "value": "Vuelve a cargar el historial antes de intentarlo de nuevo; puede que la invitación ya exista."
+    }
+  ],
+  "web.admin.settings.invitations.create.reloadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo volver a cargar el historial de invitaciones. Vuelve a intentarlo antes de crear otra invitación."
+    }
+  ],
+  "web.admin.settings.invitations.create.role": [
+    {
+      "type": 0,
+      "value": "Rol"
+    }
+  ],
+  "web.admin.settings.invitations.create.roleAdmin": [
+    {
+      "type": 0,
+      "value": "Administrador"
+    }
+  ],
+  "web.admin.settings.invitations.create.roleUser": [
+    {
+      "type": 0,
+      "value": "Usuario"
+    }
+  ],
+  "web.admin.settings.invitations.create.sending": [
+    {
+      "type": 0,
+      "value": "Enviando..."
+    }
+  ],
+  "web.admin.settings.invitations.create.serverDefault": [
+    {
+      "type": 0,
+      "value": "Predeterminado del servidor"
+    }
+  ],
+  "web.admin.settings.invitations.create.submitEmail": [
+    {
+      "type": 0,
+      "value": "Enviar invitación"
+    }
+  ],
+  "web.admin.settings.invitations.create.submitLink": [
+    {
+      "type": 0,
+      "value": "Crear enlace"
+    }
+  ],
+  "web.admin.settings.invitations.create.tourHint": [
+    {
+      "type": 0,
+      "value": "Recorre lo que puede hacer este servidor y omite lo que esté desactivado."
+    }
+  ],
+  "web.admin.settings.invitations.create.tourLabel": [
+    {
+      "type": 0,
+      "value": "Mostrar el recorrido de funciones al iniciar sesión por primera vez"
+    }
+  ],
+  "web.admin.settings.invitations.delivery.failed": [
+    {
+      "type": 0,
+      "value": "Se creó la invitación, pero el envío del correo falló o no se pudo confirmar. Este enlace sigue activo; entrégalo tú."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.linkCreated": [
+    {
+      "type": 0,
+      "value": "Enlace de invitación creado. Compártelo con la persona a la que invitas. Introducirá su dirección de correo y elegirá una contraseña."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.newLinkForEmail": [
+    {
+      "type": 0,
+      "value": "Se creó un enlace nuevo para "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". No se envió ningún correo; comparte tú este enlace."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.notConfigured": [
+    {
+      "type": 0,
+      "value": "El correo electrónico no está configurado. Se creó la invitación; entrega tú este enlace."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.sent": [
+    {
+      "type": 0,
+      "value": "Correo enviado a "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". No se garantiza que llegue al destinatario. Puedes copiar el enlace de abajo."
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailSent": [
+    {
+      "type": 0,
+      "value": "Correo enviado"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailUnconfirmed": [
+    {
+      "type": 0,
+      "value": "Correo sin confirmar"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailUnconfirmedTitle": [
+    {
+      "type": 0,
+      "value": "El correo falló o no se pudo confirmar su entrega. El enlace sigue funcionando."
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.link": [
+    {
+      "type": 0,
+      "value": "Enlace creado"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.unknownTitle": [
+    {
+      "type": 0,
+      "value": "Se creó antes de que se registrara la entrega"
+    }
+  ],
+  "web.admin.settings.invitations.empty": [
+    {
+      "type": 0,
+      "value": "Aún no hay invitaciones. Invita a alguien para empezar."
+    }
+  ],
+  "web.admin.settings.invitations.historyFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar el historial de invitaciones. "
+    },
+    {
+      "type": 1,
+      "value": "error"
+    }
+  ],
+  "web.admin.settings.invitations.intro": [
+    {
+      "type": 0,
+      "value": "Invita a alguien por correo electrónico o crea un enlace para compartirlo tú. Su dirección de correo será su nombre de usuario."
+    }
+  ],
+  "web.admin.settings.invitations.invite.button": [
+    {
+      "type": 0,
+      "value": "Invitar a alguien"
+    }
+  ],
+  "web.admin.settings.invitations.invite.description": [
+    {
+      "type": 0,
+      "value": "Elige su acceso y cómo recibirá el enlace de invitación."
+    }
+  ],
+  "web.admin.settings.invitations.invite.title": [
+    {
+      "type": 0,
+      "value": "Invitar a alguien"
+    }
+  ],
+  "web.admin.settings.invitations.loadMore": [
+    {
+      "type": 0,
+      "value": "Cargar más"
+    }
+  ],
+  "web.admin.settings.invitations.loading": [
+    {
+      "type": 0,
+      "value": "Cargando invitaciones..."
+    }
+  ],
+  "web.admin.settings.invitations.loadingCapabilities": [
+    {
+      "type": 0,
+      "value": "Cargando las funciones de invitación..."
+    }
+  ],
+  "web.admin.settings.invitations.notConfigured": [
+    {
+      "type": 0,
+      "value": "Las invitaciones no están configuradas en este servidor."
+    }
+  ],
+  "web.admin.settings.invitations.publicUrlMissing": [
+    {
+      "type": 0,
+      "value": "Define la URL pública de Silo para crear enlaces de invitación. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Configuración general"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.reloadHistory": [
+    {
+      "type": 0,
+      "value": "Volver a cargar el historial"
+    }
+  ],
+  "web.admin.settings.invitations.resend.creating": [
+    {
+      "type": 0,
+      "value": "Creando una invitación nueva..."
+    }
+  ],
+  "web.admin.settings.invitations.resend.description": [
+    {
+      "type": 0,
+      "value": "Un reemplazo invalida el enlace anterior."
+    }
+  ],
+  "web.admin.settings.invitations.resend.finePrint": [
+    {
+      "type": 0,
+      "value": "El enlace funciona una sola vez. Cualquier enlace anterior ha dejado de funcionar."
+    }
+  ],
+  "web.admin.settings.invitations.resend.title": [
+    {
+      "type": 0,
+      "value": "Enlace de invitación nuevo"
+    }
+  ],
+  "web.admin.settings.invitations.resend.uncertain": [
+    {
+      "type": 0,
+      "value": "Es posible que el resultado no sea seguro. Vuelve a cargar el historial antes de reenviar otra vez."
+    }
+  ],
+  "web.admin.settings.invitations.resendFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo reenviar la invitación. Vuelve a cargar el historial antes de continuar."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.confirm": [
+    {
+      "type": 0,
+      "value": "Revocar"
+    }
+  ],
+  "web.admin.settings.invitations.revoke.emailDescription": [
+    {
+      "type": 0,
+      "value": "¿Revocar la invitación para "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": "? Su enlace dejará de funcionar."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.linkDescription": [
+    {
+      "type": 0,
+      "value": "¿Revocar esta invitación por enlace? El enlace dejará de funcionar."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.title": [
+    {
+      "type": 0,
+      "value": "Revocar invitación"
+    }
+  ],
+  "web.admin.settings.invitations.revokeFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo revocar la invitación."
+    }
+  ],
+  "web.admin.settings.invitations.row.copyNewLink": [
+    {
+      "type": 0,
+      "value": "Copiar un enlace nuevo sin enviarlo por correo"
+    }
+  ],
+  "web.admin.settings.invitations.row.emailNewLink": [
+    {
+      "type": 0,
+      "value": "Enviar un enlace nuevo por correo"
+    }
+  ],
+  "web.admin.settings.invitations.row.expires": [
+    {
+      "type": 0,
+      "value": "vence el "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.admin.settings.invitations.row.invitedBy": [
+    {
+      "type": 0,
+      "value": "Invitación de "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.admin.settings.invitations.row.joinedByLink": [
+    {
+      "type": 0,
+      "value": "Se unió mediante enlace"
+    }
+  ],
+  "web.admin.settings.invitations.row.linkInvitation": [
+    {
+      "type": 0,
+      "value": "Invitación por enlace"
+    }
+  ],
+  "web.admin.settings.invitations.row.note": [
+    {
+      "type": 0,
+      "value": "“"
+    },
+    {
+      "type": 1,
+      "value": "note"
+    },
+    {
+      "type": 0,
+      "value": "”"
+    }
+  ],
+  "web.admin.settings.invitations.row.replaceLink": [
+    {
+      "type": 0,
+      "value": "Reemplazar por un enlace nuevo"
+    }
+  ],
+  "web.admin.settings.invitations.row.revokeLink": [
+    {
+      "type": 0,
+      "value": "Revocar este enlace"
+    }
+  ],
+  "web.admin.settings.invitations.status.accepted": [
+    {
+      "type": 0,
+      "value": "Aceptada"
+    }
+  ],
+  "web.admin.settings.invitations.status.expired": [
+    {
+      "type": 0,
+      "value": "Vencida"
+    }
+  ],
+  "web.admin.settings.invitations.status.pending": [
+    {
+      "type": 0,
+      "value": "Pendiente"
+    }
+  ],
+  "web.admin.settings.invitations.status.revoked": [
+    {
+      "type": 0,
+      "value": "Revocada"
+    }
+  ],
+  "web.admin.settings.invitations.table.created": [
+    {
+      "type": 0,
+      "value": "Creación"
+    }
+  ],
+  "web.admin.settings.invitations.table.delivery": [
+    {
+      "type": 0,
+      "value": "Entrega"
+    }
+  ],
+  "web.admin.settings.invitations.table.recipient": [
+    {
+      "type": 0,
+      "value": "Destinatario"
+    }
+  ],
+  "web.admin.settings.invitations.table.role": [
+    {
+      "type": 0,
+      "value": "Rol"
+    }
+  ],
+  "web.admin.settings.invitations.table.status": [
+    {
+      "type": 0,
+      "value": "Estado"
+    }
+  ],
   "web.admin.shell.mobileHeader.eyebrow": [
     {
       "type": 0,
@@ -4250,6 +4892,18 @@
     {
       "type": 0,
       "value": "Panel"
+    }
+  ],
+  "web.admin.shell.nav.page.users.label": [
+    {
+      "type": 0,
+      "value": "Usuarios"
+    }
+  ],
+  "web.admin.shell.nav.section.manage": [
+    {
+      "type": 0,
+      "value": "Gestionar"
     }
   ],
   "web.admin.shell.nav.section.monitor": [
@@ -4746,6 +5400,1295 @@
       "value": "Sincronizar proveedores de visualización"
     }
   ],
+  "web.admin.users.deleteDialog.confirm": [
+    {
+      "type": 0,
+      "value": "Eliminar cuenta"
+    }
+  ],
+  "web.admin.users.deleteDialog.confirmLabel": [
+    {
+      "type": 0,
+      "value": "Escribe "
+    },
+    {
+      "type": 8,
+      "value": "code",
+      "children": [
+        {
+          "type": 1,
+          "value": "username"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " para confirmar"
+    }
+  ],
+  "web.admin.users.deleteDialog.conflict": [
+    {
+      "type": 0,
+      "value": "El usuario cambió. Vuelve a cargarlo antes de intentarlo de nuevo."
+    }
+  ],
+  "web.admin.users.deleteDialog.deleteFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo eliminar el usuario."
+    }
+  ],
+  "web.admin.users.deleteDialog.description": [
+    {
+      "type": 0,
+      "value": "Esto elimina la cuenta, sus perfiles, el historial de reproducción y las preferencias guardadas. No se puede deshacer."
+    }
+  ],
+  "web.admin.users.deleteDialog.disableFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo desactivar el usuario."
+    }
+  ],
+  "web.admin.users.deleteDialog.disableHint": [
+    {
+      "type": 0,
+      "value": "¿Quieres conservar el historial? Mejor "
+    },
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 0,
+          "value": "desactiva"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " la cuenta. Así se impide el inicio de sesión y se conserva todo."
+    }
+  ],
+  "web.admin.users.deleteDialog.disableInstead": [
+    {
+      "type": 0,
+      "value": "Desactivar en su lugar"
+    }
+  ],
+  "web.admin.users.deleteDialog.reload": [
+    {
+      "type": 0,
+      "value": "Volver a cargar el usuario actual"
+    }
+  ],
+  "web.admin.users.deleteDialog.reloadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo volver a cargar el usuario."
+    }
+  ],
+  "web.admin.users.deleteDialog.title": [
+    {
+      "type": 0,
+      "value": "¿Eliminar a "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "?"
+    }
+  ],
+  "web.admin.users.detail.access.card.conflict": [
+    {
+      "type": 0,
+      "value": "Otro administrador cambió esta cuenta después de que empezaras. Tus cambios se conservan."
+    }
+  ],
+  "web.admin.users.detail.access.card.reloadAndReview": [
+    {
+      "type": 0,
+      "value": "Volver a cargar y revisar"
+    }
+  ],
+  "web.admin.users.detail.access.card.reloadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo volver a cargar esta cuenta."
+    }
+  ],
+  "web.admin.users.detail.access.card.saveFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo guardar esta cuenta."
+    }
+  ],
+  "web.admin.users.detail.access.card.saved": [
+    {
+      "type": 0,
+      "value": "Guardado"
+    }
+  ],
+  "web.admin.users.detail.access.card.saving": [
+    {
+      "type": 0,
+      "value": "Guardando..."
+    }
+  ],
+  "web.admin.users.detail.access.library.accessGroup": [
+    {
+      "type": 0,
+      "value": "Grupo de acceso"
+    }
+  ],
+  "web.admin.users.detail.access.library.adminDescription": [
+    {
+      "type": 0,
+      "value": "Los administradores no usan grupos de acceso. Los valores sin definir siguen el valor predeterminado del servidor."
+    }
+  ],
+  "web.admin.users.detail.access.library.chooseForAccount": [
+    {
+      "type": 0,
+      "value": "Elegir para esta cuenta"
+    }
+  ],
+  "web.admin.users.detail.access.library.libraries": [
+    {
+      "type": 0,
+      "value": "Bibliotecas"
+    }
+  ],
+  "web.admin.users.detail.access.library.markerEdit": [
+    {
+      "type": 0,
+      "value": "Edición de marcadores"
+    }
+  ],
+  "web.admin.users.detail.access.library.markerEditDescription": [
+    {
+      "type": 0,
+      "value": "Marcadores de intro, resumen, créditos y avance"
+    }
+  ],
+  "web.admin.users.detail.access.library.metadataCuration": [
+    {
+      "type": 0,
+      "value": "Gestión de metadatos"
+    }
+  ],
+  "web.admin.users.detail.access.library.metadataCurationDescription": [
+    {
+      "type": 0,
+      "value": "Editar, actualizar y volver a asociar metadatos"
+    }
+  ],
+  "web.admin.users.detail.access.library.noGroup": [
+    {
+      "type": 0,
+      "value": "Sin grupo"
+    }
+  ],
+  "web.admin.users.detail.access.library.noLibraryWarning": [
+    {
+      "type": 0,
+      "value": "Esta cuenta no verá ninguna biblioteca."
+    }
+  ],
+  "web.admin.users.detail.access.library.useGroupLibraries": [
+    {
+      "type": 0,
+      "value": "Usar las bibliotecas del grupo"
+    }
+  ],
+  "web.admin.users.detail.access.library.useServerDefault": [
+    {
+      "type": 0,
+      "value": "Usar el valor predeterminado del servidor"
+    }
+  ],
+  "web.admin.users.detail.access.role.admin": [
+    {
+      "type": 0,
+      "value": "Administrador"
+    }
+  ],
+  "web.admin.users.detail.access.role.user": [
+    {
+      "type": 0,
+      "value": "Usuario"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.adminLeavesGroup": [
+    {
+      "type": 0,
+      "value": "Los administradores no usan grupos de acceso. Al guardar, esta cuenta se quitará de "
+    },
+    {
+      "type": 1,
+      "value": "group"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.canSignIn": [
+    {
+      "type": 0,
+      "value": "Puede iniciar sesión"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.cannotDisableSelf": [
+    {
+      "type": 0,
+      "value": "No puedes desactivar tu propia cuenta."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.email": [
+    {
+      "type": 0,
+      "value": "Correo electrónico"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.enterUsername": [
+    {
+      "type": 0,
+      "value": "Escribe un nombre de usuario."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownRole": [
+    {
+      "type": 0,
+      "value": "No puedes cambiar tu propio rol."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerGrantsAdmin": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede conceder permisos de administrador"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerGrantsAdminRole": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede conceder el rol de administrador."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerStaysEnabled": [
+    {
+      "type": 0,
+      "value": "El propietario del servidor sigue siendo un administrador habilitado."
+    }
+  ],
+  "web.admin.users.detail.access.signIn.role": [
+    {
+      "type": 0,
+      "value": "Rol"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.username": [
+    {
+      "type": 0,
+      "value": "Nombre de usuario"
+    }
+  ],
+  "web.admin.users.detail.access.tab.ownerOnlyNote": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede cambiar el acceso y los límites de un administrador."
+    }
+  ],
+  "web.admin.users.detail.common.cardTitle.library": [
+    {
+      "type": 0,
+      "value": "Acceso a bibliotecas"
+    }
+  ],
+  "web.admin.users.detail.common.cardTitle.signin": [
+    {
+      "type": 0,
+      "value": "Inicio de sesión y rol"
+    }
+  ],
+  "web.admin.users.detail.header.adminNotice": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede cambiar la cuenta de otro administrador. Tú puedes verla."
+    }
+  ],
+  "web.admin.users.detail.header.breadcrumb": [
+    {
+      "type": 0,
+      "value": "Ruta de navegación"
+    }
+  ],
+  "web.admin.users.detail.header.breadcrumbUsers": [
+    {
+      "type": 0,
+      "value": "Usuarios"
+    }
+  ],
+  "web.admin.users.detail.header.deleteAccount": [
+    {
+      "type": 0,
+      "value": "Eliminar cuenta…"
+    }
+  ],
+  "web.admin.users.detail.header.disableAccount": [
+    {
+      "type": 0,
+      "value": "Desactivar cuenta"
+    }
+  ],
+  "web.admin.users.detail.header.disabledNotice": [
+    {
+      "type": 0,
+      "value": "Esta cuenta no puede iniciar sesión. Se conservan sus perfiles y su historial."
+    }
+  ],
+  "web.admin.users.detail.header.enableAccount": [
+    {
+      "type": 0,
+      "value": "Activar cuenta"
+    }
+  ],
+  "web.admin.users.detail.header.externalSignIn": [
+    {
+      "type": 0,
+      "value": "Inicio de sesión externo"
+    }
+  ],
+  "web.admin.users.detail.header.group": [
+    {
+      "type": 0,
+      "value": "Grupo: "
+    },
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 1,
+          "value": "name"
+        }
+      ]
+    }
+  ],
+  "web.admin.users.detail.header.groupIdFallback": [
+    {
+      "type": 0,
+      "value": "#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.users.detail.header.joined": [
+    {
+      "type": 0,
+      "value": "Se unió el "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.admin.users.detail.header.lastActive": [
+    {
+      "type": 0,
+      "value": "Última actividad: "
+    },
+    {
+      "type": 1,
+      "value": "when"
+    }
+  ],
+  "web.admin.users.detail.header.makeOwner": [
+    {
+      "type": 0,
+      "value": "Transferir la propiedad"
+    }
+  ],
+  "web.admin.users.detail.header.moreActions": [
+    {
+      "type": 0,
+      "value": "Más acciones"
+    }
+  ],
+  "web.admin.users.detail.header.noActivity": [
+    {
+      "type": 0,
+      "value": "Sin actividad registrada"
+    }
+  ],
+  "web.admin.users.detail.header.ownerNotice": [
+    {
+      "type": 0,
+      "value": "Esta es la cuenta del propietario del servidor. Solo el propietario puede cambiarla."
+    }
+  ],
+  "web.admin.users.detail.header.passwordSignIn": [
+    {
+      "type": 0,
+      "value": "Inicio de sesión con contraseña"
+    }
+  ],
+  "web.admin.users.detail.header.resetPassword": [
+    {
+      "type": 0,
+      "value": "Restablecer contraseña"
+    }
+  ],
+  "web.admin.users.detail.header.setPassword": [
+    {
+      "type": 0,
+      "value": "Establecer contraseña"
+    }
+  ],
+  "web.admin.users.detail.header.status.active": [
+    {
+      "type": 0,
+      "value": "Activa"
+    }
+  ],
+  "web.admin.users.detail.header.status.disabled": [
+    {
+      "type": 0,
+      "value": "Desactivada"
+    }
+  ],
+  "web.admin.users.detail.header.temporaryPassword": [
+    {
+      "type": 0,
+      "value": "Contraseña temporal"
+    }
+  ],
+  "web.admin.users.list.addUser": [
+    {
+      "type": 0,
+      "value": "Añadir usuario"
+    }
+  ],
+  "web.admin.users.list.adminGroupNone": [
+    {
+      "type": 0,
+      "value": "—"
+    }
+  ],
+  "web.admin.users.list.column.actions": [
+    {
+      "type": 0,
+      "value": "Acciones"
+    }
+  ],
+  "web.admin.users.list.column.created": [
+    {
+      "type": 0,
+      "value": "Creación"
+    }
+  ],
+  "web.admin.users.list.column.email": [
+    {
+      "type": 0,
+      "value": "Correo electrónico"
+    }
+  ],
+  "web.admin.users.list.column.group": [
+    {
+      "type": 0,
+      "value": "Grupo"
+    }
+  ],
+  "web.admin.users.list.column.lastActive": [
+    {
+      "type": 0,
+      "value": "Última actividad"
+    }
+  ],
+  "web.admin.users.list.column.role": [
+    {
+      "type": 0,
+      "value": "Rol"
+    }
+  ],
+  "web.admin.users.list.column.status": [
+    {
+      "type": 0,
+      "value": "Estado"
+    }
+  ],
+  "web.admin.users.list.column.username": [
+    {
+      "type": 0,
+      "value": "Nombre de usuario"
+    }
+  ],
+  "web.admin.users.list.create.adminNoGroups": [
+    {
+      "type": 0,
+      "value": "Las cuentas de administrador no pueden unirse a grupos."
+    }
+  ],
+  "web.admin.users.list.create.adminOwnerOnly": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede conceder el rol de administrador."
+    }
+  ],
+  "web.admin.users.list.create.defaultGroup": [
+    {
+      "type": 0,
+      "value": "Grupo predeterminado"
+    }
+  ],
+  "web.admin.users.list.create.defaultProfile": [
+    {
+      "type": 0,
+      "value": "Crear un perfil predeterminado"
+    }
+  ],
+  "web.admin.users.list.create.defaultProfileUnavailable": [
+    {
+      "type": 0,
+      "value": "Crear un perfil predeterminado (no disponible; desmárcalo para crear solo la cuenta)"
+    }
+  ],
+  "web.admin.users.list.create.email": [
+    {
+      "type": 0,
+      "value": "Correo electrónico"
+    }
+  ],
+  "web.admin.users.list.create.group": [
+    {
+      "type": 0,
+      "value": "Grupo"
+    }
+  ],
+  "web.admin.users.list.create.markerEdit": [
+    {
+      "type": 0,
+      "value": "Edición de marcadores"
+    }
+  ],
+  "web.admin.users.list.create.markerEditHelp": [
+    {
+      "type": 0,
+      "value": "Editar marcadores de intro, resumen, créditos y avance en las bibliotecas asignadas."
+    }
+  ],
+  "web.admin.users.list.create.metadataCuration": [
+    {
+      "type": 0,
+      "value": "Gestión de metadatos"
+    }
+  ],
+  "web.admin.users.list.create.metadataCurationHelp": [
+    {
+      "type": 0,
+      "value": "Editar, actualizar y volver a asociar metadatos en las bibliotecas asignadas."
+    }
+  ],
+  "web.admin.users.list.create.password": [
+    {
+      "type": 0,
+      "value": "Contraseña"
+    }
+  ],
+  "web.admin.users.list.create.requirePasswordChange": [
+    {
+      "type": 0,
+      "value": "Exigir cambio en el primer inicio de sesión"
+    }
+  ],
+  "web.admin.users.list.create.role": [
+    {
+      "type": 0,
+      "value": "Rol"
+    }
+  ],
+  "web.admin.users.list.create.role.admin": [
+    {
+      "type": 0,
+      "value": "Administrador"
+    }
+  ],
+  "web.admin.users.list.create.role.user": [
+    {
+      "type": 0,
+      "value": "Usuario"
+    }
+  ],
+  "web.admin.users.list.create.saveFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo guardar el usuario."
+    }
+  ],
+  "web.admin.users.list.create.saving": [
+    {
+      "type": 0,
+      "value": "Guardando..."
+    }
+  ],
+  "web.admin.users.list.create.tab.access": [
+    {
+      "type": 0,
+      "value": "Acceso"
+    }
+  ],
+  "web.admin.users.list.create.tab.account": [
+    {
+      "type": 0,
+      "value": "Cuenta"
+    }
+  ],
+  "web.admin.users.list.create.username": [
+    {
+      "type": 0,
+      "value": "Nombre de usuario"
+    }
+  ],
+  "web.admin.users.list.createDialogTitle": [
+    {
+      "type": 0,
+      "value": "Crear usuario"
+    }
+  ],
+  "web.admin.users.list.deleteAria": [
+    {
+      "type": 0,
+      "value": "Eliminar a "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    }
+  ],
+  "web.admin.users.list.deleteTooltip": [
+    {
+      "type": 0,
+      "value": "Eliminar usuario"
+    }
+  ],
+  "web.admin.users.list.editAria": [
+    {
+      "type": 0,
+      "value": "Editar a "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    }
+  ],
+  "web.admin.users.list.editTooltip": [
+    {
+      "type": 0,
+      "value": "Editar usuario"
+    }
+  ],
+  "web.admin.users.list.groupFilterAll": [
+    {
+      "type": 0,
+      "value": "Todos los grupos"
+    }
+  ],
+  "web.admin.users.list.groupFilterLabel": [
+    {
+      "type": 0,
+      "value": "Filtrar por grupo de acceso"
+    }
+  ],
+  "web.admin.users.list.groupsLoadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudieron cargar los grupos de acceso, así que los nombres y filtros de grupo no están disponibles."
+    }
+  ],
+  "web.admin.users.list.lastActiveNever": [
+    {
+      "type": 0,
+      "value": "Nunca"
+    }
+  ],
+  "web.admin.users.list.loadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudieron cargar los usuarios."
+    }
+  ],
+  "web.admin.users.list.nextPage": [
+    {
+      "type": 0,
+      "value": "Siguiente"
+    }
+  ],
+  "web.admin.users.list.noGroup": [
+    {
+      "type": 0,
+      "value": "Sin grupo"
+    }
+  ],
+  "web.admin.users.list.noMatches": [
+    {
+      "type": 0,
+      "value": "Ningún usuario coincide con tu búsqueda o filtro."
+    }
+  ],
+  "web.admin.users.list.pageRange": [
+    {
+      "type": 0,
+      "value": "Mostrando "
+    },
+    {
+      "type": 1,
+      "value": "from"
+    },
+    {
+      "type": 0,
+      "value": "-"
+    },
+    {
+      "type": 1,
+      "value": "to"
+    },
+    {
+      "type": 0,
+      "value": " de "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    }
+  ],
+  "web.admin.users.list.pageSizeOption": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " fila"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " de filas"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " filas"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.users.list.previousPage": [
+    {
+      "type": 0,
+      "value": "Anterior"
+    }
+  ],
+  "web.admin.users.list.reload": [
+    {
+      "type": 0,
+      "value": "Volver a cargar usuarios"
+    }
+  ],
+  "web.admin.users.list.searchPlaceholder": [
+    {
+      "type": 0,
+      "value": "Buscar por nombre de usuario o correo electrónico..."
+    }
+  ],
+  "web.admin.users.list.status.active": [
+    {
+      "type": 0,
+      "value": "Activa"
+    }
+  ],
+  "web.admin.users.list.status.disabled": [
+    {
+      "type": 0,
+      "value": "Desactivada"
+    }
+  ],
+  "web.admin.users.list.subtitle": [
+    {
+      "type": 0,
+      "value": "Gestiona el acceso, los valores predeterminados y las invitaciones de las personas que usan Silo."
+    }
+  ],
+  "web.admin.users.list.tab.invitations": [
+    {
+      "type": 0,
+      "value": "Invitaciones"
+    }
+  ],
+  "web.admin.users.list.tab.users": [
+    {
+      "type": 0,
+      "value": "Usuarios"
+    }
+  ],
+  "web.admin.users.list.title": [
+    {
+      "type": 0,
+      "value": "Usuarios"
+    }
+  ],
+  "web.admin.users.list.unavailable": [
+    {
+      "type": 0,
+      "value": "La administración de usuarios no está disponible."
+    }
+  ],
+  "web.admin.users.list.unknownGroup": [
+    {
+      "type": 0,
+      "value": "Grupo desconocido"
+    }
+  ],
+  "web.admin.users.list.userLoadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar el usuario."
+    }
+  ],
+  "web.admin.users.page.accountChanged": [
+    {
+      "type": 0,
+      "value": "La cuenta cambió. Vuelve a intentarlo."
+    }
+  ],
+  "web.admin.users.page.allUsers": [
+    {
+      "type": 0,
+      "value": "Todos los usuarios"
+    }
+  ],
+  "web.admin.users.page.changeFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo cambiar la cuenta."
+    }
+  ],
+  "web.admin.users.page.disableConfirm": [
+    {
+      "type": 0,
+      "value": "Desactivar cuenta"
+    }
+  ],
+  "web.admin.users.page.disableDescription": [
+    {
+      "type": 0,
+      "value": "No podrá iniciar sesión hasta que vuelvas a activar la cuenta. Se conservan sus perfiles, su historial y sus descargas."
+    }
+  ],
+  "web.admin.users.page.disableTitle": [
+    {
+      "type": 0,
+      "value": "¿Desactivar a "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "?"
+    }
+  ],
+  "web.admin.users.page.disabled": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " está desactivado"
+    }
+  ],
+  "web.admin.users.page.enabled": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " está activado"
+    }
+  ],
+  "web.admin.users.page.loadFailedDescription": [
+    {
+      "type": 0,
+      "value": "Algo salió mal al cargar la cuenta. Vuelve a intentarlo en un momento."
+    }
+  ],
+  "web.admin.users.page.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar este usuario"
+    }
+  ],
+  "web.admin.users.page.notFoundDescription": [
+    {
+      "type": 0,
+      "value": "Es posible que la cuenta se haya eliminado o que el enlace sea incorrecto."
+    }
+  ],
+  "web.admin.users.page.notFoundTitle": [
+    {
+      "type": 0,
+      "value": "Usuario no encontrado"
+    }
+  ],
+  "web.admin.users.page.ownerTransferred": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " es ahora el propietario del servidor"
+    }
+  ],
+  "web.admin.users.page.transferConfirm": [
+    {
+      "type": 0,
+      "value": "Hacer propietario"
+    }
+  ],
+  "web.admin.users.page.transferDescription": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " pasará a ser la única cuenta que puede gestionar administradores, y tú seguirás siendo administrador. Solo "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " podrá devolverte la propiedad."
+    }
+  ],
+  "web.admin.users.page.transferFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo transferir la propiedad."
+    }
+  ],
+  "web.admin.users.page.transferTitle": [
+    {
+      "type": 0,
+      "value": "¿Hacer a "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " propietario del servidor?"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.copyFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo copiar el enlace. Selecciónalo y cópialo manualmente."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.copyLink": [
+    {
+      "type": 0,
+      "value": "Copiar enlace"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.description": [
+    {
+      "type": 0,
+      "value": "Elige cómo recuperará el acceso. Todas las opciones cierran su sesión en todos los dispositivos."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailAction": [
+    {
+      "type": 0,
+      "value": "Enviar enlace"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHint": [
+    {
+      "type": 0,
+      "value": "Se envía a "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". Funciona una sola vez y caduca en 24 horas."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintDisabled": [
+    {
+      "type": 0,
+      "value": "Activa la cuenta para enviarle un enlace de restablecimiento."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintNoAddress": [
+    {
+      "type": 0,
+      "value": "Esta cuenta no tiene correo electrónico, así que comparte un enlace."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintNoMail": [
+    {
+      "type": 0,
+      "value": "Configura el correo electrónico en Configuración para enviar enlaces de restablecimiento."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailOption": [
+    {
+      "type": 0,
+      "value": "Enviar un enlace de restablecimiento por correo"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailSent": [
+    {
+      "type": 0,
+      "value": "Se envió un enlace de restablecimiento a "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". Caduca el "
+    },
+    {
+      "type": 1,
+      "value": "expires"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailUnconfirmed": [
+    {
+      "type": 0,
+      "value": "El servidor de correo no confirmó la entrega. Vuelve a enviarlo o crea un enlace para compartir."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.issueFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo crear un enlace de restablecimiento."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkAction": [
+    {
+      "type": 0,
+      "value": "Crear enlace"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkCopied": [
+    {
+      "type": 0,
+      "value": "Enlace copiado"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHint": [
+    {
+      "type": 0,
+      "value": "Cópialo y envíalo tú."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHintDisabled": [
+    {
+      "type": 0,
+      "value": "Activa la cuenta para crear un enlace de restablecimiento."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHintNoUrl": [
+    {
+      "type": 0,
+      "value": "Define la URL pública de Silo para crear enlaces de restablecimiento. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Configuración general"
+        }
+      ]
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkOption": [
+    {
+      "type": 0,
+      "value": "Crear un enlace para compartir"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkShare": [
+    {
+      "type": 0,
+      "value": "Comparte este enlace solo con "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": ". Cualquiera que lo tenga puede definir la contraseña de la cuenta hasta que caduque el "
+    },
+    {
+      "type": 1,
+      "value": "expires"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.methodGroup": [
+    {
+      "type": 0,
+      "value": "Cómo recupera el acceso"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.mustChange": [
+    {
+      "type": 0,
+      "value": "Debe elegir una nueva al iniciar sesión la próxima vez"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordAction": [
+    {
+      "type": 0,
+      "value": "Definir contraseña"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordLabel": [
+    {
+      "type": 0,
+      "value": "Contraseña temporal"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordOption": [
+    {
+      "type": 0,
+      "value": "Definir una contraseña temporal"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordOptionHint": [
+    {
+      "type": 0,
+      "value": "Escribe una ahora y comunícasela."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordRules": [
+    {
+      "type": 0,
+      "value": "Al menos "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": " caracteres y no más de "
+    },
+    {
+      "type": 1,
+      "value": "max"
+    },
+    {
+      "type": 0,
+      "value": " bytes UTF-8."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordSet": [
+    {
+      "type": 0,
+      "value": "Contraseña definida. Se cerró la sesión de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " en todas partes."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordSetMustChange": [
+    {
+      "type": 0,
+      "value": "Contraseña definida. Se cerró la sesión de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " en todas partes. Debe elegir una nueva al iniciar sesión la próxima vez."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.setFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo definir la contraseña."
+    }
+  ],
+  "web.admin.users.passwordResetDialog.title": [
+    {
+      "type": 0,
+      "value": "Restablecer la contraseña de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    }
+  ],
   "web.audiobooks.duration.hours": [
     {
       "type": 1,
@@ -4808,6 +6751,12 @@
     {
       "type": 0,
       "value": "Contraseña temporal"
+    }
+  ],
+  "web.auth.invalidEmail": [
+    {
+      "type": 0,
+      "value": "Escribe una dirección de correo electrónico válida, como name@example.com"
     }
   ],
   "web.auth.login.device.continueOnPhone": [
@@ -18615,6 +20564,60 @@
       "value": "Buscar configuración"
     }
   ],
+  "web.settings.sessions.admin.empty": [
+    {
+      "type": 0,
+      "value": "Esta cuenta no tiene ningún inicio de sesión activo."
+    }
+  ],
+  "web.settings.sessions.admin.ownerOnly": [
+    {
+      "type": 0,
+      "value": "Solo el propietario del servidor puede cerrar sesión a otro administrador o al propietario."
+    }
+  ],
+  "web.settings.sessions.adminDescription": [
+    {
+      "type": 0,
+      "value": "Navegadores y apps que han iniciado sesión en la cuenta de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.settings.sessions.confirm.adminClientDescription": [
+    {
+      "type": 0,
+      "value": "Este cliente de la cuenta de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " perderá el acceso en su próxima solicitud autenticada. Sus otras sesiones y la contraseña no cambian."
+    }
+  ],
+  "web.settings.sessions.confirm.allTitle": [
+    {
+      "type": 0,
+      "value": "¿Cerrar sesión de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " en todas partes?"
+    }
+  ],
   "web.settings.sessions.confirm.clientDescription": [
     {
       "type": 0,
@@ -18639,6 +20642,12 @@
     {
       "type": 0,
       "value": "Un video que ya se esté reproduciendo puede continuar hasta su próxima solicitud. Se conserva la configuración guardada del dispositivo."
+    }
+  ],
+  "web.settings.sessions.confirm.sessionTitle": [
+    {
+      "type": 0,
+      "value": "¿Cerrar esta sesión?"
     }
   ],
   "web.settings.sessions.confirm.signingOut": [
@@ -18669,6 +20678,12 @@
     {
       "type": 0,
       "value": "Dispositivo desconocido"
+    }
+  ],
+  "web.settings.sessions.footnoteAdmin": [
+    {
+      "type": 0,
+      "value": "La última actividad registra la actividad autenticada y se actualiza como máximo una vez por minuto. Es posible que las sesiones más antiguas aún no tengan actividad registrada. Al cerrar sesión se conservan la contraseña y la configuración guardada del dispositivo. Las demás cuentas mantienen la sesión iniciada."
     }
   ],
   "web.settings.sessions.lastSeen.active": [
@@ -18999,6 +21014,12 @@
       "value": "User-Agent"
     }
   ],
+  "web.settings.sessions.signOutEverywhere": [
+    {
+      "type": 0,
+      "value": "Cerrar sesión en todas partes"
+    }
+  ],
   "web.settings.sessions.signOutFailed": [
     {
       "type": 0,
@@ -19009,6 +21030,20 @@
     {
       "type": 0,
       "value": "Sesión cerrada"
+    }
+  ],
+  "web.settings.sessions.signedOutEverywhere": [
+    {
+      "type": 0,
+      "value": "Se cerró la sesión de "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": " en todas partes"
     }
   ],
   "web.settings.sessions.title": [

@@ -38,6 +38,8 @@
   "granary.admin.dashboard.forbidden": "لا يمكن لهذا الحساب فتح لوحة معلومات الخادم. يمكن ذلك للمسؤولين فقط.",
   "granary.admin.dashboard.user": "{username}، آخر نشاط {last_active}، {status}",
   "granary.admin.dashboard.userWithRole": "{username} ({role})، آخر نشاط {last_active}، {status}",
+  "granary.admin.users.nameTaken": "اسم المستخدم أو البريد الإلكتروني مستخدم بالفعل",
+  "granary.admin.users.pageSize": "صفوف لكل صفحة",
   "granary.apiFailure.busy": "الخادم مشغول، حاول مرة أخرى.",
   "granary.apiFailure.tooManyRequests": "{count, plural, zero {يتلقى الخادم طلبات كثيرة جدًا. حاول مرة أخرى بعد # دقيقة.} one {يتلقى الخادم طلبات كثيرة جدًا. حاول مرة أخرى بعد دقيقة واحدة.} two {يتلقى الخادم طلبات كثيرة جدًا. حاول مرة أخرى بعد دقيقتين.} few {يتلقى الخادم طلبات كثيرة جدًا. حاول مرة أخرى بعد # دقائق.} many {يتلقى الخادم طلبات كثيرة جدًا. حاول مرة أخرى بعد # دقيقة.} other {يتلقى الخادم طلبات كثيرة جدًا. حاول مرة أخرى بعد # دقيقة.}}",
   "granary.apiFailure.tooManyRequestsLater": "طلبات كثيرة جدًا. انتظر قليلًا ثم حاول مرة أخرى.",

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 
 namespace Granary.App.Views;
@@ -20,6 +21,10 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
 {
     private AdminDashboardView? _dashboard;
     private AdminActivityView? _activity;
+    private AdminUsersView? _users;
+    private AdminUserDetailView? _detail;
+    // Users opens on its Invitations tab next: Open asked for it. A pick in the sidebar opens the Users tab, as the web's link.
+    private bool _invitationsNext;
 
     public AdminPage()
     {
@@ -32,6 +37,8 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
 
     // The web's section and build headings, which its CSS shows in capitals: by the rules of the language on screen.
     public string MonitorHeading => AppText.Upper(AppText.Get("web.admin.shell.nav.section.monitor"));
+
+    public string ManageHeading => AppText.Upper(AppText.Get("web.admin.shell.nav.section.manage"));
 
     public string BuildHeading => AppText.Upper(AppText.Get("web.admin.shell.sidebar.build.heading"));
 
@@ -46,32 +53,52 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
-        _dashboard?.Deactivate();
-        _activity?.Deactivate();
+        DeactivateAll();
         _dashboard?.Release();
         _activity?.Release();
+        _users?.Release();
+        _detail?.Release();
         Bindings.StopTracking();
     }
 
     /// <summary>Shows one of the area's pages (<see cref="AdminPages"/>), as picking it in the sidebar does.</summary>
     public void Open(string page)
     {
-        var item = Pages.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page) ?? (ListViewItem)Pages.Items[0];
-        if (ReferenceEquals(Pages.SelectedItem, item))
+        // Invitations is a tab of Users, as the web's /admin/users?tab=invitations.
+        _invitationsNext = page == AdminPages.Invitations;
+        string tag = _invitationsNext ? AdminPages.Users : page;
+        var (list, item) = Lists.SelectMany(list => list.Items.OfType<ListViewItem>().Select(item => (list, item)))
+            .FirstOrDefault(entry => entry.item.Tag as string == tag);
+        if (item is null)
         {
+            (list, item) = (Pages, (ListViewItem)Pages.Items[0]);
+        }
+        if (ReferenceEquals(list.SelectedItem, item))
+        {
+            if (tag == AdminPages.Users)
+            {
+                DeactivateAll();
+                ShowUsersAgain();
+            }
             return;
         }
-        Pages.SelectedItem = item;
+        list.SelectedItem = item;
     }
+
+    // The sidebar's sections are lists of their own that share one pick.
+    private ListView[] Lists => [Pages, ManagePages];
 
     private async void OnPageSelected(object sender, SelectionChangedEventArgs e)
     {
-        if (Pages.SelectedItem is not ListViewItem { Tag: string page })
+        if (sender is not ListView { SelectedItem: ListViewItem { Tag: string page } } picked)
         {
             return;
         }
-        _dashboard?.Deactivate();
-        _activity?.Deactivate();
+        foreach (var list in Lists.Where(list => !ReferenceEquals(list, picked)))
+        {
+            list.SelectedItem = null;
+        }
+        DeactivateAll();
         Sidebar.LastPage = page;
         try
         {
@@ -81,6 +108,9 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
                     _activity ??= new AdminActivityView();
                     Show(_activity);
                     await _activity.ActivateAsync();
+                    break;
+                case AdminPages.Users:
+                    await ShowUsersAsync();
                     break;
                 default:
                     _dashboard ??= CreateDashboard();
@@ -102,7 +132,89 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
     void IDockSpace.ReserveBottom(double height) => PageScroller.Margin = new Thickness(0, 0, 0, height);
 
     // A game controller's bumpers go through the area's pages.
-    void IPadSections.StepSection(int by) => PadControls.StepRow([Pages], by);
+    void IPadSections.StepSection(int by) => PadControls.StepRow(Lists, by);
+
+    private void DeactivateAll()
+    {
+        _dashboard?.Deactivate();
+        _activity?.Deactivate();
+        _users?.Deactivate();
+        CloseDetail();
+    }
+
+    // Users picked again, as Open asks for another of its tabs: async void, so nothing may escape.
+    private async void ShowUsersAgain()
+    {
+        try
+        {
+            await ShowUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            App.Services.GetRequiredService<ILogger<AdminPage>>().LogError(ex, "Users could not be shown");
+        }
+    }
+
+    // Users picked while it is already picked, which changes no selection: from an account or the Invitations tab back to the
+    // list, as the web's sidebar link does.
+    private void OnUsersTapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (ReferenceEquals(ManagePages.SelectedItem, sender) && (_detail is not null || _users?.ShowsInvitations == true))
+        {
+            Open(AdminPages.Users);
+        }
+    }
+
+    private Task ShowUsersAsync()
+    {
+        var users = _users ??= CreateUsers();
+        users.ShowTab(_invitationsNext);
+        _invitationsNext = false;
+        Sidebar.LastPage = users.ShowsInvitations ? AdminPages.Invitations : AdminPages.Users;
+        Show(users);
+        return users.ActivateAsync();
+    }
+
+    private AdminUsersView CreateUsers()
+    {
+        var users = new AdminUsersView();
+        users.UserRequested += (_, id) => OpenUser(users, id);
+        // Back into the area returns to the tab last shown.
+        users.TabChanged += (_, page) => Sidebar.LastPage = page;
+        return users;
+    }
+
+    // An account opens in place of the list, under Users in the sidebar, as the web's /admin/users/{id}.
+    private async void OpenUser(AdminUsersView users, string id)
+    {
+        try
+        {
+            users.Deactivate();
+            CloseDetail();
+            var detail = _detail = new AdminUserDetailView();
+            detail.BackRequested += async (_, _) =>
+            {
+                CloseDetail();
+                Show(users);
+                await users.ReturnAsync();
+            };
+            Show(detail);
+            var list = users.ViewModel;
+            await detail.OpenAsync(list.Actor, id, list.Capabilities, list.Groups, list.ViewerIsOwner);
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape.
+            App.Services.GetRequiredService<ILogger<AdminPage>>().LogError(ex, "An account could not be opened");
+        }
+    }
+
+    private void CloseDetail()
+    {
+        _detail?.Deactivate();
+        _detail?.Release();
+        _detail = null;
+    }
 
     private void Show(UIElement view)
     {
