@@ -7,6 +7,7 @@ using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
 using Granary.Core.Texts;
+using Granary.Core.ViewModels.Profiles;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Settings;
@@ -151,10 +152,10 @@ public sealed partial class ProfilesSettingsViewModel : ObservableObject
             // Deleted elsewhere meanwhile.
             Status = AppText.Get("web.common.toast.profiles.deleted");
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is ProfileChangedException)
+        catch (Exception ex) when (ProfileWriteText.IsRefusal(ex, CancellationToken.None))
         {
             _logger.LogWarning("A profile could not be deleted: {Failure}", ApiFailureText.Describe(ex));
-            Status = AppText.Get("web.common.toast.profiles.deleteFailed");
+            Status = ProfileWriteText.Describe(ex, "web.common.toast.profiles.deleteFailed");
             return;
         }
         finally
@@ -162,6 +163,82 @@ public sealed partial class ProfilesSettingsViewModel : ObservableObject
             row.IsBusy = false;
         }
         await AfterChangeAsync();
+    }
+
+    /// <summary>
+    /// The editor for New profile (<paramref name="row"/> null) or a profile's Edit, writing as the acting primary profile;
+    /// null when the list no longer belongs to the server, account and profile in use, or a new one has no room.
+    /// </summary>
+    public ProfileEditorViewModel? CreateEditor(ProfileSettingsRow? row)
+    {
+        if (Target() is not { } target || Household is not { } household || (row is null ? !household.HasRoom : !Profiles.Contains(row)))
+        {
+            return null;
+        }
+        return new ProfileEditorViewModel(_profiles,
+            new ProfileEditorTarget(target.Server.BaseUri, ManagingProfile.Acting(target.AccountId, target.ProfileId), household), row?.Profile, _logger);
+    }
+
+    /// <summary>
+    /// After the editor saved: the web's toast, and when the acting profile's own PIN changed, the same profile again with a
+    /// proof of the new PIN (as the web's <c>onSaveSuccess</c>), since a PIN change ends its old one. Then the list and the
+    /// sidebar read the household again.
+    /// </summary>
+    public async Task AfterSaveAsync(ProfileEditorSaved saved)
+    {
+        ArgumentNullException.ThrowIfNull(saved);
+        Status = saved.Notice.Length > 0 ? saved.Notice
+            : AppText.Get(saved.Created ? "web.common.toast.profiles.created" : "web.common.toast.profiles.updated");
+        if (Target() is { } target && saved.Profile.Id == target.ProfileId && (saved.NewPin.Length > 0 || saved.PinCleared))
+        {
+            await ProveOwnPinAsync(target, saved.PinCleared ? null : saved.NewPin);
+        }
+        await AfterChangeAsync();
+    }
+
+    // The acting profile picked again with the new PIN's proof, or without one once it has none; only while it still acts.
+    private async Task ProveOwnPinAsync((ServerEntry Server, string AccountId, string ProfileId) target, string? pin)
+    {
+        try
+        {
+            string? token = null;
+            if (pin is not null)
+            {
+                var verification = await _profiles.VerifyPinAsync(target.Server.BaseUri, target.ProfileId, pin);
+                if (!verification.Valid || string.IsNullOrEmpty(verification.ProfileToken))
+                {
+                    Status = AppText.Get("web.settings.profiles.savedPinFailed");
+                    return;
+                }
+                token = verification.ProfileToken;
+            }
+            if (Target() != target)
+            {
+                return;
+            }
+            await _session.SelectProfileAsync(target.Server.Id, target.ProfileId, token);
+        }
+        catch (SiloApiException ex) when (ex.Status == 429)
+        {
+            _logger.LogWarning("The new PIN could not be checked: {Failure}", ApiFailureText.Describe(ex));
+            Status = AppText.Get("web.settings.profiles.savedWithLockout", ("lockout", PinLockout(ex.RetryAfter)));
+        }
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex) || ex is ActiveServerChangedException)
+        {
+            _logger.LogWarning("The new PIN could not be checked: {Failure}", ApiFailureText.Describe(ex));
+            Status = AppText.Get("web.settings.profiles.savedPinFailed");
+        }
+    }
+
+    // A PIN check refused with 429, in the web's words (components/profiles/pinLockout.ts).
+    private static string PinLockout(TimeSpan? retryAfter)
+    {
+        if (retryAfter is not { } delay)
+        {
+            return AppText.Get("web.profiles.pin.lockedLater");
+        }
+        int minutes = ApiFailureText.WholeMinutes(delay);
+        return AppText.Get("web.profiles.pin.lockedMinutes", ("count", minutes), ("count_text", AppText.Number(minutes)));
     }
 
     /// <summary>The list and the sidebar read the household again, as the web refetches it after a write.</summary>

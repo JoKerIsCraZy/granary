@@ -1,6 +1,7 @@
 using System.Net;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
+using Granary.Core.ViewModels.Profiles;
 using Granary.Core.ViewModels.Settings;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -203,6 +204,96 @@ public sealed class ProfilesSettingsViewModelTests
         Assert.False(page.HasLoadError);
         Assert.Equal("", page.Status);
         Assert.Equal(2, page.Profiles.Count);
+    }
+
+    [Fact]
+    public async Task ARefusedDelete_IsWordedAsTheLibrariesWordARefusal()
+    {
+        _silo.On(HttpMethod.Get, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.OK, HouseholdJson));
+        _silo.On(HttpMethod.Delete, ProfilesPath + "/p-kid", ScriptedSilo.Problem(403, "forbidden"));
+        var page = Create();
+        await page.LoadAsync(Ct);
+
+        await page.DeleteCommand.ExecuteAsync(page.Profiles[1]);
+
+        Assert.Equal(Granary.Core.ViewModels.LibraryErrors.Denied, page.Status);
+    }
+
+    [Fact]
+    public async Task TheEditor_WritesAsTheActingProfileAndItsAccount()
+    {
+        _silo.On(HttpMethod.Get, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.OK, HouseholdJson));
+        _silo.On(HttpMethod.Post, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.Created, """{"id":"p-new","name":"Leo","is_primary":false,"has_pin":false,"is_child":false}"""));
+        var page = Create();
+        await page.LoadAsync(Ct);
+
+        var editor = page.CreateEditor(null)!;
+        editor.Name = "Leo";
+        var saved = await editor.SaveAsync(Ct);
+        await page.AfterSaveAsync(saved!);
+
+        var create = Assert.Single(_silo.SentTo(HttpMethod.Post, ProfilesPath));
+        Assert.Equal(("p-owner", "1"), (create.AsProfile, create.AsAccount));
+        Assert.Equal("Profile created", page.Status);
+        Assert.Equal(2, _silo.SentTo(HttpMethod.Get, ProfilesPath).Count);
+        Assert.Empty(_session.Calls);
+    }
+
+    [Fact]
+    public async Task NoEditorOpens_ForAFullHouseholdsNewProfile_OrOnceAnotherProfileActs()
+    {
+        _silo.On(HttpMethod.Get, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.OK, HouseholdJson.Replace("\"max_profiles\": 5", "\"max_profiles\": 2",
+            StringComparison.Ordinal)));
+        var page = Create();
+        await page.LoadAsync(Ct);
+
+        Assert.Null(page.CreateEditor(null));
+        Assert.NotNull(page.CreateEditor(page.Profiles[1]));
+        _session.ProfileId = "p-kid";
+        Assert.Null(page.CreateEditor(page.Profiles[1]));
+    }
+
+    [Fact]
+    public async Task AChangeOfTheActingProfilesOwnPin_PicksItAgainWithTheNewProof()
+    {
+        _silo.On(HttpMethod.Get, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.OK, HouseholdJson));
+        _silo.On(HttpMethod.Post, ProfilesPath + "/p-owner/verify-pin", ScriptedSilo.Json(HttpStatusCode.OK, """{"valid":true,"profile_token":"pvt_new"}"""));
+        var page = Create();
+        await page.LoadAsync(Ct);
+        var owner = page.Profiles[0].Profile;
+
+        await page.AfterSaveAsync(new ProfileEditorSaved(owner, false, "2580", false, ""));
+
+        Assert.Equal(["profile:p-owner:token"], _session.Calls);
+        Assert.Equal("""{"pin":"2580"}""", Assert.Single(_silo.SentTo(HttpMethod.Post, ProfilesPath + "/p-owner/verify-pin")).Body);
+        Assert.Equal("Profile updated", page.Status);
+    }
+
+    [Fact]
+    public async Task ARemovedOwnPin_PicksTheProfileAgainWithoutAProof_AndAnotherProfilesPinChangesNothingHere()
+    {
+        _silo.On(HttpMethod.Get, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.OK, HouseholdJson));
+        var page = Create();
+        await page.LoadAsync(Ct);
+
+        await page.AfterSaveAsync(new ProfileEditorSaved(page.Profiles[1].Profile, false, "1111", false, ""));
+        await page.AfterSaveAsync(new ProfileEditorSaved(page.Profiles[0].Profile, false, "", true, ""));
+
+        Assert.Equal(["profile:p-owner:no-token"], _session.Calls);
+    }
+
+    [Fact]
+    public async Task ANewPinThatCannotBeChecked_SaysTheSaveWent_AndPicksNothing()
+    {
+        _silo.On(HttpMethod.Get, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.OK, HouseholdJson));
+        _silo.On(HttpMethod.Post, ProfilesPath + "/p-owner/verify-pin", ScriptedSilo.Problem(429, "rate_limited", TimeSpan.FromMinutes(5)));
+        var page = Create();
+        await page.LoadAsync(Ct);
+
+        await page.AfterSaveAsync(new ProfileEditorSaved(page.Profiles[0].Profile, false, "2580", false, ""));
+
+        Assert.Empty(_session.Calls);
+        Assert.StartsWith("Profile saved. Too many incorrect PINs.", page.Status, StringComparison.Ordinal);
     }
 
     [Fact]
