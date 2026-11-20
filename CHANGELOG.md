@@ -8,6 +8,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Profiles:** the household's primary profile manages the household's profiles in Settings → Profiles, as on Silo's
+  web: add, edit and delete them, with a name, a preset picture or an image of its own (where your Silo server keeps
+  uploads), a PIN to set, change or remove, Kids, and the content rating, advisory age, playback quality, libraries and
+  requests your server lets a profile have. The profile picker offers Add profile too, after the primary profile's PIN.
+
 - **Previews offline:** downloads keep the seek bar's preview pictures, so they show while you scrub without a
   connection too. Downloads you already have get them the next time Granary refreshes them with your Silo server.
 - **Read-ahead buffer:** Settings → Playback → This PC sets how much of a title streamed from your Silo server

@@ -742,7 +742,7 @@ the profile alone (settings manifest, `scopes: ["profile"]`), default `auto`. A 
 
 ### 6.7 Managing the household's profiles
 
-Settings → Profiles, and Add profile on the picker and in the profile menu, create, change and delete profiles as the web's
+Settings → Profiles, and Add profile on the picker, create, change and delete profiles as the web's
 `ProfileEditorDialog` and `ProfilesSettings.tsx` do (silo-server `internal/apiv2/profiles.go`,
 `internal/api/handlers/profiles.go`).
 
@@ -750,7 +750,12 @@ Settings → Profiles, and Add profile on the picker and in the profile menu, cr
   the account's primary profile, verified with its token when it has a PIN (`handlers.householdManagerAs`). Anyone else
   gets `403 forbidden`; an unverified PIN-locked primary gets `403 profile_verification_required`. The first profile is
   created by anyone signed in, without access members, and becomes the primary. Granary shows Settings → Profiles only to
-  the acting primary profile, as the web's `RequirePrimaryOrAdmin`.
+  the acting primary profile, as the web's `RequirePrimaryOrAdmin`, and Add profile on the picker only while the
+  household has a primary profile and room, as Android's picker (`canManageProfiles`); it does not create an account's
+  first profile.
+- **Refusals.** A `401`, `403`, `404`, `429` or `503` and a network failure are worded as the libraries word them
+  (`LibraryErrors.Describe`); any other refusal of a save or delete as the web's toast ("Failed to save profile", "Failed
+  to delete"). A picture that fails after the profile was saved keeps the save and says "Failed to upload avatar".
 - **As whom.** In Settings the writes go out as the acting profile, bound to it and its account (`ManagingProfile.Acting`),
   so a write made for it never goes out as another profile or account. The picker's and the menu's Add profile verify the primary profile's PIN first
   (when it has one) and send its id and that proof with the write (`ManagingProfile.Lent`), as the web's picker creates a

@@ -1069,6 +1069,11 @@ SiloHttp ─▶ ClientIdentityHandler ─▶ AuthenticationHandler ─▶ Socket
   request message, so a concurrent request, the refresh and later requests never see them, and the primary handler
   follows no redirect. The proof lives in memory for that one Add. The acting profile's household writes
   (`ManagingProfile.Acting`) are bound to the profile and its account as `SendAsAccountProfileAsync` binds any write.
+- The profile editor (`ViewModels/Profiles/ProfileEditorViewModel*.cs`, shown by `Controls/ProfileEditorView`) takes a
+  `ProfileEditorTarget`: the server, the `ManagingProfile` it writes as and the household as last read, whose flags decide
+  which limits it offers and sends. Settings → Profiles makes it with the acting profile; the picker's Add profile with a
+  lent one, made after the primary profile's PIN check from the server and account its list was read for, and dropped
+  with the editor. A picture is checked by `AvatarUpload.Check` before it is kept and again before it is sent.
 - `TokenRefresher` makes the refresh single-flight per server: a caller whose token was already replaced
   gets the new one without a network call, and a failed refresh answers everyone waiting until its
   `Retry-After` passes. The refresh runs on its own client (identity handler only); a caller can stop
