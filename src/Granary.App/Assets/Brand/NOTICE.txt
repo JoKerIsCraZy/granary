@@ -9,9 +9,8 @@ silo-mark-flat.svg is the official Silo mark, flat cut, exactly as Silo's brand 
 It is a trademark of Silo Media L.L.C. and is NOT licensed under the GNU Affero
 General Public License that covers Granary's source code, nor under any other
 open-source license. Granary includes it unmodified only to refer to Silo: beside
-"Connect to your Silo server", beside the server's name where a Silo server is
-signed in to, and at the top of the folded sidebar for a signed-in Silo server that has
-no mark of its own (as Silo's web does), as Silo's brand policy permits ("Use the Silo logo or icon in a project
+"Connect to your Silo server" and beside the server's name where a Silo server is
+signed in to, as Silo's brand policy permits ("Use the Silo logo or icon in a project
 that works with Silo") and as Silo's developers asked. Granary's own name stays the
 more prominent identity on those screens. The mark is not Granary's logo or app
 icon, and it must not be altered (the brand page: no recolouring, stretching,
