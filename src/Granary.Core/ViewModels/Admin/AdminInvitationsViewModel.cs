@@ -20,6 +20,8 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
     ILogger<AdminInvitationsViewModel> logger) : ObservableObject
 {
     private string? _cursor;
+    // Resends and revokes still on their way: until each has an outcome, no history read frees the rows.
+    private int _pending;
     // The account and profile the tab was opened as: everything it sends goes only as them.
     private AdminActor? _actor;
     // The cursors this history was read with: one named again would go round in a circle.
@@ -132,7 +134,7 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
         _cursors.Clear();
         _cursor = null;
         HasMore = false;
-        if (await ReadPageAsync(history.Token))
+        if (await ReadPageAsync(history.Token) && _pending == 0)
         {
             IsBlocked = false;
             ActionError = "";
@@ -159,16 +161,29 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
         IsBlocked = true;
         Resent = null;
         ActionError = "";
+        _pending++;
         try
         {
             var resent = await invitations.ResendAsync(actor, row.Id, delivery);
             if (visit.IsCancellationRequested)
             {
-                // The tab left meanwhile: the link is not shown, and the next visit reads the history afresh.
+                // The tab left meanwhile: the link is not shown. A visit open now reads its history again, which shows it.
+                _pending--;
+                await SettleEarlierVisitAsync(answered: true, done: true);
+                _pending++;
                 return false;
             }
             Resent = resent;
             return true;
+        }
+        catch (Exception ex) when (AdminFailures.IsExpected(ex) && visit.IsCancellationRequested)
+        {
+            // A visit left meanwhile: its outcome only frees or holds the current visit's rows.
+            logger.LogWarning(ex, "Could not resend an invitation");
+            _pending--;
+            await SettleEarlierVisitAsync(answered: ex is SiloApiException or ProfileChangedException, done: false);
+            _pending++;
+            return false;
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
@@ -180,6 +195,10 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
             IsBlocked = uncertain;
             return false;
         }
+        finally
+        {
+            _pending--;
+        }
     }
 
     /// <summary>Forgets the new link once its dialog closed.</summary>
@@ -188,6 +207,8 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
     [RelayCommand]
     private async Task RevokeAsync(AdminInvitationRow? row)
     {
+        // The visit the question is asked in: one left while it was open sends nothing.
+        var visit = _load.Token;
         if (row is null || _actor is not { } actor || IsBlocked || !await confirmation.AskAsync(
             AppText.Get("web.admin.settings.invitations.revoke.title"),
             row.Invitation.IsLink
@@ -197,15 +218,21 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
         {
             return;
         }
-        var visit = _load.Token;
+        if (visit.IsCancellationRequested || IsBlocked)
+        {
+            return;
+        }
         IsBlocked = true;
         ActionError = "";
+        _pending++;
         try
         {
             await invitations.RevokeAsync(actor, row.Id);
+            _pending--;
             if (visit.IsCancellationRequested)
             {
-                // The tab was left meanwhile; its next visit reads the history afresh.
+                // The tab was left meanwhile; a visit open now reads its history again.
+                await SettleEarlierVisitAsync(answered: true, done: true);
                 return;
             }
             IsBlocked = false;
@@ -213,14 +240,35 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex) && visit.IsCancellationRequested)
         {
+            _pending--;
+            await SettleEarlierVisitAsync(answered: ex is SiloApiException or ProfileChangedException, done: false);
             logger.LogWarning(ex, "Could not revoke an invitation");
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
+            _pending--;
             logger.LogWarning(ex, "Could not revoke an invitation");
             ActionError = AdminFailures.Describe(ex, AppText.Get("web.admin.settings.invitations.revokeFailed"));
             // Without an answer it may still have been revoked: the rows wait for Reload history. A refusal is final.
             IsBlocked = ex is not (SiloApiException or ProfileChangedException);
+        }
+    }
+
+    // A resend or revoke of a visit left before it ended. Done: the visit open now reads its history again, which frees its
+    // rows. Refused: nothing changed, so its rows are free once nothing else runs. No answer: they wait for Reload history.
+    private async Task SettleEarlierVisitAsync(bool answered, bool done)
+    {
+        if (_load.IsCancellationRequested || State != LibraryLoadState.Ready || !answered)
+        {
+            return;
+        }
+        if (done)
+        {
+            await RestartAsync();
+        }
+        else if (_pending == 0)
+        {
+            IsBlocked = false;
         }
     }
 

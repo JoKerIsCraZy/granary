@@ -140,10 +140,16 @@ public sealed partial class AdminInvitationsView : UserControl
             return;
         }
         _inviting = true;
+        int visit = _visit;
         var deferral = args.GetDeferral();
         try
         {
             await Form.SaveAsync();
+            if (visit != _visit)
+            {
+                // The tab was left while it was made: its link is not shown.
+                Form.Clear();
+            }
         }
         catch (Exception ex)
         {

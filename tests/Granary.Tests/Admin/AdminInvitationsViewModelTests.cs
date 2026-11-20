@@ -422,4 +422,74 @@ public sealed class AdminInvitationsViewModelTests
 
         Assert.Equal(["5", "6"], form.Libraries.Select(library => library.Id));
     }
+    [Fact]
+    public async Task ARevokeConfirmedAfterLeaving_IsNotSent()
+    {
+        _silo.Map("api/v2/admin/invitations/1", _ => BrowseFakeSilo.NoContent());
+        var tab = await OpenedAsync();
+        _confirmation.WhileAsking = async () =>
+        {
+            tab.Deactivate();
+            await tab.OpenAsync(viewerIsOwner: true);
+        };
+
+        await tab.RevokeCommand.ExecuteAsync(tab.Rows[0]);
+
+        Assert.DoesNotContain(_silo.To("api/v2/admin/invitations/1"), request => request.Method == HttpMethod.Delete);
+        Assert.False(tab.IsBlocked);
+    }
+
+    [Fact]
+    public async Task AResendFailureOfAnEarlierVisit_LeavesTheCurrentOneAlone()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map("api/v2/admin/invitations/1/resend", (_, _) => answer.Task);
+        var tab = await OpenedAsync();
+
+        var resend = tab.ResendAsync(tab.Rows[0], InvitationDeliveries.Link);
+        tab.Deactivate();
+        await tab.OpenAsync(viewerIsOwner: true);
+        answer.SetResult(BrowseFakeSilo.Problem(403, "forbidden"));
+        await resend;
+
+        Assert.Equal("", tab.ActionError);
+    }
+
+    [Fact]
+    public async Task AHistoryReadWhileAResendRuns_KeepsTheRowsHeld()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map("api/v2/admin/invitations/1/resend", (_, _) => answer.Task);
+        var tab = await OpenedAsync();
+
+        var resend = tab.ResendAsync(tab.Rows[0], InvitationDeliveries.Link);
+        await tab.RestartCommand.ExecuteAsync(null);
+        Assert.True(tab.IsBlocked);
+
+        answer.SetResult(Created("1", "not_requested", ""));
+        Assert.True(await resend);
+        await tab.RestartCommand.ExecuteAsync(null);
+        Assert.False(tab.IsBlocked);
+    }
+
+    [Fact]
+    public async Task AnInviteThatMayHaveBeenMade_StillWaitsForTheHistory_WhenOpenedAgain()
+    {
+        _silo.Map("api/v2/admin/invitations", request => request.Method == HttpMethod.Post
+            ? throw new HttpRequestException("no answer")
+            : BrowseFakeSilo.Json(Page1));
+        var form = new AdminNewInvitationViewModel(new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
+            _silo.Logs.For<AdminNewInvitationViewModel>());
+        var capabilities = new AdminInvitationCapabilities { State = "available", DefaultProfile = true };
+        await form.StartAsync(AdminActors.Of(_session), capabilities, [], viewerIsOwner: true);
+        Assert.False(await form.SaveAsync(TestContext.Current.CancellationToken));
+
+        await form.StartAsync(AdminActors.Of(_session), capabilities, [], viewerIsOwner: true);
+
+        Assert.True(form.NeedsReload);
+        Assert.False(form.CanSubmit);
+        Assert.NotEqual("", form.Error);
+        form.ReloadDone();
+        Assert.True(form.CanSubmit);
+    }
 }

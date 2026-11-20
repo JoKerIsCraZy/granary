@@ -149,8 +149,13 @@ public sealed partial class AdminNewInvitationViewModel(AdminInvitationsApi invi
         _defaultProfile = capabilities.DefaultProfile;
         EmailDelivery = capabilities.EmailDelivery;
         IsEmail = capabilities.EmailDelivery;
-        Email = EmailError = Note = Error = "";
-        IsAdminRole = NeedsReload = false;
+        Email = EmailError = Note = "";
+        IsAdminRole = false;
+        // A create that may have gone through keeps waiting for the history, with its reason, until ReloadDone.
+        if (!NeedsReload)
+        {
+            Error = "";
+        }
         CanGrantAdmin = viewerIsOwner;
         CreateProfile = capabilities.DefaultProfile;
         ShowTour = InheritLibraries = true;
