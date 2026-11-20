@@ -113,4 +113,21 @@ public sealed class AdminNewUserViewModelTests
         Assert.True(await form.SaveAsync(TestContext.Current.CancellationToken));
         Assert.False(Sent().GetProperty("create_default_profile").GetBoolean());
     }
+    [Fact]
+    public async Task TheNameAndAddress_AreSentTrimmed_AndABlankNameIsNot()
+    {
+        _silo.Map("api/v2/admin/users", _ => BrowseFakeSilo.Json("""{ "id": "9" }""", System.Net.HttpStatusCode.Created));
+        var form = Started();
+        form.Username = "   ";
+        Assert.False(await form.SaveAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("Enter a username.", form.Error);
+        Assert.DoesNotContain(_silo.To("api/v2/admin/users"), request => request.Method == HttpMethod.Post);
+
+        form.Username = " ana ";
+        form.Email = " ana@example.com ";
+        Assert.True(await form.SaveAsync(TestContext.Current.CancellationToken));
+
+        var body = Sent();
+        Assert.Equal(("ana", "ana@example.com"), (body.GetProperty("username").GetString(), body.GetProperty("email").GetString()));
+    }
 }

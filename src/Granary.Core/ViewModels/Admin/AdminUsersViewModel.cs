@@ -58,7 +58,8 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     public IReadOnlyList<AdminAccessGroup> Groups { get; private set; } = [];
 
     /// <summary>The signed-in account's id.</summary>
-    public string? ViewerId => _session.Account?.Id;
+    /// <summary>The account the list was opened as, not whoever is signed in now.</summary>
+    public string? ViewerId => _actor?.AccountId;
 
     /// <summary>The account and profile this was opened as; its dialogs act as them too.</summary>
     public AdminActor? Actor => _actor;
@@ -196,7 +197,7 @@ public sealed partial class AdminUsersViewModel : ObservableObject
                 _groupNames = groups.ToDictionary(group => group.Id, group => group.Name, StringComparer.Ordinal);
                 GroupsFailed = false;
                 GroupFilters = [GroupFilters[0], .. groups.Select(group => new AdminGroupFilter(group.Id, group.Name)), DefaultFilters()[1]];
-                SelectedGroup = GroupFilters.FirstOrDefault(filter => filter.Value == SelectedGroup.Value) ?? GroupFilters[0];
+                SelectedGroup = GroupFilters.FirstOrDefault(filter => filter.Value == SelectedGroup?.Value) ?? GroupFilters[0];
             }
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex))

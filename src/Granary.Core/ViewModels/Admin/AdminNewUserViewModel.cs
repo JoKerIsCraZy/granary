@@ -126,7 +126,12 @@ public sealed partial class AdminNewUserViewModel(AdminUsersApi users, ILogger<A
         {
             return false;
         }
-        if (!EmailAddress.IsValid(Email))
+        if (Username.Trim().Length == 0)
+        {
+            Error = AppText.Get("web.admin.users.detail.access.signIn.enterUsername");
+            return false;
+        }
+        if (!EmailAddress.IsValid(Email.Trim()))
         {
             Error = EmailAddress.InvalidText;
             return false;
@@ -168,8 +173,8 @@ public sealed partial class AdminNewUserViewModel(AdminUsersApi users, ILogger<A
         string? group = IsAdminRole || SelectedGroupChoice is not { Value: not AdminGroupFilter.None } choice ? null : choice.Value;
         return new AdminUserDraft
         {
-            Username = Username,
-            Email = Email,
+            Username = Username.Trim(),
+            Email = Email.Trim(),
             Password = Password,
             RequirePasswordChange = RequirePasswordChange && Password.Length > 0 ? true : null,
             Role = IsAdminRole ? AdminRoles.Admin : AdminRoles.User,

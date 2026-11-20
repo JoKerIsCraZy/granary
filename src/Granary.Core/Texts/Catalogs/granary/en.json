@@ -79,6 +79,8 @@
   "@granary.admin.dashboard.userWithRole": { "description": "Admin → Dashboard → Users: what a screen reader says for an administrator's row. {role}: admin or owner; the rest as in granary.admin.dashboard.user." },
   "granary.admin.users.nameTaken": "Username or email already in use",
   "@granary.admin.users.nameTaken": { "description": "Admin → Users → Create User: the server refused the new account because another already has its username or email (409). Granary's own: the web shows the server's English sentence. Silo apps: account_create_error_taken." },
+  "granary.admin.users.pageSize": "Rows per page",
+  "@granary.admin.users.pageSize": { "description": "Admin → Users: the name screen readers give the box below the table that chooses how many accounts a page shows (25, 50 or 100 rows). Granary's own: the web's box has no name. Silo's term for them is rows (web.admin.users.list.pageSizeOption)." },
   "granary.apiFailure.busy": "The server is busy, try again.",
   "@granary.apiFailure.busy": { "description": "After a call the server answered as busy (503): the profile picker, a PIN check, a title's page, starting playback." },
   "granary.apiFailure.tooManyRequests": "{count, plural, one {The server is receiving too many requests. Try again in # minute.} other {The server is receiving too many requests. Try again in # minutes.}}",

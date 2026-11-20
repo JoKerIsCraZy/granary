@@ -99,14 +99,17 @@ public sealed partial class AdminUserDetailViewModel
         {
             return Task.CompletedTask;
         }
-        string? validation = Username.Trim().Length == 0 ? AppText.Get("web.admin.users.detail.access.signIn.enterUsername")
+        // Sent trimmed, as the web's form sends them.
+        string username = Username.Trim();
+        string email = Email.Trim();
+        string? validation = username.Length == 0 ? AppText.Get("web.admin.users.detail.access.signIn.enterUsername")
             // An address is checked only when it changes: an account may have none.
-            : Email != account.Email && !EmailAddress.IsValid(Email) ? EmailAddress.InvalidText
+            : email != account.Email && !EmailAddress.IsValid(email) ? EmailAddress.InvalidText
             : null;
         var change = new AdminUserChange
         {
-            Username = Username != account.Username ? Username : null,
-            Email = Email != account.Email ? Email : null,
+            Username = username != account.Username ? username : null,
+            Email = email != account.Email ? email : null,
             // An admin is never grouped: the server clears the group.
             Role = IsAdminRole != account.IsAdmin ? (IsAdminRole ? AdminRoles.Admin : AdminRoles.User) : null,
             Enabled = CanSignIn != account.Enabled ? CanSignIn : null,

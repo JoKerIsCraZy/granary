@@ -20,7 +20,7 @@ public sealed partial class AdminUsersViewModel
     public partial IReadOnlyList<AdminGroupFilter> GroupFilters { get; private set; }
 
     [ObservableProperty]
-    public partial AdminGroupFilter SelectedGroup { get; set; }
+    public partial AdminGroupFilter? SelectedGroup { get; set; }
 
     [ObservableProperty]
     public partial AdminUserSort SortField { get; private set; } = AdminUserSort.Username;
@@ -61,7 +61,7 @@ public sealed partial class AdminUsersViewModel
 
     partial void OnSearchTextChanged(string value) => FirstPage();
 
-    partial void OnSelectedGroupChanged(AdminGroupFilter value) => FirstPage();
+    partial void OnSelectedGroupChanged(AdminGroupFilter? value) => FirstPage();
 
     partial void OnPageSizeChanged(int value) => FirstPage();
 
@@ -129,7 +129,8 @@ public sealed partial class AdminUsersViewModel
         {
             return false;
         }
-        return SelectedGroup.Value switch
+        // None picked is all groups.
+        return (SelectedGroup?.Value ?? AdminGroupFilter.All) switch
         {
             AdminGroupFilter.All => true,
             // Admin accounts can't join groups, so they show only under All groups.

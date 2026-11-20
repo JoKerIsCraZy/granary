@@ -173,4 +173,13 @@ public sealed class AdminUsersViewModelTests
         Assert.Equal(LibraryLoadState.Error, users.State);
         Assert.False(users.ViewerIsOwner);
     }
+    [Fact]
+    public async Task NoGroupPicked_ShowsEveryAccount()
+    {
+        var users = await LoadedAsync();
+
+        users.SelectedGroup = null;
+
+        Assert.Equal(4, users.Rows.Count);
+    }
 }

@@ -18,6 +18,7 @@ public sealed partial class AdminUserDeleteViewModel(AdminUsersApi users, ILogge
     private string _version = "";
     // The account and profile this was opened as: everything it sends goes only as them.
     private AdminActor? _actor;
+    private bool _viewerIsOwner;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Title), nameof(CanDelete), nameof(OffersDisable))]
@@ -52,17 +53,18 @@ public sealed partial class AdminUserDeleteViewModel(AdminUsersApi users, ILogge
     public bool OffersDisable => DisableOffered && Account is { Enabled: true };
 
     /// <summary>The name typed, and never the Owner: ownership can have moved to this account since the list was read.</summary>
-    public bool CanDelete => Account is { IsOwner: false } && !IsBusy && !HasConflict && Typed == Account.Username;
+    public bool CanDelete => Account is { } account && Deletable(account) && !IsBusy && !HasConflict && Typed == account.Username;
 
     public bool CanDisable => !IsBusy && !HasConflict;
 
     /// <summary>Reads the account fresh, so the delete carries its current version. False when it could not be read.</summary>
-    public async Task<bool> StartAsync(AdminActor? actor, string id, CancellationToken cancellationToken = default)
+    public async Task<bool> StartAsync(AdminActor? actor, string id, bool viewerIsOwner, CancellationToken cancellationToken = default)
     {
         Account = null;
         Typed = Error = "";
         HasConflict = false;
         _actor = actor;
+        _viewerIsOwner = viewerIsOwner;
         return await ReadAsync(id, "web.admin.users.list.userLoadFailed", cancellationToken);
     }
 
@@ -116,10 +118,13 @@ public sealed partial class AdminUserDeleteViewModel(AdminUsersApi users, ILogge
         }
     }
 
+    // As the web's canDelete, on the account as read now: ownership or a role may have moved since the list was read.
+    private bool Deletable(AdminUser account) => AdminAccountRules.CanDelete(account, _actor?.AccountId, _viewerIsOwner);
+
     private async Task<bool> RunAsync(Func<AdminActor, AdminUser, Task> action, string fallbackKey, bool requireName)
     {
         if (_actor is not { } actor || Account is not { } account || IsBusy || HasConflict
-            || (requireName && (Typed != account.Username || account.IsOwner)))
+            || (requireName && (Typed != account.Username || !Deletable(account))))
         {
             return false;
         }

@@ -39,6 +39,7 @@
   "granary.admin.dashboard.user": "{username}, dernière activité : {last_active}, {status}",
   "granary.admin.dashboard.userWithRole": "{username} ({role}), dernière activité : {last_active}, {status}",
   "granary.admin.users.nameTaken": "Nom d’utilisateur ou e-mail déjà utilisé",
+  "granary.admin.users.pageSize": "Lignes par page",
   "granary.apiFailure.busy": "Le serveur est occupé. Réessayez.",
   "granary.apiFailure.tooManyRequests": "{count, plural, one {Le serveur reçoit trop de demandes. Réessayez dans # minute.} other {Le serveur reçoit trop de demandes. Réessayez dans # minutes.}}",
   "granary.apiFailure.tooManyRequestsLater": "Trop de demandes. Patientez un instant, puis réessayez.",

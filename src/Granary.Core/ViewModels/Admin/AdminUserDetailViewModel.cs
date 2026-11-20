@@ -63,9 +63,23 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
     /// <summary>The account and profile this was opened as; its dialogs act as them too.</summary>
     public AdminActor? Actor => _actor;
 
-    public bool ViewerIsOwner { get; private set; }
+    public bool ViewerIsOwner
+    {
+        get;
+        private set
+        {
+            if (field != value)
+            {
+                field = value;
+                // What the header offers depends on it, and so does whether the sessions can be managed.
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Header));
+            }
+        }
+    }
 
-    public string? ViewerId => _session.Account?.Id;
+    /// <summary>The account the page was opened as, not whoever is signed in now.</summary>
+    public string? ViewerId => _actor?.AccountId;
 
     /// <summary>The header's words and the actions it offers, for <see cref="Account"/>.</summary>
     public AdminUserHeader? Header => Account is { } account

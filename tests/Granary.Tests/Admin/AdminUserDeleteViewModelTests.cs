@@ -30,7 +30,7 @@ public sealed class AdminUserDeleteViewModelTests
     private async Task<AdminUserDeleteViewModel> StartedAsync()
     {
         var dialog = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
-        Assert.True(await dialog.StartAsync(AdminActors.Of(_session), "3", TestContext.Current.CancellationToken));
+        Assert.True(await dialog.StartAsync(AdminActors.Of(_session), "3", viewerIsOwner: true, TestContext.Current.CancellationToken));
         return dialog;
     }
 
@@ -91,5 +91,28 @@ public sealed class AdminUserDeleteViewModelTests
         Assert.False(dialog.CanDelete);
         Assert.False(await dialog.DeleteAsync(TestContext.Current.CancellationToken));
         Assert.DoesNotContain(_silo.To("api/v2/admin/users/3"), request => request.Method == HttpMethod.Delete);
+    }
+    [Fact]
+    public async Task AnAccountTheViewerMayNotManage_CannotBeDeleted()
+    {
+        _silo.Map("api/v2/admin/users/3", _ => AdminUserPayloads.Versioned(AdminUserPayloads.User(role: "admin", group: "null")));
+        var dialog = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
+        Assert.True(await dialog.StartAsync(AdminActors.Of(_session), "3", viewerIsOwner: false, TestContext.Current.CancellationToken));
+        dialog.Typed = "ana";
+
+        Assert.False(dialog.CanDelete);
+        Assert.False(await dialog.DeleteAsync(TestContext.Current.CancellationToken));
+        Assert.DoesNotContain(_silo.To("api/v2/admin/users/3"), request => request.Method == HttpMethod.Delete);
+    }
+
+    [Fact]
+    public async Task TheViewersOwnAccount_CannotBeDeleted()
+    {
+        _silo.Map("api/v2/admin/users/1", _ => AdminUserPayloads.Versioned(AdminUserPayloads.User(id: "1", username: "elena", role: "admin", group: "null")));
+        var dialog = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
+        Assert.True(await dialog.StartAsync(AdminActors.Of(_session), "1", viewerIsOwner: true, TestContext.Current.CancellationToken));
+        dialog.Typed = "elena";
+
+        Assert.False(dialog.CanDelete);
     }
 }

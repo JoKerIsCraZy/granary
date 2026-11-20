@@ -313,4 +313,73 @@ public sealed class AdminUserDetailViewModelTests
         Assert.Equal("ana3", detail.Username);
         Assert.True(detail.HasSignInChanges);
     }
+    [Fact]
+    public async Task MakeOwner_ReadsTheAccountFresh_AndAsksWithItsName()
+    {
+        _account = AdminUserPayloads.User(role: "admin", group: "null");
+        _silo.Map("api/v2/admin/users/3/transfer-ownership", _ => BrowseFakeSilo.NoContent());
+        var detail = await OpenedAsync();
+        _account = AdminUserPayloads.User(username: "anna", role: "admin", group: "null");
+        var raised = new List<string?>();
+        detail.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        await detail.MakeOwnerCommand.ExecuteAsync(null);
+
+        Assert.Equal("Make anna the server owner?", _confirmation.Asked.Single().Title);
+        Assert.Single(_silo.To("api/v2/admin/users/3/transfer-ownership"));
+        Assert.False(detail.ViewerIsOwner);
+        Assert.Contains(nameof(AdminUserDetailViewModel.Header), raised);
+    }
+
+    [Fact]
+    public async Task MakeOwner_OfAnAccountNoLongerAnEnabledAdmin_IsNotSent()
+    {
+        _account = AdminUserPayloads.User(role: "admin", group: "null");
+        _silo.Map("api/v2/admin/users/3/transfer-ownership", _ => BrowseFakeSilo.NoContent());
+        var detail = await OpenedAsync();
+        _account = AdminUserPayloads.User(role: "admin", group: "null", enabled: false);
+
+        await detail.MakeOwnerCommand.ExecuteAsync(null);
+
+        Assert.Empty(_confirmation.Asked);
+        Assert.Empty(_silo.To("api/v2/admin/users/3/transfer-ownership"));
+        Assert.True(detail.NoticeIsError);
+        Assert.True(detail.ViewerIsOwner);
+    }
+
+    [Theory]
+    [InlineData(403)]
+    [InlineData(422)]
+    public async Task MakeOwner_Refused_IsWordedByItsStatus(int status)
+    {
+        _account = AdminUserPayloads.User(role: "admin", group: "null");
+        _silo.Map("api/v2/admin/users/3/transfer-ownership", _ => BrowseFakeSilo.Problem(status, status == 403 ? "forbidden" : "validation_failed"));
+        var detail = await OpenedAsync();
+
+        await detail.MakeOwnerCommand.ExecuteAsync(null);
+
+        Assert.Equal(status == 403 ? LibraryErrors.Denied : "Could not transfer ownership.", detail.Notice);
+        Assert.True(detail.ViewerIsOwner);
+    }
+
+    [Fact]
+    public async Task TheViewer_IsTheAccountThePageWasOpenedAs()
+    {
+        var detail = await OpenedAsync();
+        _session.Account = new Granary.Core.Api.Auth.Account("2", "kim", "kim@example.com", "admin", [], true, false, null);
+
+        Assert.Equal("1", detail.ViewerId);
+    }
+
+    [Fact]
+    public async Task SignIn_SendsTheNameAndAddressTrimmed()
+    {
+        var detail = await OpenedAsync();
+        detail.Username = " ana2 ";
+        detail.Email = " ana@example.com ";
+
+        await detail.SaveSignInCommand.ExecuteAsync(null);
+
+        Assert.Equal("""{"username":"ana2"}""", _writes.Single().Body);
+    }
 }

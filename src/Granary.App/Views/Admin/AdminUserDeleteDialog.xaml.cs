@@ -31,11 +31,11 @@ public sealed partial class AdminUserDeleteDialog : ContentDialog
     /// Reads the account fresh and asks. Null when it could not be read (<see cref="AdminUserDeleteViewModel.Error"/> says
     /// why); otherwise what was done.
     /// </summary>
-    public async Task<AdminUserDeleteOutcome?> AskAsync(XamlRoot root, AdminActor? actor, string id, bool offerDisable)
+    public async Task<AdminUserDeleteOutcome?> AskAsync(XamlRoot root, AdminActor? actor, string id, bool offerDisable, bool viewerIsOwner)
     {
         Outcome = AdminUserDeleteOutcome.None;
         ViewModel.DisableOffered = offerDisable;
-        if (!await ViewModel.StartAsync(actor, id))
+        if (!await ViewModel.StartAsync(actor, id, viewerIsOwner))
         {
             return null;
         }

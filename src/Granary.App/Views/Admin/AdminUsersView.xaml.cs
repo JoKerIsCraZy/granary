@@ -17,6 +17,8 @@ namespace Granary.App.Views.Admin;
 public sealed partial class AdminUsersView : UserControl
 {
     private bool _creating;
+    // A delete dialog is opening or open: a second click opens nothing.
+    private bool _deleting;
     private bool _active;
     private AdminInvitationsView? _invitations;
 
@@ -223,15 +225,16 @@ public sealed partial class AdminUsersView : UserControl
 
     private async void OnDeleteClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: string id } || !ViewModel.IsAvailable || XamlRoot is null)
+        if (sender is not FrameworkElement { Tag: string id } || !ViewModel.IsAvailable || XamlRoot is null || _deleting)
         {
             return;
         }
+        _deleting = true;
         try
         {
             ShowActionError("");
             var dialog = new AdminUserDeleteDialog();
-            var outcome = await dialog.AskAsync(XamlRoot, ViewModel.Actor, id, offerDisable: false);
+            var outcome = await dialog.AskAsync(XamlRoot, ViewModel.Actor, id, offerDisable: false, ViewModel.ViewerIsOwner);
             if (outcome is null)
             {
                 ShowActionError(dialog.ViewModel.Error);
@@ -244,6 +247,10 @@ public sealed partial class AdminUsersView : UserControl
         catch (Exception ex)
         {
             Log(ex, "The account could not be deleted");
+        }
+        finally
+        {
+            _deleting = false;
         }
     }
 

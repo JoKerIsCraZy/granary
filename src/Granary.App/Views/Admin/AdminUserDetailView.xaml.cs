@@ -15,12 +15,23 @@ namespace Granary.App.Views.Admin;
 /// </summary>
 public sealed partial class AdminUserDetailView : UserControl
 {
+    // A delete dialog is opening or open: a second click opens nothing.
+    private bool _deleting;
+
     public AdminUserDetailView()
     {
         ViewModel = App.Services.GetRequiredService<AdminUserDetailViewModel>();
         Sessions = App.Services.GetRequiredService<AdminUserSessionsViewModel>();
         InitializeComponent();
         ViewModel.Closed += (_, _) => BackRequested?.Invoke(this, EventArgs.Empty);
+        // After Make owner the viewer is no longer the Owner: Sign out is offered only where it still may be.
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AdminUserDetailViewModel.ViewerIsOwner))
+            {
+                Sessions.SetManageable(ViewModel.Header?.Manageable == true && ViewModel.Capabilities.Available);
+            }
+        };
     }
 
     /// <summary>Back to the list of accounts.</summary>
@@ -140,14 +151,15 @@ public sealed partial class AdminUserDetailView : UserControl
 
     private async void OnDeleteClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.Account is not { } account || XamlRoot is null)
+        if (ViewModel.Account is not { } account || XamlRoot is null || _deleting)
         {
             return;
         }
+        _deleting = true;
         try
         {
             var dialog = new AdminUserDeleteDialog();
-            var outcome = await dialog.AskAsync(XamlRoot, ViewModel.Actor, account.Id, offerDisable: true);
+            var outcome = await dialog.AskAsync(XamlRoot, ViewModel.Actor, account.Id, offerDisable: true, ViewModel.ViewerIsOwner);
             if (outcome is null)
             {
                 ViewModel.Say(dialog.ViewModel.Error, isError: true);
@@ -160,6 +172,10 @@ public sealed partial class AdminUserDetailView : UserControl
         catch (Exception ex)
         {
             Log(ex, "The account could not be deleted");
+        }
+        finally
+        {
+            _deleting = false;
         }
     }
 

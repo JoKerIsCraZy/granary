@@ -32,16 +32,31 @@ public sealed partial class AdminUserDetailViewModel
     [RelayCommand]
     private async Task MakeOwnerAsync()
     {
-        if (_actor is not { } actor || Account is not { } account || _acting || !await _confirmation.AskAsync(
-            AppText.Get("web.admin.users.page.transferTitle", ("username", account.Username)),
-            AppText.Get("web.admin.users.page.transferDescription", ("username", account.Username)),
-            AppText.Get("web.admin.users.page.transferConfirm")))
+        if (_actor is not { } actor || Account is null || _acting)
         {
             return;
         }
         _acting = true;
         try
         {
+            // Read fresh first: the account may have been renamed, disabled or demoted since the page read it.
+            if (!await ReadAsync(keepDrafts: true) || Account is not { } account)
+            {
+                Say(AppText.Get("web.admin.users.detail.access.card.reloadFailed"), isError: true);
+                return;
+            }
+            if (!AdminAccountRules.CanTransferOwnership(account, ViewerId, ViewerIsOwner))
+            {
+                Say(AppText.Get("web.admin.users.page.transferFailed"), isError: true);
+                return;
+            }
+            if (!await _confirmation.AskAsync(
+                AppText.Get("web.admin.users.page.transferTitle", ("username", account.Username)),
+                AppText.Get("web.admin.users.page.transferDescription", ("username", account.Username)),
+                AppText.Get("web.admin.users.page.transferConfirm")))
+            {
+                return;
+            }
             await _users.TransferOwnershipAsync(actor, account.Id);
             // The viewer stays an admin, no longer the Owner.
             ViewerIsOwner = false;

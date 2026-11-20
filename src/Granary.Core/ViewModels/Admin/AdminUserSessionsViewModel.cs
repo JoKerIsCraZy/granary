@@ -50,6 +50,9 @@ public sealed partial class AdminUserSessionsViewModel(AdminUsersApi users, ICon
     public bool IsEmpty => State == LibraryLoadState.Ready && Sessions.Count == 0;
 
     /// <summary>Reads the first page of the account's sign-ins.</summary>
+    /// <summary>The viewer's rights changed (Make owner): Sign out is offered again, or no longer.</summary>
+    public void SetManageable(bool manageable) => Manageable = manageable;
+
     public Task OpenAsync(AdminActor? actor, AdminUser account, bool manageable)
     {
         _account = account;

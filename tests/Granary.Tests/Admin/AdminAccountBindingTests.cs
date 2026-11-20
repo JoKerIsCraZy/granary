@@ -32,7 +32,8 @@ public sealed class AdminAccountBindingTests
         _silo.Acting = _session;
         _silo.Map("api/v2/libraries", """{ "items": [] }""");
         _silo.Map("api/v2/admin/users/3", request => request.Method == HttpMethod.Get
-            ? AdminUserPayloads.Versioned(AdminUserPayloads.User())
+            // An admin, so Make owner may go too.
+            ? AdminUserPayloads.Versioned(AdminUserPayloads.User(role: "admin", group: "null"))
             : BrowseFakeSilo.NoContent());
         _silo.Map("api/v2/admin/users/3/password-reset", _ => BrowseFakeSilo.Json($$"""
             { "delivery": "link", "delivery_status": "not_requested", "reset_url": "https://silo.example/reset#s3cret", "expires_at": "2026-10-28T12:30:00.000Z" }
@@ -102,7 +103,7 @@ public sealed class AdminAccountBindingTests
         await sessions.SignOutCommand.ExecuteAsync(sessions.Sessions[0]);
         await sessions.SignOutEverywhereCommand.ExecuteAsync(null);
         var delete = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
-        Assert.True(await delete.StartAsync(AdminActors.Of(_session), "3", TestContext.Current.CancellationToken));
+        Assert.True(await delete.StartAsync(AdminActors.Of(_session), "3", viewerIsOwner: true, TestContext.Current.CancellationToken));
         delete.Typed = "ana";
         Assert.True(await delete.DeleteAsync(TestContext.Current.CancellationToken));
 
@@ -149,7 +150,7 @@ public sealed class AdminAccountBindingTests
     public async Task AfterASwitch_DeleteAndReset_AreNotSent()
     {
         var delete = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
-        Assert.True(await delete.StartAsync(AdminActors.Of(_session), "3", TestContext.Current.CancellationToken));
+        Assert.True(await delete.StartAsync(AdminActors.Of(_session), "3", viewerIsOwner: true, TestContext.Current.CancellationToken));
         var reset = new AdminPasswordResetViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminPasswordResetViewModel>());
         reset.Start(AdminActors.Of(_session), Ana, Capabilities, passwordOnly: false);
         AnotherAccountSignsIn();
