@@ -1723,6 +1723,46 @@
       }
     }
   ],
+  "web.admin.common.downloadAccess.conversionOff": [
+    {
+      "type": 0,
+      "value": "O servidor não está preparando cópias compatíveis com dispositivos, então todo download é o arquivo original. Ative em "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Configurações → Downloads"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.common.downloadAccess.serverOff": [
+    {
+      "type": 0,
+      "value": "Os downloads estão desativados para todo o servidor, então ninguém pode baixar. Ative-os em "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Configurações → Downloads"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
   "web.admin.common.serverActivity.connecting": [
     {
       "type": 0,
@@ -4258,6 +4298,58 @@
       "value": "Esta sessão não permite pausar, retomar nem enviar mensagens em tempo real. Parar e Encerrar ainda podem finalizar a reprodução."
     }
   ],
+  "web.admin.settings.hooks.inviteCodes.createFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível criar o código de convite"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.created": [
+    {
+      "type": 0,
+      "value": "Código de convite criado"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.deleteFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível excluir o código de convite"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.deleted": [
+    {
+      "type": 0,
+      "value": "Código de convite excluído"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.topUpFailed": [
+    {
+      "type": 0,
+      "value": "Verifique o máximo de usos atual do código antes de tentar adicionar usos novamente. "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.topUpUnconfirmed": [
+    {
+      "type": 0,
+      "value": "Não foi possível confirmar o resultado."
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.toppedUp": [
+    {
+      "type": 0,
+      "value": "Usos adicionados ao código de convite"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.updateFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível atualizar o código de convite"
+    }
+  ],
   "web.admin.settings.invitations.capabilitiesFailed": [
     {
       "type": 0,
@@ -4898,6 +4990,322 @@
     {
       "type": 0,
       "value": "Status"
+    }
+  ],
+  "web.admin.settings.inviteCodes.copied": [
+    {
+      "type": 0,
+      "value": "Copiado para a área de transferência"
+    }
+  ],
+  "web.admin.settings.inviteCodes.copyFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível copiar para a área de transferência"
+    }
+  ],
+  "web.admin.settings.inviteCodes.create.button": [
+    {
+      "type": 0,
+      "value": "Criar código"
+    }
+  ],
+  "web.admin.settings.inviteCodes.create.title": [
+    {
+      "type": 0,
+      "value": "Criar código de convite"
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.confirm": [
+    {
+      "type": 0,
+      "value": "Excluir"
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.description": [
+    {
+      "type": 0,
+      "value": "Excluir o código de convite “"
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": "”? Esta ação não pode ser desfeita."
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.title": [
+    {
+      "type": 0,
+      "value": "Excluir código de convite"
+    }
+  ],
+  "web.admin.settings.inviteCodes.deleteLabel": [
+    {
+      "type": 0,
+      "value": "Excluir código de convite "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.empty": [
+    {
+      "type": 0,
+      "value": "Ainda não há códigos de convite. Crie um para começar."
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.code": [
+    {
+      "type": 0,
+      "value": "Código"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.codePlaceholder": [
+    {
+      "type": 0,
+      "value": "ex.: BETA2026"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.create": [
+    {
+      "type": 0,
+      "value": "Criar"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.creating": [
+    {
+      "type": 0,
+      "value": "Criando…"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.label": [
+    {
+      "type": 0,
+      "value": "Rótulo"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.labelPlaceholder": [
+    {
+      "type": 0,
+      "value": "ex.: Testadores beta"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.maxUses": [
+    {
+      "type": 0,
+      "value": "Máximo de usos"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.maxUsesInvalid": [
+    {
+      "type": 0,
+      "value": "O máximo de usos deve ser um número positivo"
+    }
+  ],
+  "web.admin.settings.inviteCodes.loadFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar os códigos de convite. "
+    },
+    {
+      "type": 8,
+      "value": "button",
+      "children": [
+        {
+          "type": 0,
+          "value": "Tentar novamente"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.loadMore": [
+    {
+      "type": 0,
+      "value": "Carregar mais"
+    }
+  ],
+  "web.admin.settings.inviteCodes.loading": [
+    {
+      "type": 0,
+      "value": "Carregando códigos de convite…"
+    }
+  ],
+  "web.admin.settings.inviteCodes.signupsOff": [
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 0,
+          "value": "Os cadastros públicos estão desativados"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " — estes códigos só funcionarão quando você ativá-los. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Configuração de cadastros públicos"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.signupsOn": [
+    {
+      "type": 0,
+      "value": "Os códigos só funcionam enquanto os cadastros públicos estão ativados. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Configuração de cadastros públicos"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.status.active": [
+    {
+      "type": 0,
+      "value": "Ativo"
+    }
+  ],
+  "web.admin.settings.inviteCodes.status.disabled": [
+    {
+      "type": 0,
+      "value": "Desativado"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.actions": [
+    {
+      "type": 0,
+      "value": "Ações"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.code": [
+    {
+      "type": 0,
+      "value": "Código"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.created": [
+    {
+      "type": 0,
+      "value": "Criado em"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.label": [
+    {
+      "type": 0,
+      "value": "Rótulo"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.status": [
+    {
+      "type": 0,
+      "value": "Status"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.usage": [
+    {
+      "type": 0,
+      "value": "Uso"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUp.description": [
+    {
+      "type": 0,
+      "value": "Adicione usos extras a "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": ". O uso atual é "
+    },
+    {
+      "type": 1,
+      "value": "used"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "max"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUp.title": [
+    {
+      "type": 0,
+      "value": "Adicionar usos ao código de convite"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.adding": [
+    {
+      "type": 0,
+      "value": "Adicionando…"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.additionalUses": [
+    {
+      "type": 0,
+      "value": "Usos adicionais"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.invalid": [
+    {
+      "type": 0,
+      "value": "Os usos adicionais devem ser um número positivo"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.submit": [
+    {
+      "type": 0,
+      "value": "Adicionar usos"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpLabel": [
+    {
+      "type": 0,
+      "value": "Adicionar usos ao código de convite "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.usageCount": [
+    {
+      "type": 1,
+      "value": "used"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "max"
     }
   ],
   "web.admin.shell.mobileHeader.eyebrow": [
@@ -5892,6 +6300,12 @@
       "value": "Senha temporária"
     }
   ],
+  "web.admin.users.list.accessGroupsLink": [
+    {
+      "type": 0,
+      "value": "Grupos de acesso"
+    }
+  ],
   "web.admin.users.list.addUser": [
     {
       "type": 0,
@@ -6070,6 +6484,12 @@
     {
       "type": 0,
       "value": "Conta"
+    }
+  ],
+  "web.admin.users.list.create.tab.limits": [
+    {
+      "type": 0,
+      "value": "Limites"
     }
   ],
   "web.admin.users.list.create.username": [
@@ -6251,6 +6671,18 @@
       "value": "Pesquisar por nome de usuário ou e-mail…"
     }
   ],
+  "web.admin.users.list.signupsOff": [
+    {
+      "type": 0,
+      "value": "Cadastro público desativado"
+    }
+  ],
+  "web.admin.users.list.signupsOn": [
+    {
+      "type": 0,
+      "value": "Cadastro público ativado"
+    }
+  ],
   "web.admin.users.list.status.active": [
     {
       "type": 0,
@@ -6273,6 +6705,12 @@
     {
       "type": 0,
       "value": "Convites"
+    }
+  ],
+  "web.admin.users.list.tab.inviteCodes": [
+    {
+      "type": 0,
+      "value": "Códigos de convite"
     }
   ],
   "web.admin.users.list.tab.users": [
@@ -14895,6 +15333,149 @@
       "value": "Parar a reprodução"
     }
   ],
+  "web.player.bitrateLimit.choosePlaceholder": [
+    {
+      "type": 0,
+      "value": "Escolha um limite"
+    }
+  ],
+  "web.player.bitrateLimit.custom": [
+    {
+      "type": 0,
+      "value": "Personalizado"
+    }
+  ],
+  "web.player.bitrateLimit.customAria": [
+    {
+      "type": 1,
+      "value": "label"
+    },
+    {
+      "type": 0,
+      "value": " em Mbps"
+    }
+  ],
+  "web.player.bitrateLimit.customPlaceholder": [
+    {
+      "type": 0,
+      "value": "ex.: 1.5"
+    }
+  ],
+  "web.player.bitrateLimit.invalid": [
+    {
+      "type": 6,
+      "value": "places",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Insira um valor acima de "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps, como 8 ou 1.5 (até "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " casa decimal)."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Insira um valor acima de "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps, como 8 ou 1.5 (até "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " de casas decimais)."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Insira um valor acima de "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps, como 8 ou 1.5 (até "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " casas decimais)."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.bitrateLimit.lowWarning": [
+    {
+      "type": 0,
+      "value": "Abaixo de "
+    },
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps, as transmissões são transcodificadas em qualidade muito baixa."
+    }
+  ],
+  "web.player.bitrateLimit.unit": [
+    {
+      "type": 0,
+      "value": "Mbps"
+    }
+  ],
+  "web.player.bitrateLimit.unlimited": [
+    {
+      "type": 0,
+      "value": "Ilimitado"
+    }
+  ],
+  "web.player.bitrateLimit.value": [
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
   "web.player.bufferingStatus": [
     {
       "type": 0,
@@ -16969,6 +17550,12 @@
       "value": "second"
     }
   ],
+  "web.profiles.noLibraries": [
+    {
+      "type": 0,
+      "value": "Nenhuma biblioteca disponível."
+    }
+  ],
   "web.profiles.picker.add": [
     {
       "type": 0,
@@ -17105,6 +17692,246 @@
     {
       "type": 0,
       "value": "Verificando…"
+    }
+  ],
+  "web.profiles.userPolicy.adminDefault": [
+    {
+      "type": 0,
+      "value": "Padrão do administrador"
+    }
+  ],
+  "web.profiles.userPolicy.adminLimitHelp": [
+    {
+      "type": 0,
+      "value": "Digite um número inteiro ou desative “Substituir” para usar o padrão do administrador."
+    }
+  ],
+  "web.profiles.userPolicy.adminLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "Digite um número inteiro de pelo menos "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": " ou desative “Substituir” para usar o padrão do administrador."
+    }
+  ],
+  "web.profiles.userPolicy.adminQuality": [
+    {
+      "type": 0,
+      "value": "Usa o limite de qualidade padrão do administrador."
+    }
+  ],
+  "web.profiles.userPolicy.adminValue": [
+    {
+      "type": 0,
+      "value": "Padrão do administrador: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.allowed": [
+    {
+      "type": 0,
+      "value": "Permitido"
+    }
+  ],
+  "web.profiles.userPolicy.audioTranscoding": [
+    {
+      "type": 0,
+      "value": "Transcodificação de áudio"
+    }
+  ],
+  "web.profiles.userPolicy.audioTranscodingHint": [
+    {
+      "type": 0,
+      "value": "Conversão de áudio sem codificação de vídeo."
+    }
+  ],
+  "web.profiles.userPolicy.downloadTranscodes": [
+    {
+      "type": 0,
+      "value": "Download de transcodificações"
+    }
+  ],
+  "web.profiles.userPolicy.downloads": [
+    {
+      "type": 0,
+      "value": "Downloads"
+    }
+  ],
+  "web.profiles.userPolicy.groupAllLibraries": [
+    {
+      "type": 0,
+      "value": "Herdar do grupo"
+    }
+  ],
+  "web.profiles.userPolicy.groupLimitHelp": [
+    {
+      "type": 0,
+      "value": "Digite um número inteiro ou desative “Substituir” para herdar."
+    }
+  ],
+  "web.profiles.userPolicy.groupLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "Digite um número inteiro de pelo menos "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": " ou desative “Substituir” para herdar."
+    }
+  ],
+  "web.profiles.userPolicy.groupQuality": [
+    {
+      "type": 0,
+      "value": "Usa o limite de qualidade do grupo de acesso."
+    }
+  ],
+  "web.profiles.userPolicy.groupUnknown": [
+    {
+      "type": 0,
+      "value": "Herdado do grupo"
+    }
+  ],
+  "web.profiles.userPolicy.groupValue": [
+    {
+      "type": 0,
+      "value": "Herdado: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.maxLocalBitrate": [
+    {
+      "type": 0,
+      "value": "Taxa de bits máxima de transmissão local"
+    }
+  ],
+  "web.profiles.userPolicy.maxPlaybackQuality": [
+    {
+      "type": 0,
+      "value": "Qualidade máxima de reprodução"
+    }
+  ],
+  "web.profiles.userPolicy.maxProfiles": [
+    {
+      "type": 0,
+      "value": "Máximo de perfis"
+    }
+  ],
+  "web.profiles.userPolicy.maxRemoteBitrate": [
+    {
+      "type": 0,
+      "value": "Taxa de bits máxima de transmissão remota"
+    }
+  ],
+  "web.profiles.userPolicy.maxStreams": [
+    {
+      "type": 0,
+      "value": "Máximo de transmissões"
+    }
+  ],
+  "web.profiles.userPolicy.maxTranscodes": [
+    {
+      "type": 0,
+      "value": "Máximo de transcodificações"
+    }
+  ],
+  "web.profiles.userPolicy.mediaRequests": [
+    {
+      "type": 0,
+      "value": "Solicitações de mídia"
+    }
+  ],
+  "web.profiles.userPolicy.mediaRequestsHint": [
+    {
+      "type": 0,
+      "value": "Solicitar novos filmes e séries quando as solicitações estiverem ativadas."
+    }
+  ],
+  "web.profiles.userPolicy.notAllowed": [
+    {
+      "type": 0,
+      "value": "Não permitido"
+    }
+  ],
+  "web.profiles.userPolicy.override": [
+    {
+      "type": 0,
+      "value": "Substituir"
+    }
+  ],
+  "web.profiles.userPolicy.serverDefault": [
+    {
+      "type": 0,
+      "value": "Padrão do servidor"
+    }
+  ],
+  "web.profiles.userPolicy.serverLimitHelp": [
+    {
+      "type": 0,
+      "value": "Digite um número inteiro ou desative “Substituir” para usar o padrão do servidor."
+    }
+  ],
+  "web.profiles.userPolicy.serverLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "Digite um número inteiro de pelo menos "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": " ou desative “Substituir” para usar o padrão do servidor."
+    }
+  ],
+  "web.profiles.userPolicy.serverQuality": [
+    {
+      "type": 0,
+      "value": "Usa o limite de qualidade padrão do servidor."
+    }
+  ],
+  "web.profiles.userPolicy.serverValue": [
+    {
+      "type": 0,
+      "value": "Padrão do servidor: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.unlimited": [
+    {
+      "type": 0,
+      "value": "Ilimitado"
+    }
+  ],
+  "web.profiles.userPolicy.videoTranscoding": [
+    {
+      "type": 0,
+      "value": "Transcodificação de vídeo"
+    }
+  ],
+  "web.profiles.userPolicy.zeroUnlimited": [
+    {
+      "type": 0,
+      "value": "0 = ilimitado"
     }
   ],
   "web.recommendations.emptyBody": [
@@ -21914,6 +22741,12 @@
     {
       "type": 0,
       "value": "Sem limite"
+    }
+  ],
+  "web.settings.watchProviders.auth.copyCode": [
+    {
+      "type": 0,
+      "value": "Copiar código"
     }
   ],
   "web.shell.pageBack.goBack": [

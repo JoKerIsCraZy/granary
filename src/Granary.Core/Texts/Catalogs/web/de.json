@@ -1675,6 +1675,46 @@
       }
     }
   ],
+  "web.admin.common.downloadAccess.conversionOff": [
+    {
+      "type": 0,
+      "value": "Der Server erstellt keine gerätefreundlichen Kopien, daher ist jeder Download die Originaldatei. Schalte das unter "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Einstellungen → Downloads"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " ein."
+    }
+  ],
+  "web.admin.common.downloadAccess.serverOff": [
+    {
+      "type": 0,
+      "value": "Downloads sind für den gesamten Server ausgeschaltet, daher kann niemand etwas herunterladen. Schalte sie unter "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Einstellungen → Downloads"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " ein."
+    }
+  ],
   "web.admin.common.serverActivity.connecting": [
     {
       "type": 0,
@@ -3859,6 +3899,58 @@
       "value": "Diese Sitzung unterstützt weder Pausieren und Fortsetzen in Echtzeit noch Nachrichten. Mit „Stoppen“ und „Beenden“ lässt sich die Wiedergabe trotzdem beenden."
     }
   ],
+  "web.admin.settings.hooks.inviteCodes.createFailed": [
+    {
+      "type": 0,
+      "value": "Der Einladungscode konnte nicht erstellt werden"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.created": [
+    {
+      "type": 0,
+      "value": "Einladungscode erstellt"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.deleteFailed": [
+    {
+      "type": 0,
+      "value": "Der Einladungscode konnte nicht gelöscht werden"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.deleted": [
+    {
+      "type": 0,
+      "value": "Einladungscode gelöscht"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.topUpFailed": [
+    {
+      "type": 0,
+      "value": "Prüfe die aktuelle maximale Nutzungszahl des Codes, bevor du das Aufstocken erneut versuchst. "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.topUpUnconfirmed": [
+    {
+      "type": 0,
+      "value": "Das Ergebnis konnte nicht bestätigt werden."
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.toppedUp": [
+    {
+      "type": 0,
+      "value": "Einladungscode aufgestockt"
+    }
+  ],
+  "web.admin.settings.hooks.inviteCodes.updateFailed": [
+    {
+      "type": 0,
+      "value": "Der Einladungscode konnte nicht aktualisiert werden"
+    }
+  ],
   "web.admin.settings.invitations.capabilitiesFailed": [
     {
       "type": 0,
@@ -4507,6 +4599,330 @@
     {
       "type": 0,
       "value": "Status"
+    }
+  ],
+  "web.admin.settings.inviteCodes.copied": [
+    {
+      "type": 0,
+      "value": "In die Zwischenablage kopiert"
+    }
+  ],
+  "web.admin.settings.inviteCodes.copyFailed": [
+    {
+      "type": 0,
+      "value": "Kopieren in die Zwischenablage fehlgeschlagen"
+    }
+  ],
+  "web.admin.settings.inviteCodes.create.button": [
+    {
+      "type": 0,
+      "value": "Code erstellen"
+    }
+  ],
+  "web.admin.settings.inviteCodes.create.title": [
+    {
+      "type": 0,
+      "value": "Einladungscode erstellen"
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.confirm": [
+    {
+      "type": 0,
+      "value": "Löschen"
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.description": [
+    {
+      "type": 0,
+      "value": "Einladungscode „"
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": "“ löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+    }
+  ],
+  "web.admin.settings.inviteCodes.delete.title": [
+    {
+      "type": 0,
+      "value": "Einladungscode löschen"
+    }
+  ],
+  "web.admin.settings.inviteCodes.deleteLabel": [
+    {
+      "type": 0,
+      "value": "Einladungscode "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": " löschen"
+    }
+  ],
+  "web.admin.settings.inviteCodes.empty": [
+    {
+      "type": 0,
+      "value": "Noch keine Einladungscodes. Erstelle einen, um loszulegen."
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.code": [
+    {
+      "type": 0,
+      "value": "Code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.codePlaceholder": [
+    {
+      "type": 0,
+      "value": "z. B. BETA2026"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.create": [
+    {
+      "type": 0,
+      "value": "Erstellen"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.creating": [
+    {
+      "type": 0,
+      "value": "Wird erstellt …"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.label": [
+    {
+      "type": 0,
+      "value": "Bezeichnung"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.labelPlaceholder": [
+    {
+      "type": 0,
+      "value": "z. B. Betatest-Gruppe"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.maxUses": [
+    {
+      "type": 0,
+      "value": "Maximale Nutzungen"
+    }
+  ],
+  "web.admin.settings.inviteCodes.form.maxUsesInvalid": [
+    {
+      "type": 0,
+      "value": "Die maximale Anzahl an Nutzungen muss eine positive Zahl sein"
+    }
+  ],
+  "web.admin.settings.inviteCodes.loadFailed": [
+    {
+      "type": 0,
+      "value": "Einladungscodes konnten nicht geladen werden. "
+    },
+    {
+      "type": 8,
+      "value": "button",
+      "children": [
+        {
+          "type": 0,
+          "value": "Erneut versuchen"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.loadMore": [
+    {
+      "type": 0,
+      "value": "Mehr laden"
+    }
+  ],
+  "web.admin.settings.inviteCodes.loading": [
+    {
+      "type": 0,
+      "value": "Einladungscodes werden geladen …"
+    }
+  ],
+  "web.admin.settings.inviteCodes.signupsOff": [
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 0,
+          "value": "Öffentliche Registrierungen sind deaktiviert"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " – diese Codes funktionieren erst, wenn du sie aktivierst. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Einstellung „Öffentliche Registrierungen“"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.signupsOn": [
+    {
+      "type": 0,
+      "value": "Codes funktionieren nur, solange öffentliche Registrierungen aktiviert sind. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Einstellung „Öffentliche Registrierungen“"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.inviteCodes.status.active": [
+    {
+      "type": 0,
+      "value": "Aktiv"
+    }
+  ],
+  "web.admin.settings.inviteCodes.status.disabled": [
+    {
+      "type": 0,
+      "value": "Deaktiviert"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.actions": [
+    {
+      "type": 0,
+      "value": "Aktionen"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.code": [
+    {
+      "type": 0,
+      "value": "Code"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.created": [
+    {
+      "type": 0,
+      "value": "Erstellt"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.label": [
+    {
+      "type": 0,
+      "value": "Bezeichnung"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.status": [
+    {
+      "type": 0,
+      "value": "Status"
+    }
+  ],
+  "web.admin.settings.inviteCodes.table.usage": [
+    {
+      "type": 0,
+      "value": "Nutzung"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUp.description": [
+    {
+      "type": 0,
+      "value": "Füge "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": " zusätzliche Nutzungen hinzu. Aktuelle Nutzung: "
+    },
+    {
+      "type": 1,
+      "value": "used"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "max"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUp.title": [
+    {
+      "type": 0,
+      "value": "Einladungscode aufstocken"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.adding": [
+    {
+      "type": 0,
+      "value": "Wird hinzugefügt …"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.additionalUses": [
+    {
+      "type": 0,
+      "value": "Zusätzliche Nutzungen"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.invalid": [
+    {
+      "type": 0,
+      "value": "Die Anzahl zusätzlicher Nutzungen muss eine positive Zahl sein"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpForm.submit": [
+    {
+      "type": 0,
+      "value": "Nutzungen hinzufügen"
+    }
+  ],
+  "web.admin.settings.inviteCodes.topUpLabel": [
+    {
+      "type": 0,
+      "value": "Einladungscode "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": " aufstocken"
+    }
+  ],
+  "web.admin.settings.inviteCodes.usageCount": [
+    {
+      "type": 1,
+      "value": "used"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "max"
     }
   ],
   "web.admin.shell.mobileHeader.eyebrow": [
@@ -5485,6 +5901,12 @@
       "value": "Temporäres Passwort"
     }
   ],
+  "web.admin.users.list.accessGroupsLink": [
+    {
+      "type": 0,
+      "value": "Zugriffsgruppen"
+    }
+  ],
   "web.admin.users.list.addUser": [
     {
       "type": 0,
@@ -5665,6 +6087,12 @@
       "value": "Konto"
     }
   ],
+  "web.admin.users.list.create.tab.limits": [
+    {
+      "type": 0,
+      "value": "Limits"
+    }
+  ],
   "web.admin.users.list.create.username": [
     {
       "type": 0,
@@ -5833,6 +6261,18 @@
       "value": "Nach Benutzername oder E-Mail suchen…"
     }
   ],
+  "web.admin.users.list.signupsOff": [
+    {
+      "type": 0,
+      "value": "Öffentliche Registrierung aus"
+    }
+  ],
+  "web.admin.users.list.signupsOn": [
+    {
+      "type": 0,
+      "value": "Öffentliche Registrierung ein"
+    }
+  ],
   "web.admin.users.list.status.active": [
     {
       "type": 0,
@@ -5855,6 +6295,12 @@
     {
       "type": 0,
       "value": "Einladungen"
+    }
+  ],
+  "web.admin.users.list.tab.inviteCodes": [
+    {
+      "type": 0,
+      "value": "Einladungscodes"
     }
   ],
   "web.admin.users.list.tab.users": [
@@ -14123,6 +14569,126 @@
       "value": "Wiedergabe beenden"
     }
   ],
+  "web.player.bitrateLimit.choosePlaceholder": [
+    {
+      "type": 0,
+      "value": "Limit wählen"
+    }
+  ],
+  "web.player.bitrateLimit.custom": [
+    {
+      "type": 0,
+      "value": "Benutzerdefiniert"
+    }
+  ],
+  "web.player.bitrateLimit.customAria": [
+    {
+      "type": 1,
+      "value": "label"
+    },
+    {
+      "type": 0,
+      "value": " in Mbps"
+    }
+  ],
+  "web.player.bitrateLimit.customPlaceholder": [
+    {
+      "type": 0,
+      "value": "z. B. 1.5"
+    }
+  ],
+  "web.player.bitrateLimit.invalid": [
+    {
+      "type": 6,
+      "value": "places",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Gib einen Wert über "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps ein, z. B. 8 oder 1.5 (bis zu "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " Nachkommastelle)."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Gib einen Wert über "
+            },
+            {
+              "type": 1,
+              "value": "min"
+            },
+            {
+              "type": 0,
+              "value": " Mbps ein, z. B. 8 oder 1.5 (bis zu "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " Nachkommastellen)."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.bitrateLimit.lowWarning": [
+    {
+      "type": 0,
+      "value": "Unter "
+    },
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps werden Streams in sehr niedriger Qualität transkodiert."
+    }
+  ],
+  "web.player.bitrateLimit.unit": [
+    {
+      "type": 0,
+      "value": "Mbps"
+    }
+  ],
+  "web.player.bitrateLimit.unlimited": [
+    {
+      "type": 0,
+      "value": "Unbegrenzt"
+    }
+  ],
+  "web.player.bitrateLimit.value": [
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
   "web.player.bufferingStatus": [
     {
       "type": 0,
@@ -16019,6 +16585,12 @@
       "value": "second"
     }
   ],
+  "web.profiles.noLibraries": [
+    {
+      "type": 0,
+      "value": "Keine Mediatheken verfügbar."
+    }
+  ],
   "web.profiles.picker.add": [
     {
       "type": 0,
@@ -16143,6 +16715,246 @@
     {
       "type": 0,
       "value": "Wird überprüft …"
+    }
+  ],
+  "web.profiles.userPolicy.adminDefault": [
+    {
+      "type": 0,
+      "value": "Admin-Standard"
+    }
+  ],
+  "web.profiles.userPolicy.adminLimitHelp": [
+    {
+      "type": 0,
+      "value": "Gib eine ganze Zahl ein oder schalte „Überschreiben“ aus, um den Admin-Standard zu verwenden."
+    }
+  ],
+  "web.profiles.userPolicy.adminLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "Gib eine ganze Zahl von mindestens "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": " ein oder schalte „Überschreiben“ aus, um den Admin-Standard zu verwenden."
+    }
+  ],
+  "web.profiles.userPolicy.adminQuality": [
+    {
+      "type": 0,
+      "value": "Verwendet die Standard-Qualitätsgrenze des Admins."
+    }
+  ],
+  "web.profiles.userPolicy.adminValue": [
+    {
+      "type": 0,
+      "value": "Admin-Standard: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.allowed": [
+    {
+      "type": 0,
+      "value": "Erlaubt"
+    }
+  ],
+  "web.profiles.userPolicy.audioTranscoding": [
+    {
+      "type": 0,
+      "value": "Audio-Transkodierung"
+    }
+  ],
+  "web.profiles.userPolicy.audioTranscodingHint": [
+    {
+      "type": 0,
+      "value": "Audiokonvertierung ohne Videokodierung."
+    }
+  ],
+  "web.profiles.userPolicy.downloadTranscodes": [
+    {
+      "type": 0,
+      "value": "Transkodierte Downloads"
+    }
+  ],
+  "web.profiles.userPolicy.downloads": [
+    {
+      "type": 0,
+      "value": "Downloads"
+    }
+  ],
+  "web.profiles.userPolicy.groupAllLibraries": [
+    {
+      "type": 0,
+      "value": "Von Gruppe übernehmen"
+    }
+  ],
+  "web.profiles.userPolicy.groupLimitHelp": [
+    {
+      "type": 0,
+      "value": "Gib eine ganze Zahl ein oder schalte „Überschreiben“ aus, um den Wert zu übernehmen."
+    }
+  ],
+  "web.profiles.userPolicy.groupLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "Gib eine ganze Zahl von mindestens "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": " ein oder schalte „Überschreiben“ aus, um den Wert zu übernehmen."
+    }
+  ],
+  "web.profiles.userPolicy.groupQuality": [
+    {
+      "type": 0,
+      "value": "Verwendet die Qualitätsgrenze der Zugriffsgruppe."
+    }
+  ],
+  "web.profiles.userPolicy.groupUnknown": [
+    {
+      "type": 0,
+      "value": "Von Gruppe übernommen"
+    }
+  ],
+  "web.profiles.userPolicy.groupValue": [
+    {
+      "type": 0,
+      "value": "Übernommen: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.maxLocalBitrate": [
+    {
+      "type": 0,
+      "value": "Max. Bitrate für lokale Streams"
+    }
+  ],
+  "web.profiles.userPolicy.maxPlaybackQuality": [
+    {
+      "type": 0,
+      "value": "Max. Wiedergabequalität"
+    }
+  ],
+  "web.profiles.userPolicy.maxProfiles": [
+    {
+      "type": 0,
+      "value": "Max. Profile"
+    }
+  ],
+  "web.profiles.userPolicy.maxRemoteBitrate": [
+    {
+      "type": 0,
+      "value": "Max. Bitrate für Remote-Streams"
+    }
+  ],
+  "web.profiles.userPolicy.maxStreams": [
+    {
+      "type": 0,
+      "value": "Max. Streams"
+    }
+  ],
+  "web.profiles.userPolicy.maxTranscodes": [
+    {
+      "type": 0,
+      "value": "Max. Transkodierungen"
+    }
+  ],
+  "web.profiles.userPolicy.mediaRequests": [
+    {
+      "type": 0,
+      "value": "Medienanfragen"
+    }
+  ],
+  "web.profiles.userPolicy.mediaRequestsHint": [
+    {
+      "type": 0,
+      "value": "Neue Filme und Serien anfragen, wenn Anfragen aktiviert sind."
+    }
+  ],
+  "web.profiles.userPolicy.notAllowed": [
+    {
+      "type": 0,
+      "value": "Nicht erlaubt"
+    }
+  ],
+  "web.profiles.userPolicy.override": [
+    {
+      "type": 0,
+      "value": "Überschreiben"
+    }
+  ],
+  "web.profiles.userPolicy.serverDefault": [
+    {
+      "type": 0,
+      "value": "Server-Standard"
+    }
+  ],
+  "web.profiles.userPolicy.serverLimitHelp": [
+    {
+      "type": 0,
+      "value": "Gib eine ganze Zahl ein oder schalte „Überschreiben“ aus, um den Server-Standard zu verwenden."
+    }
+  ],
+  "web.profiles.userPolicy.serverLimitHelpMin": [
+    {
+      "type": 0,
+      "value": "Gib eine ganze Zahl von mindestens "
+    },
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": " ein oder schalte „Überschreiben“ aus, um den Server-Standard zu verwenden."
+    }
+  ],
+  "web.profiles.userPolicy.serverQuality": [
+    {
+      "type": 0,
+      "value": "Verwendet die Standard-Qualitätsgrenze des Servers."
+    }
+  ],
+  "web.profiles.userPolicy.serverValue": [
+    {
+      "type": 0,
+      "value": "Server-Standard: "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.profiles.userPolicy.unlimited": [
+    {
+      "type": 0,
+      "value": "Unbegrenzt"
+    }
+  ],
+  "web.profiles.userPolicy.videoTranscoding": [
+    {
+      "type": 0,
+      "value": "Video-Transkodierung"
+    }
+  ],
+  "web.profiles.userPolicy.zeroUnlimited": [
+    {
+      "type": 0,
+      "value": "0 = unbegrenzt"
     }
   ],
   "web.recommendations.emptyBody": [
@@ -20589,6 +21401,12 @@
     {
       "type": 0,
       "value": "Kein Limit"
+    }
+  ],
+  "web.settings.watchProviders.auth.copyCode": [
+    {
+      "type": 0,
+      "value": "Code kopieren"
     }
   ],
   "web.shell.pageBack.goBack": [

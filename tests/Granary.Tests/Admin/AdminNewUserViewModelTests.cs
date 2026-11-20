@@ -16,7 +16,7 @@ public sealed class AdminNewUserViewModelTests
 
     private AdminNewUserViewModel Started(bool groupsKnown = true, bool owner = true, bool defaultProfile = true)
     {
-        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
+        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), new AdminApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
         form.Start(AdminActors.Of(_session), new AdminUserCapabilities { Available = true, DefaultProfile = defaultProfile }, groupsKnown ? Groups : [], groupsKnown, owner);
         form.Username = "ana";
         form.Email = "ana@example.com";
@@ -134,7 +134,7 @@ public sealed class AdminNewUserViewModelTests
     public async Task GroupsNotReadAgain_LetTheServerChoose_EvenWithOldOnesAtHand()
     {
         _silo.Map("api/v2/admin/users", _ => BrowseFakeSilo.Json("""{ "id": "9" }""", System.Net.HttpStatusCode.Created));
-        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
+        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), new AdminApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
         form.Start(AdminActors.Of(_session), new AdminUserCapabilities { Available = true, DefaultProfile = true }, Groups, groupsKnown: false,
             viewerIsOwner: true);
         (form.Username, form.Email, form.Password) = ("ana", "ana@example.com", "margin fossil");

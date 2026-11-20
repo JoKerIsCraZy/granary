@@ -223,11 +223,17 @@ public sealed partial class AdminUserDetailViewModel
 }
 
 /// <summary>A library the account may be given, ticked when it has it.</summary>
-public sealed partial class AdminLibraryChoice(string id, string name) : ObservableObject
+public sealed partial class AdminLibraryChoice(string id, string name, string type = "", bool enabled = true) : ObservableObject
 {
     public string Id { get; } = id;
 
     public string Name { get; } = name;
+
+    /// <summary>The library's kind as the server names it (movies, shows), shown muted beside the name as the web's selector.</summary>
+    public string Type { get; } = type;
+
+    /// <summary>A switched-off library, which the web's selector marks Disabled.</summary>
+    public bool IsDisabled { get; } = !enabled;
 
     [ObservableProperty]
     public partial bool IsChecked { get; set; }
