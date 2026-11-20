@@ -53,6 +53,7 @@ public sealed partial class AdminInvitationsView : UserControl
     {
         _visit++;
         ViewModel.Deactivate();
+        Form.Clear();
         InviteDialog.Hide();
         ResendDialog.Hide();
     }
@@ -118,8 +119,11 @@ public sealed partial class AdminInvitationsView : UserControl
         }
         finally
         {
-            // The link was shown once; it is not kept.
-            Form.Clear();
+            // The link was shown once; it is not kept. A dialog of an earlier visit leaves the current one's alone.
+            if (visit == _visit)
+            {
+                Form.Clear();
+            }
         }
     }
 
@@ -185,6 +189,7 @@ public sealed partial class AdminInvitationsView : UserControl
             return;
         }
         bool made = false;
+        int visit = _visit;
         try
         {
             // A failed one says so with Reload history, which the viewer chooses, as on the web.
@@ -203,11 +208,15 @@ public sealed partial class AdminInvitationsView : UserControl
         }
         finally
         {
-            // The link was shown once; then the history is read again, which frees the rows.
-            ViewModel.ForgetResent();
-            if (made)
+            // The link was shown once; then the history is read again, which frees the rows. A resend of an earlier visit leaves
+            // the current one's link alone: leaving the tab forgot its own.
+            if (visit == _visit)
             {
-                await ReadHistoryAgainAsync();
+                ViewModel.ForgetResent();
+                if (made)
+                {
+                    await ReadHistoryAgainAsync();
+                }
             }
         }
     }

@@ -375,4 +375,20 @@ public sealed class AdminInvitationsViewModelTests
         Assert.False(await resend);
         Assert.Equal(("", ""), (tab.ResentLink, tab.ResentMessage));
     }
+    [Fact]
+    public async Task ARevokeThatEndsAfterLeaving_LeavesTheNextVisitAlone()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map("api/v2/admin/invitations/1", (_, _) => answer.Task);
+        var tab = await OpenedAsync();
+
+        var revoke = tab.RevokeCommand.ExecuteAsync(tab.Rows[0]);
+        tab.Deactivate();
+        await tab.OpenAsync(viewerIsOwner: true);
+        answer.SetResult(BrowseFakeSilo.Problem(403, "forbidden"));
+        await revoke;
+
+        Assert.Equal("", tab.ActionError);
+        Assert.False(tab.IsBlocked);
+    }
 }

@@ -194,13 +194,23 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
         {
             return;
         }
+        var visit = _load.Token;
         IsBlocked = true;
         ActionError = "";
         try
         {
             await invitations.RevokeAsync(actor, row.Id);
+            if (visit.IsCancellationRequested)
+            {
+                // The tab was left meanwhile; its next visit reads the history afresh.
+                return;
+            }
             IsBlocked = false;
             await RestartAsync();
+        }
+        catch (Exception ex) when (AdminFailures.IsExpected(ex) && visit.IsCancellationRequested)
+        {
+            logger.LogWarning(ex, "Could not revoke an invitation");
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
