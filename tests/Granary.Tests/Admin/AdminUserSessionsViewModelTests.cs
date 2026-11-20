@@ -102,4 +102,22 @@ public sealed class AdminUserSessionsViewModelTests
         Assert.True(sessions.HasMore);
         Assert.True(sessions.NoticeIsError);
     }
+    [Fact]
+    public async Task SigningOutEverywhereWhileTheFirstPageLoads_EndsTheLoading()
+    {
+        var first = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map("api/v2/admin/users/3/login-sessions", (request, _) => request.Method == HttpMethod.Delete
+            ? Task.FromResult(BrowseFakeSilo.Json("""{ "revoked": 2 }"""))
+            : first.Task);
+        var sessions = new AdminUserSessionsViewModel(new AdminUsersApi(_silo.Http), _confirmation,
+            new ManualTimeProvider(AdminUserPayloads.Now), _silo.Logs.For<AdminUserSessionsViewModel>());
+        var open = sessions.OpenAsync(AdminActors.Of(AdminUserPayloads.OwnerSession()), Ana, manageable: true);
+
+        await sessions.SignOutEverywhereCommand.ExecuteAsync(null);
+        first.SetResult(BrowseFakeSilo.Json(Sessions));
+        await open;
+
+        Assert.Equal(LibraryLoadState.Ready, sessions.State);
+        Assert.Empty(sessions.Sessions);
+    }
 }

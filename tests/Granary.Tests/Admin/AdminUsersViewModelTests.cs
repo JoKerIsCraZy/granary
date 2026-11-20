@@ -159,4 +159,18 @@ public sealed class AdminUsersViewModelTests
 
         Assert.Equal("3", opened);
     }
+    [Fact]
+    public async Task OpeningAsAnotherAccount_DropsTheRowsTheFirstOneRead()
+    {
+        var users = await LoadedAsync();
+        Assert.NotEmpty(users.Rows);
+        _session.Account = new Granary.Core.Api.Auth.Account("2", "kim", "kim@example.com", "admin", [], true, false, null);
+        _silo.Map("api/v2/admin/users", _ => BrowseFakeSilo.Problem(503, "dependency_unavailable"));
+
+        await users.OpenAsync();
+
+        Assert.Empty(users.Rows);
+        Assert.Equal(LibraryLoadState.Error, users.State);
+        Assert.False(users.ViewerIsOwner);
+    }
 }

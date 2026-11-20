@@ -121,6 +121,7 @@ public sealed partial class AdminUserSessionsViewModel(AdminUsersApi users, ICon
             _generation++;
             Sessions.Clear();
             HasMore = false;
+            State = LibraryLoadState.Ready;
             OnPropertyChanged(nameof(IsEmpty));
             Say(AppText.Get("web.settings.sessions.signedOutEverywhere", ("username", _account.Username)), isError: false);
         }

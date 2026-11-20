@@ -105,7 +105,7 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
     /// Reads the account. A card that keeps its drafts keeps only the fields edited on the account read before, so a change
     /// another administrator made to a field nobody touched here shows, and is not sent back. False when it was not read.
     /// </summary>
-    internal async Task<bool> ReadAsync(bool keepSignIn, bool keepAccess)
+    internal async Task<bool> ReadAsync(bool keepSignIn, bool keepAccess, AdminUser? signInBase = null, AdminUser? accessBase = null)
     {
         if (_actor is not { } actor || _id.Length == 0)
         {
@@ -121,8 +121,9 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
                 return false;
             }
             var before = Account;
-            var signIn = keepSignIn ? SignInDraft(before) : null;
-            var access = keepAccess ? AccessDraft(before) : null;
+            // Edits are measured against the account read before, or for a card just saved against what it sent.
+            var signIn = keepSignIn ? SignInDraft(signInBase ?? before) : null;
+            var access = keepAccess ? AccessDraft(accessBase ?? before) : null;
             _version = read.Version;
             Account = read.Value;
             ResetSignIn(signIn);

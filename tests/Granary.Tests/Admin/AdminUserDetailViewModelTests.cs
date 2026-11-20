@@ -25,6 +25,7 @@ public sealed class AdminUserDetailViewModelTests
     private int _version = 1;
     private int _writeStatus = 204;
     private int _readStatus = 200;
+    private TaskCompletionSource? _writeGate;
 
     public AdminUserDetailViewModelTests()
     {
@@ -36,6 +37,10 @@ public sealed class AdminUserDetailViewModelTests
                 return _readStatus == 200 ? AdminUserPayloads.Versioned(_account, $"\"v{_version}\"") : BrowseFakeSilo.Problem(_readStatus, "dependency_unavailable");
             }
             string? body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
+            if (_writeGate is { } gate)
+            {
+                await gate.Task;
+            }
             _writes.Add((request.Method, request.Headers.TryGetValues("If-Match", out var tags) ? tags.Single() : null, body));
             return _writeStatus == 204 ? BrowseFakeSilo.NoContent() : BrowseFakeSilo.Problem(_writeStatus, "precondition_failed");
         });
@@ -291,5 +296,21 @@ public sealed class AdminUserDetailViewModelTests
         var detail = await OpenedAsync();
 
         Assert.False(detail.HasAccessChanges);
+    }
+    [Fact]
+    public async Task EditsMadeWhileASaveRuns_AreKept()
+    {
+        var detail = await OpenedAsync();
+        _writeGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        detail.Username = "ana2";
+
+        var save = detail.SaveSignInCommand.ExecuteAsync(null);
+        detail.Username = "ana3";
+        _account = AdminUserPayloads.User(username: "ana2");
+        _writeGate.SetResult();
+        await save;
+
+        Assert.Equal("ana3", detail.Username);
+        Assert.True(detail.HasSignInChanges);
     }
 }

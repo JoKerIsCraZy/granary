@@ -56,14 +56,16 @@ public sealed partial class AdminUserDetailViewModel
             return false;
         }
         card.IsSaving = true;
+        bool savedSignIn = ReferenceEquals(card, SignInCard);
+        // The card as it was sent: what is edited while the save runs differs from it, and stays.
+        var sent = savedSignIn ? SentSignIn(account) : SentAccess(account);
         try
         {
             await _users.UpdateAsync(actor, account.Id, _version, change);
             // The version just sent is spent: nothing more goes until the account is read again.
             _version = "";
             card.Saved = AppText.Get("web.admin.users.detail.access.card.saved");
-            bool savedSignIn = ReferenceEquals(card, SignInCard);
-            if (!await ReadAsync(keepSignIn: !savedSignIn, keepAccess: savedSignIn) && Account is not null)
+            if (!await ReadAsync(keepSignIn: true, keepAccess: true, savedSignIn ? sent : null, savedSignIn ? null : sent) && Account is not null)
             {
                 // Saved, but not read again: Reload and review reads it before the next change.
                 card.HasConflict = true;

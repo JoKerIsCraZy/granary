@@ -71,7 +71,21 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     /// </summary>
     public Task OpenAsync()
     {
-        _actor = _session.State == SessionState.Ready ? AdminActors.Of(_session) : null;
+        var actor = _session.State == SessionState.Ready ? AdminActors.Of(_session) : null;
+        if (actor != _actor)
+        {
+            // Another account or profile: nothing the first one read is shown or offered to its dialogs.
+            _load?.Cancel();
+            _accounts = [];
+            Groups = [];
+            Capabilities = new AdminUserCapabilities();
+            IsAvailable = false;
+            ViewerIsOwner = false;
+            LoadFailed = false;
+            State = LibraryLoadState.Idle;
+            Apply();
+        }
+        _actor = actor;
         return LoadAsync();
     }
 

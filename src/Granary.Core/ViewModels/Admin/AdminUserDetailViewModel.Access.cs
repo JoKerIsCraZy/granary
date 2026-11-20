@@ -130,6 +130,16 @@ public sealed partial class AdminUserDetailViewModel
     private sealed record AccessEdits(bool GroupEdited, string? Group, bool LibrariesEdited, IReadOnlyList<string>? Libraries, bool? MarkerEdit,
         bool? MetadataCuration);
 
+    // The account as the Library access card sends it; an admin's group stays as it was, as the card never sends one.
+    private AdminUser SentAccess(AdminUser account) => account with
+    {
+        AccessGroupId = account.IsAdmin ? account.AccessGroupId : SelectedValue,
+        LibraryIds = !_librariesRead ? account.LibraryIds : ChoosesLibraries ? ChosenIds() : null,
+        Permissions = [.. account.Permissions.Where(permission => permission is not (AdminPermissions.MarkerEdit or AdminPermissions.MetadataCuration)),
+            .. MarkerEdit ? [AdminPermissions.MarkerEdit] : Array.Empty<string>(),
+            .. MetadataCuration ? [AdminPermissions.MetadataCuration] : Array.Empty<string>()],
+    };
+
     private AccessEdits? AccessDraft(AdminUser? before) => before is null ? null : new AccessEdits(
         GroupOf(before) != SelectedValue, SelectedValue,
         LibrariesChanged(before), ChoosesLibraries ? ChosenIds() : null,

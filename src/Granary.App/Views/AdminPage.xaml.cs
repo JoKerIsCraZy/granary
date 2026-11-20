@@ -196,7 +196,7 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
             {
                 CloseDetail();
                 Show(users);
-                await users.ActivateAsync();
+                await users.ReturnAsync();
             };
             Show(detail);
             var list = users.ViewModel;

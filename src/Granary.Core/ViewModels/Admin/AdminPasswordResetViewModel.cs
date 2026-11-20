@@ -193,11 +193,13 @@ public sealed partial class AdminPasswordResetViewModel(AdminUsersApi users, ILo
     // Read fresh, so the save carries the account's current version.
     private async Task SetPasswordAsync(AdminActor actor, CancellationToken cancellationToken)
     {
+        // Read once: the box can change while the request runs, and the message says what was sent.
+        bool mustChange = MustChange;
         var fresh = await users.GetAsync(actor, _account.Id, cancellationToken);
         await users.UpdateAsync(actor, _account.Id, fresh.Version,
-            new AdminUserChange { Password = Password, RequirePasswordChange = MustChange }, cancellationToken);
+            new AdminUserChange { Password = Password, RequirePasswordChange = mustChange }, cancellationToken);
         Password = "";
-        Outcome = MustChange
+        Outcome = mustChange
             ? AppText.Get("web.admin.users.passwordResetDialog.passwordSetMustChange", ("username", _account.Username))
             : AppText.Get("web.admin.users.passwordResetDialog.passwordSet", ("username", _account.Username));
         IsDone = true;

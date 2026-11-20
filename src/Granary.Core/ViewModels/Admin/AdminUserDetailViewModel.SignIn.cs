@@ -127,6 +127,12 @@ public sealed partial class AdminUserDetailViewModel
     // The fields edited on the account read before (null where untouched), to keep over a new read.
     private sealed record SignInEdits(string? Username, string? Email, bool? IsAdminRole, bool? CanSignIn);
 
+    // The account as the Sign-in card sends it.
+    private AdminUser SentSignIn(AdminUser account) => account with
+    {
+        Username = Username, Email = Email, Role = IsAdminRole ? AdminRoles.Admin : AdminRoles.User, Enabled = CanSignIn,
+    };
+
     private SignInEdits? SignInDraft(AdminUser? before) => before is null ? null : new SignInEdits(
         Username != before.Username ? Username : null,
         Email != before.Email ? Email : null,

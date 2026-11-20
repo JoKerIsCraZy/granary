@@ -70,6 +70,23 @@ public sealed partial class AdminUsersView : UserControl
         }
     }
 
+    /// <summary>
+    /// Back from an account: the list read again as the account and profile it was opened as, not as whoever is signed in now,
+    /// as the account's page acted.
+    /// </summary>
+    public async Task ReturnAsync()
+    {
+        _active = true;
+        try
+        {
+            await ViewModel.LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            Log(ex, "The users could not be shown");
+        }
+    }
+
     /// <summary>Shows a tab, as the web's <c>?tab=</c> does; read on the next <see cref="ActivateAsync"/>.</summary>
     public void ShowTab(bool invitations)
     {
