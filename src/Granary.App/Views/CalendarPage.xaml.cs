@@ -32,6 +32,29 @@ public sealed partial class CalendarPage : Page
     {
         ViewModel = App.Services.GetRequiredService<CalendarViewModel>();
         InitializeComponent();
+        WeekGrid.ElementPrepared += OnColumnPrepared;
+    }
+
+    // A column the grid reuses for another day (another week) starts at its top, not where the last one was scrolled to.
+    private static void OnColumnPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
+    {
+        if (FirstScroller(args.Element) is { } scroller)
+        {
+            scroller.ChangeView(null, 0, null, disableAnimation: true);
+        }
+    }
+
+    private static ScrollViewer? FirstScroller(DependencyObject element)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            var child = VisualTreeHelper.GetChild(element, i);
+            if ((child as ScrollViewer ?? FirstScroller(child)) is { } found)
+            {
+                return found;
+            }
+        }
+        return null;
     }
 
     public CalendarViewModel ViewModel { get; }

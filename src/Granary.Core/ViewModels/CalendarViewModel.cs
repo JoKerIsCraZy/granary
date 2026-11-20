@@ -121,6 +121,7 @@ public sealed partial class CalendarViewModel : ObservableObject
         bool shown = Equals(_loadedFor, Key()) && State is LibraryLoadState.Ready or LibraryLoadState.Empty or LibraryLoadState.Loading;
         if (isReturn && shown)
         {
+            MoveTodayOn();
             return Task.CompletedTask;
         }
         if (!isReturn)
@@ -129,6 +130,21 @@ public sealed partial class CalendarViewModel : ObservableObject
             SetQuietly(() => SelectedLibrary = AllLibraries);
         }
         return LoadAsync();
+    }
+
+    // A week kept from an earlier visit: past, today and future go by the date now, so a return after midnight moves TODAY on.
+    private void MoveTodayOn()
+    {
+        var today = Today;
+        for (int i = 0; i < Days.Count; i++)
+        {
+            var day = Days[i];
+            var when = day.Date < today ? CalendarDayTime.Past : day.Date == today ? CalendarDayTime.Today : CalendarDayTime.Future;
+            if (when != day.When)
+            {
+                Days[i] = day with { When = when };
+            }
+        }
     }
 
     [RelayCommand]
@@ -309,18 +325,25 @@ public sealed partial class CalendarViewModel : ObservableObject
     {
         string subtitle = CalendarText.Subtitle(airing);
         string code = CalendarText.Code(airing);
+        string? time = CalendarText.AirTime(airing, zone);
+        string? badge = CalendarText.Badge(airing.Badges);
         return new CalendarAiring(airing.ContentId, airing.Title, OpenCommand)
         {
             Code = code,
-            Time = CalendarText.AirTime(airing, zone),
-            Badge = CalendarText.Badge(airing.Badges),
+            Time = time,
+            Badge = badge,
             BadgeKind = CalendarText.BadgeKind(airing.Badges),
             IsWatched = airing.Watched,
             ImageUrl = ArtworkUrl.Resolve(server, airing.PosterUrl),
             ImageThumbhash = airing.PosterThumbhash,
             ToolTip = subtitle != code ? subtitle : null,
-            // As the calendar's cards were named before the grid: the title, then the episode in the web's capitals.
-            AccessibleName = subtitle.Length > 0 ? $"{airing.Title}, {AppText.Upper(subtitle)}" : airing.Title,
+            // The title, the episode in the web's capitals, then what the card shows over its picture: the badge, the time and
+            // whether it is watched, which its parts do not say themselves.
+            AccessibleName = string.Join(", ", new[]
+            {
+                airing.Title, subtitle.Length > 0 ? AppText.Upper(subtitle) : "", badge, time,
+                airing.Watched ? AppText.Get("web.item.card.watched") : "",
+            }.Where(part => !string.IsNullOrEmpty(part))),
         };
     }
 

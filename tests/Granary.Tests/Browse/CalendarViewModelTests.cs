@@ -117,15 +117,15 @@ public sealed class CalendarViewModelTests
         Assert.Equal(new Uri("https://s3.example.test/severance.jpg"), premiere.ImageUrl);
         Assert.Equal("1QcSHQRnh493V4dIh4eXh1h4kJUI", premiere.ImageThumbhash);
         Assert.False(premiere.IsWatched);
-        // Screen readers name a card as before the grid: the title, then the episode in the web's capitals.
-        Assert.Equal("Severance, S2 · E1 - HELLO, MS. COBEL", premiere.AccessibleName);
+        // Screen readers hear the title, the episode in the web's capitals, the badge, the time and whether it is watched.
+        Assert.Equal($"Severance, S2 · E1 - HELLO, MS. COBEL, NEW SEASON, {premiere.Time}", premiere.AccessibleName);
         var movie = aired[1].Airings[0];
         Assert.Equal("Movie", movie.Code);
         Assert.Null(movie.ToolTip);
         Assert.Equal(CalendarBadgeKind.None, movie.BadgeKind);
         Assert.Equal(DateText.Time(new DateTime(2026, 1, 1, 20, 15, 0)), movie.Time);
         Assert.True(movie.IsWatched);
-        Assert.Equal("Dune: Part Three, MOVIE", movie.AccessibleName);
+        Assert.Equal($"Dune: Part Three, MOVIE, {movie.Time}, Watched", movie.AccessibleName);
     }
 
     [Fact]
@@ -389,6 +389,29 @@ public sealed class CalendarViewModelTests
         Assert.Equal(DateText.Time(new DateTime(2026, 1, 1, 20, 0, 0)), page.Days[0].Airings[0].Time);
     }
 
+    // Back on a week loaded yesterday: today moves on without reading the week again.
+    [Fact]
+    public async Task BackAfterMidnight_MovesTodayOn_WithoutReadingTheWeekAgain()
+    {
+        var berlin = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+        var clock = new ZoneClock(new DateTimeOffset(2026, 10, 26, 10, 0, 0, TimeSpan.Zero), berlin);
+        _harness.Answer(CalendarPath, """
+            { "events": [ { "date": "2026-10-28", "items": [ { "content_id": "movie:m", "type": "movie", "title": "M", "air_date": "2026-10-28",
+              "local_air_date": "2026-10-28", "air_at": "2026-10-28T19:00:00Z", "badges": [], "watched": false } ] } ] }
+            """);
+        var page = new CalendarViewModel(_harness.Session, new CalendarApi(_harness.Silo.Http), _sidebar, _harness.Navigation, clock,
+            _harness.Logs.For<CalendarViewModel>());
+        await page.ActivateAsync(isReturn: false);
+        Assert.Equal(CalendarDayTime.Today, page.Days[0].When);
+        int reads = _harness.Silo.Sent.Count(r => r.Uri.AbsolutePath.EndsWith(CalendarPath, StringComparison.Ordinal));
+
+        clock.Now = new DateTimeOffset(2026, 10, 27, 10, 0, 0, TimeSpan.Zero);
+        await page.ActivateAsync(isReturn: true);
+
+        Assert.Equal([CalendarDayTime.Past, CalendarDayTime.Today, CalendarDayTime.Future], page.Days.Take(3).Select(d => d.When));
+        Assert.Equal(reads, _harness.Silo.Sent.Count(r => r.Uri.AbsolutePath.EndsWith(CalendarPath, StringComparison.Ordinal)));
+    }
+
     [Theory]
     [InlineData(3, "Etc/GMT-3")]
     [InlineData(-5, "Etc/GMT+5")]
@@ -450,7 +473,9 @@ public sealed class CalendarViewModelTests
     /// <summary>A clock standing still in a zone of the test's choosing.</summary>
     private sealed class ZoneClock(DateTimeOffset now, TimeZoneInfo zone) : TimeProvider
     {
-        public override DateTimeOffset GetUtcNow() => now;
+        public DateTimeOffset Now { get; set; } = now;
+
+        public override DateTimeOffset GetUtcNow() => Now;
 
         public override TimeZoneInfo LocalTimeZone => zone;
     }

@@ -56,8 +56,8 @@ public sealed partial class CalendarAiringCard : UserControl
         _decodedWidth = 0;
         BlurImage.Source = Thumbhashes.Get(airing?.ImageThumbhash);
         TitleText.Text = airing?.Title ?? "";
-        CodeText.Text = airing?.Code ?? "";
-        CodeText.Visibility = Visible(airing?.HasCode == true);
+        // A card without a code keeps the code's line, so cards laid out at the first one's height never cut a later code off.
+        CodeText.Text = airing?.HasCode == true ? airing.Code : " ";
         TimeText.Text = airing?.Time ?? "";
         TimeChip.Visibility = Visible(airing?.HasTime == true);
         WatchedMark.Visibility = Visible(airing?.IsWatched == true);
