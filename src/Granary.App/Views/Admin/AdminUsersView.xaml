@@ -248,9 +248,16 @@
                         <StackPanel Grid.Row="1" Spacing="6">
                             <PasswordBox Header="{x:Bind t:AppText.Get('web.admin.users.list.create.password')}"
                                          Password="{x:Bind NewUser.Password, Mode=TwoWay}" />
-                            <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind NewUser.RequirePasswordChange, Mode=TwoWay}"
-                                          IsEnabled="{x:Bind NewUser.CanRequireChange, Mode=OneWay}" OnContent="" OffContent=""
-                                          Header="{x:Bind t:AppText.Get('web.admin.users.list.create.requirePasswordChange')}" />
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.requirePasswordChange')}" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                <ToggleSwitch Grid.Column="1" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind NewUser.RequirePasswordChange, Mode=TwoWay}"
+                                              IsEnabled="{x:Bind NewUser.CanRequireChange, Mode=OneWay}"
+                                              AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.create.requirePasswordChange')}" />
+                            </Grid>
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6">
                             <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.role')}" FontSize="13" />
@@ -267,7 +274,7 @@
                                AutomationProperties.HeadingLevel="Level3" />
                     <StackPanel Spacing="6">
                         <ComboBox Header="{x:Bind t:AppText.Get('web.admin.users.list.create.group')}" Style="{StaticResource SiloSettingsComboBoxStyle}"
-                                  HorizontalAlignment="Stretch" ItemsSource="{x:Bind NewUser.GroupChoices, Mode=OneWay}"
+                                  Width="Auto" HorizontalAlignment="Stretch" ItemsSource="{x:Bind NewUser.GroupChoices, Mode=OneWay}"
                                   SelectedItem="{x:Bind NewUser.SelectedGroupChoice, Mode=TwoWay}" IsEnabled="{x:Bind NewUser.CanPickGroup, Mode=OneWay}" />
                         <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.create.adminNoGroups')}" Style="{StaticResource AdminHintTextStyle}"
                                    Visibility="{x:Bind NewUser.IsGroupHintShown, Mode=OneWay}" />

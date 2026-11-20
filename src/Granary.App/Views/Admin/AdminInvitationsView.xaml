@@ -243,7 +243,7 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <ComboBox Header="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.accessGroup')}" Style="{StaticResource SiloSettingsComboBoxStyle}"
-                                      HorizontalAlignment="Stretch" VerticalAlignment="Top" ItemsSource="{x:Bind Form.GroupChoices, Mode=OneWay}"
+                                      Width="Auto" HorizontalAlignment="Stretch" VerticalAlignment="Top" ItemsSource="{x:Bind Form.GroupChoices, Mode=OneWay}"
                                       SelectedItem="{x:Bind Form.SelectedGroup, Mode=TwoWay}" IsEnabled="{x:Bind Form.CanPickGroup, Mode=OneWay}" />
                             <StackPanel Grid.Column="1" Spacing="6">
                                 <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.role')}" FontSize="13" />
