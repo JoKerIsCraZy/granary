@@ -46,6 +46,29 @@
                 </Border>
             </DataTemplate>
 
+            <!--
+                The same card in half a row: the web's row wraps there (flex-wrap; the name at least 128 px, the menu at least
+                160), so the name and line sit on top and the menu below them on the left (gap-y-2).
+            -->
+            <DataTemplate x:Key="SwitchCardTemplate" x:DataType="admin:AdminPolicySwitchField">
+                <Border Style="{StaticResource AdminFieldCardStyle}">
+                    <StackPanel Spacing="8">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{x:Bind Label}" Style="{StaticResource AdminFieldLabelStyle}" />
+                            <TextBlock Text="{x:Bind Description}" Style="{StaticResource AdminHintTextStyle}" Visibility="{x:Bind HasDescription}" />
+                        </StackPanel>
+                        <ComboBox Style="{StaticResource AdminSelectStyle}" MinWidth="160" ItemsSource="{x:Bind Options}"
+                                  SelectedIndex="{x:Bind SelectedIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind Label}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="admin:AdminPolicyOption">
+                                    <TextBlock Text="{x:Bind Text, Mode=OneWay}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+
             <DataTemplate x:Key="LimitFieldTemplate" x:DataType="admin:AdminPolicyLimitField">
                 <StackPanel Spacing="4">
                     <Grid ColumnSpacing="8">
@@ -61,7 +84,7 @@
                                       AutomationProperties.Name="{x:Bind local:AdminPolicyFieldsView.OverrideName(Label)}" />
                     </Grid>
                     <Grid Visibility="{x:Bind IsInherited, Mode=OneWay}">
-                        <Rectangle Style="{StaticResource AdminDashedBoxStyle}" />
+                        <Rectangle Style="{StaticResource AdminDashedBoxStyle}" StrokeDashArray="4,3" />
                         <TextBlock Text="{x:Bind DefaultText, Mode=OneWay}" Style="{StaticResource AdminDashedTextStyle}" />
                     </Grid>
                     <StackPanel Spacing="4" Visibility="{x:Bind IsOverridden, Mode=OneWay}">
@@ -87,7 +110,7 @@
                                       AutomationProperties.Name="{x:Bind local:AdminPolicyFieldsView.OverrideName(Label)}" />
                     </Grid>
                     <Grid Visibility="{x:Bind IsInherited, Mode=OneWay}">
-                        <Rectangle Style="{StaticResource AdminDashedBoxStyle}" />
+                        <Rectangle Style="{StaticResource AdminDashedBoxStyle}" StrokeDashArray="4,3" />
                         <TextBlock Text="{x:Bind DefaultText, Mode=OneWay}" Style="{StaticResource AdminDashedTextStyle}" />
                     </Grid>
                     <StackPanel Spacing="4" Visibility="{x:Bind IsOverridden, Mode=OneWay}">
@@ -186,9 +209,9 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <ContentControl Content="{x:Bind Policy.Downloads, Mode=OneWay}" ContentTemplate="{StaticResource SwitchRowTemplate}" IsTabStop="False"
+                <ContentControl Content="{x:Bind Policy.Downloads, Mode=OneWay}" ContentTemplate="{StaticResource SwitchCardTemplate}" IsTabStop="False"
                                 HorizontalContentAlignment="Stretch" />
-                <ContentControl Grid.Column="1" Content="{x:Bind Policy.DownloadTranscodes, Mode=OneWay}" ContentTemplate="{StaticResource SwitchRowTemplate}"
+                <ContentControl Grid.Column="1" Content="{x:Bind Policy.DownloadTranscodes, Mode=OneWay}" ContentTemplate="{StaticResource SwitchCardTemplate}"
                                 IsTabStop="False" HorizontalContentAlignment="Stretch" />
             </Grid>
             <ContentControl Content="{x:Bind Policy.Requests, Mode=OneWay}" ContentTemplate="{StaticResource SwitchRowTemplate}" IsTabStop="False"
@@ -221,9 +244,9 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <ContentControl Content="{x:Bind Policy.VideoTranscoding, Mode=OneWay}" ContentTemplate="{StaticResource SwitchRowTemplate}" IsTabStop="False"
+                <ContentControl Content="{x:Bind Policy.VideoTranscoding, Mode=OneWay}" ContentTemplate="{StaticResource SwitchCardTemplate}" IsTabStop="False"
                                 HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
-                <ContentControl Grid.Column="1" Content="{x:Bind Policy.AudioTranscoding, Mode=OneWay}" ContentTemplate="{StaticResource SwitchRowTemplate}"
+                <ContentControl Grid.Column="1" Content="{x:Bind Policy.AudioTranscoding, Mode=OneWay}" ContentTemplate="{StaticResource SwitchCardTemplate}"
                                 IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
             </Grid>
             <StackPanel Spacing="4">

@@ -29,8 +29,8 @@ public sealed partial class AdminInvitationsView : UserControl
         ViewModel = App.Services.GetRequiredService<AdminInvitationsViewModel>();
         Form = App.Services.GetRequiredService<AdminNewInvitationViewModel>();
         InitializeComponent();
-        AdminDialogs.Dress(InviteDialog, AdminDialogs.Default);
-        AdminDialogs.Dress(ResendDialog, AdminDialogs.Default);
+        AdminDialogs.Dress(InviteDialog, AdminDialogs.Default, InviteRoot);
+        AdminDialogs.Dress(ResendDialog, AdminDialogs.Default, ResendRoot);
         // The web's notice links to its Email settings, which open in the server's web app.
         AdminInlines.Fill(EmailSetupText, "web.admin.settings.invitations.create.emailSetup",
             () => AdminWebLinks.Open(ViewModel.Actor?.Server, AdminWebLinks.EmailSettings));

@@ -31,7 +31,8 @@ public sealed partial class AdminUsersView : UserControl
         ViewModel = App.Services.GetRequiredService<AdminUsersViewModel>();
         NewUser = App.Services.GetRequiredService<AdminNewUserViewModel>();
         InitializeComponent();
-        AdminDialogs.Dress(CreateDialog, AdminDialogs.Wide);
+        // The body holds 440 px while the window has room; the title, checkbox, tabs and Save take about 220 more.
+        AdminDialogs.Dress(CreateDialog, AdminDialogs.Wide, CreateForm, CreateBody, bodyHeight: 440, reserve: 220);
         foreach (int size in AdminUsersViewModel.PageSizes)
         {
             PageSizeBox.Items.Add(new ComboBoxItem { Content = ViewModel.PageSizeText(size), Tag = size });
@@ -381,6 +382,9 @@ public sealed partial class AdminUsersView : UserControl
     }
 
     private void OnCreateClosing(ContentDialog sender, ContentDialogClosingEventArgs args) => args.Cancel = _creating;
+
+    // The password is sent once and kept nowhere else: closed without saving, it is dropped too.
+    private void OnCreateClosed(ContentDialog sender, ContentDialogClosedEventArgs args) => NewUser.Password = "";
 
     private static void Log(Exception ex, string message) =>
         App.Services.GetRequiredService<ILogger<AdminUsersView>>().LogError(ex, "{Message}", message);

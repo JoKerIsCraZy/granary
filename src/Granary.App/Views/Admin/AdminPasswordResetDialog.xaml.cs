@@ -21,7 +21,7 @@ public sealed partial class AdminPasswordResetDialog : ContentDialog
     {
         ViewModel = App.Services.GetRequiredService<AdminPasswordResetViewModel>();
         InitializeComponent();
-        AdminDialogs.Dress(this, AdminDialogs.Default);
+        AdminDialogs.Dress(this, AdminDialogs.Default, ResetRoot);
     }
 
     public AdminPasswordResetViewModel ViewModel { get; }

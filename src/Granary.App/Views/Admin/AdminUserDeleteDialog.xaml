@@ -21,12 +21,20 @@
         </ResourceDictionary>
     </ContentDialog.Resources>
 
-    <StackPanel Width="462" Spacing="16">
+    <!-- The title and the footer stay; only the body between them scrolls, its scrollbar in a gutter of its own. -->
+    <Grid x:Name="DeleteRoot" Width="478" Padding="0,0,16,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
         <!-- AlertDialogHeader: the title (text-lg semibold) and the description (muted text-sm), gap-2. -->
-        <StackPanel Spacing="8">
+        <StackPanel Spacing="8" Margin="0,0,0,16">
             <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource AdminDialogTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
             <TextBlock Text="{x:Bind admin:AdminUserDeleteViewModel.Description}" Style="{StaticResource AdminDialogDescriptionStyle}" />
         </StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-16,0" Padding="0,0,16,0">
+        <StackPanel Spacing="16">
         <!-- The info note: rounded-xl, px-3 py-2.5, the info blue at 25 % and 5 %, muted text-sm. -->
         <Border Visibility="{x:Bind ViewModel.OffersDisable, Mode=OneWay}" Padding="12,10" CornerRadius="16" BorderThickness="1"
                 BorderBrush="{StaticResource AdminInfoBorderBrush}" Background="{StaticResource AdminInfoBackgroundBrush}">
@@ -48,8 +56,10 @@
                    Visibility="{x:Bind Shown(ViewModel.Error), Mode=OneWay}" />
         <Button Visibility="{x:Bind ViewModel.HasConflict, Mode=OneWay}" Style="{StaticResource AdminPrimaryButtonStyle}" Click="OnReloadClick"
                 Content="{x:Bind t:AppText.Get('web.admin.users.deleteDialog.reload')}" />
+        </StackPanel>
+        </ScrollViewer>
         <!-- AlertDialogFooter: gap-2, on the right. -->
-        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="2" Margin="0,16,0,0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
             <Button Style="{StaticResource AdminGhostButtonStyle}" Click="OnCancelClick" IsEnabled="{x:Bind Not(ViewModel.IsBusy), Mode=OneWay}"
                     Content="{x:Bind t:AppText.Get('common.cancel')}" />
             <Button Style="{StaticResource AdminOutlineButtonStyle}" Click="OnDisableClick" Visibility="{x:Bind ViewModel.OffersDisable, Mode=OneWay}"
@@ -57,5 +67,5 @@
             <Button Style="{StaticResource AdminDestructiveButtonStyle}" Click="OnDeleteClick" IsEnabled="{x:Bind ViewModel.CanDelete, Mode=OneWay}"
                     Content="{x:Bind t:AppText.Get('web.admin.users.deleteDialog.confirm')}" />
         </StackPanel>
-    </StackPanel>
+    </Grid>
 </ContentDialog>

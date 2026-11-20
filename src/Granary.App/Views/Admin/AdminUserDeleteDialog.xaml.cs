@@ -20,7 +20,7 @@ public sealed partial class AdminUserDeleteDialog : ContentDialog
     {
         ViewModel = App.Services.GetRequiredService<AdminUserDeleteViewModel>();
         InitializeComponent();
-        AdminDialogs.Dress(this, AdminDialogs.Default);
+        AdminDialogs.Dress(this, AdminDialogs.Default, DeleteRoot);
     }
 
     public AdminUserDeleteViewModel ViewModel { get; }

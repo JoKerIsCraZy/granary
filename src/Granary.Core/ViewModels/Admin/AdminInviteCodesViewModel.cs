@@ -22,8 +22,12 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
 {
     private string? _cursor;
     private AdminActor? _actor;
-    // The tab's reads while it shows; Deactivate cancels them.
+    // The tab's reads while it shows; Deactivate cancels them. Writes are never cancelled: one sent may have happened.
     private CancellationTokenSource _load = new();
+    // The list as it is read now; a restart replaces it, so a page of the one before is dropped.
+    private CancellationTokenSource _list = new();
+    // Counts the list's reads: only the latest one's answer and end are taken.
+    private int _reads;
 
     public ObservableCollection<AdminInviteCodeRow> Rows { get; } = [];
 
@@ -131,20 +135,26 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
     {
         _load.Cancel();
         TopUpRow = null;
+        NewCode = NewLabel = "";
     }
 
     /// <summary>The first page again, as the web's list after a change.</summary>
     [RelayCommand]
     public async Task RestartAsync()
     {
+        _list.Cancel();
+        _list.Dispose();
+        _list = CancellationTokenSource.CreateLinkedTokenSource(_load.Token);
+        _reads++;
+        IsLoading = false;
         Rows.Clear();
         _cursor = null;
         HasMore = false;
-        await ReadPageAsync(_load.Token);
+        await ReadPageAsync(_list.Token);
     }
 
     [RelayCommand(CanExecute = nameof(CanLoadMore))]
-    private Task LoadMoreAsync() => ReadPageAsync(_load.Token);
+    private Task LoadMoreAsync() => ReadPageAsync(_list.Token);
 
     private bool CanLoadMore() => HasMore && !IsLoading;
 
@@ -178,7 +188,7 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
         FormError = "";
         try
         {
-            await codes.CreateAsync(actor, new AdminInviteCodeDraft { Code = code, Label = NewLabel, MaxUses = max }, _load.Token);
+            await codes.CreateAsync(actor, new AdminInviteCodeDraft { Code = code, Label = NewLabel, MaxUses = max });
             Say("web.admin.settings.hooks.inviteCodes.created");
             await RestartAsync();
             return true;
@@ -204,7 +214,7 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
         }
         try
         {
-            await codes.SetEnabledAsync(actor, row.Id, !row.Enabled, _load.Token);
+            await codes.SetEnabledAsync(actor, row.Id, !row.Enabled);
             Message = "";
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex))
@@ -240,7 +250,7 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
         bool done = false;
         try
         {
-            await codes.TopUpAsync(actor, row.Id, amount, _load.Token);
+            await codes.TopUpAsync(actor, row.Id, amount);
             Say("web.admin.settings.hooks.inviteCodes.toppedUp");
             done = true;
         }
@@ -273,7 +283,7 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
         }
         try
         {
-            await codes.DeleteAsync(actor, row.Id, _load.Token);
+            await codes.DeleteAsync(actor, row.Id);
             Say("web.admin.settings.hooks.inviteCodes.deleted");
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex))
@@ -336,12 +346,13 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
         {
             return;
         }
+        int read = _reads;
         IsLoading = true;
         LoadFailed = false;
         try
         {
             var page = await codes.ListPageAsync(actor, _cursor, cancellationToken);
-            if (cancellationToken.IsCancellationRequested)
+            if (cancellationToken.IsCancellationRequested || read != _reads)
             {
                 return;
             }
@@ -356,15 +367,23 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
         {
             // The tab left.
         }
-        catch (Exception ex) when (AdminFailures.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex) && read == _reads)
         {
             logger.LogWarning(ex, "Could not read the invite codes");
             LoadFailed = true;
         }
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
+        {
+            // A newer read took over.
+            logger.LogDebug(ex, "An earlier read of the invite codes ended");
+        }
         finally
         {
-            IsLoading = false;
-            OnPropertyChanged(nameof(IsEmpty));
+            if (read == _reads)
+            {
+                IsLoading = false;
+                OnPropertyChanged(nameof(IsEmpty));
+            }
         }
     }
 }

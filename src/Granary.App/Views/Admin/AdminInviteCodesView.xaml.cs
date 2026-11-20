@@ -28,8 +28,8 @@ public sealed partial class AdminInviteCodesView : UserControl
     {
         ViewModel = App.Services.GetRequiredService<AdminInviteCodesViewModel>();
         InitializeComponent();
-        AdminDialogs.Dress(CreateDialog, AdminDialogs.Default);
-        AdminDialogs.Dress(TopUpDialog, AdminDialogs.Default);
+        AdminDialogs.Dress(CreateDialog, AdminDialogs.Default, CreateRoot);
+        AdminDialogs.Dress(TopUpDialog, AdminDialogs.Default, TopUpRoot);
         AdminInlines.Fill(SignupsOnText, "web.admin.settings.inviteCodes.signupsOn", OpenSignInSettings);
         AdminInlines.Fill(SignupsOffText, "web.admin.settings.inviteCodes.signupsOff", OpenSignInSettings);
     }
@@ -79,8 +79,14 @@ public sealed partial class AdminInviteCodesView : UserControl
     // The switch flips the code; a switch set to the code's own state (as the row is drawn) does nothing.
     private async void OnToggled(object sender, RoutedEventArgs e)
     {
-        if (sender is not ToggleSwitch toggle || RowOf(sender) is not { } row || toggle.IsOn == row.Enabled || _busy)
+        if (sender is not ToggleSwitch toggle || RowOf(sender) is not { } row || toggle.IsOn == row.Enabled)
         {
+            return;
+        }
+        if (_busy)
+        {
+            // Another change runs: the switch goes back to the code's state, which this handler then leaves alone.
+            toggle.IsOn = row.Enabled;
             return;
         }
         _busy = true;

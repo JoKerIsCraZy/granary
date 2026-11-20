@@ -152,8 +152,13 @@
 
         <!-- Create Invite Code: Code, Label, Max uses (space-y-4, each space-y-2) and the full-width Create. -->
         <ContentDialog x:Name="CreateDialog" Closing="OnDialogClosing">
-            <StackPanel Width="462" Spacing="16" KeyDown="OnCreateKeyDown">
-                <Grid ColumnSpacing="12">
+            <Grid x:Name="CreateRoot" Width="478" Padding="0,0,16,0" KeyDown="OnCreateKeyDown">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid ColumnSpacing="12" Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -165,17 +170,19 @@
                         <FontIcon Glyph="&#xE711;" FontSize="14" />
                     </Button>
                 </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-16,0" Padding="0,0,16,0">
+                <StackPanel Spacing="16">
                 <TextBlock Text="{x:Bind ViewModel.FormError, Mode=OneWay}" Style="{StaticResource AdminErrorTextStyle}"
                            Visibility="{x:Bind local:AdminUsersView.Shown(ViewModel.FormError), Mode=OneWay}" />
                 <StackPanel Spacing="8">
                     <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.code')}" Style="{StaticResource AdminFieldLabelStyle}" />
                     <TextBox Style="{StaticResource AdminTextBoxStyle}" Text="{x:Bind ViewModel.NewCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             CharacterCasing="Upper" PlaceholderText="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.codePlaceholder')}"
+                             CharacterCasing="Upper" MaxLength="128" PlaceholderText="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.codePlaceholder')}"
                              AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.code')}" />
                 </StackPanel>
                 <StackPanel Spacing="8">
                     <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.label')}" Style="{StaticResource AdminFieldLabelStyle}" />
-                    <TextBox Style="{StaticResource AdminTextBoxStyle}" Text="{x:Bind ViewModel.NewLabel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    <TextBox Style="{StaticResource AdminTextBoxStyle}" MaxLength="512" Text="{x:Bind ViewModel.NewLabel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              PlaceholderText="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.labelPlaceholder')}"
                              AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.label')}" />
                 </StackPanel>
@@ -184,15 +191,22 @@
                     <TextBox Style="{StaticResource AdminTextBoxStyle}" Text="{x:Bind ViewModel.NewMaxUses, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              InputScope="Number" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.form.maxUses')}" />
                 </StackPanel>
-                <Button Style="{StaticResource AdminPrimaryButtonStyle}" HorizontalAlignment="Stretch" Click="OnCreateSubmitClick"
+                </StackPanel>
+                </ScrollViewer>
+                <Button Grid.Row="2" Margin="0,16,0,0" Style="{StaticResource AdminPrimaryButtonStyle}" HorizontalAlignment="Stretch" Click="OnCreateSubmitClick"
                         Content="{x:Bind ViewModel.CreateText, Mode=OneWay}" IsEnabled="{x:Bind CanCreate(ViewModel.IsCreating, ViewModel.HasNewCode), Mode=OneWay}" />
-            </StackPanel>
+            </Grid>
         </ContentDialog>
 
         <!-- Top Up Invite Code: what it has, Additional uses and the full-width Add Uses. -->
         <ContentDialog x:Name="TopUpDialog" Closing="OnDialogClosing">
-            <StackPanel Width="462" Spacing="16" KeyDown="OnTopUpKeyDown">
-                <Grid ColumnSpacing="12">
+            <Grid x:Name="TopUpRoot" Width="478" Padding="0,0,16,0" KeyDown="OnTopUpKeyDown">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid ColumnSpacing="12" Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -207,6 +221,8 @@
                         <FontIcon Glyph="&#xE711;" FontSize="14" />
                     </Button>
                 </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-16,0" Padding="0,0,16,0">
+                <StackPanel Spacing="16">
                 <TextBlock Text="{x:Bind ViewModel.FormError, Mode=OneWay}" Style="{StaticResource AdminErrorTextStyle}"
                            Visibility="{x:Bind local:AdminUsersView.Shown(ViewModel.FormError), Mode=OneWay}" />
                 <StackPanel Spacing="8">
@@ -214,9 +230,11 @@
                     <TextBox Style="{StaticResource AdminTextBoxStyle}" Text="{x:Bind ViewModel.AdditionalUses, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              InputScope="Number" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.topUpForm.additionalUses')}" />
                 </StackPanel>
-                <Button Style="{StaticResource AdminPrimaryButtonStyle}" HorizontalAlignment="Stretch" Click="OnTopUpSubmitClick"
+                </StackPanel>
+                </ScrollViewer>
+                <Button Grid.Row="2" Margin="0,16,0,0" Style="{StaticResource AdminPrimaryButtonStyle}" HorizontalAlignment="Stretch" Click="OnTopUpSubmitClick"
                         Content="{x:Bind ViewModel.TopUpText, Mode=OneWay}" IsEnabled="{x:Bind local:AdminUsersView.Not(ViewModel.IsToppingUp), Mode=OneWay}" />
-            </StackPanel>
+            </Grid>
         </ContentDialog>
     </Grid>
 </UserControl>

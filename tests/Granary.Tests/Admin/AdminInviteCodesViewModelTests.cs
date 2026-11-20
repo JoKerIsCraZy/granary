@@ -77,6 +77,34 @@ public sealed class AdminInviteCodesViewModelTests
     }
 
     [Fact]
+    public async Task LeavingTheTab_DoesNotCancelAWrite()
+    {
+        var tab = Tab();
+        await tab.OpenAsync();
+        tab.StartCreate();
+        var started = new TaskCompletionSource();
+        var answer = new TaskCompletionSource<HttpResponseMessage>();
+        _silo.Map("api/v2/admin/invite-codes", (request, _) =>
+        {
+            if (request.Method == HttpMethod.Get)
+            {
+                return Task.FromResult(BrowseFakeSilo.Json(Page1));
+            }
+            started.TrySetResult();
+            return answer.Task;
+        });
+
+        var create = tab.CreateAsync();
+        await started.Task;
+        tab.Deactivate();
+        answer.SetResult(BrowseFakeSilo.Json("""{ "id": "3", "code": "X", "label": "", "max_uses": 1, "use_count": 0, "enabled": true }""",
+            HttpStatusCode.Created));
+
+        Assert.True(await create);
+        Assert.Equal("Invite code created", tab.Message);
+    }
+
+    [Fact]
     public async Task AMaxUsesNotPositive_IsNotSent()
     {
         var tab = Tab();

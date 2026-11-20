@@ -287,11 +287,14 @@
         <Setter Property="Padding" Value="12,8" />
     </Style>
 
-    <!-- The default a field shows while not overridden: the web's dashed box, rounded-md, px-3 py-2, text-sm muted. -->
+    <!--
+        The default a field shows while not overridden: the web's dashed box, rounded-md, px-3 py-2, text-sm muted. Each
+        Rectangle sets StrokeDashArray="4,3" itself: a DoubleCollection in a Style is one shared instance, which only the
+        first box would draw.
+    -->
     <Style x:Key="AdminDashedBoxStyle" TargetType="Rectangle">
         <Setter Property="Stroke" Value="{StaticResource AdminCardBorderBrush}" />
         <Setter Property="StrokeThickness" Value="1" />
-        <Setter Property="StrokeDashArray" Value="4,3" />
         <Setter Property="RadiusX" Value="10" />
         <Setter Property="RadiusY" Value="10" />
     </Style>

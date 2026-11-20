@@ -180,9 +180,15 @@
             one time the server gives it.
         -->
         <ContentDialog x:Name="InviteDialog" Closing="OnInviteClosing">
-            <StackPanel Width="462" Spacing="16">
+            <!-- The title and the footer stay; only the body between them scrolls, its scrollbar in a gutter of its own. -->
+            <Grid x:Name="InviteRoot" Width="478" Padding="0,0,16,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <!-- DialogHeader: the title and its line (gap-2), the X top right. -->
-                <Grid ColumnSpacing="12">
+                <Grid ColumnSpacing="12" Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -198,29 +204,15 @@
                     </Button>
                 </Grid>
 
-                <!-- Made: what its delivery did (text-sm), the link in a muted box, the fine print, then Copy link and Done on the right. -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-16,0" Padding="0,0,16,0">
+                <StackPanel Spacing="16">
+                <!-- Made: what its delivery did (text-sm), the link in a muted box and the fine print; Copy link and Done below. -->
                 <StackPanel Spacing="16" Visibility="{x:Bind Form.HasResult, Mode=OneWay}">
                     <TextBlock Text="{x:Bind Form.ResultMessage, Mode=OneWay}" FontSize="14" TextWrapping="Wrap" />
                     <Border Background="{StaticResource SiloSurfaceRaisedBrush}" CornerRadius="10" Padding="10">
                         <TextBlock Text="{x:Bind Form.ClaimUrl, Mode=OneWay}" FontFamily="Consolas" FontSize="12" TextTrimming="CharacterEllipsis" />
                     </Border>
                     <TextBlock Text="{x:Bind Form.FinePrint, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}" />
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock x:Name="InviteCopyResult" Style="{StaticResource AdminHintTextStyle}" VerticalAlignment="Center" />
-                        <Button Grid.Column="1" Style="{StaticResource AdminOutlineButtonStyle}" Click="OnCopyInviteClick">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon Glyph="&#xE8C8;" FontSize="14" />
-                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.claimLink.copy')}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Grid.Column="2" Style="{StaticResource AdminPrimaryButtonStyle}" Click="OnInviteCloseClick"
-                                Content="{x:Bind t:AppText.Get('common.done')}" />
-                    </Grid>
                 </StackPanel>
 
                 <!-- The form. -->
@@ -397,8 +389,30 @@
                         </Grid>
                     </StackPanel>
 
+                </StackPanel>
+                </StackPanel>
+                </ScrollViewer>
+
+                <!-- Made: Copy link and Done on the right (ClaimLinkBox). -->
+                <Grid Grid.Row="2" ColumnSpacing="8" Margin="0,16,0,0" Visibility="{x:Bind Form.HasResult, Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="InviteCopyResult" Style="{StaticResource AdminHintTextStyle}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Style="{StaticResource AdminOutlineButtonStyle}" Click="OnCopyInviteClick">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE8C8;" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.claimLink.copy')}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="2" Style="{StaticResource AdminPrimaryButtonStyle}" Click="OnInviteCloseClick"
+                            Content="{x:Bind t:AppText.Get('common.done')}" />
+                </Grid>
                     <!-- The footer (pt-2): the expiry, muted text-xs, on the left; Cancel (ghost) and the submit on the right. -->
-                    <Grid ColumnSpacing="8" Padding="0,8,0,0">
+                    <Grid Grid.Row="2" ColumnSpacing="8" Margin="0,16,0,0" Padding="0,8,0,0"
+                          Visibility="{x:Bind local:AdminUsersView.Hidden(Form.HasResult), Mode=OneWay}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -411,14 +425,18 @@
                         <Button Grid.Column="2" Style="{StaticResource AdminPrimaryButtonStyle}" Click="OnInviteSubmitClick"
                                 IsEnabled="{x:Bind Form.CanSubmit, Mode=OneWay}" Content="{x:Bind Form.SubmitText, Mode=OneWay}" />
                     </Grid>
-                </StackPanel>
-            </StackPanel>
+            </Grid>
         </ContentDialog>
 
         <!-- A row's new link (InvitationsTab.tsx's resend dialog): the title, what its delivery did, the link, Copy link and Done. -->
         <ContentDialog x:Name="ResendDialog">
-            <StackPanel Width="462" Spacing="16">
-                <Grid ColumnSpacing="12">
+            <Grid x:Name="ResendRoot" Width="478" Padding="0,0,16,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid ColumnSpacing="12" Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -433,11 +451,15 @@
                         <FontIcon Glyph="&#xE711;" FontSize="14" />
                     </Button>
                 </Grid>
-                <Border Background="{StaticResource SiloSurfaceRaisedBrush}" CornerRadius="10" Padding="10">
-                    <TextBlock Text="{x:Bind ViewModel.ResentLink, Mode=OneWay}" FontFamily="Consolas" FontSize="12" TextTrimming="CharacterEllipsis" />
-                </Border>
-                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.resend.finePrint')}" Style="{StaticResource AdminHintTextStyle}" />
-                <Grid ColumnSpacing="8">
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-16,0" Padding="0,0,16,0">
+                    <StackPanel Spacing="16">
+                        <Border Background="{StaticResource SiloSurfaceRaisedBrush}" CornerRadius="10" Padding="10">
+                            <TextBlock Text="{x:Bind ViewModel.ResentLink, Mode=OneWay}" FontFamily="Consolas" FontSize="12" TextTrimming="CharacterEllipsis" />
+                        </Border>
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.resend.finePrint')}" Style="{StaticResource AdminHintTextStyle}" />
+                    </StackPanel>
+                </ScrollViewer>
+                <Grid Grid.Row="2" ColumnSpacing="8" Margin="0,16,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -452,7 +474,7 @@
                     </Button>
                     <Button Grid.Column="2" Style="{StaticResource AdminPrimaryButtonStyle}" Click="OnResendCloseClick" Content="{x:Bind t:AppText.Get('common.done')}" />
                 </Grid>
-            </StackPanel>
+            </Grid>
         </ContentDialog>
     </Grid>
 </UserControl>

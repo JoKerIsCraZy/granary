@@ -265,14 +265,14 @@
             "Create a default profile" checkbox, the line tabs Account, Access and Limits over a body that scrolls, and one
             full-width Save under a hairline. No Cancel: the X and Esc close it.
         -->
-        <ContentDialog x:Name="CreateDialog" Closing="OnCreateClosing">
-            <Grid x:Name="CreateForm" Width="622" RowSpacing="0" KeyDown="OnCreateKeyDown">
+        <ContentDialog x:Name="CreateDialog" Closing="OnCreateClosing" Closed="OnCreateClosed">
+            <Grid x:Name="CreateForm" Width="638" Padding="0,0,16,0" KeyDown="OnCreateKeyDown">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
@@ -314,8 +314,11 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- The tab's body scrolls (max-h-[70vh] on the form); a fixed height keeps the dialog from jumping between tabs. -->
-                <ScrollViewer Grid.Row="4" Height="440" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                <!--
+                    Only the tab's body scrolls (max-h-[70vh] on the form), its scrollbar in a 16 px gutter of its own. It keeps
+                    one height while the window has room, so the dialog does not change height between tabs (AdminDialogs).
+                -->
+                <ScrollViewer x:Name="CreateBody" Grid.Row="4" VerticalScrollBarVisibility="Auto" Margin="0,0,-16,0" Padding="0,0,16,0">
                     <Grid>
                         <!-- Account: Username | Email, Password (with the switch under it) | Role; grid gap-3, each field space-y-2. -->
                         <Grid ColumnSpacing="12" RowSpacing="12" VerticalAlignment="Top"
