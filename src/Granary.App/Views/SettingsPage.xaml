@@ -142,6 +142,15 @@
                         <TextBlock x:Name="AccountGroup" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                                    CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
                         <ListView x:Name="AccountPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False">
+                            <!-- The household's profiles: for its primary profile only, as the web's RequirePrimaryOrAdmin. -->
+                            <ListViewItem Tag="profiles" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.profiles.title')}"
+                                          Visibility="{x:Bind ShowsProfiles(Sidebar.Profile), Mode=OneWay}"
+                                          controls:SearchKeywords.Terms="household, add profile, new profile, pin, kids, parental controls, avatar">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE716;" FontSize="14" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.profiles.title')}" FontSize="14" />
+                                </StackPanel>
+                            </ListViewItem>
                             <ListViewItem Tag="devices" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.devices.title')}"
                                           controls:SearchKeywords.Terms="tv, phone, tablet, browser, this device, forget device, sessions, sign out">
                                 <StackPanel Orientation="Horizontal" Spacing="12">

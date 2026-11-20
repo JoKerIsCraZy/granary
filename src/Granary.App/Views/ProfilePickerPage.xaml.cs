@@ -88,8 +88,41 @@ public sealed partial class ProfilePickerPage : Page, IOwnFocus
                 // Digits typed during the check would otherwise start the next attempt.
                 PinBox.IsEnabled = !ViewModel.IsVerifyingPin;
                 break;
+            case nameof(ProfilePickerViewModel.Editor) when ViewModel.Editor is { } editor:
+                // After the PIN dialog has gone: two dialogs cannot be open at once.
+                DispatcherQueue.TryEnqueue(() => ShowEditor(editor));
+                break;
         }
     }
+
+    // Add profile's editor; closing it lets the primary profile's proof go with it.
+    private async void ShowEditor(Granary.Core.ViewModels.Profiles.ProfileEditorViewModel editor)
+    {
+        try
+        {
+            while (_isPinDialogShown)
+            {
+                await Task.Delay(50);
+            }
+            var saved = ReferenceEquals(ViewModel.Editor, editor) && XamlRoot is { } root
+                ? await Controls.ProfileEditorView.ShowAsync(editor, root)
+                : null;
+            if (ReferenceEquals(ViewModel.Editor, editor))
+            {
+                await ViewModel.CloseEditorAsync(saved);
+            }
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape.
+            App.Services.GetRequiredService<ILogger<ProfilePickerPage>>().LogWarning("The profile editor failed: {Error}", ex.GetType().Name);
+            await ViewModel.CloseEditorAsync(null);
+        }
+    }
+
+    /// <summary>The PIN prompt's line: why the primary profile's PIN is asked for Add profile, else what a PIN is.</summary>
+    public static string PinDescription(string addLine) =>
+        string.IsNullOrEmpty(addLine) ? Granary.Core.Texts.AppText.Get("granary.profiles.pin.description") : addLine;
 
     private async void ShowPinDialog()
     {

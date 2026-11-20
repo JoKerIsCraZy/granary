@@ -8087,6 +8087,18 @@
       "value": "右にスクロール"
     }
   ],
+  "web.common.ui.imageUpload.delete": [
+    {
+      "type": 0,
+      "value": "画像を削除"
+    }
+  ],
+  "web.common.ui.imageUpload.removeSelected": [
+    {
+      "type": 0,
+      "value": "選択したファイルを外す"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,

@@ -9376,6 +9376,18 @@
       "value": "Rolar para a direita"
     }
   ],
+  "web.common.ui.imageUpload.delete": [
+    {
+      "type": 0,
+      "value": "Excluir imagem"
+    }
+  ],
+  "web.common.ui.imageUpload.removeSelected": [
+    {
+      "type": 0,
+      "value": "Remover arquivo selecionado"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,

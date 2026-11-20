@@ -11160,6 +11160,18 @@
       "value": "التمرير لليمين"
     }
   ],
+  "web.common.ui.imageUpload.delete": [
+    {
+      "type": 0,
+      "value": "حذف الصورة"
+    }
+  ],
+  "web.common.ui.imageUpload.removeSelected": [
+    {
+      "type": 0,
+      "value": "إزالة الملف المحدد"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,

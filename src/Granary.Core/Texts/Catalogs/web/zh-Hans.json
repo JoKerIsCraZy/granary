@@ -8103,6 +8103,18 @@
       "value": "向右滚动"
     }
   ],
+  "web.common.ui.imageUpload.delete": [
+    {
+      "type": 0,
+      "value": "删除图片"
+    }
+  ],
+  "web.common.ui.imageUpload.removeSelected": [
+    {
+      "type": 0,
+      "value": "移除所选文件"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,

@@ -9364,6 +9364,18 @@
       "value": "Desplazar a la derecha"
     }
   ],
+  "web.common.ui.imageUpload.delete": [
+    {
+      "type": 0,
+      "value": "Eliminar imagen"
+    }
+  ],
+  "web.common.ui.imageUpload.removeSelected": [
+    {
+      "type": 0,
+      "value": "Quitar el archivo seleccionado"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,

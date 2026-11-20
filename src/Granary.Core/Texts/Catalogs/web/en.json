@@ -8768,6 +8768,18 @@
       "value": "Scroll right"
     }
   ],
+  "web.common.ui.imageUpload.delete": [
+    {
+      "type": 0,
+      "value": "Delete image"
+    }
+  ],
+  "web.common.ui.imageUpload.removeSelected": [
+    {
+      "type": 0,
+      "value": "Remove selected file"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
