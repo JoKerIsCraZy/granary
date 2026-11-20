@@ -21,6 +21,8 @@ public sealed class ServerAccentTests
 
     private static readonly string WordmarkUrl = ScriptedSilo.Base.AbsoluteUri.TrimEnd('/') + "/api/v2/branding/assets/wordmark?v=1.webp";
 
+    private static readonly string MarkUrl = ScriptedSilo.Base.AbsoluteUri.TrimEnd('/') + "/api/v2/branding/assets/mark?v=1.webp";
+
     private readonly LibraryHarness _harness = new();
     private readonly FakeLocalNetwork _network = new();
     private readonly InMemoryServerRegistry _registry = new();
@@ -164,6 +166,71 @@ public sealed class ServerAccentTests
         await accent.StartAsync();
 
         Assert.Equal(full, accent.Wordmark?.AbsoluteUri);
+    }
+
+    [Fact]
+    public async Task TheServersMark_IsItsAddressOnTheServer()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK,
+            """{ "server_name": "Elena's Silo", "mark_url": "/api/v2/branding/assets/mark?v=1.webp" }"""));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Equal(MarkUrl, accent.Mark?.AbsoluteUri);
+        Assert.Null(accent.Wordmark);
+    }
+
+    [Theory]
+    [InlineData("""{ "server_name": "Elena's Silo" }""")]
+    [InlineData("""{ "mark_url": "" }""")]
+    [InlineData("""{ "mark_url": "file:///C:/Windows/win.ini" }""")]
+    [InlineData("""{ "mark_url": "//elsewhere.example/mark.webp" }""")]
+    [InlineData("""{ "mark_url": "https://elsewhere.example/mark.webp" }""")]
+    public async Task NoMark_OrOneFromElsewhere_ShowsNone(string branding)
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, branding));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Null(accent.Mark);
+    }
+
+    [Fact]
+    public async Task AnotherServer_DoesNotKeepTheLastOnesMark_WhileItsOwnIsRead()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "mark_url": "/first.webp" }"""));
+        var accent = Create();
+        await accent.StartAsync();
+        Assert.NotNull(accent.Mark);
+        var held = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, () => held.Task);
+
+        _harness.Session.ActiveServer = _harness.Session.ActiveServer! with { Id = "another-server" };
+        _harness.Session.RaiseChanged();
+
+        Assert.Null(accent.Mark);
+        held.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{ "mark_url": "/second.webp" }""", System.Text.Encoding.UTF8, "application/json"),
+        });
+        await accent.Reading;
+        Assert.EndsWith("/second.webp", accent.Mark?.AbsoluteUri, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task NoServer_ShowsNoMark()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "mark_url": "/mark.webp" }"""));
+        var accent = Create();
+        await accent.StartAsync();
+
+        _harness.Session.ActiveServer = null;
+        _harness.Session.RaiseChanged();
+        await accent.Reading;
+
+        Assert.Null(accent.Mark);
     }
 
     [Fact]
@@ -495,6 +562,65 @@ public sealed class ServerAccentTests
 
         Assert.Same(AccentPalette.Default, accent.Palette);
         Assert.Null(accent.Wordmark);
+    }
+
+    [Fact]
+    public async Task TheRememberedMark_IsShownAtOnce_AndKeptWhileAReadFails()
+    {
+        Remember(new SavedBranding("#16a34a", WordmarkUrl, MarkUrl));
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError());
+        var accent = Create();
+
+        var reading = accent.StartAsync();
+
+        Assert.Equal(MarkUrl, accent.Mark?.AbsoluteUri);
+        await reading;
+        await RetryAsync(accent);
+        Assert.Equal(MarkUrl, accent.Mark?.AbsoluteUri);
+        Assert.Equal(new SavedBranding("#16a34a", WordmarkUrl, MarkUrl), Remembered());
+    }
+
+    [Theory]
+    [InlineData("https://elsewhere.example/mark.webp")]
+    [InlineData("http://nas.example/silo/api/v2/branding/assets/mark.webp")]
+    [InlineData("file:///C:/Windows/win.ini")]
+    [InlineData("/api/v2/branding/assets/mark.webp")]
+    [InlineData("not a url")]
+    public async Task ARememberedMark_FromElsewhere_IsNotShown(string mark)
+    {
+        Remember(new SavedBranding("#16a34a", WordmarkUrl, mark));
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError());
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Null(accent.Mark);
+        Assert.Equal(WordmarkUrl, accent.Wordmark?.AbsoluteUri);
+    }
+
+    [Fact]
+    public async Task ARead_IsRemembered_WithTheMarksAddress()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK,
+            """{ "accent_color": "#1d4ed8", "wordmark_url": "/api/v2/branding/assets/wordmark?v=1.webp", "mark_url": "/api/v2/branding/assets/mark?v=1.webp" }"""));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Equal(new SavedBranding("#1d4ed8", WordmarkUrl, MarkUrl), Remembered());
+    }
+
+    [Fact]
+    public async Task AMarkTheServerNoLongerHas_IsForgotten()
+    {
+        Remember(new SavedBranding("#1d4ed8", null, MarkUrl));
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, Blue));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Null(accent.Mark);
+        Assert.Equal(new SavedBranding("#1d4ed8", null), Remembered());
     }
 
     [Theory]

@@ -34,6 +34,9 @@ release's section is what its update says it changes (docs/release.md).
 - **Date and time formats:** dates and times follow your profile's date format (DD/MM/YYYY, MM/DD/YYYY or YYYY-MM-DD)
   and time format (12-hour or 24-hour), as on Silo's web: with DD/MM/YYYY the day comes first in English dates too.
   Choose them in Settings → Accessibility → Date & time; they apply at once.
+- **Server mark in the narrow sidebar:** on a title's, a person's or a box set's page, the narrow sidebar shows your
+  Silo server's square logo at the top, as Silo's web does; click it to go Home. It fades into the wordmark or name as
+  the sidebar opens, and the entries below no longer move as it opens and closes.
 
 ### Fixed
 

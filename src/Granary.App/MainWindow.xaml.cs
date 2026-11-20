@@ -275,8 +275,8 @@ public sealed partial class MainWindow : Window
         }), handledEventsToo: true);
         pane.AddHandler(UIElement.PointerExitedEvent, new PointerEventHandler((_, e) =>
         {
-            // PointerExited bubbles: the entries move as the pane opens (the server's name appears on top), and the one
-            // the mouse was on reports it left. Only a mouse outside the pane as shown has left it, as the web's
+            // PointerExited bubbles: the parts of the pane change as it opens (the headers turn into fold buttons), and the
+            // one the mouse was on can report it left. Only a mouse outside the pane as shown has left it, as the web's
             // mouseleave; reacting to the rest closed the pane under the mouse and opened it again, on and off.
             if (!IsOverPane(pane, e))
             {
@@ -419,7 +419,8 @@ public sealed partial class MainWindow : Window
     }
 
     // Opening or closing the pane, by the window or by the rail's pointer or a click beside it, turns the headers between
-    // fold buttons and dividers, and the folded sections' entries between hidden and shown.
+    // fold buttons and dividers, the folded sections' entries between hidden and shown, and the top between the server's
+    // name or wordmark and its mark.
     private void OnPaneOpening(NavigationView sender, object args) => ShowPaneParts(open: true);
 
     private void OnPaneClosing(NavigationView sender, NavigationViewPaneClosingEventArgs args) => ShowPaneParts(open: false);
@@ -429,6 +430,7 @@ public sealed partial class MainWindow : Window
         ShowHeaders(open);
         ShowSections(open);
         PlaceDock(animate: true, open);
+        ShowBrand(open);
         // Over the rail's pane while it is open over the page, the disc would sit on the sidebar.
         PageBackButton.Visibility = _showsPageBack && !(_isRail && open) ? Visibility.Visible : Visibility.Collapsed;
     }
