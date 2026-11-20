@@ -11,10 +11,13 @@ namespace Granary.App.Views.Settings;
 /// Settings → Profiles (<see cref="ProfilesSettingsViewModel"/>): reads the household when first shown; New profile and Edit
 /// open the profile editor in a dialog.
 /// </summary>
-public sealed partial class ProfilesSettingsView : UserControl
+public sealed partial class ProfilesSettingsView : UserControl, IDisposable
 {
     // One editor at a time: a second press while it is open does nothing.
     private bool _editing;
+
+    // Closes the open editor dialog when the page leaves.
+    private readonly CancellationTokenSource _close = new();
 
     public ProfilesSettingsView()
     {
@@ -25,6 +28,13 @@ public sealed partial class ProfilesSettingsView : UserControl
     }
 
     public ProfilesSettingsViewModel ViewModel { get; }
+
+    // The settings page lets its views go as it leaves: an open editor goes with it.
+    public void Dispose()
+    {
+        _close.Cancel();
+        _close.Dispose();
+    }
 
     // Static because x:Bind function bindings in the template call them on the type.
     public static bool CanPress(bool canDelete, bool isIdle) => canDelete && isIdle;
@@ -64,7 +74,7 @@ public sealed partial class ProfilesSettingsView : UserControl
         _editing = true;
         try
         {
-            if (await ProfileEditorView.ShowAsync(editor, root) is { } saved)
+            if (await ProfileEditorView.ShowAsync(editor, root, _close.Token) is { } saved)
             {
                 await ViewModel.AfterSaveAsync(saved);
             }

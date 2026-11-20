@@ -262,6 +262,12 @@ public sealed partial class ProfilesSettingsViewModel : ObservableObject
 
     private void Show(ProfileCollection? household, Uri? serverBase)
     {
+        // Only the household's primary profile manages it (the server refuses anyone else): for another, the page stays empty,
+        // offers no editor and deletes nothing, however it was reached.
+        if (household is { Items.Count: > 0 } && !household.Items.Any(p => p.Id == _target?.ProfileId && p.IsPrimary))
+        {
+            household = null;
+        }
         Household = household;
         Profiles.Clear();
         if (household is not null && serverBase is not null)

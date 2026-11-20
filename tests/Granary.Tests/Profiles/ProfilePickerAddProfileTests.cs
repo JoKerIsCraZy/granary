@@ -26,11 +26,12 @@ public sealed class ProfilePickerAddProfileTests : IDisposable
         State = SessionState.ProfileRequired,
         Account = new Account("1", "elena", "", "user", [], true, false, null),
     };
+    private readonly RecordingLogger<ProfilePickerViewModel> _logger = new();
     private readonly ProfilePickerViewModel _picker;
 
     public ProfilePickerAddProfileTests()
     {
-        _picker = new ProfilePickerViewModel(new ProfilesApi(_silo.Http), _session, new ImmediateDispatcher(), new RecordingLogger<ProfilePickerViewModel>());
+        _picker = new ProfilePickerViewModel(new ProfilesApi(_silo.Http), _session, new ImmediateDispatcher(), _logger);
     }
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -105,6 +106,19 @@ public sealed class ProfilePickerAddProfileTests : IDisposable
         Assert.Null(_picker.Editor);
         Assert.True(_picker.IsPinPromptOpen);
         Assert.Empty(_session.Calls);
+    }
+
+    [Fact]
+    public async Task APrimaryPinCheckThatFails_LogsNeitherTheProfileNorThePin()
+    {
+        await LoadAsync();
+        _silo.On(HttpMethod.Post, ProfilesPath + "/p-owner/verify-pin", ScriptedSilo.Problem(503, "dependency_unavailable"));
+
+        _picker.AddProfileCommand.Execute(null);
+        await _picker.SubmitPinCommand.ExecuteAsync("2580");
+
+        Assert.NotEmpty(_logger.Lines);
+        Assert.DoesNotContain(_logger.Lines, line => line.Contains("p-owner", StringComparison.Ordinal) || line.Contains("2580", StringComparison.Ordinal));
     }
 
     [Fact]

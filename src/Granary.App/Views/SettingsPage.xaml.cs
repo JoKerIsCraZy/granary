@@ -91,7 +91,7 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
         string page = e.Parameter as string ?? "playback";
         foreach (var list in Lists())
         {
-            if (list.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page) is { } item)
+            if (list.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page && i.Visibility == Visibility.Visible) is { } item)
             {
                 list.SelectedItem = item;
                 return;

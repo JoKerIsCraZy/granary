@@ -28,7 +28,11 @@ public sealed record ProfileEditorTarget(Uri Server, ManagingProfile Manager, Pr
 /// <summary>What a save did: the profile as the server has it now, and what the person may need to hear.</summary>
 /// <param name="NewPin">The PIN just set, for the acting profile's new token; empty when it did not change.</param>
 /// <param name="Notice">Why the picture did not change though the profile did; empty when it did.</param>
-public sealed record ProfileEditorSaved(Profile Profile, bool Created, string NewPin, bool PinCleared, string Notice);
+public sealed record ProfileEditorSaved(Profile Profile, bool Created, string NewPin, bool PinCleared, string Notice)
+{
+    // The PIN never shows in a log or a message.
+    public override string ToString() => $"ProfileEditorSaved {{ Created = {Created}, NewPin = {(NewPin.Length > 0 ? "<redacted>" : "none")} }}";
+}
 
 /// <summary>
 /// The profile editor, as the web's <c>ProfileEditorDialog</c> with <c>lib/profile-management.ts</c>: a new profile or one

@@ -12,6 +12,9 @@ public sealed record ProfileAvatarStyle(string Id, string Label, string Summary)
 /// <summary>A preset picture: its id (<c>dicebear:identicon:cosmic-otter</c> or <c>avatar-3</c>), name and preview.</summary>
 public sealed record ProfileAvatarPreset(string Id, string Label, Uri PreviewUrl)
 {
+    /// <summary>The letter shown while the picture loads, or when it cannot.</summary>
+    public string Initial => Label.Length > 0 ? Label[..1] : "?";
+
     public override string ToString() => Label;
 }
 
@@ -90,8 +93,10 @@ public static class ProfileAvatarPresets
         if (id.StartsWith("avatar-", StringComparison.Ordinal) && int.TryParse(id["avatar-".Length..], NumberStyles.None, CultureInfo.InvariantCulture, out int n)
             && n is >= 1 and <= 8 && id == $"avatar-{n}")
         {
-            return new ProfileAvatarPreset(id, AppText.Get($"web.profiles.helpers.avatar.legacy.{LegacyKeys[n - 1]}"),
-                new Uri(serverBase, $"profile-avatars/{id}.svg"));
+            // The server's own drawing, under its base path as the server's avatar_url is resolved.
+            return ProfileItemViewModel.ResolveAvatarUrl($"/profile-avatars/{id}.svg", serverBase) is { } url
+                ? new ProfileAvatarPreset(id, AppText.Get($"web.profiles.helpers.avatar.legacy.{LegacyKeys[n - 1]}"), url)
+                : null;
         }
         return null;
     }

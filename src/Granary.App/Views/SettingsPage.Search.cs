@@ -85,7 +85,9 @@ public sealed partial class SettingsPage
         {
             foreach (var (heading, list, _) in Groups())
             {
-                var shown = _entries[list].Where(entry => listed is null || listed.Contains(entry.Tag as string ?? "")).ToList();
+                // A page held back for this profile (Profiles, for the household's primary profile only) is not offered either.
+                var shown = _entries[list].Where(entry => entry.Visibility == Visibility.Visible
+                    && (listed is null || listed.Contains(entry.Tag as string ?? ""))).ToList();
                 Keep(list.Items, shown);
                 heading.Visibility = list.Visibility = shown.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
                 if (shown.Count > 0)

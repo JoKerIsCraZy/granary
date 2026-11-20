@@ -344,14 +344,14 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             }
             if (string.IsNullOrEmpty(verification.ProfileToken))
             {
-                _logger.LogWarning("PIN check for profile {ProfileId} was valid but carried no profile token", profileId);
+                _logger.LogWarning("A PIN check was valid but carried no profile token");
                 return new PinOutcome(null, AppText.Get("granary.profiles.pin.unconfirmed"), false);
             }
             return new PinOutcome(verification.ProfileToken, null, false);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
-            _logger.LogWarning("PIN check for profile {ProfileId} failed: {Failure}", profileId, ApiFailureText.Describe(ex));
+            _logger.LogWarning("A PIN check failed: {Failure}", ApiFailureText.Describe(ex));
             return ex is SiloApiException { Status: 404 }
                 ? new PinOutcome(null, null, true)
                 : new PinOutcome(null, DescribePinFailure(ex), false);
@@ -369,7 +369,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         }
         catch (ActiveServerChangedException)
         {
-            _logger.LogInformation("Another server became active while profile {ProfileId} was picked; the pick was dropped", profileId);
+            _logger.LogInformation("Another server became active while a profile was picked; the pick was dropped");
             // The session may have moved on before this list was shown: the new server's profiles come either way.
             if (!ListBelongsToActiveServer(out _))
             {
@@ -378,7 +378,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         }
         catch (Exception ex)
         {
-            _logger.LogWarning("Selecting profile {ProfileId} failed: {Failure}", profileId, ApiFailureText.Describe(ex));
+            _logger.LogWarning("Selecting a profile failed: {Failure}", ApiFailureText.Describe(ex));
             SetStatus(AppText.Get("granary.profiles.openFailed"), isLoadError: false);
         }
         finally

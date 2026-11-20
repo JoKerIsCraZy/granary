@@ -317,6 +317,34 @@ public sealed class ProfileEditorViewModelTests
     }
 
     [Fact]
+    public async Task ANewPinWithANewPicture_SendsThePictureFirst_WhileTheOldProofStillHolds()
+    {
+        _silo.On(HttpMethod.Put, ProfilesPath + "/p-owner/avatar", ScriptedSilo.Json(HttpStatusCode.OK,
+            """{"id":"p-owner","name":"Elena Moreau","is_primary":true,"has_pin":true,"is_child":false,"avatar_source":"upload"}"""));
+        _silo.On(HttpMethod.Patch, ProfilesPath + "/p-owner", ScriptedSilo.Json(HttpStatusCode.OK, """{"id":"p-owner","name":"Elena Moreau","is_primary":true,"has_pin":true,"is_child":false}"""));
+        var editor = Editor(Owner);
+        editor.SelectPreset(editor.Presets[0]);
+        editor.ChoosePicture(Png, "elena.png");
+        editor.Pin = "2580";
+
+        var saved = await editor.SaveAsync(Ct);
+
+        Assert.Equal([HttpMethod.Put, HttpMethod.Patch], _silo.Sent.Select(r => r.Method));
+        Assert.DoesNotContain("\"avatar\"", _silo.Sent[1].Body, StringComparison.Ordinal);
+        Assert.Equal("2580", saved?.NewPin);
+        Assert.DoesNotContain("2580", saved!.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AServersOwnPreset_IsDrawnFromUnderItsBasePath()
+    {
+        var editor = Editor(Kid with { Avatar = "preset:avatar-3" });
+
+        Assert.Equal(new Uri("https://nas.example/silo/profile-avatars/avatar-3.svg"), editor.Preview?.Url);
+        Assert.Equal("Star Bear", editor.PreviewLine);
+    }
+
+    [Fact]
     public void AStoredPreset_OpensOnItsStyle_AndMoreOptionsShowsOthers()
     {
         var editor = Editor(Kid with { Avatar = "preset:dicebear:fun-emoji:mint-panda" });

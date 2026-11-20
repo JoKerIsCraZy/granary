@@ -297,6 +297,20 @@ public sealed class ProfilesSettingsViewModelTests
     }
 
     [Fact]
+    public async Task AProfileThatIsNotThePrimary_GetsNoRows_NoNewProfile_AndNoEditor()
+    {
+        _silo.On(HttpMethod.Get, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.OK, HouseholdJson));
+        _session.ProfileId = "p-kid";
+        var page = Create();
+
+        await page.LoadAsync(Ct);
+
+        Assert.Empty(page.Profiles);
+        Assert.False(page.CanAdd || page.ShowsList || page.IsEmpty);
+        Assert.Null(page.CreateEditor(null));
+    }
+
+    [Fact]
     public async Task AnAccountWithoutProfiles_ShowsTheEmptyList()
     {
         _silo.On(HttpMethod.Get, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.OK, """{"items": [], "avatar_upload_enabled": false}"""));

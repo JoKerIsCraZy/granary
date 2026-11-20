@@ -21,6 +21,8 @@ public sealed partial class ProfilePickerPage : Page, IOwnFocus
     private bool _isPinDialogShown;
     private bool _hasFocusedFirstTile;
     private ProfileItemViewModel? _promptedProfile;
+    // Closes Add profile's open editor dialog.
+    private CancellationTokenSource? _editorClose;
 
     public ProfilePickerPage()
     {
@@ -45,6 +47,7 @@ public sealed partial class ProfilePickerPage : Page, IOwnFocus
         {
             PinDialog.Hide();
         }
+        _editorClose?.Cancel();
         ViewModel.Dispose();
     }
 
@@ -92,12 +95,18 @@ public sealed partial class ProfilePickerPage : Page, IOwnFocus
                 // After the PIN dialog has gone: two dialogs cannot be open at once.
                 DispatcherQueue.TryEnqueue(() => ShowEditor(editor));
                 break;
+            case nameof(ProfilePickerViewModel.Editor):
+                // The editor went (another server): its dialog, and the proof it holds, go too.
+                _editorClose?.Cancel();
+                break;
         }
     }
 
     // Add profile's editor; closing it lets the primary profile's proof go with it.
     private async void ShowEditor(Granary.Core.ViewModels.Profiles.ProfileEditorViewModel editor)
     {
+        using var close = new CancellationTokenSource();
+        _editorClose = close;
         try
         {
             while (_isPinDialogShown)
@@ -105,7 +114,7 @@ public sealed partial class ProfilePickerPage : Page, IOwnFocus
                 await Task.Delay(50);
             }
             var saved = ReferenceEquals(ViewModel.Editor, editor) && XamlRoot is { } root
-                ? await Controls.ProfileEditorView.ShowAsync(editor, root)
+                ? await Controls.ProfileEditorView.ShowAsync(editor, root, close.Token)
                 : null;
             if (ReferenceEquals(ViewModel.Editor, editor))
             {
@@ -117,6 +126,13 @@ public sealed partial class ProfilePickerPage : Page, IOwnFocus
             // async void: nothing may escape.
             App.Services.GetRequiredService<ILogger<ProfilePickerPage>>().LogWarning("The profile editor failed: {Error}", ex.GetType().Name);
             await ViewModel.CloseEditorAsync(null);
+        }
+        finally
+        {
+            if (ReferenceEquals(_editorClose, close))
+            {
+                _editorClose = null;
+            }
         }
     }
 

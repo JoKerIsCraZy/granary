@@ -24,11 +24,21 @@ public sealed partial class ProfileEditorViewModel
             bool hadUpload = Profile is { AvatarSource: "upload" };
             bool keepsUpload = hadUpload && !RemoveUploadedPicture && NewPicture is null && SelectedPreset is null;
             bool deletesUpload = hadUpload && RemoveUploadedPicture && NewPicture is null && SelectedPreset is null;
+            // A PIN change ends the profile's proofs, the one a picture would go with among them: the picture goes first then,
+            // and the update leaves the avatar as the picture's call left it.
+            bool pictureFirst = Profile is not null && (ClearPin || Pin.Length > 0) && (NewPicture is not null || deletesUpload);
+            string notice = "";
+            Profile? pictured = null;
+            if (pictureFirst)
+            {
+                (pictured, notice) = await SavePictureAsync(Profile!.Id, deletesUpload, cancellationToken);
+            }
             Profile saved;
             try
             {
                 saved = Profile is { } profile
-                    ? await _profiles.UpdateAsync(_target.Server, profile.Id, BuildUpdate(keepsUpload, deletesUpload), _target.Manager, cancellationToken)
+                    ? await _profiles.UpdateAsync(_target.Server, profile.Id, BuildUpdate(keepsUpload || pictureFirst, deletesUpload), _target.Manager,
+                        cancellationToken)
                     : await _profiles.CreateAsync(_target.Server, BuildCreate(), _target.Manager, cancellationToken);
             }
             catch (Exception ex) when (ProfileWriteText.IsRefusal(ex, cancellationToken))
@@ -37,30 +47,10 @@ public sealed partial class ProfileEditorViewModel
                 Status = ProfileWriteText.Describe(ex, "web.common.toast.profiles.saveFailed");
                 return null;
             }
-            string notice = "";
-            if (NewPicture is { } picture)
+            if (!pictureFirst)
             {
-                try
-                {
-                    saved = await _profiles.UploadAvatarAsync(_target.Server, saved.Id, picture, PictureFileName, _target.Manager, cancellationToken);
-                }
-                catch (Exception ex) when (ex is AvatarRejectedException || ProfileWriteText.IsRefusal(ex, cancellationToken))
-                {
-                    _logger.LogWarning("A profile's picture could not be uploaded: {Failure}", ApiFailureText.Describe(ex));
-                    notice = AppText.Get("web.common.toast.profiles.avatarUploadFailed");
-                }
-            }
-            else if (deletesUpload)
-            {
-                try
-                {
-                    await _profiles.DeleteAvatarAsync(_target.Server, saved.Id, _target.Manager, cancellationToken);
-                }
-                catch (Exception ex) when (ProfileWriteText.IsRefusal(ex, cancellationToken))
-                {
-                    _logger.LogWarning("A profile's picture could not be removed: {Failure}", ApiFailureText.Describe(ex));
-                    notice = AppText.Get("web.common.toast.profiles.avatarRemoveFailed");
-                }
+                (pictured, notice) = await SavePictureAsync(saved.Id, deletesUpload, cancellationToken);
+                saved = pictured ?? saved;
             }
             return new ProfileEditorSaved(saved, IsNew, ClearPin ? "" : Pin, ClearPin, notice);
         }
@@ -68,6 +58,37 @@ public sealed partial class ProfileEditorViewModel
         {
             IsSaving = false;
         }
+    }
+
+    // The new picture, or the removal of the uploaded one: the profile as the upload left it (null when nothing came back),
+    // and why it did not go through, as the web's toast; the save stays either way.
+    private async Task<(Profile? Profile, string Notice)> SavePictureAsync(string profileId, bool deletesUpload, CancellationToken cancellationToken)
+    {
+        if (NewPicture is { } picture)
+        {
+            try
+            {
+                return (await _profiles.UploadAvatarAsync(_target.Server, profileId, picture, PictureFileName, _target.Manager, cancellationToken), "");
+            }
+            catch (Exception ex) when (ex is AvatarRejectedException || ProfileWriteText.IsRefusal(ex, cancellationToken))
+            {
+                _logger.LogWarning("A profile's picture could not be uploaded: {Failure}", ApiFailureText.Describe(ex));
+                return (null, AppText.Get("web.common.toast.profiles.avatarUploadFailed"));
+            }
+        }
+        if (deletesUpload)
+        {
+            try
+            {
+                await _profiles.DeleteAvatarAsync(_target.Server, profileId, _target.Manager, cancellationToken);
+            }
+            catch (Exception ex) when (ProfileWriteText.IsRefusal(ex, cancellationToken))
+            {
+                _logger.LogWarning("A profile's picture could not be removed: {Failure}", ApiFailureText.Describe(ex));
+                return (null, AppText.Get("web.common.toast.profiles.avatarRemoveFailed"));
+            }
+        }
+        return (null, "");
     }
 
     private ProfileCreate BuildCreate()

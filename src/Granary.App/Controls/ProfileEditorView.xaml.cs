@@ -38,9 +38,10 @@ public sealed partial class ProfileEditorView : UserControl
 
     /// <summary>
     /// Shows the editor in a dialog with Cancel and Save profile; Save keeps it open until the save went through, as the web's
-    /// dialog does. What was saved, or null when it was cancelled.
+    /// dialog does. What was saved, or null when it was cancelled. <paramref name="close"/> closes it from outside, as when the
+    /// profile it writes as is no longer the one in use, so the dialog never outlives its editor.
     /// </summary>
-    public static async Task<ProfileEditorSaved?> ShowAsync(ProfileEditorViewModel editor, XamlRoot root)
+    public static async Task<ProfileEditorSaved?> ShowAsync(ProfileEditorViewModel editor, XamlRoot root, CancellationToken close)
     {
         ArgumentNullException.ThrowIfNull(editor);
         var view = new ProfileEditorView(editor);
@@ -81,8 +82,13 @@ public sealed partial class ProfileEditorView : UserControl
         };
         dialog.Opened += (_, _) => view.NameBox.Focus(FocusState.Programmatic);
         _ = editor.LoadLibrariesAsync();
+        using var closing = close.Register(dialog.Hide);
         try
         {
+            if (close.IsCancellationRequested)
+            {
+                return null;
+            }
             await dialog.ShowAsync();
         }
         catch (Exception ex) when (ex is InvalidOperationException or COMException)
