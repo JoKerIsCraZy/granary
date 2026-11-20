@@ -93,7 +93,12 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+        <!-- A narrow page puts the presets and the library menu on a line of their own under the title (OnDaysSizeChanged). -->
         <Grid ColumnSpacing="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
@@ -106,7 +111,7 @@
                            Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap"
                            Visibility="{x:Bind ViewModel.HasSummary, Mode=OneWay}" />
             </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Bottom">
+            <StackPanel x:Name="HeaderControls" Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Bottom">
                 <controls:PillChoices IsSegmented="True" ItemsSource="{x:Bind ViewModel.Presets}" SelectedItem="{x:Bind ViewModel.SelectedPreset, Mode=TwoWay}"
                                       VerticalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.calendar.presetLabel')}" />
                 <!-- As high as the presets' track, in its colours. -->

@@ -96,6 +96,16 @@ public sealed partial class CalendarPage : Page
         {
             IsWide = wide;
         }
+        PlaceHeaderControls(wide);
+    }
+
+    // Beside the title while the grid fits, else under it, so the summary keeps its line.
+    private void PlaceHeaderControls(bool wide)
+    {
+        Grid.SetRow(HeaderControls, wide ? 0 : 1);
+        Grid.SetColumn(HeaderControls, wide ? 1 : 0);
+        HeaderControls.HorizontalAlignment = wide ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+        HeaderControls.Margin = wide ? new Thickness(0) : new Thickness(0, 16, 0, 0);
     }
 
     private void OnLibraryMenuOpening(object sender, object e)
