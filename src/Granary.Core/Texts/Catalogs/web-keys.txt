@@ -533,11 +533,113 @@ web.admin.sessions.playback.toast.stopSent
 web.admin.sessions.playback.toast.terminateReceipt
 web.admin.sessions.playback.unsupportedControl
 
+# Admin → Users → Invitations, in the words of the web's Invitations tab (pages/admin-settings/InvitationsTab.tsx,
+# InvitationList.tsx, CreateInvitationForm.tsx, InvitationDisplay.tsx, invitationRules.ts):
+# src/Granary.App/Views/Admin/AdminInvitationsView.xaml(.cs) and src/Granary.Core/ViewModels/Admin (AdminInvitationRow,
+# AdminInvitationsViewModel, AdminNewInvitationViewModel).
+web.admin.settings.invitations.capabilitiesFailed
+web.admin.settings.invitations.claimLink.copy
+web.admin.settings.invitations.copied
+web.admin.settings.invitations.copyFailed
+web.admin.settings.invitations.create.accessGroup
+web.admin.settings.invitations.create.creating
+web.admin.settings.invitations.create.defaultGroup
+web.admin.settings.invitations.create.deliveryQuestion
+web.admin.settings.invitations.create.emailHint
+web.admin.settings.invitations.create.emailLabel
+web.admin.settings.invitations.create.emailOption
+web.admin.settings.invitations.create.emailOptionBody
+web.admin.settings.invitations.create.emailOptionUnavailable
+web.admin.settings.invitations.create.emailSetup
+web.admin.settings.invitations.create.expiry
+web.admin.settings.invitations.create.failed
+web.admin.settings.invitations.create.finePrintEmail
+web.admin.settings.invitations.create.finePrintLink
+web.admin.settings.invitations.create.inheritGroup
+web.admin.settings.invitations.create.libraryHint
+web.admin.settings.invitations.create.linkOption
+web.admin.settings.invitations.create.linkOptionBody
+web.admin.settings.invitations.create.noDefaultProfile
+web.admin.settings.invitations.create.noteHintEmail
+web.admin.settings.invitations.create.noteHintLink
+web.admin.settings.invitations.create.noteLabel
+web.admin.settings.invitations.create.notePlaceholder
+web.admin.settings.invitations.create.ownerOnly
+web.admin.settings.invitations.create.personalNoteLabel
+web.admin.settings.invitations.create.profileHintEmail
+web.admin.settings.invitations.create.profileHintLink
+web.admin.settings.invitations.create.profileLabel
+web.admin.settings.invitations.create.reloadBeforeRetry
+web.admin.settings.invitations.create.reloadFailed
+web.admin.settings.invitations.create.role
+web.admin.settings.invitations.create.roleAdmin
+web.admin.settings.invitations.create.roleUser
+web.admin.settings.invitations.create.sending
+web.admin.settings.invitations.create.serverDefault
+web.admin.settings.invitations.create.submitEmail
+web.admin.settings.invitations.create.submitLink
+web.admin.settings.invitations.create.tourHint
+web.admin.settings.invitations.create.tourLabel
+web.admin.settings.invitations.delivery.failed
+web.admin.settings.invitations.delivery.linkCreated
+web.admin.settings.invitations.delivery.newLinkForEmail
+web.admin.settings.invitations.delivery.notConfigured
+web.admin.settings.invitations.delivery.sent
+web.admin.settings.invitations.deliveryLabel.emailSent
+web.admin.settings.invitations.deliveryLabel.emailUnconfirmed
+web.admin.settings.invitations.deliveryLabel.emailUnconfirmedTitle
+web.admin.settings.invitations.deliveryLabel.link
+web.admin.settings.invitations.deliveryLabel.unknownTitle
+web.admin.settings.invitations.empty
+web.admin.settings.invitations.historyFailed
+web.admin.settings.invitations.intro
+web.admin.settings.invitations.invite.button
+web.admin.settings.invitations.invite.description
+web.admin.settings.invitations.invite.title
+web.admin.settings.invitations.loadMore
+web.admin.settings.invitations.loading
+web.admin.settings.invitations.loadingCapabilities
+web.admin.settings.invitations.notConfigured
+web.admin.settings.invitations.publicUrlMissing
+web.admin.settings.invitations.reloadHistory
+web.admin.settings.invitations.resend.creating
+web.admin.settings.invitations.resend.description
+web.admin.settings.invitations.resend.finePrint
+web.admin.settings.invitations.resend.title
+web.admin.settings.invitations.resend.uncertain
+web.admin.settings.invitations.resendFailed
+web.admin.settings.invitations.revoke.confirm
+web.admin.settings.invitations.revoke.emailDescription
+web.admin.settings.invitations.revoke.linkDescription
+web.admin.settings.invitations.revoke.title
+web.admin.settings.invitations.revokeFailed
+web.admin.settings.invitations.row.copyNewLink
+web.admin.settings.invitations.row.emailNewLink
+web.admin.settings.invitations.row.expires
+web.admin.settings.invitations.row.invitedBy
+web.admin.settings.invitations.row.joinedByLink
+web.admin.settings.invitations.row.linkInvitation
+web.admin.settings.invitations.row.note
+web.admin.settings.invitations.row.replaceLink
+web.admin.settings.invitations.row.revokeLink
+web.admin.settings.invitations.status.accepted
+web.admin.settings.invitations.status.expired
+web.admin.settings.invitations.status.pending
+web.admin.settings.invitations.status.revoked
+web.admin.settings.invitations.table.created
+web.admin.settings.invitations.table.delivery
+web.admin.settings.invitations.table.recipient
+web.admin.settings.invitations.table.role
+web.admin.settings.invitations.table.status
+
 # The admin area's own sidebar, in the words of the web's AdminSidebar and admin navigation (components/AdminSidebar.tsx,
 # lib/adminNavigation.ts): src/Granary.App/Views/AdminPage.xaml and AdminSidebarViewModel.cs.
 web.admin.shell.mobileHeader.eyebrow
 web.admin.shell.nav.page.activity.label
 web.admin.shell.nav.page.dashboard.label
+# The admin sidebar's Manage section and its Users page (lib/adminNavigation.ts): src/Granary.App/Views/AdminPage.xaml(.cs).
+web.admin.shell.nav.page.users.label
+web.admin.shell.nav.section.manage
 web.admin.shell.nav.section.monitor
 web.admin.shell.sidebar.backToApp
 web.admin.shell.sidebar.build.dev
@@ -617,6 +719,187 @@ web.admin.tasks.task.sync_movie_box_sets.name
 web.admin.tasks.task.sync_podcast_feeds.name
 web.admin.tasks.task.sync_user_collections.name
 web.admin.tasks.task.sync_watch_providers.name
+# Admin → Users, in the words of the web's users page and its dialogs (pages/AdminUsers.tsx, components/admin/users,
+# components/AdminUserDeleteDialog.tsx, lib/email.ts): src/Granary.App/Views/Admin/AdminUsers*, AdminUserDeleteDialog and
+# src/Granary.Core/ViewModels/Admin (AdminAccountRow, AdminUsersViewModel*, AdminNewUserViewModel, AdminUserDeleteViewModel), EmailAddress.cs.
+web.admin.users.deleteDialog.confirm
+web.admin.users.deleteDialog.confirmLabel
+web.admin.users.deleteDialog.conflict
+web.admin.users.deleteDialog.deleteFailed
+web.admin.users.deleteDialog.description
+web.admin.users.deleteDialog.disableFailed
+web.admin.users.deleteDialog.disableHint
+web.admin.users.deleteDialog.disableInstead
+web.admin.users.deleteDialog.reload
+web.admin.users.deleteDialog.reloadFailed
+web.admin.users.deleteDialog.title
+# An account in Admin → Users, in the words of the web's account page, its header and Access cards, its password reset
+# dialog and its sessions panel (pages/AdminUserDetail.tsx, pages/admin-users/detail, components/AdminUserPasswordResetDialog.tsx,
+# components/sessions/LoginSessionsPanel.tsx): src/Granary.App/Views/Admin/AdminUserDetailView*, AdminPasswordResetDialog and
+# src/Granary.Core/ViewModels/Admin (AdminUserDetailViewModel*, AdminPasswordResetViewModel, AdminUserSessionsViewModel).
+web.admin.users.detail.access.card.conflict
+web.admin.users.detail.access.card.reloadAndReview
+web.admin.users.detail.access.card.reloadFailed
+web.admin.users.detail.access.card.saveFailed
+web.admin.users.detail.access.card.saved
+web.admin.users.detail.access.card.saving
+web.admin.users.detail.access.library.accessGroup
+web.admin.users.detail.access.library.adminDescription
+web.admin.users.detail.access.library.chooseForAccount
+web.admin.users.detail.access.library.libraries
+web.admin.users.detail.access.library.markerEdit
+web.admin.users.detail.access.library.markerEditDescription
+web.admin.users.detail.access.library.metadataCuration
+web.admin.users.detail.access.library.metadataCurationDescription
+web.admin.users.detail.access.library.noGroup
+web.admin.users.detail.access.library.noLibraryWarning
+web.admin.users.detail.access.library.useGroupLibraries
+web.admin.users.detail.access.library.useServerDefault
+web.admin.users.detail.access.role.admin
+web.admin.users.detail.access.role.user
+web.admin.users.detail.access.signIn.adminLeavesGroup
+web.admin.users.detail.access.signIn.canSignIn
+web.admin.users.detail.access.signIn.cannotDisableSelf
+web.admin.users.detail.access.signIn.email
+web.admin.users.detail.access.signIn.enterUsername
+web.admin.users.detail.access.signIn.ownRole
+web.admin.users.detail.access.signIn.ownerGrantsAdmin
+web.admin.users.detail.access.signIn.ownerGrantsAdminRole
+web.admin.users.detail.access.signIn.ownerStaysEnabled
+web.admin.users.detail.access.signIn.role
+web.admin.users.detail.access.signIn.username
+web.admin.users.detail.access.tab.ownerOnlyNote
+web.admin.users.detail.common.cardTitle.library
+web.admin.users.detail.common.cardTitle.signin
+web.admin.users.detail.header.adminNotice
+web.admin.users.detail.header.breadcrumb
+web.admin.users.detail.header.breadcrumbUsers
+web.admin.users.detail.header.deleteAccount
+web.admin.users.detail.header.disableAccount
+web.admin.users.detail.header.disabledNotice
+web.admin.users.detail.header.enableAccount
+web.admin.users.detail.header.externalSignIn
+web.admin.users.detail.header.group
+web.admin.users.detail.header.groupIdFallback
+web.admin.users.detail.header.joined
+web.admin.users.detail.header.lastActive
+web.admin.users.detail.header.makeOwner
+web.admin.users.detail.header.moreActions
+web.admin.users.detail.header.noActivity
+web.admin.users.detail.header.ownerNotice
+web.admin.users.detail.header.passwordSignIn
+web.admin.users.detail.header.resetPassword
+web.admin.users.detail.header.setPassword
+web.admin.users.detail.header.status.active
+web.admin.users.detail.header.status.disabled
+web.admin.users.detail.header.temporaryPassword
+web.admin.users.list.addUser
+web.admin.users.list.adminGroupNone
+web.admin.users.list.column.actions
+web.admin.users.list.column.created
+web.admin.users.list.column.email
+web.admin.users.list.column.group
+web.admin.users.list.column.lastActive
+web.admin.users.list.column.role
+web.admin.users.list.column.status
+web.admin.users.list.column.username
+web.admin.users.list.create.adminNoGroups
+web.admin.users.list.create.adminOwnerOnly
+web.admin.users.list.create.defaultGroup
+web.admin.users.list.create.defaultProfile
+web.admin.users.list.create.defaultProfileUnavailable
+web.admin.users.list.create.email
+web.admin.users.list.create.group
+web.admin.users.list.create.markerEdit
+web.admin.users.list.create.markerEditHelp
+web.admin.users.list.create.metadataCuration
+web.admin.users.list.create.metadataCurationHelp
+web.admin.users.list.create.password
+web.admin.users.list.create.requirePasswordChange
+web.admin.users.list.create.role
+web.admin.users.list.create.role.admin
+web.admin.users.list.create.role.user
+web.admin.users.list.create.saveFailed
+web.admin.users.list.create.saving
+web.admin.users.list.create.tab.access
+web.admin.users.list.create.tab.account
+web.admin.users.list.create.username
+web.admin.users.list.createDialogTitle
+web.admin.users.list.deleteAria
+web.admin.users.list.deleteTooltip
+web.admin.users.list.editAria
+web.admin.users.list.editTooltip
+web.admin.users.list.groupFilterAll
+web.admin.users.list.groupFilterLabel
+web.admin.users.list.groupsLoadFailed
+web.admin.users.list.lastActiveNever
+web.admin.users.list.loadFailed
+web.admin.users.list.nextPage
+web.admin.users.list.noGroup
+web.admin.users.list.noMatches
+web.admin.users.list.pageRange
+web.admin.users.list.pageSizeOption
+web.admin.users.list.previousPage
+web.admin.users.list.reload
+web.admin.users.list.searchPlaceholder
+web.admin.users.list.status.active
+web.admin.users.list.status.disabled
+web.admin.users.list.subtitle
+# The tabs of Admin → Users (pages/AdminUsers.tsx): src/Granary.App/Views/Admin/AdminUsersView.xaml.
+web.admin.users.list.tab.invitations
+web.admin.users.list.tab.users
+web.admin.users.list.title
+web.admin.users.list.unavailable
+web.admin.users.list.unknownGroup
+web.admin.users.list.userLoadFailed
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.admin.users.page.accountChanged
+web.admin.users.page.allUsers
+web.admin.users.page.changeFailed
+web.admin.users.page.disableConfirm
+web.admin.users.page.disableDescription
+web.admin.users.page.disableTitle
+web.admin.users.page.disabled
+web.admin.users.page.enabled
+web.admin.users.page.loadFailedDescription
+web.admin.users.page.loadFailedTitle
+web.admin.users.page.notFoundDescription
+web.admin.users.page.notFoundTitle
+web.admin.users.page.ownerTransferred
+web.admin.users.page.transferConfirm
+web.admin.users.page.transferDescription
+web.admin.users.page.transferFailed
+web.admin.users.page.transferTitle
+web.admin.users.passwordResetDialog.copyFailed
+web.admin.users.passwordResetDialog.copyLink
+web.admin.users.passwordResetDialog.description
+web.admin.users.passwordResetDialog.emailAction
+web.admin.users.passwordResetDialog.emailHint
+web.admin.users.passwordResetDialog.emailHintDisabled
+web.admin.users.passwordResetDialog.emailHintNoAddress
+web.admin.users.passwordResetDialog.emailHintNoMail
+web.admin.users.passwordResetDialog.emailOption
+web.admin.users.passwordResetDialog.emailSent
+web.admin.users.passwordResetDialog.emailUnconfirmed
+web.admin.users.passwordResetDialog.issueFailed
+web.admin.users.passwordResetDialog.linkAction
+web.admin.users.passwordResetDialog.linkCopied
+web.admin.users.passwordResetDialog.linkHint
+web.admin.users.passwordResetDialog.linkHintDisabled
+web.admin.users.passwordResetDialog.linkHintNoUrl
+web.admin.users.passwordResetDialog.linkOption
+web.admin.users.passwordResetDialog.linkShare
+web.admin.users.passwordResetDialog.methodGroup
+web.admin.users.passwordResetDialog.mustChange
+web.admin.users.passwordResetDialog.passwordAction
+web.admin.users.passwordResetDialog.passwordLabel
+web.admin.users.passwordResetDialog.passwordOption
+web.admin.users.passwordResetDialog.passwordOptionHint
+web.admin.users.passwordResetDialog.passwordRules
+web.admin.users.passwordResetDialog.passwordSet
+web.admin.users.passwordResetDialog.passwordSetMustChange
+web.admin.users.passwordResetDialog.setFailed
+web.admin.users.passwordResetDialog.title
 
 # More of the collection editor's words, as above under catalog.sort.author.
 # More of the Requests words, as above under requests.error.create.
@@ -630,6 +913,8 @@ web.audiobooks.duration.minutes
 web.auth.choosePassword.description
 web.auth.choosePassword.settleFailed
 web.auth.choosePassword.temporaryPassword
+# More of Admin → Users' words, as above under web.admin.users.deleteDialog.confirm.
+web.auth.invalidEmail
 
 # Signing in, in the words of the web's Login page: src/Granary.App/Views/SignInPage.xaml(.cs). A disabled account is
 # the web's oauthFailure text, as its sign-in words permission_denied (lib/externalSignIn.ts): Describe in
@@ -2004,6 +2289,9 @@ web.player.watchTogether.viewersLabel
 
 # More of the collection editor's words, as above under catalog.sort.author.
 web.profiles.libraries.count
+# The library access heading of Invite someone, as the web's LibraryAccessSelector (components/LibraryAccessSelector.tsx):
+# src/Granary.App/Views/Admin/AdminInvitationsView.xaml.
+web.profiles.libraryAccess.label
 web.profiles.librarySelect.libraryFallback
 web.profiles.librarySelect.more
 web.profiles.librarySelect.pair
@@ -2456,9 +2744,17 @@ web.settings.search.clear
 web.settings.search.matchCount
 web.settings.search.noMatches
 web.settings.search.placeholder
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.settings.sessions.admin.empty
+web.settings.sessions.admin.ownerOnly
+web.settings.sessions.adminDescription
+web.settings.sessions.confirm.adminClientDescription
+web.settings.sessions.confirm.allTitle
 web.settings.sessions.confirm.clientDescription
 web.settings.sessions.confirm.deviceTitle
 web.settings.sessions.confirm.note
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.settings.sessions.confirm.sessionTitle
 
 # The shell's profile menu while it signs out (src/Granary.Core/ViewModels/SidebarViewModel.cs), in the words of the
 # web's own sign-out button (components/sessions/LoginSessionsPanel.tsx).
@@ -2469,6 +2765,8 @@ web.settings.sessions.confirm.thisBrowserDescription
 web.settings.sessions.current.description
 web.settings.sessions.description
 web.settings.sessions.device.unknown
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.settings.sessions.footnoteAdmin
 web.settings.sessions.lastSeen.active
 web.settings.sessions.lastSeen.days
 web.settings.sessions.lastSeen.hours
@@ -2494,8 +2792,12 @@ web.settings.sessions.row.signedIn
 web.settings.sessions.row.summary
 web.settings.sessions.row.unknown
 web.settings.sessions.row.userAgent
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.settings.sessions.signOutEverywhere
 web.settings.sessions.signOutFailed
 web.settings.sessions.signedOut
+# More of an account's page in Admin → Users, as above under web.admin.users.detail.access.card.conflict.
+web.settings.sessions.signedOutEverywhere
 web.settings.sessions.title
 web.settings.sidebar.backToApp
 web.settings.sidebar.title

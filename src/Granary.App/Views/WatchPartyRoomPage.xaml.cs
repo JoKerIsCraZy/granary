@@ -147,7 +147,7 @@ public sealed partial class WatchPartyRoomPage : Page
 
     private void OnCopyCodeClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.Code.Length > 0 && RoomClipboard.Copy(ViewModel.Code))
+        if (ViewModel.Code.Length > 0 && SecretClipboard.Copy(ViewModel.Code))
         {
             ViewModel.Copied(AppText.Get("web.watchTogether.common.codeCopied", ("code", ViewModel.Code)));
         }
@@ -160,7 +160,7 @@ public sealed partial class WatchPartyRoomPage : Page
             ViewModel.Copied(AppText.Get("web.watchTogether.room.inviteNotReady"));
             return;
         }
-        if (RoomClipboard.Copy(link.AbsoluteUri))
+        if (SecretClipboard.Copy(link.AbsoluteUri))
         {
             ViewModel.Copied(WatchPartyText.InviteCopied(ViewModel.Code));
         }

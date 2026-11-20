@@ -28,7 +28,7 @@ public sealed partial class DetailHero : UserControl
     public DetailHero()
     {
         Party = App.Services.GetRequiredService<StartPartyViewModel>();
-        Party.CopyText = RoomClipboard.Copy;
+        Party.CopyText = SecretClipboard.Copy;
         InitializeComponent();
         // The menu's Watch Party entry follows the page, the server's rooms and this profile's room while the hero shows.
         // Loaded and Unloaded can come out of order (an Unloaded after the next Loaded), so they are counted: only the

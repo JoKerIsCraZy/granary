@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Admin → Users → Invitations, as the web's (pages/admin-settings/InvitationsTab.tsx, InvitationList.tsx,
+    CreateInvitationForm.tsx; docs/ui-design.md, Admin): the history in a table, a page of 50 at a time, Invite someone,
+    and a row's new link and Revoke. A link shows once, in its dialog, and is copied only through Copy link.
+-->
+<UserControl
+    x:Class="Granary.App.Views.Admin.AdminInvitationsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Granary.App.Views.Admin"
+    xmlns:admin="using:Granary.Core.ViewModels.Admin"
+    xmlns:t="using:Granary.Core.Texts"
+    AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.tab.invitations')}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ms-appx:///Themes/AdminForms.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <StackPanel Spacing="16">
+            <!-- What invitations offer: read, failed with Reload capabilities, or not set up. -->
+            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.loadingCapabilities')}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                       Visibility="{x:Bind local:AdminUsersView.LoadingShown(ViewModel.State), Mode=OneWay}" />
+            <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind Failed(ViewModel.State), Mode=OneWay}">
+                <TextBlock Text="{x:Bind ViewModel.CapabilitiesFailedText}" Style="{StaticResource AdminErrorTextStyle}" VerticalAlignment="Center" />
+                <Button Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.ReloadCapabilitiesCommand}"
+                        Content="{x:Bind ViewModel.ReloadCapabilitiesText}" />
+            </StackPanel>
+            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.notConfigured')}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                       Visibility="{x:Bind Unconfigured(ViewModel.State), Mode=OneWay}" />
+
+            <StackPanel Spacing="16" Visibility="{x:Bind local:AdminUsersView.Ready(ViewModel.State), Mode=OneWay}">
+                <!-- The intro and Invite someone. -->
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.intro')}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                               TextWrapping="Wrap" MaxWidth="576" HorizontalAlignment="Left" />
+                    <Button Grid.Column="1" Style="{StaticResource SiloPrimaryButtonStyle}" VerticalAlignment="Top" Click="OnInviteClick"
+                            IsEnabled="{x:Bind ViewModel.CanInvite, Mode=OneWay}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE715;" FontSize="12" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.invite.button')}" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <!-- No public URL: links cannot be made. The web's amber notice, without its link to a page Granary lacks. -->
+                <Border Style="{StaticResource AdminWarningCardStyle}" Visibility="{x:Bind ViewModel.PublicUrlMissing, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE7BA;" FontSize="14" Foreground="#FFF59E0B" VerticalAlignment="Top" Margin="0,2,0,0" />
+                        <TextBlock Text="{x:Bind ViewModel.PublicUrlMissingText}" FontSize="13" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- A resend or revoke that failed, and the history that could not be read: Reload history. -->
+                <StackPanel Spacing="8" Visibility="{x:Bind local:AdminUsersView.Shown(ViewModel.ActionError), Mode=OneWay}">
+                    <TextBlock Text="{x:Bind ViewModel.ActionError, Mode=OneWay}" Style="{StaticResource AdminErrorTextStyle}" />
+                    <Button Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.RestartCommand}"
+                            Content="{x:Bind t:AppText.Get('web.admin.settings.invitations.reloadHistory')}" />
+                </StackPanel>
+                <StackPanel Spacing="8" Visibility="{x:Bind local:AdminUsersView.Shown(ViewModel.HistoryError), Mode=OneWay}">
+                    <TextBlock Text="{x:Bind ViewModel.HistoryError, Mode=OneWay}" Style="{StaticResource AdminErrorTextStyle}" />
+                    <Button Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.RestartCommand}"
+                            Content="{x:Bind t:AppText.Get('web.admin.settings.invitations.reloadHistory')}" />
+                </StackPanel>
+
+                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.loading')}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           Visibility="{x:Bind ViewModel.IsFirstPageLoading, Mode=OneWay}" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.empty')}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" />
+
+                <!-- The history, as the web's table: the recipient and its details, role, status, delivery, created, and the actions. -->
+                <Border Style="{StaticResource AdminFormCardStyle}" Padding="16,8" Visibility="{x:Bind ViewModel.HasRows, Mode=OneWay}">
+                    <StackPanel>
+                        <Grid ColumnSpacing="12" Padding="0,8" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,0,0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="72" />
+                                <ColumnDefinition Width="1.4*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="112" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.table.recipient')}" Style="{StaticResource AdminColumnHeadingStyle}" />
+                            <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.table.role')}" Style="{StaticResource AdminColumnHeadingStyle}" />
+                            <TextBlock Grid.Column="2" Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.table.status')}" Style="{StaticResource AdminColumnHeadingStyle}" />
+                            <TextBlock Grid.Column="3" Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.table.delivery')}" Style="{StaticResource AdminColumnHeadingStyle}" />
+                            <TextBlock Grid.Column="4" Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.table.created')}" Style="{StaticResource AdminColumnHeadingStyle}" />
+                        </Grid>
+
+                        <!-- A resend or revoke that runs or failed holds every row's actions until the history is read again. -->
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}" IsTabStop="False"
+                                      IsEnabled="{x:Bind local:AdminUsersView.Not(ViewModel.IsBlocked), Mode=OneWay}"
+                                      AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.tab.invitations')}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="admin:AdminInvitationRow">
+                                    <Grid ColumnSpacing="12" Padding="0,8" BorderBrush="#4D2A2A2F" BorderThickness="0,0,0,1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="72" />
+                                            <ColumnDefinition Width="1.4*" />
+                                            <ColumnDefinition Width="1.2*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="112" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind Recipient}" FontFamily="{StaticResource SiloFontMedium}" FontSize="13" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{x:Bind Details}" Style="{StaticResource AdminMutedCellStyle}" FontSize="12"
+                                                       Visibility="{x:Bind local:AdminUsersView.Shown(Details)}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{x:Bind RoleText}" Style="{StaticResource AdminMutedCellStyle}" />
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <Border Style="{StaticResource AdminBadgeStyle}" Background="{x:Bind local:AdminInvitationsView.StatusBackground(IsPending)}"
+                                                    BorderBrush="{x:Bind local:AdminInvitationsView.StatusBorder(IsPending)}">
+                                                <TextBlock Text="{x:Bind StatusText}" Style="{StaticResource AdminBadgeTextStyle}"
+                                                           Foreground="{x:Bind local:AdminInvitationsView.StatusForeground(IsPending)}" />
+                                            </Border>
+                                            <TextBlock Text="{x:Bind ExpiresText}" Style="{StaticResource AdminMutedCellStyle}" FontSize="12"
+                                                       Visibility="{x:Bind local:AdminUsersView.Shown(ExpiresText)}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+                                                    ToolTipService.ToolTip="{x:Bind local:AdminUsersView.TipOrNull(DeliveryTip)}">
+                                            <FontIcon Glyph="{x:Bind DeliveryGlyph}" FontSize="13" Visibility="{x:Bind local:AdminUsersView.Shown(DeliveryGlyph)}"
+                                                      Foreground="{x:Bind local:AdminInvitationsView.DeliveryForeground(DeliveryUnconfirmed)}" />
+                                            <TextBlock Text="{x:Bind DeliveryText}" Style="{StaticResource AdminCellStyle}"
+                                                       Foreground="{x:Bind local:AdminInvitationsView.DeliveryForeground(DeliveryUnconfirmed)}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="4" Text="{x:Bind CreatedText}" Style="{StaticResource AdminMutedCellStyle}" />
+                                        <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+                                            <Button Style="{StaticResource AdminRowIconButtonStyle}" Visibility="{x:Bind CanResendLink}" IsEnabled="{x:Bind ResendEnabled}"
+                                                    Click="OnResendLinkClick" Tag="{x:Bind Id}"
+                                                    ToolTipService.ToolTip="{x:Bind ResendLinkText}" AutomationProperties.Name="{x:Bind ResendLinkText}">
+                                                <FontIcon Glyph="&#xE71B;" FontSize="12" />
+                                            </Button>
+                                            <Button Style="{StaticResource AdminRowIconButtonStyle}" Visibility="{x:Bind CanResendEmail}" IsEnabled="{x:Bind ResendEnabled}"
+                                                    Click="OnResendEmailClick" Tag="{x:Bind Id}"
+                                                    ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.admin.settings.invitations.row.emailNewLink')}"
+                                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.invitations.row.emailNewLink')}">
+                                                <FontIcon Glyph="&#xE715;" FontSize="12" />
+                                            </Button>
+                                            <Button Style="{StaticResource AdminRowIconButtonStyle}" Visibility="{x:Bind CanRevoke}" Click="OnRevokeClick" Tag="{x:Bind Id}"
+                                                    ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.admin.settings.invitations.row.revokeLink')}"
+                                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.invitations.row.revokeLink')}">
+                                                <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="{StaticResource SiloDestructiveBrush}" />
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Button Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.LoadMoreCommand}"
+                        Visibility="{x:Bind ViewModel.HasMore, Mode=OneWay}"
+                        Content="{x:Bind t:AppText.Get('web.admin.settings.invitations.loadMore')}" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- The web's Invite someone dialog. Once made it shows the link instead, the one time the server gives it. -->
+        <ContentDialog x:Name="InviteDialog" Title="{x:Bind t:AppText.Get('web.admin.settings.invitations.invite.title')}"
+                       PrimaryButtonText="{x:Bind SubmitText(Form.HasResult, Form.SubmitText), Mode=OneWay}"
+                       CloseButtonText="{x:Bind CloseText(Form.HasResult), Mode=OneWay}" DefaultButton="Primary"
+                       IsPrimaryButtonEnabled="{x:Bind Form.CanSubmit, Mode=OneWay}"
+                       PrimaryButtonClick="OnInviteSubmitClick" Closing="OnInviteClosing">
+            <ScrollViewer MaxHeight="560" VerticalScrollBarVisibility="Auto">
+                <StackPanel MinWidth="440" MaxWidth="560" Spacing="14" Padding="0,0,12,0">
+                    <!-- Made: what its delivery did, and the link. -->
+                    <StackPanel Spacing="12" Visibility="{x:Bind Form.HasResult, Mode=OneWay}">
+                        <TextBlock Text="{x:Bind Form.ResultMessage, Mode=OneWay}" FontSize="13" TextWrapping="Wrap" />
+                        <Border Style="{StaticResource AdminSecretBoxStyle}">
+                            <TextBlock Text="{x:Bind Form.ClaimUrl, Mode=OneWay}" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" />
+                        </Border>
+                        <TextBlock Text="{x:Bind Form.FinePrint, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}" />
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnCopyInviteClick">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE8C8;" FontSize="12" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.claimLink.copy')}" />
+                                </StackPanel>
+                            </Button>
+                            <TextBlock x:Name="InviteCopyResult" Style="{StaticResource AdminHintTextStyle}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- The form. -->
+                    <StackPanel Spacing="14" Visibility="{x:Bind local:AdminUsersView.Hidden(Form.HasResult), Mode=OneWay}">
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.invite.description')}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                                   TextWrapping="Wrap" />
+                        <StackPanel Spacing="8" Visibility="{x:Bind local:AdminUsersView.Shown(Form.Error), Mode=OneWay}">
+                            <TextBlock Text="{x:Bind Form.Error, Mode=OneWay}" Style="{StaticResource AdminErrorTextStyle}" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.reloadBeforeRetry')}" Style="{StaticResource AdminErrorTextStyle}"
+                                       Visibility="{x:Bind Form.NeedsReload, Mode=OneWay}" />
+                            <Button Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnFormReloadClick" Visibility="{x:Bind Form.NeedsReload, Mode=OneWay}"
+                                    Content="{x:Bind t:AppText.Get('web.admin.settings.invitations.reloadHistory')}" />
+                        </StackPanel>
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.noDefaultProfile')}" Style="{StaticResource AdminHintTextStyle}"
+                                   Visibility="{x:Bind Form.HasNoDefaultProfile, Mode=OneWay}" />
+
+                        <!-- How they get it: a link to share, or an email. -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.deliveryQuestion')}" FontSize="13"
+                                       FontFamily="{StaticResource SiloFontMedium}" />
+                            <StackPanel Spacing="2">
+                                <RadioButton GroupName="InviteDelivery" Content="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.linkOption')}"
+                                             IsChecked="{x:Bind Form.IsLink, Mode=TwoWay}" IsEnabled="{x:Bind local:AdminUsersView.Not(Form.IsSaving), Mode=OneWay}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.linkOptionBody')}" Style="{StaticResource AdminHintTextStyle}"
+                                           Margin="28,0,0,0" />
+                            </StackPanel>
+                            <StackPanel Spacing="2">
+                                <RadioButton GroupName="InviteDelivery" Content="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.emailOption')}"
+                                             IsChecked="{x:Bind Form.IsEmail, Mode=TwoWay}" IsEnabled="{x:Bind EmailChoosable(Form.EmailDelivery, Form.IsSaving), Mode=OneWay}" />
+                                <TextBlock Text="{x:Bind Form.EmailOptionBody, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}" Margin="28,0,0,0" />
+                            </StackPanel>
+                            <Border Style="{StaticResource AdminWarningCardStyle}" Visibility="{x:Bind local:AdminUsersView.Hidden(Form.EmailDelivery), Mode=OneWay}">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <FontIcon Glyph="&#xE7BA;" FontSize="14" Foreground="#FFF59E0B" VerticalAlignment="Top" Margin="0,2,0,0" />
+                                    <TextBlock x:Name="EmailSetupText" FontSize="13" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Spacing="4" Visibility="{x:Bind Form.IsEmail, Mode=OneWay}">
+                            <TextBox Header="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.emailLabel')}" Text="{x:Bind Form.Email, Mode=TwoWay}"
+                                     PlaceholderText="them@example.com" InputScope="EmailSmtpAddress" />
+                            <TextBlock Text="{x:Bind Form.EmailError, Mode=OneWay}" Style="{StaticResource AdminErrorTextStyle}"
+                                       Visibility="{x:Bind local:AdminUsersView.Shown(Form.EmailError), Mode=OneWay}" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.emailHint')}" Style="{StaticResource AdminHintTextStyle}" />
+                        </StackPanel>
+
+                        <!-- The access group and the role. -->
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Header="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.accessGroup')}" Style="{StaticResource SiloSettingsComboBoxStyle}"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Top" ItemsSource="{x:Bind Form.GroupChoices, Mode=OneWay}"
+                                      SelectedItem="{x:Bind Form.SelectedGroup, Mode=TwoWay}" IsEnabled="{x:Bind Form.CanPickGroup, Mode=OneWay}" />
+                            <StackPanel Grid.Column="1" Spacing="6">
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.role')}" FontSize="13" />
+                                <RadioButton GroupName="InviteRole" Content="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.roleUser')}"
+                                             IsChecked="{x:Bind Form.IsUserRole, Mode=TwoWay}" />
+                                <RadioButton GroupName="InviteRole" Content="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.roleAdmin')}"
+                                             IsChecked="{x:Bind Form.IsAdminRole, Mode=TwoWay}" IsEnabled="{x:Bind Form.CanGrantAdmin, Mode=OneWay}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.ownerOnly')}" Style="{StaticResource AdminHintTextStyle}"
+                                           Visibility="{x:Bind local:AdminUsersView.Hidden(Form.CanGrantAdmin), Mode=OneWay}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Library access: the group's, or the ones ticked here. -->
+                        <StackPanel Spacing="6">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.profiles.libraryAccess.label')}" FontSize="13" FontFamily="{StaticResource SiloFontMedium}" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.inheritGroup')}" FontSize="13" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind Form.InheritLibraries, Mode=TwoWay}"
+                                              OnContent="" OffContent="" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.inheritGroup')}" />
+                            </Grid>
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.libraryHint')}" Style="{StaticResource AdminHintTextStyle}"
+                                       Visibility="{x:Bind Form.InheritLibraries, Mode=OneWay}" />
+                            <ItemsControl ItemsSource="{x:Bind Form.Libraries}" IsTabStop="False" Margin="4,0,0,0"
+                                          Visibility="{x:Bind local:AdminUsersView.Hidden(Form.InheritLibraries), Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="admin:AdminLibraryChoice">
+                                        <CheckBox Content="{x:Bind Name}" IsChecked="{x:Bind IsChecked, Mode=TwoWay}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBox Header="{x:Bind Form.NoteLabel, Mode=OneWay}" Text="{x:Bind Form.Note, Mode=TwoWay}" AcceptsReturn="True" TextWrapping="Wrap"
+                                     MinHeight="64" PlaceholderText="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.notePlaceholder')}" />
+                            <TextBlock Text="{x:Bind Form.NoteHint, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}" />
+                        </StackPanel>
+
+                        <!-- Their first profile and the tour. -->
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.profileLabel')}" FontSize="13" />
+                                <TextBlock Text="{x:Bind Form.ProfileHint, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}" />
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind Form.CreateProfile, Mode=TwoWay}"
+                                          IsEnabled="{x:Bind Form.CanChangeProfile, Mode=OneWay}" OnContent="" OffContent=""
+                                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.profileLabel')}" />
+                        </Grid>
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.tourLabel')}" FontSize="13" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.tourHint')}" Style="{StaticResource AdminHintTextStyle}" />
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind Form.ShowTour, Mode=TwoWay}"
+                                          OnContent="" OffContent="" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.tourLabel')}" />
+                        </Grid>
+
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.create.expiry')}" Style="{StaticResource AdminHintTextStyle}" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </ContentDialog>
+
+        <!-- A row's new link, the one time the server gives it. -->
+        <ContentDialog x:Name="ResendDialog" Title="{x:Bind t:AppText.Get('web.admin.settings.invitations.resend.title')}"
+                       CloseButtonText="{x:Bind t:AppText.Get('common.done')}" DefaultButton="Close">
+            <StackPanel MinWidth="400" MaxWidth="520" Spacing="12">
+                <TextBlock Text="{x:Bind ViewModel.ResentMessage, Mode=OneWay}" FontSize="13" TextWrapping="Wrap" />
+                <Border Style="{StaticResource AdminSecretBoxStyle}">
+                    <TextBlock Text="{x:Bind ViewModel.ResentLink, Mode=OneWay}" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" />
+                </Border>
+                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.resend.finePrint')}" Style="{StaticResource AdminHintTextStyle}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnCopyResentClick">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE8C8;" FontSize="12" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.invitations.claimLink.copy')}" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock x:Name="ResendCopyResult" Style="{StaticResource AdminHintTextStyle}" VerticalAlignment="Center" />
+                </StackPanel>
+            </StackPanel>
+        </ContentDialog>
+    </Grid>
+</UserControl>

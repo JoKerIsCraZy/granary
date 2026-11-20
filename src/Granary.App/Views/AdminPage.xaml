@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The server's administration, as Silo's web opens it for an administrator: the app's sidebar gives way to the admin area's
-    own (260 px) with Back to App, the MONITOR pages and the server's build at its foot; the page on the right scrolls,
-    1400 px at most. Granary offers the Dashboard and Activity; the rest of the web's admin stays on the web.
+    own (260 px) with Back to App, the MONITOR and MANAGE pages and the server's build at its foot; the page on the right scrolls,
+    1400 px at most. Granary offers the Dashboard, Activity and Users; the rest of the web's admin stays on the web.
 -->
 <Page
     x:Class="Granary.App.Views.AdminPage"
@@ -71,6 +71,18 @@
                                                    Foreground="#FFEF4444" />
                                     </Border>
                                 </Grid>
+                            </ListViewItem>
+                        </ListView>
+                        <TextBlock Text="{x:Bind ManageHeading}" Margin="8,16,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                                   CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
+                        <!-- The web's Users topic, with the one page of it Granary has. -->
+                        <ListView x:Name="ManagePages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
+                                  AutomationProperties.Name="{x:Bind ManageHeading}">
+                            <ListViewItem Tag="users" Tapped="OnUsersTapped" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.nav.page.users.label')}">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE716;" FontSize="14" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.shell.nav.page.users.label')}" FontSize="14" />
+                                </StackPanel>
                             </ListViewItem>
                         </ListView>
                     </StackPanel>

@@ -3492,6 +3492,640 @@
       "value": "このセッションは、ライブでの一時停止、再開、メッセージに対応していません。「停止」と「強制終了」で再生を終了することはできます。"
     }
   ],
+  "web.admin.settings.invitations.capabilitiesFailed": [
+    {
+      "type": 0,
+      "value": "招待機能の情報を読み込めませんでした。"
+    },
+    {
+      "type": 8,
+      "value": "button",
+      "children": [
+        {
+          "type": 0,
+          "value": "再読み込み"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.claimLink.copy": [
+    {
+      "type": 0,
+      "value": "リンクをコピー"
+    }
+  ],
+  "web.admin.settings.invitations.copied": [
+    {
+      "type": 0,
+      "value": "クリップボードにコピーしました"
+    }
+  ],
+  "web.admin.settings.invitations.copyFailed": [
+    {
+      "type": 0,
+      "value": "リンクをコピーできませんでした。選択して手動でコピーするか、もう一度お試しください。"
+    }
+  ],
+  "web.admin.settings.invitations.create.accessGroup": [
+    {
+      "type": 0,
+      "value": "アクセスグループ"
+    }
+  ],
+  "web.admin.settings.invitations.create.creating": [
+    {
+      "type": 0,
+      "value": "作成中…"
+    }
+  ],
+  "web.admin.settings.invitations.create.defaultGroup": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "（デフォルト）"
+    }
+  ],
+  "web.admin.settings.invitations.create.deliveryQuestion": [
+    {
+      "type": 0,
+      "value": "招待の受け取り方法"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailHint": [
+    {
+      "type": 0,
+      "value": "送信先であり、サインイン用のユーザー名にもなります。"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailLabel": [
+    {
+      "type": 0,
+      "value": "メールアドレス"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOption": [
+    {
+      "type": 0,
+      "value": "メールで送信"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOptionBody": [
+    {
+      "type": 0,
+      "value": "リンクをメールで送信します。コピーすることもできます。"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOptionUnavailable": [
+    {
+      "type": 0,
+      "value": "このサーバーではメールが設定されていません。"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailSetup": [
+    {
+      "type": 0,
+      "value": "招待をメールで送信するには、"
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "メールの設定"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "でメールサーバーを設定してください"
+    }
+  ],
+  "web.admin.settings.invitations.create.expiry": [
+    {
+      "type": 0,
+      "value": "リンクの有効期限は7日 · 1回限り"
+    }
+  ],
+  "web.admin.settings.invitations.create.failed": [
+    {
+      "type": 0,
+      "value": "招待を作成できませんでした。"
+    }
+  ],
+  "web.admin.settings.invitations.create.finePrintEmail": [
+    {
+      "type": 0,
+      "value": "リンクは1回だけ使用でき、7日で期限切れになります。後で再送信すると新しいリンクが発行され、このリンクは無効になります。"
+    }
+  ],
+  "web.admin.settings.invitations.create.finePrintLink": [
+    {
+      "type": 0,
+      "value": "リンクは1回だけ使用でき、7日で期限切れになります。リンクを知っている人は誰でも使用できます。意図しない相手に渡った場合は、履歴から取り消してください。"
+    }
+  ],
+  "web.admin.settings.invitations.create.inheritGroup": [
+    {
+      "type": 0,
+      "value": "アクセスグループに従う"
+    }
+  ],
+  "web.admin.settings.invitations.create.libraryHint": [
+    {
+      "type": 0,
+      "value": "承諾時に作成されるアカウントは、選択したグループのライブラリ範囲に従います。"
+    }
+  ],
+  "web.admin.settings.invitations.create.linkOption": [
+    {
+      "type": 0,
+      "value": "リンクを作成"
+    }
+  ],
+  "web.admin.settings.invitations.create.linkOptionBody": [
+    {
+      "type": 0,
+      "value": "チャットなどでリンクを自分で共有します。"
+    }
+  ],
+  "web.admin.settings.invitations.create.noDefaultProfile": [
+    {
+      "type": 0,
+      "value": "このサーバーではデフォルトのプロフィールを一括で作成できません。プロフィールのオプションをオフにして、プロフィールなしの招待を作成してください。"
+    }
+  ],
+  "web.admin.settings.invitations.create.noteHintEmail": [
+    {
+      "type": 0,
+      "value": "メールと招待ページに表示されます。プレーンテキストです。"
+    }
+  ],
+  "web.admin.settings.invitations.create.noteHintLink": [
+    {
+      "type": 0,
+      "value": "招待ページと招待履歴に表示され、リンクを区別できます。"
+    }
+  ],
+  "web.admin.settings.invitations.create.noteLabel": [
+    {
+      "type": 0,
+      "value": "メモ（任意）"
+    }
+  ],
+  "web.admin.settings.invitations.create.notePlaceholder": [
+    {
+      "type": 0,
+      "value": "都合のいいときに設定してね。"
+    }
+  ],
+  "web.admin.settings.invitations.create.ownerOnly": [
+    {
+      "type": 0,
+      "value": "管理者を招待できるのはサーバーの所有者だけです。"
+    }
+  ],
+  "web.admin.settings.invitations.create.personalNoteLabel": [
+    {
+      "type": 0,
+      "value": "個人的なメッセージ（任意）"
+    }
+  ],
+  "web.admin.settings.invitations.create.profileHintEmail": [
+    {
+      "type": 0,
+      "value": "@より前の部分が名前になります。後で変更できます。"
+    }
+  ],
+  "web.admin.settings.invitations.create.profileHintLink": [
+    {
+      "type": 0,
+      "value": "入力されたメールアドレスの@より前の部分が名前になります。後で変更できます。"
+    }
+  ],
+  "web.admin.settings.invitations.create.profileLabel": [
+    {
+      "type": 0,
+      "value": "最初のプロフィールを作成"
+    }
+  ],
+  "web.admin.settings.invitations.create.reloadBeforeRetry": [
+    {
+      "type": 0,
+      "value": "招待がすでに作成されている可能性があります。もう一度試す前に履歴を再読み込みしてください。"
+    }
+  ],
+  "web.admin.settings.invitations.create.reloadFailed": [
+    {
+      "type": 0,
+      "value": "招待履歴を再読み込みできませんでした。別の招待を作成する前に、もう一度お試しください。"
+    }
+  ],
+  "web.admin.settings.invitations.create.role": [
+    {
+      "type": 0,
+      "value": "ロール"
+    }
+  ],
+  "web.admin.settings.invitations.create.roleAdmin": [
+    {
+      "type": 0,
+      "value": "管理者"
+    }
+  ],
+  "web.admin.settings.invitations.create.roleUser": [
+    {
+      "type": 0,
+      "value": "ユーザー"
+    }
+  ],
+  "web.admin.settings.invitations.create.sending": [
+    {
+      "type": 0,
+      "value": "送信中…"
+    }
+  ],
+  "web.admin.settings.invitations.create.serverDefault": [
+    {
+      "type": 0,
+      "value": "サーバーのデフォルト"
+    }
+  ],
+  "web.admin.settings.invitations.create.submitEmail": [
+    {
+      "type": 0,
+      "value": "招待を送信"
+    }
+  ],
+  "web.admin.settings.invitations.create.submitLink": [
+    {
+      "type": 0,
+      "value": "リンクを作成"
+    }
+  ],
+  "web.admin.settings.invitations.create.tourHint": [
+    {
+      "type": 0,
+      "value": "このサーバーでできることを紹介します。オフの機能は省略されます。"
+    }
+  ],
+  "web.admin.settings.invitations.create.tourLabel": [
+    {
+      "type": 0,
+      "value": "初回サインイン時に機能ツアーを表示"
+    }
+  ],
+  "web.admin.settings.invitations.delivery.failed": [
+    {
+      "type": 0,
+      "value": "招待は作成されましたが、メールの送信に失敗したか、送信されたか不明です。このリンクは有効なので、ご自身で届けてください。"
+    }
+  ],
+  "web.admin.settings.invitations.delivery.linkCreated": [
+    {
+      "type": 0,
+      "value": "招待リンクを作成しました。招待する相手に共有してください。相手はメールアドレスを入力し、パスワードを設定します。"
+    }
+  ],
+  "web.admin.settings.invitations.delivery.newLinkForEmail": [
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": "の新しいリンクを作成しました。メールは送信されていないため、このリンクをご自身で共有してください。"
+    }
+  ],
+  "web.admin.settings.invitations.delivery.notConfigured": [
+    {
+      "type": 0,
+      "value": "メールが設定されていません。招待は作成されたので、このリンクをご自身で届けてください。"
+    }
+  ],
+  "web.admin.settings.invitations.delivery.sent": [
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": "にメールを送信しました。受信者に届くとは限りません。下のリンクをコピーすることもできます。"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailSent": [
+    {
+      "type": 0,
+      "value": "メール送信済み"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailUnconfirmed": [
+    {
+      "type": 0,
+      "value": "メール未確認"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailUnconfirmedTitle": [
+    {
+      "type": 0,
+      "value": "メールの送信に失敗したか、届いたか不明です。リンクは引き続き使用できます。"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.link": [
+    {
+      "type": 0,
+      "value": "リンク作成済み"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.unknownTitle": [
+    {
+      "type": 0,
+      "value": "送信方法の記録より前に作成"
+    }
+  ],
+  "web.admin.settings.invitations.empty": [
+    {
+      "type": 0,
+      "value": "招待はまだありません。誰かを招待して始めましょう。"
+    }
+  ],
+  "web.admin.settings.invitations.historyFailed": [
+    {
+      "type": 0,
+      "value": "招待履歴を読み込めませんでした。"
+    },
+    {
+      "type": 1,
+      "value": "error"
+    }
+  ],
+  "web.admin.settings.invitations.intro": [
+    {
+      "type": 0,
+      "value": "メールで招待するか、自分で共有するリンクを作成します。メールアドレスがユーザー名になります。"
+    }
+  ],
+  "web.admin.settings.invitations.invite.button": [
+    {
+      "type": 0,
+      "value": "招待する"
+    }
+  ],
+  "web.admin.settings.invitations.invite.description": [
+    {
+      "type": 0,
+      "value": "アクセス権と招待リンクの受け取り方法を選択してください。"
+    }
+  ],
+  "web.admin.settings.invitations.invite.title": [
+    {
+      "type": 0,
+      "value": "招待する"
+    }
+  ],
+  "web.admin.settings.invitations.loadMore": [
+    {
+      "type": 0,
+      "value": "さらに読み込む"
+    }
+  ],
+  "web.admin.settings.invitations.loading": [
+    {
+      "type": 0,
+      "value": "招待を読み込み中…"
+    }
+  ],
+  "web.admin.settings.invitations.loadingCapabilities": [
+    {
+      "type": 0,
+      "value": "招待の機能を読み込み中…"
+    }
+  ],
+  "web.admin.settings.invitations.notConfigured": [
+    {
+      "type": 0,
+      "value": "このサーバーでは招待が設定されていません。"
+    }
+  ],
+  "web.admin.settings.invitations.publicUrlMissing": [
+    {
+      "type": 0,
+      "value": "招待リンクを作成するには、Siloの公開URLを設定してください。"
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "一般設定"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.reloadHistory": [
+    {
+      "type": 0,
+      "value": "履歴を再読み込み"
+    }
+  ],
+  "web.admin.settings.invitations.resend.creating": [
+    {
+      "type": 0,
+      "value": "新しい招待を作成中…"
+    }
+  ],
+  "web.admin.settings.invitations.resend.description": [
+    {
+      "type": 0,
+      "value": "新しいリンクを作成すると、以前のリンクは無効になります。"
+    }
+  ],
+  "web.admin.settings.invitations.resend.finePrint": [
+    {
+      "type": 0,
+      "value": "このリンクは1回だけ使用できます。以前のリンクはすべて無効になりました。"
+    }
+  ],
+  "web.admin.settings.invitations.resend.title": [
+    {
+      "type": 0,
+      "value": "新しい招待リンク"
+    }
+  ],
+  "web.admin.settings.invitations.resend.uncertain": [
+    {
+      "type": 0,
+      "value": "結果が不確かな可能性があります。もう一度再送信する前に、履歴を再読み込みしてください。"
+    }
+  ],
+  "web.admin.settings.invitations.resendFailed": [
+    {
+      "type": 0,
+      "value": "招待を再送信できませんでした。続行する前に履歴を再読み込みしてください。"
+    }
+  ],
+  "web.admin.settings.invitations.revoke.confirm": [
+    {
+      "type": 0,
+      "value": "取り消す"
+    }
+  ],
+  "web.admin.settings.invitations.revoke.emailDescription": [
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": "への招待を取り消しますか？招待リンクは使用できなくなります。"
+    }
+  ],
+  "web.admin.settings.invitations.revoke.linkDescription": [
+    {
+      "type": 0,
+      "value": "このリンク招待を取り消しますか？リンクは使用できなくなります。"
+    }
+  ],
+  "web.admin.settings.invitations.revoke.title": [
+    {
+      "type": 0,
+      "value": "招待を取り消す"
+    }
+  ],
+  "web.admin.settings.invitations.revokeFailed": [
+    {
+      "type": 0,
+      "value": "招待を取り消せませんでした。"
+    }
+  ],
+  "web.admin.settings.invitations.row.copyNewLink": [
+    {
+      "type": 0,
+      "value": "メールを送らずに新しいリンクをコピー"
+    }
+  ],
+  "web.admin.settings.invitations.row.emailNewLink": [
+    {
+      "type": 0,
+      "value": "新しいリンクをメールで送信"
+    }
+  ],
+  "web.admin.settings.invitations.row.expires": [
+    {
+      "type": 0,
+      "value": "有効期限："
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.admin.settings.invitations.row.invitedBy": [
+    {
+      "type": 0,
+      "value": "招待者："
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.admin.settings.invitations.row.joinedByLink": [
+    {
+      "type": 0,
+      "value": "リンクから参加"
+    }
+  ],
+  "web.admin.settings.invitations.row.linkInvitation": [
+    {
+      "type": 0,
+      "value": "リンク招待"
+    }
+  ],
+  "web.admin.settings.invitations.row.note": [
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 1,
+      "value": "note"
+    },
+    {
+      "type": 0,
+      "value": "」"
+    }
+  ],
+  "web.admin.settings.invitations.row.replaceLink": [
+    {
+      "type": 0,
+      "value": "新しいリンクに置き換え"
+    }
+  ],
+  "web.admin.settings.invitations.row.revokeLink": [
+    {
+      "type": 0,
+      "value": "このリンクを取り消す"
+    }
+  ],
+  "web.admin.settings.invitations.status.accepted": [
+    {
+      "type": 0,
+      "value": "承諾済み"
+    }
+  ],
+  "web.admin.settings.invitations.status.expired": [
+    {
+      "type": 0,
+      "value": "期限切れ"
+    }
+  ],
+  "web.admin.settings.invitations.status.pending": [
+    {
+      "type": 0,
+      "value": "保留中"
+    }
+  ],
+  "web.admin.settings.invitations.status.revoked": [
+    {
+      "type": 0,
+      "value": "取り消し済み"
+    }
+  ],
+  "web.admin.settings.invitations.table.created": [
+    {
+      "type": 0,
+      "value": "作成日"
+    }
+  ],
+  "web.admin.settings.invitations.table.delivery": [
+    {
+      "type": 0,
+      "value": "送信方法"
+    }
+  ],
+  "web.admin.settings.invitations.table.recipient": [
+    {
+      "type": 0,
+      "value": "受信者"
+    }
+  ],
+  "web.admin.settings.invitations.table.role": [
+    {
+      "type": 0,
+      "value": "ロール"
+    }
+  ],
+  "web.admin.settings.invitations.table.status": [
+    {
+      "type": 0,
+      "value": "状態"
+    }
+  ],
   "web.admin.shell.mobileHeader.eyebrow": [
     {
       "type": 0,
@@ -3508,6 +4142,18 @@
     {
       "type": 0,
       "value": "ダッシュボード"
+    }
+  ],
+  "web.admin.shell.nav.page.users.label": [
+    {
+      "type": 0,
+      "value": "ユーザー"
+    }
+  ],
+  "web.admin.shell.nav.section.manage": [
+    {
+      "type": 0,
+      "value": "管理"
     }
   ],
   "web.admin.shell.nav.section.monitor": [
@@ -3980,6 +4626,1249 @@
       "value": "視聴プロバイダーを同期"
     }
   ],
+  "web.admin.users.deleteDialog.confirm": [
+    {
+      "type": 0,
+      "value": "アカウントを削除"
+    }
+  ],
+  "web.admin.users.deleteDialog.confirmLabel": [
+    {
+      "type": 0,
+      "value": "確認のため"
+    },
+    {
+      "type": 8,
+      "value": "code",
+      "children": [
+        {
+          "type": 1,
+          "value": "username"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "と入力してください"
+    }
+  ],
+  "web.admin.users.deleteDialog.conflict": [
+    {
+      "type": 0,
+      "value": "ユーザーが変更されました。再読み込みしてからもう一度お試しください。"
+    }
+  ],
+  "web.admin.users.deleteDialog.deleteFailed": [
+    {
+      "type": 0,
+      "value": "ユーザーを削除できませんでした。"
+    }
+  ],
+  "web.admin.users.deleteDialog.description": [
+    {
+      "type": 0,
+      "value": "アカウントとそのプロフィール、視聴履歴、保存された設定が削除されます。この操作は元に戻せません。"
+    }
+  ],
+  "web.admin.users.deleteDialog.disableFailed": [
+    {
+      "type": 0,
+      "value": "ユーザーを無効にできませんでした。"
+    }
+  ],
+  "web.admin.users.deleteDialog.disableHint": [
+    {
+      "type": 0,
+      "value": "履歴を残したい場合は、代わりにアカウントを"
+    },
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 0,
+          "value": "無効化"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "してください。サインインできなくなりますが、データはすべて残ります。"
+    }
+  ],
+  "web.admin.users.deleteDialog.disableInstead": [
+    {
+      "type": 0,
+      "value": "代わりに無効化"
+    }
+  ],
+  "web.admin.users.deleteDialog.reload": [
+    {
+      "type": 0,
+      "value": "現在のユーザーを再読み込み"
+    }
+  ],
+  "web.admin.users.deleteDialog.reloadFailed": [
+    {
+      "type": 0,
+      "value": "ユーザーを再読み込みできませんでした。"
+    }
+  ],
+  "web.admin.users.deleteDialog.title": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "を削除しますか？"
+    }
+  ],
+  "web.admin.users.detail.access.card.conflict": [
+    {
+      "type": 0,
+      "value": "編集の開始後に別の管理者がこのアカウントを変更しました。編集内容は保持されています。"
+    }
+  ],
+  "web.admin.users.detail.access.card.reloadAndReview": [
+    {
+      "type": 0,
+      "value": "再読み込みして確認"
+    }
+  ],
+  "web.admin.users.detail.access.card.reloadFailed": [
+    {
+      "type": 0,
+      "value": "このアカウントを再読み込みできませんでした。"
+    }
+  ],
+  "web.admin.users.detail.access.card.saveFailed": [
+    {
+      "type": 0,
+      "value": "このアカウントを保存できませんでした。"
+    }
+  ],
+  "web.admin.users.detail.access.card.saved": [
+    {
+      "type": 0,
+      "value": "保存しました"
+    }
+  ],
+  "web.admin.users.detail.access.card.saving": [
+    {
+      "type": 0,
+      "value": "保存中…"
+    }
+  ],
+  "web.admin.users.detail.access.library.accessGroup": [
+    {
+      "type": 0,
+      "value": "アクセスグループ"
+    }
+  ],
+  "web.admin.users.detail.access.library.adminDescription": [
+    {
+      "type": 0,
+      "value": "管理者はアクセスグループを使用しません。未設定の値はサーバーのデフォルトに従います。"
+    }
+  ],
+  "web.admin.users.detail.access.library.chooseForAccount": [
+    {
+      "type": 0,
+      "value": "このアカウント用に選択"
+    }
+  ],
+  "web.admin.users.detail.access.library.libraries": [
+    {
+      "type": 0,
+      "value": "ライブラリ"
+    }
+  ],
+  "web.admin.users.detail.access.library.markerEdit": [
+    {
+      "type": 0,
+      "value": "マーカーの編集"
+    }
+  ],
+  "web.admin.users.detail.access.library.markerEditDescription": [
+    {
+      "type": 0,
+      "value": "イントロ、あらすじ、クレジット、プレビューのマーカー"
+    }
+  ],
+  "web.admin.users.detail.access.library.metadataCuration": [
+    {
+      "type": 0,
+      "value": "メタデータの管理"
+    }
+  ],
+  "web.admin.users.detail.access.library.metadataCurationDescription": [
+    {
+      "type": 0,
+      "value": "メタデータの編集、更新、再マッチ"
+    }
+  ],
+  "web.admin.users.detail.access.library.noGroup": [
+    {
+      "type": 0,
+      "value": "グループなし"
+    }
+  ],
+  "web.admin.users.detail.access.library.noLibraryWarning": [
+    {
+      "type": 0,
+      "value": "このアカウントにはライブラリが表示されません。"
+    }
+  ],
+  "web.admin.users.detail.access.library.useGroupLibraries": [
+    {
+      "type": 0,
+      "value": "グループのライブラリを使用"
+    }
+  ],
+  "web.admin.users.detail.access.library.useServerDefault": [
+    {
+      "type": 0,
+      "value": "サーバーのデフォルトを使用"
+    }
+  ],
+  "web.admin.users.detail.access.role.admin": [
+    {
+      "type": 0,
+      "value": "管理者"
+    }
+  ],
+  "web.admin.users.detail.access.role.user": [
+    {
+      "type": 0,
+      "value": "ユーザー"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.adminLeavesGroup": [
+    {
+      "type": 0,
+      "value": "管理者はアクセスグループを使用しません。保存すると、このアカウントは"
+    },
+    {
+      "type": 1,
+      "value": "group"
+    },
+    {
+      "type": 0,
+      "value": "から外されます。"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.canSignIn": [
+    {
+      "type": 0,
+      "value": "サインイン可能"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.cannotDisableSelf": [
+    {
+      "type": 0,
+      "value": "自分のアカウントは無効にできません。"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.email": [
+    {
+      "type": 0,
+      "value": "メールアドレス"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.enterUsername": [
+    {
+      "type": 0,
+      "value": "ユーザー名を入力してください。"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownRole": [
+    {
+      "type": 0,
+      "value": "自分のロールは変更できません。"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerGrantsAdmin": [
+    {
+      "type": 0,
+      "value": "管理者権限を付与できるのはサーバーのオーナーのみです"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerGrantsAdminRole": [
+    {
+      "type": 0,
+      "value": "管理者ロールを付与できるのはサーバーのオーナーのみです。"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.ownerStaysEnabled": [
+    {
+      "type": 0,
+      "value": "サーバーのオーナーは常に有効な管理者です。"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.role": [
+    {
+      "type": 0,
+      "value": "ロール"
+    }
+  ],
+  "web.admin.users.detail.access.signIn.username": [
+    {
+      "type": 0,
+      "value": "ユーザー名"
+    }
+  ],
+  "web.admin.users.detail.access.tab.ownerOnlyNote": [
+    {
+      "type": 0,
+      "value": "管理者のアクセスと制限を変更できるのはサーバーのオーナーのみです。"
+    }
+  ],
+  "web.admin.users.detail.common.cardTitle.library": [
+    {
+      "type": 0,
+      "value": "ライブラリへのアクセス"
+    }
+  ],
+  "web.admin.users.detail.common.cardTitle.signin": [
+    {
+      "type": 0,
+      "value": "サインインとロール"
+    }
+  ],
+  "web.admin.users.detail.header.adminNotice": [
+    {
+      "type": 0,
+      "value": "他の管理者アカウントを変更できるのはサーバーの所有者のみです。閲覧は可能です。"
+    }
+  ],
+  "web.admin.users.detail.header.breadcrumb": [
+    {
+      "type": 0,
+      "value": "パンくずリスト"
+    }
+  ],
+  "web.admin.users.detail.header.breadcrumbUsers": [
+    {
+      "type": 0,
+      "value": "ユーザー"
+    }
+  ],
+  "web.admin.users.detail.header.deleteAccount": [
+    {
+      "type": 0,
+      "value": "アカウントを削除…"
+    }
+  ],
+  "web.admin.users.detail.header.disableAccount": [
+    {
+      "type": 0,
+      "value": "アカウントを無効化"
+    }
+  ],
+  "web.admin.users.detail.header.disabledNotice": [
+    {
+      "type": 0,
+      "value": "このアカウントはサインインできません。プロフィールと履歴は保持されます。"
+    }
+  ],
+  "web.admin.users.detail.header.enableAccount": [
+    {
+      "type": 0,
+      "value": "アカウントを有効化"
+    }
+  ],
+  "web.admin.users.detail.header.externalSignIn": [
+    {
+      "type": 0,
+      "value": "外部サインイン"
+    }
+  ],
+  "web.admin.users.detail.header.group": [
+    {
+      "type": 0,
+      "value": "グループ："
+    },
+    {
+      "type": 8,
+      "value": "b",
+      "children": [
+        {
+          "type": 1,
+          "value": "name"
+        }
+      ]
+    }
+  ],
+  "web.admin.users.detail.header.groupIdFallback": [
+    {
+      "type": 0,
+      "value": "#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.users.detail.header.joined": [
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "に参加"
+    }
+  ],
+  "web.admin.users.detail.header.lastActive": [
+    {
+      "type": 0,
+      "value": "最終アクティブ："
+    },
+    {
+      "type": 1,
+      "value": "when"
+    }
+  ],
+  "web.admin.users.detail.header.makeOwner": [
+    {
+      "type": 0,
+      "value": "オーナーにする"
+    }
+  ],
+  "web.admin.users.detail.header.moreActions": [
+    {
+      "type": 0,
+      "value": "その他の操作"
+    }
+  ],
+  "web.admin.users.detail.header.noActivity": [
+    {
+      "type": 0,
+      "value": "アクティビティの記録なし"
+    }
+  ],
+  "web.admin.users.detail.header.ownerNotice": [
+    {
+      "type": 0,
+      "value": "これはサーバーのオーナーです。このアカウントを変更できるのはオーナーのみです。"
+    }
+  ],
+  "web.admin.users.detail.header.passwordSignIn": [
+    {
+      "type": 0,
+      "value": "パスワードでサインイン"
+    }
+  ],
+  "web.admin.users.detail.header.resetPassword": [
+    {
+      "type": 0,
+      "value": "パスワードをリセット"
+    }
+  ],
+  "web.admin.users.detail.header.setPassword": [
+    {
+      "type": 0,
+      "value": "パスワードを設定"
+    }
+  ],
+  "web.admin.users.detail.header.status.active": [
+    {
+      "type": 0,
+      "value": "有効"
+    }
+  ],
+  "web.admin.users.detail.header.status.disabled": [
+    {
+      "type": 0,
+      "value": "無効"
+    }
+  ],
+  "web.admin.users.detail.header.temporaryPassword": [
+    {
+      "type": 0,
+      "value": "仮パスワード"
+    }
+  ],
+  "web.admin.users.list.addUser": [
+    {
+      "type": 0,
+      "value": "ユーザーを追加"
+    }
+  ],
+  "web.admin.users.list.adminGroupNone": [
+    {
+      "type": 0,
+      "value": "—"
+    }
+  ],
+  "web.admin.users.list.column.actions": [
+    {
+      "type": 0,
+      "value": "操作"
+    }
+  ],
+  "web.admin.users.list.column.created": [
+    {
+      "type": 0,
+      "value": "作成日"
+    }
+  ],
+  "web.admin.users.list.column.email": [
+    {
+      "type": 0,
+      "value": "メールアドレス"
+    }
+  ],
+  "web.admin.users.list.column.group": [
+    {
+      "type": 0,
+      "value": "グループ"
+    }
+  ],
+  "web.admin.users.list.column.lastActive": [
+    {
+      "type": 0,
+      "value": "最終アクティブ"
+    }
+  ],
+  "web.admin.users.list.column.role": [
+    {
+      "type": 0,
+      "value": "ロール"
+    }
+  ],
+  "web.admin.users.list.column.status": [
+    {
+      "type": 0,
+      "value": "ステータス"
+    }
+  ],
+  "web.admin.users.list.column.username": [
+    {
+      "type": 0,
+      "value": "ユーザー名"
+    }
+  ],
+  "web.admin.users.list.create.adminNoGroups": [
+    {
+      "type": 0,
+      "value": "管理者アカウントはグループに参加できません。"
+    }
+  ],
+  "web.admin.users.list.create.adminOwnerOnly": [
+    {
+      "type": 0,
+      "value": "管理者ロールを付与できるのはサーバーのオーナーのみです。"
+    }
+  ],
+  "web.admin.users.list.create.defaultGroup": [
+    {
+      "type": 0,
+      "value": "デフォルトグループ"
+    }
+  ],
+  "web.admin.users.list.create.defaultProfile": [
+    {
+      "type": 0,
+      "value": "デフォルトのプロフィールを作成"
+    }
+  ],
+  "web.admin.users.list.create.defaultProfileUnavailable": [
+    {
+      "type": 0,
+      "value": "デフォルトのプロフィールを作成（使用不可。アカウントのみを作成するにはチェックを外してください）"
+    }
+  ],
+  "web.admin.users.list.create.email": [
+    {
+      "type": 0,
+      "value": "メールアドレス"
+    }
+  ],
+  "web.admin.users.list.create.group": [
+    {
+      "type": 0,
+      "value": "グループ"
+    }
+  ],
+  "web.admin.users.list.create.markerEdit": [
+    {
+      "type": 0,
+      "value": "マーカーの編集"
+    }
+  ],
+  "web.admin.users.list.create.markerEditHelp": [
+    {
+      "type": 0,
+      "value": "割り当てられたライブラリ内で、イントロ、あらすじ、クレジット、プレビューのマーカーを編集します。"
+    }
+  ],
+  "web.admin.users.list.create.metadataCuration": [
+    {
+      "type": 0,
+      "value": "メタデータの管理"
+    }
+  ],
+  "web.admin.users.list.create.metadataCurationHelp": [
+    {
+      "type": 0,
+      "value": "割り当てられたライブラリ内で、メタデータの編集、更新、再マッチを行います。"
+    }
+  ],
+  "web.admin.users.list.create.password": [
+    {
+      "type": 0,
+      "value": "パスワード"
+    }
+  ],
+  "web.admin.users.list.create.requirePasswordChange": [
+    {
+      "type": 0,
+      "value": "初回サインイン時に変更を求める"
+    }
+  ],
+  "web.admin.users.list.create.role": [
+    {
+      "type": 0,
+      "value": "ロール"
+    }
+  ],
+  "web.admin.users.list.create.role.admin": [
+    {
+      "type": 0,
+      "value": "管理者"
+    }
+  ],
+  "web.admin.users.list.create.role.user": [
+    {
+      "type": 0,
+      "value": "ユーザー"
+    }
+  ],
+  "web.admin.users.list.create.saveFailed": [
+    {
+      "type": 0,
+      "value": "ユーザーを保存できませんでした。"
+    }
+  ],
+  "web.admin.users.list.create.saving": [
+    {
+      "type": 0,
+      "value": "保存中…"
+    }
+  ],
+  "web.admin.users.list.create.tab.access": [
+    {
+      "type": 0,
+      "value": "アクセス"
+    }
+  ],
+  "web.admin.users.list.create.tab.account": [
+    {
+      "type": 0,
+      "value": "アカウント"
+    }
+  ],
+  "web.admin.users.list.create.username": [
+    {
+      "type": 0,
+      "value": "ユーザー名"
+    }
+  ],
+  "web.admin.users.list.createDialogTitle": [
+    {
+      "type": 0,
+      "value": "ユーザーを作成"
+    }
+  ],
+  "web.admin.users.list.deleteAria": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "を削除"
+    }
+  ],
+  "web.admin.users.list.deleteTooltip": [
+    {
+      "type": 0,
+      "value": "ユーザーを削除"
+    }
+  ],
+  "web.admin.users.list.editAria": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "を編集"
+    }
+  ],
+  "web.admin.users.list.editTooltip": [
+    {
+      "type": 0,
+      "value": "ユーザーを編集"
+    }
+  ],
+  "web.admin.users.list.groupFilterAll": [
+    {
+      "type": 0,
+      "value": "すべてのグループ"
+    }
+  ],
+  "web.admin.users.list.groupFilterLabel": [
+    {
+      "type": 0,
+      "value": "アクセスグループで絞り込み"
+    }
+  ],
+  "web.admin.users.list.groupsLoadFailed": [
+    {
+      "type": 0,
+      "value": "アクセスグループを読み込めなかったため、グループ名とグループの絞り込みは使用できません。"
+    }
+  ],
+  "web.admin.users.list.lastActiveNever": [
+    {
+      "type": 0,
+      "value": "なし"
+    }
+  ],
+  "web.admin.users.list.loadFailed": [
+    {
+      "type": 0,
+      "value": "ユーザーを読み込めませんでした。"
+    }
+  ],
+  "web.admin.users.list.nextPage": [
+    {
+      "type": 0,
+      "value": "次へ"
+    }
+  ],
+  "web.admin.users.list.noGroup": [
+    {
+      "type": 0,
+      "value": "グループなし"
+    }
+  ],
+  "web.admin.users.list.noMatches": [
+    {
+      "type": 0,
+      "value": "検索またはフィルターに一致するユーザーはいません。"
+    }
+  ],
+  "web.admin.users.list.pageRange": [
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": "件中"
+    },
+    {
+      "type": 1,
+      "value": "from"
+    },
+    {
+      "type": 0,
+      "value": "-"
+    },
+    {
+      "type": 1,
+      "value": "to"
+    },
+    {
+      "type": 0,
+      "value": "件を表示"
+    }
+  ],
+  "web.admin.users.list.pageSizeOption": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "行"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.users.list.previousPage": [
+    {
+      "type": 0,
+      "value": "前へ"
+    }
+  ],
+  "web.admin.users.list.reload": [
+    {
+      "type": 0,
+      "value": "ユーザーを再読み込み"
+    }
+  ],
+  "web.admin.users.list.searchPlaceholder": [
+    {
+      "type": 0,
+      "value": "ユーザー名またはメールアドレスで検索…"
+    }
+  ],
+  "web.admin.users.list.status.active": [
+    {
+      "type": 0,
+      "value": "有効"
+    }
+  ],
+  "web.admin.users.list.status.disabled": [
+    {
+      "type": 0,
+      "value": "無効"
+    }
+  ],
+  "web.admin.users.list.subtitle": [
+    {
+      "type": 0,
+      "value": "Siloを利用するユーザーのアクセス、デフォルト、招待の流れを管理します。"
+    }
+  ],
+  "web.admin.users.list.tab.invitations": [
+    {
+      "type": 0,
+      "value": "招待"
+    }
+  ],
+  "web.admin.users.list.tab.users": [
+    {
+      "type": 0,
+      "value": "ユーザー"
+    }
+  ],
+  "web.admin.users.list.title": [
+    {
+      "type": 0,
+      "value": "ユーザー"
+    }
+  ],
+  "web.admin.users.list.unavailable": [
+    {
+      "type": 0,
+      "value": "ユーザー管理は利用できません。"
+    }
+  ],
+  "web.admin.users.list.unknownGroup": [
+    {
+      "type": 0,
+      "value": "不明なグループ"
+    }
+  ],
+  "web.admin.users.list.userLoadFailed": [
+    {
+      "type": 0,
+      "value": "ユーザーを読み込めませんでした。"
+    }
+  ],
+  "web.admin.users.page.accountChanged": [
+    {
+      "type": 0,
+      "value": "アカウントが変更されました。もう一度お試しください。"
+    }
+  ],
+  "web.admin.users.page.allUsers": [
+    {
+      "type": 0,
+      "value": "すべてのユーザー"
+    }
+  ],
+  "web.admin.users.page.changeFailed": [
+    {
+      "type": 0,
+      "value": "アカウントを変更できませんでした。"
+    }
+  ],
+  "web.admin.users.page.disableConfirm": [
+    {
+      "type": 0,
+      "value": "アカウントを無効化"
+    }
+  ],
+  "web.admin.users.page.disableDescription": [
+    {
+      "type": 0,
+      "value": "アカウントを再び有効にするまでサインインできなくなります。プロフィール、履歴、ダウンロードは残ります。"
+    }
+  ],
+  "web.admin.users.page.disableTitle": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "を無効にしますか？"
+    }
+  ],
+  "web.admin.users.page.disabled": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "を無効にしました"
+    }
+  ],
+  "web.admin.users.page.enabled": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "を有効にしました"
+    }
+  ],
+  "web.admin.users.page.loadFailedDescription": [
+    {
+      "type": 0,
+      "value": "アカウントの読み込み中に問題が発生しました。しばらくしてからもう一度お試しください。"
+    }
+  ],
+  "web.admin.users.page.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "このユーザーを読み込めませんでした"
+    }
+  ],
+  "web.admin.users.page.notFoundDescription": [
+    {
+      "type": 0,
+      "value": "アカウントが削除されたか、リンクが間違っている可能性があります。"
+    }
+  ],
+  "web.admin.users.page.notFoundTitle": [
+    {
+      "type": 0,
+      "value": "ユーザーが見つかりません"
+    }
+  ],
+  "web.admin.users.page.ownerTransferred": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "がサーバーのオーナーになりました"
+    }
+  ],
+  "web.admin.users.page.transferConfirm": [
+    {
+      "type": 0,
+      "value": "オーナーにする"
+    }
+  ],
+  "web.admin.users.page.transferDescription": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "が管理者を管理できる唯一のアカウントになり、自分は管理者のままです。オーナー権限を戻せるのは"
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "のみです。"
+    }
+  ],
+  "web.admin.users.page.transferFailed": [
+    {
+      "type": 0,
+      "value": "オーナー権限を移譲できませんでした。"
+    }
+  ],
+  "web.admin.users.page.transferTitle": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "をサーバーのオーナーにしますか？"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.copyFailed": [
+    {
+      "type": 0,
+      "value": "リンクをコピーできませんでした。リンクを選択して手動でコピーしてください。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.copyLink": [
+    {
+      "type": 0,
+      "value": "リンクをコピー"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.description": [
+    {
+      "type": 0,
+      "value": "再びサインインする方法を選んでください。どの方法でも、すべてのデバイスからサインアウトされます。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailAction": [
+    {
+      "type": 0,
+      "value": "リンクをメールで送信"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHint": [
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": "に送信されます。1回のみ使用でき、24時間で期限切れになります。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintDisabled": [
+    {
+      "type": 0,
+      "value": "リセットリンクを送信するには、アカウントを有効にしてください。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintNoAddress": [
+    {
+      "type": 0,
+      "value": "このアカウントにはメールアドレスがないため、代わりにリンクを共有してください。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailHintNoMail": [
+    {
+      "type": 0,
+      "value": "リセットリンクを送信するには、設定でメールを設定してください。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailOption": [
+    {
+      "type": 0,
+      "value": "リセットリンクをメールで送信"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailSent": [
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": "にリセットリンクを送信しました。有効期限は"
+    },
+    {
+      "type": 1,
+      "value": "expires"
+    },
+    {
+      "type": 0,
+      "value": "です。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.emailUnconfirmed": [
+    {
+      "type": 0,
+      "value": "メールサーバーで配信を確認できませんでした。もう一度送信するか、共有用のリンクを作成してください。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.issueFailed": [
+    {
+      "type": 0,
+      "value": "リセットリンクを作成できませんでした。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkAction": [
+    {
+      "type": 0,
+      "value": "リンクを作成"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkCopied": [
+    {
+      "type": 0,
+      "value": "リンクをコピーしました"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHint": [
+    {
+      "type": 0,
+      "value": "コピーしてご自身で送信してください。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHintDisabled": [
+    {
+      "type": 0,
+      "value": "リセットリンクを作成するには、アカウントを有効にしてください。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkHintNoUrl": [
+    {
+      "type": 0,
+      "value": "リセットリンクを作成するには、Siloの公開URLを設定してください。"
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "一般設定"
+        }
+      ]
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkOption": [
+    {
+      "type": 0,
+      "value": "共有用のリンクを作成"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.linkShare": [
+    {
+      "type": 0,
+      "value": "このリンクは"
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "とのみ共有してください。リンクを持っている人は誰でも、有効期限の"
+    },
+    {
+      "type": 1,
+      "value": "expires"
+    },
+    {
+      "type": 0,
+      "value": "までアカウントのパスワードを設定できます。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.methodGroup": [
+    {
+      "type": 0,
+      "value": "再びサインインする方法"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.mustChange": [
+    {
+      "type": 0,
+      "value": "次回のサインイン時に新しいパスワードの設定を必須にする"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordAction": [
+    {
+      "type": 0,
+      "value": "パスワードを設定"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordLabel": [
+    {
+      "type": 0,
+      "value": "一時パスワード"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordOption": [
+    {
+      "type": 0,
+      "value": "一時パスワードを設定"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordOptionHint": [
+    {
+      "type": 0,
+      "value": "ここで入力し、本人に伝えてください。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordRules": [
+    {
+      "type": 1,
+      "value": "min"
+    },
+    {
+      "type": 0,
+      "value": "文字以上、UTF-8で"
+    },
+    {
+      "type": 1,
+      "value": "max"
+    },
+    {
+      "type": 0,
+      "value": "バイト以下にしてください。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordSet": [
+    {
+      "type": 0,
+      "value": "パスワードを設定しました。"
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "はすべての場所からサインアウトされました。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.passwordSetMustChange": [
+    {
+      "type": 0,
+      "value": "パスワードを設定しました。"
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "はすべての場所からサインアウトされました。次回のサインイン時に新しいパスワードを設定する必要があります。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.setFailed": [
+    {
+      "type": 0,
+      "value": "パスワードを設定できませんでした。"
+    }
+  ],
+  "web.admin.users.passwordResetDialog.title": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "のパスワードをリセット"
+    }
+  ],
   "web.audiobooks.duration.hours": [
     {
       "type": 1,
@@ -4042,6 +5931,12 @@
     {
       "type": 0,
       "value": "一時パスワード"
+    }
+  ],
+  "web.auth.invalidEmail": [
+    {
+      "type": 0,
+      "value": "有効なメールアドレスを入力してください（例：name@example.com）"
     }
   ],
   "web.auth.login.device.continueOnPhone": [
@@ -12333,6 +14228,12 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.profiles.libraryAccess.label": [
+    {
+      "type": 0,
+      "value": "ライブラリへのアクセス"
+    }
+  ],
   "web.profiles.librarySelect.libraryFallback": [
     {
       "type": 0,
@@ -15185,6 +17086,48 @@
       "value": "設定を検索"
     }
   ],
+  "web.settings.sessions.admin.empty": [
+    {
+      "type": 0,
+      "value": "このアカウントにはアクティブなサインインがありません。"
+    }
+  ],
+  "web.settings.sessions.admin.ownerOnly": [
+    {
+      "type": 0,
+      "value": "ほかの管理者やオーナーをサインアウトできるのは、サーバーのオーナーだけです。"
+    }
+  ],
+  "web.settings.sessions.adminDescription": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "のアカウントにサインインしているブラウザーとアプリです。"
+    }
+  ],
+  "web.settings.sessions.confirm.adminClientDescription": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "のアカウントのこのクライアントは、次の認証済みリクエストでアクセスできなくなります。ほかのセッションとパスワードは変わりません。"
+    }
+  ],
+  "web.settings.sessions.confirm.allTitle": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "をすべての場所からサインアウトしますか？"
+    }
+  ],
   "web.settings.sessions.confirm.clientDescription": [
     {
       "type": 0,
@@ -15205,6 +17148,12 @@
     {
       "type": 0,
       "value": "再生中の動画は、次のリクエストまで再生が続く場合があります。保存されたデバイスの設定は保持されます。"
+    }
+  ],
+  "web.settings.sessions.confirm.sessionTitle": [
+    {
+      "type": 0,
+      "value": "このセッションをサインアウトしますか？"
     }
   ],
   "web.settings.sessions.confirm.signingOut": [
@@ -15235,6 +17184,12 @@
     {
       "type": 0,
       "value": "不明なデバイス"
+    }
+  ],
+  "web.settings.sessions.footnoteAdmin": [
+    {
+      "type": 0,
+      "value": "最終アクティビティは認証済みの操作を記録し、更新は最大で1分に1回です。古いセッションにはまだアクティビティが記録されていない場合があります。サインアウトしても、パスワードと保存されたデバイスの設定は保持されます。ほかのアカウントはサインインしたままです。"
     }
   ],
   "web.settings.sessions.lastSeen.active": [
@@ -15469,6 +17424,12 @@
       "value": "User-Agent"
     }
   ],
+  "web.settings.sessions.signOutEverywhere": [
+    {
+      "type": 0,
+      "value": "すべての場所からサインアウト"
+    }
+  ],
   "web.settings.sessions.signOutFailed": [
     {
       "type": 0,
@@ -15479,6 +17440,16 @@
     {
       "type": 0,
       "value": "セッションをサインアウトしました"
+    }
+  ],
+  "web.settings.sessions.signedOutEverywhere": [
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "をすべての場所からサインアウトしました"
     }
   ],
   "web.settings.sessions.title": [

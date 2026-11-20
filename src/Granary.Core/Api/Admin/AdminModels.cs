@@ -260,32 +260,6 @@ public sealed record AdminTopTitle(string MediaItemId, string MediaType, string 
 
 public sealed record AdminDashboardTopProfile(string ProfileId, string ProfileName, string UserId, string Username, int Plays, long TotalSeconds);
 
-/// <summary>An account of <c>GET /api/v2/admin/users</c>.</summary>
-public sealed record AdminUser
-{
-    public string Id { get; init => field = value ?? ""; } = "";
-
-    public string Username { get; init => field = value ?? ""; } = "";
-
-    public string Email { get; init => field = value ?? ""; } = "";
-
-    /// <summary>admin or user.</summary>
-    public string Role { get; init => field = value ?? ""; } = "";
-
-    public bool Enabled { get; init; }
-
-    public bool IsOwner { get; init; }
-
-    public DateTimeOffset CreatedAt { get; init; }
-
-    public DateTimeOffset? LastActiveAt { get; init; }
-}
-
-public sealed record AdminUserCollection
-{
-    public IReadOnlyList<AdminUser> Items { get; init => field = value ?? []; } = [];
-}
-
 /// <summary>A library of <c>GET /api/v2/libraries</c>, as an administrator sees it: its folders and scan state.</summary>
 public sealed record AdminLibrary
 {
