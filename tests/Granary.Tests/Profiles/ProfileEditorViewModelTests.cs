@@ -404,12 +404,15 @@ public sealed class ProfileEditorViewModelTests
         Assert.Contains("\"max_playback_quality\":\"4320p\"", body, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task LeavingKids_ClearsAQualityThisClientDoesNotKnow()
+    // "8k" is a value the editor's choices don't know at all, so leaving Kids changes no choice: only the save clears it.
+    [Theory]
+    [InlineData("4320p")]
+    [InlineData("8k")]
+    public async Task LeavingKids_ClearsAQualityThisClientDoesNotKnow(string quality)
     {
         ScriptLibraries();
         _silo.On(HttpMethod.Patch, ProfilesPath + "/p-kid", ScriptedSilo.Json(HttpStatusCode.OK, """{"id":"p-kid","name":"Mila","is_primary":false,"has_pin":false,"is_child":false}"""));
-        var editor = Editor(Kid with { MaxPlaybackQuality = "4320p" });
+        var editor = Editor(Kid with { MaxPlaybackQuality = quality });
         await editor.LoadLibrariesAsync(Ct);
 
         editor.IsChild = false;
