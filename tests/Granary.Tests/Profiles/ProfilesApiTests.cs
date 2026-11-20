@@ -242,7 +242,7 @@ public sealed class ProfilesApiTests
         var notAnImage = await Assert.ThrowsAsync<AvatarRejectedException>(() =>
             Api.UploadAvatarAsync(ScriptedSilo.Base, "p-elena", "GIF89a......"u8.ToArray(), "elena.png", manager, Ct));
 
-        Assert.Equal((AvatarProblem.TooLarge, AvatarProblem.TooLarge, AvatarProblem.NotAnImage), (tooLarge.Problem, empty.Problem, notAnImage.Problem));
+        Assert.Equal((AvatarProblem.TooLarge, AvatarProblem.NotAnImage, AvatarProblem.NotAnImage), (tooLarge.Problem, empty.Problem, notAnImage.Problem));
         Assert.Empty(_silo.Sent);
     }
 

@@ -751,11 +751,12 @@ Settings → Profiles, and Add profile on the picker and in the profile menu, cr
   gets `403 forbidden`; an unverified PIN-locked primary gets `403 profile_verification_required`. The first profile is
   created by anyone signed in, without access members, and becomes the primary. Granary shows Settings → Profiles only to
   the acting primary profile, as the web's `RequirePrimaryOrAdmin`.
-- **As whom.** In Settings the writes go out as the acting profile, bound to it (`ManagingProfile.Acting`), so a write
-  made for it never goes out as another. The picker's and the menu's Add profile verify the primary profile's PIN first
+- **As whom.** In Settings the writes go out as the acting profile, bound to it and its account (`ManagingProfile.Acting`),
+  so a write made for it never goes out as another profile or account. The picker's and the menu's Add profile verify the primary profile's PIN first
   (when it has one) and send its id and that proof with the write (`ManagingProfile.Lent`), as the web's picker creates a
-  profile through `captureProfileRequestContextAs` without picking the primary. The proof stays in memory for that Add
-  only; a refusal of a lent profile never clears the selected one.
+  profile through `captureProfileRequestContextAs` without picking the primary. The lent id and proof go only on that
+  Add's requests, only to the server and account the picker's list came from, and never on any other request; the proof
+  stays in memory for that Add only; a refusal of a lent profile never clears the selected one.
 - `POST /api/v2/profiles` (`createProfile`, 201 → `Profile`): `name` (1..64, trimmed) required. Granary sends what the
   web's `buildProfileRequestFromDraft` sends: `name`, `is_child`, `library_restrictions_enabled`, `allowed_library_ids`
   (strings) always; `avatar` (`preset:<id>`), `pin`, `max_content_rating`, `max_playback_quality` (`1080p` | `2160p`),
@@ -767,7 +768,8 @@ Settings → Profiles, and Add profile on the picker and in the profile menu, cr
   non-empty list is `422`).
 - `DELETE /api/v2/profiles/{id}` (`deleteProfile`, 204): the primary profile answers `409`, one already gone `404`.
 - `PUT /api/v2/profiles/{id}/avatar` (`uploadProfileAvatar` → `Profile`): multipart, part `avatar`, JPEG, PNG or WebP, at
-  most 10 MiB; the server resizes it. `503` when the server keeps no uploads (`avatar_upload_enabled: false`, when the web
+  most 10 MiB (the whole request at most 11 MiB); the server decodes the bytes and resizes them. Granary sends only a
+  picture whose first bytes are a JPEG, PNG or WebP and that fits, with the type its bytes name (`AvatarUpload.Check`). `503` when the server keeps no uploads (`avatar_upload_enabled: false`, when the web
   shows "Custom uploads are unavailable"). `DELETE …/avatar` (204) removes an upload and leaves a preset.
 - The editor's libraries: `GET /api/v2/user/libraries?include_hidden=true` as the manager, so libraries the primary hid
   for itself can still be given to another profile.

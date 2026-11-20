@@ -3,10 +3,10 @@ namespace Granary.Core.Api.Profiles;
 /// <summary>Why a picture was not sent as a profile's avatar.</summary>
 public enum AvatarProblem
 {
-    /// <summary>Empty, or larger than <see cref="AvatarUpload.MaxBytes"/>.</summary>
+    /// <summary>Larger than <see cref="AvatarUpload.MaxBytes"/>.</summary>
     TooLarge,
 
-    /// <summary>Not a JPEG, PNG or WebP image.</summary>
+    /// <summary>Not a JPEG, PNG or WebP image, an empty file among them.</summary>
     NotAnImage,
 }
 
@@ -33,7 +33,7 @@ public static class AvatarUpload
     /// <exception cref="AvatarRejectedException">The picture is empty, too large, or not one of the three types.</exception>
     public static string Check(ReadOnlySpan<byte> image)
     {
-        if (image.IsEmpty || image.Length > MaxBytes)
+        if (image.Length > MaxBytes)
         {
             throw new AvatarRejectedException(AvatarProblem.TooLarge);
         }

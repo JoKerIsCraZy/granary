@@ -92,6 +92,11 @@ public sealed class AuthenticationHandler(
                 // A 401 comes from the auth middleware before the handler ran, so replaying is safe. Once only,
                 // as the same login and profile: only the bearer token changes.
                 response.Dispose();
+                if (request.GetLent() is { } lentAgain && result.Credentials!.Account?.Id != lentAgain.AccountId)
+                {
+                    // The refresh renews the same login, so this does not happen; a lent proof still never goes as another.
+                    throw new ProfileChangedException();
+                }
                 var retry = Clone(request);
                 retry.Headers.Authorization = Bearer(result.Credentials!);
                 var retried = await base.SendAsync(retry, cancellationToken).ConfigureAwait(false);

@@ -1063,7 +1063,12 @@ SiloHttp ─▶ ClientIdentityHandler ─▶ AuthenticationHandler ─▶ Socket
 - A household write can go out as a profile that does not act (`ManagingProfile.Lent`, docs/api-contract.md 6.7): the
   picker's Add profile creates as the primary profile without picking it. Such a request is `SiloAuth.Account` with the
   lent profile in its options; the handler sends that profile's id and proof in place of the session's, and a refusal
-  of it leaves the selected profile alone. The proof lives in memory for that one Add.
+  of it leaves the selected profile alone. A lent profile carries its server and account: the handler sends nothing
+  (`ProfileChangedException`) when the request is for another server or URL, is not an account request, or another
+  account is signed in, and checks the account again before the replay after a refresh. The headers live only on that
+  request message, so a concurrent request, the refresh and later requests never see them, and the primary handler
+  follows no redirect. The proof lives in memory for that one Add. The acting profile's household writes
+  (`ManagingProfile.Acting`) are bound to the profile and its account as `SendAsAccountProfileAsync` binds any write.
 - `TokenRefresher` makes the refresh single-flight per server: a caller whose token was already replaced
   gets the new one without a network call, and a failed refresh answers everyone waiting until its
   `Retry-After` passes. The refresh runs on its own client (identity handler only); a caller can stop
