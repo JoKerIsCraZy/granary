@@ -1921,7 +1921,7 @@ stream's commands on Activity and what Users does to accounts, invitations and i
   - **The admin dialogs** are dressed as the web's `DialogContent` (`AdminDialogs`): 24 px padding, 12 px corners, a
     hairline, the page's #141417, 512 px wide (672 for Add User). The title (18 px semibold), its line (14 px muted) and
     the X top right are the dialog's own content, and so are its buttons, laid out as the web's: one full-width button, or
-    Cancel (ghost) beside the action on the right. The fields follow the web's Tailwind values (`Themes/AdminForms.xaml`):
+    Cancel (ghost) beside the action on the right. The title and the buttons always show: only the body between them scrolls, its scrollbar in a 16 px gutter of its own, and the dialog is capped at the window's height, fitted again when the window is resized. The fields follow the web's Tailwind values (`Themes/AdminForms.xaml`):
     labels 14 px medium, boxes and menus 36 px with 10 px corners, hints 12 px muted, bordered cards with 10 px corners,
     choice cards with 16 px corners that turn amber when picked.
   - **Add User** (the web's Create User, `components/admin/users/CreateUserForm.tsx`): the title and X, "Create a default
@@ -1934,7 +1934,8 @@ stream's commands on Activity and what Users does to accounts, invitations and i
     web's `PolicyAccessFields` (`AdminPolicyFieldsView` on `AdminPolicyForm`): Library Access with "Inherit from group"
     and its switch ("Inherited: 2 libraries" below, or a row a library, each with its switch, Disabled badge and kind),
     the web's info line where downloads or their conversion are off on the server, Downloads and Download Transcodes side
-    by side, and Media Requests, each a card with a menu ("Inherited: Not allowed", Allowed, Not allowed). Limits: Max
+    by side, and Media Requests, each a card with a menu ("Inherited: Not allowed", Allowed, Not allowed); a card in half
+    the width has its name and line on top and the menu under them, as the web's row wraps there. Limits: Max
     Streams and Max Transcodes, then the remote and local bitrate caps, two a row, each with Override and its switch on
     the right and the default in a dashed box ("Inherited: Unlimited") until overridden; a limit's box then starts from
     what it inherits, with the web's help line ("0 = unlimited"); a cap's menu offers Unlimited, 40 to 1 Mbps and Custom,
