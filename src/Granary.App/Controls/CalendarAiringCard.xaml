@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    An airing in the Calendar's week grid, Granary's own (the user's chosen design): a 16:9 still with rounded corners, which
+    is the middle of the airing's poster over its thumbhash (the calendar carries no still or backdrop), the badge top left
+    (PREMIERE filled with the accent, FINALE outlined in it, the others outlined plainly), a check top right once watched,
+    the air time in a chip bottom left; the title and "S3 · E4" under it. The button around it opens the airing and carries
+    its name, so the texts here are left to the eye.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.CalendarAiringCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Loaded="OnLoaded"
+    Unloaded="OnUnloaded">
+
+    <Grid RowSpacing="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="Still" CornerRadius="10" Background="{StaticResource SiloSurfaceBrush}">
+            <Image x:Name="BlurImage" Stretch="UniformToFill" AutomationProperties.AccessibilityView="Raw" />
+            <Image x:Name="ArtImage" Stretch="UniformToFill" ImageFailed="OnImageFailed" AutomationProperties.AccessibilityView="Raw" />
+
+            <Border x:Name="BadgeBox" Margin="6" Padding="6,3,6,4" CornerRadius="5" BorderThickness="1"
+                    HorizontalAlignment="Left" VerticalAlignment="Top" AutomationProperties.AccessibilityView="Raw">
+                <TextBlock x:Name="BadgeText" FontSize="9.5" FontFamily="{StaticResource SiloFontExtraBold}" FontWeight="ExtraBold"
+                           CharacterSpacing="80" LineHeight="0" TextLineBounds="Tight" />
+            </Border>
+
+            <Border x:Name="WatchedMark" Width="20" Height="20" Margin="6" CornerRadius="10" Background="#CC0E0E10"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" AutomationProperties.AccessibilityView="Raw">
+                <FontIcon Glyph="&#xE73E;" FontSize="11" FontWeight="Bold" Foreground="{StaticResource SiloForegroundBrush}" />
+            </Border>
+
+            <Border x:Name="TimeChip" Margin="6" Padding="7,3,7,4" CornerRadius="6" Background="#CC0E0E10"
+                    HorizontalAlignment="Left" VerticalAlignment="Bottom" AutomationProperties.AccessibilityView="Raw">
+                <TextBlock x:Name="TimeText" FontSize="11" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold"
+                           Foreground="{StaticResource SiloForegroundBrush}" Typography.NumeralAlignment="Tabular"
+                           LineHeight="0" TextLineBounds="Tight" />
+            </Border>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Spacing="2" Padding="2,0">
+            <TextBlock x:Name="TitleText" FontSize="13" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold"
+                       Foreground="{StaticResource SiloForegroundBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                       AutomationProperties.AccessibilityView="Raw" />
+            <TextBlock x:Name="CodeText" FontSize="12" FontFamily="{StaticResource SiloFontRegular}" Foreground="{StaticResource SiloMutedBrush}"
+                       TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular"
+                       AutomationProperties.AccessibilityView="Raw" />
+        </StackPanel>
+    </Grid>
+</UserControl>

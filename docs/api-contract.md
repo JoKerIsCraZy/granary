@@ -1212,7 +1212,8 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 - `CalendarEvent`: `content_id`, `type` (`movie`, `episode`, `season_premiere`), `title` (the movie's or series'),
   `series_id`, `season_number`, `episode_number`, `episode_title`, `air_date` (the source's date), `local_air_date` (the
   day in `timezone` it is listed under), `air_at` (instant, when known) or `air_time` (HH:MM in the network's zone),
-  `badges` (`series_premiere`, `season_premiere`, `finale`), `poster_url`, `watched`. The episode may not be in a library
+  `badges` (`series_premiere`, `season_premiere`, `finale`), `poster_url` (the server's small poster: the Calendar's
+  cards show its middle as their 16:9 still), `poster_thumbhash`, `watched`. The episode may not be in a library
   yet: the web opens the series, not the episode.
 - What it lists (`internal/catalog/calendar_repo.go`): every row of the server's episode metadata with an air date in the
   window whose series is in a library the profile may see, whether the episode has a file or not; no specials (season

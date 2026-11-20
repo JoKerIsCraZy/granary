@@ -10,7 +10,7 @@ using Granary.Tests.Profiles;
 
 namespace Granary.Tests.Browse;
 
-/// <summary>The Calendar, as Silo's web shows it; the clock stands on Thursday, 1 October 2026, in UTC.</summary>
+/// <summary>The Calendar's week grid; the clock stands on Thursday, 1 October 2026, in UTC.</summary>
 public sealed class CalendarViewModelTests
 {
     private const string CalendarPath = "api/v2/calendar";
@@ -26,7 +26,8 @@ public sealed class CalendarViewModelTests
                   "content_id": "episode:severance-s02e01", "type": "episode", "title": "Severance", "series_id": "series:severance",
                   "season_number": 2, "episode_number": 1, "episode_title": "Hello, Ms. Cobel", "air_date": "2026-10-01",
                   "local_air_date": "2026-10-01", "air_at": "2026-10-01T21:00:00Z", "badges": ["season_premiere"],
-                  "poster_url": "https://s3.example.test/severance.jpg", "watched": false
+                  "poster_url": "https://s3.example.test/severance.jpg",
+                  "poster_thumbhash": "1QcSHQRnh493V4dIh4eXh1h4kJUI", "watched": false
                 }
               ]
             },
@@ -75,30 +76,114 @@ public sealed class CalendarViewModelTests
 
         Assert.Equal("Sep 28 – Oct 4, 2026", page.WeekLabel);
         Assert.StartsWith("start=2026-09-28&end=2026-10-04&filter=following&timezone=", LastQuery, StringComparison.Ordinal);
-        Assert.Equal(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], page.Days.Select(d => d.Label));
-        Assert.Equal(["28", "29", "30", "1", "2", "3", "4"], page.Days.Select(d => d.Day));
+        Assert.Equal(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], page.Days.Select(d => d.Weekday));
+        Assert.Equal(["28", "29", "30", "1", "2", "3", "4"], page.Days.Select(d => d.DayNumber));
         Assert.Equal([new DateOnly(2026, 10, 1)], page.Days.Where(d => d.IsToday).Select(d => d.Date));
-        Assert.Equal([new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 3)], page.Days.Where(d => d.HasEvents).Select(d => d.Date));
+        Assert.Equal([new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 3)], page.Days.Where(d => d.HasAirings).Select(d => d.Date));
     }
 
     [Fact]
-    public async Task EachDay_IsARowOfItsAirings_WordedAsTheWeb()
+    public async Task EachDay_KnowsWhetherItIsPastTodayOrToCome()
+    {
+        var page = await LoadedAsync();
+
+        Assert.Equal([CalendarDayTime.Past, CalendarDayTime.Past, CalendarDayTime.Past, CalendarDayTime.Today,
+            CalendarDayTime.Future, CalendarDayTime.Future, CalendarDayTime.Future], page.Days.Select(d => d.When));
+        Assert.Equal([true, true, true, false, false, false, false], page.Days.Select(d => d.IsPast));
+
+        _harness.Answer(CalendarPath, """
+            { "events": [ { "date": "2026-10-07", "items": [ { "content_id": "movie:a", "type": "movie", "title": "A", "badges": [], "watched": false } ] } ] }
+            """);
+        await page.NextWeekCommand.ExecuteAsync(null);
+        Assert.Equal(7, page.Days.Count);
+        Assert.All(page.Days, d => Assert.Equal(CalendarDayTime.Future, d.When));
+    }
+
+    [Fact]
+    public async Task EachDay_IsAColumnOfItsAirings_WordedAsTheWeb()
     {
         var page = await LoadedAsync();
 
         var aired = Aired(page);
         Assert.Equal(["Thursday, October 1st", "Saturday, October 3rd"], aired.Select(r => r.Heading));
         Assert.Equal(["TODAY", ""], aired.Select(r => r.Badge));
-        var premiere = aired[0].Cards[0];
+        var premiere = aired[0].Airings[0];
         Assert.Equal("Severance", premiere.Title);
-        Assert.Equal("S2 · E1 - HELLO, MS. COBEL", premiere.Subtitle);
-        Assert.Equal("NEW SEASON", premiere.StatusBadge);
-        Assert.Equal(DateText.Time(new DateTime(2026, 1, 1, 21, 0, 0)), premiere.Caption);
-        Assert.Equal(CalendarViewModel.CardType, premiere.Type);
-        var movie = aired[1].Cards[0];
-        Assert.Equal("MOVIE", movie.Subtitle);
-        Assert.Equal(DateText.Time(new DateTime(2026, 1, 1, 20, 15, 0)), movie.Caption);
-        Assert.True(movie.IsWatched && movie.ShowsWatchedMark);
+        Assert.Equal("S2 · E1", premiere.Code);
+        Assert.Equal("S2 · E1 - Hello, Ms. Cobel", premiere.ToolTip);
+        Assert.Equal("NEW SEASON", premiere.Badge);
+        Assert.Equal(CalendarBadgeKind.NewSeason, premiere.BadgeKind);
+        Assert.Equal(DateText.Time(new DateTime(2026, 1, 1, 21, 0, 0)), premiere.Time);
+        Assert.Equal(new Uri("https://s3.example.test/severance.jpg"), premiere.ImageUrl);
+        Assert.Equal("1QcSHQRnh493V4dIh4eXh1h4kJUI", premiere.ImageThumbhash);
+        Assert.False(premiere.IsWatched);
+        // Screen readers name a card as before the grid: the title, then the episode in the web's capitals.
+        Assert.Equal("Severance, S2 · E1 - HELLO, MS. COBEL", premiere.AccessibleName);
+        var movie = aired[1].Airings[0];
+        Assert.Equal("Movie", movie.Code);
+        Assert.Null(movie.ToolTip);
+        Assert.Equal(CalendarBadgeKind.None, movie.BadgeKind);
+        Assert.Equal(DateText.Time(new DateTime(2026, 1, 1, 20, 15, 0)), movie.Time);
+        Assert.True(movie.IsWatched);
+        Assert.Equal("Dune: Part Three, MOVIE", movie.AccessibleName);
+    }
+
+    [Fact]
+    public async Task ThePremiereIsFilled_AndTheOtherBadgesOutlined()
+    {
+        _harness.Answer(CalendarPath, """
+            { "events": [ { "date": "2026-10-02", "items": [
+              { "content_id": "episode:a", "type": "episode", "title": "A", "series_id": "series:a", "season_number": 1, "episode_number": 1, "badges": ["series_premiere"], "watched": false },
+              { "content_id": "episode:b", "type": "episode", "title": "B", "series_id": "series:b", "season_number": 2, "episode_number": 8, "badges": ["finale"], "watched": false },
+              { "content_id": "movie:c", "type": "movie", "title": "C", "badges": ["digital"], "watched": false }
+            ] } ] }
+            """);
+
+        var page = await LoadedAsync();
+
+        var airings = Assert.Single(Aired(page)).Airings;
+        Assert.Equal([CalendarBadgeKind.Premiere, CalendarBadgeKind.Finale, CalendarBadgeKind.Release], airings.Select(a => a.BadgeKind));
+        Assert.Equal(["PREMIERE", "FINALE", "DIGITAL"], airings.Select(a => a.Badge));
+    }
+
+    [Fact]
+    public async Task TheSummary_CountsTheWeeksEpisodesPremieresAndFinales()
+    {
+        _harness.Answer(CalendarPath, """
+            { "events": [
+              { "date": "2026-09-28", "items": [
+                { "content_id": "episode:a1", "type": "episode", "title": "A", "series_id": "series:a", "season_number": 1, "episode_number": 1, "badges": ["series_premiere"], "watched": true },
+                { "content_id": "episode:b9", "type": "episode", "title": "B", "series_id": "series:b", "season_number": 3, "episode_number": 9, "badges": ["finale"], "watched": false } ] },
+              { "date": "2026-10-02", "items": [
+                { "content_id": "episode:c1", "type": "episode", "title": "C", "series_id": "series:c", "season_number": 2, "episode_number": 1, "badges": ["season_premiere"], "watched": false },
+                { "content_id": "episode:d1", "type": "episode", "title": "D", "series_id": "series:d", "season_number": 1, "episode_number": 1, "badges": ["series_premiere"], "watched": false } ] }
+            ] }
+            """);
+
+        var page = await LoadedAsync();
+
+        // A new season is not a premiere: the count matches the cards that say PREMIERE.
+        Assert.Equal("4 episodes this week · 2 premieres · 1 finale", page.Summary);
+    }
+
+    [Fact]
+    public async Task TheSummary_NamesMoviesToo_AndOneOfEach()
+    {
+        var page = await LoadedAsync();
+        Assert.Equal("1 episode this week · 1 movie", page.Summary);
+
+        _harness.Answer(CalendarPath, """
+            { "events": [ { "date": "2026-10-02", "items": [
+              { "content_id": "movie:a", "type": "movie", "title": "A", "badges": [], "watched": false },
+              { "content_id": "movie:b", "type": "movie", "title": "B", "badges": [], "watched": false } ] } ] }
+            """);
+        await page.RetryCommand.ExecuteAsync(null);
+        Assert.Equal("2 movies this week", page.Summary);
+
+        _harness.Answer(CalendarPath, NoEvents);
+        await page.RetryCommand.ExecuteAsync(null);
+        Assert.Equal("", page.Summary);
+        Assert.False(page.HasSummary);
     }
 
     [Fact]
@@ -106,8 +191,8 @@ public sealed class CalendarViewModelTests
     {
         var page = await LoadedAsync();
 
-        page.OpenCommand.Execute(Aired(page)[0].Cards[0]);
-        page.OpenCommand.Execute(Aired(page)[1].Cards[0]);
+        page.OpenCommand.Execute(Aired(page)[0].Airings[0]);
+        Aired(page)[1].Airings[0].OpenCommand.Execute(Aired(page)[1].Airings[0]);
 
         Assert.Equal(["series:severance", "movie:dune-3"], _harness.Navigation.Navigations.Select(n => n.Parameter as string));
     }
@@ -162,31 +247,15 @@ public sealed class CalendarViewModelTests
     {
         var page = await LoadedAsync();
 
-        Assert.Equal(page.Days.Select(d => d.Date), page.Rows.Select(r => r.Date));
-        Assert.Equal([false, false, false, true, false, true, false], page.Rows.Select(r => r.HasAirings));
-        Assert.Equal("Friday, October 2nd", page.Rows[4].Heading);
-        Assert.True(page.Rows[4].HasNoAirings);
-        Assert.Equal("TODAY", page.Rows[3].Badge);
+        Assert.Equal(Enumerable.Range(0, 7).Select(i => new DateOnly(2026, 9, 28).AddDays(i)), page.Days.Select(r => r.Date));
+        Assert.Equal([false, false, false, true, false, true, false], page.Days.Select(r => r.HasAirings));
+        Assert.Equal("Friday, October 2nd", page.Days[4].Heading);
+        Assert.True(page.Days[4].HasNoAirings);
+        Assert.Equal("TODAY", page.Days[3].Badge);
     }
 
     [Fact]
-    public async Task ADayPicked_AsksForItsRow_AnEmptyOneToo()
-    {
-        var page = await LoadedAsync();
-        var requested = new List<DateOnly>();
-        page.DayRequested += (_, day) => requested.Add(day);
-
-        page.SelectDayCommand.Execute(page.Days[4]);
-        // The empty day's own row says so; nothing at the top.
-        Assert.False(page.HasSelectedDayEmpty);
-        Assert.True(page.Days[4].IsSelected);
-
-        page.SelectDayCommand.Execute(page.Days[3]);
-        Assert.Equal([new DateOnly(2026, 10, 2), new DateOnly(2026, 10, 1)], requested);
-    }
-
-    [Fact]
-    public async Task ADayNamedTwice_IsOneRow_AndDaysOutsideTheWeekStayOut()
+    public async Task ADayNamedTwice_IsOneColumn_AndDaysOutsideTheWeekStayOut()
     {
         _harness.Answer(CalendarPath, """
             { "events": [
@@ -198,20 +267,8 @@ public sealed class CalendarViewModelTests
 
         var page = await LoadedAsync();
 
-        Assert.Equal(7, page.Rows.Count);
-        Assert.Equal(["A", "B"], Assert.Single(Aired(page)).Cards.Select(c => c.Title));
-    }
-
-    [Fact]
-    public async Task ADayPickedInAnEmptyWeek_SaysNothingIsScheduled()
-    {
-        _harness.Answer(CalendarPath, NoEvents);
-        var page = await LoadedAsync();
-
-        page.SelectDayCommand.Execute(page.Days[4]);
-
-        Assert.True(page.HasSelectedDayEmpty);
-        Assert.Equal("Nothing scheduled for Friday, October 2nd.", page.SelectedDayEmptyText);
+        Assert.Equal(7, page.Days.Count);
+        Assert.Equal(["A", "B"], Assert.Single(Aired(page)).Airings.Select(c => c.Title));
     }
 
     [Fact]
@@ -239,18 +296,6 @@ public sealed class CalendarViewModelTests
     }
 
     [Fact]
-    public async Task ADayPicked_KeepsTheStripsButtons()
-    {
-        var page = await LoadedAsync();
-        var strip = page.Days;
-
-        page.SelectDayCommand.Execute(page.Days[1]);
-
-        Assert.Same(strip, page.Days);
-        Assert.Equal([false, true, false, false, false, false, false], page.Days.Select(d => d.IsSelected));
-    }
-
-    [Fact]
     public async Task TheSidebar_OpensThisWeekOfEveryLibrary_ButKeepsThePreset()
     {
         await _sidebar.RefreshAsync(TestContext.Current.CancellationToken);
@@ -260,7 +305,6 @@ public sealed class CalendarViewModelTests
         page.SelectedPreset = page.Presets.Single(p => p.Label == "Trending");
         // The scripted week is October's first; the next one has no airings of its own.
         await WaitUntilAsync(() => LastQuery.Contains("filter=trending&", StringComparison.Ordinal) && page.State == LibraryLoadState.Empty);
-        page.SelectDayCommand.Execute(page.Days[0]);
         int asked = _harness.Queries(CalendarPath).Count;
 
         await page.ActivateAsync(isReturn: false);
@@ -268,7 +312,6 @@ public sealed class CalendarViewModelTests
         Assert.Equal(asked + 1, _harness.Queries(CalendarPath).Count);
         Assert.StartsWith("start=2026-09-28&end=2026-10-04&filter=trending&timezone=", LastQuery, StringComparison.Ordinal);
         Assert.DoesNotContain("library_id", LastQuery, StringComparison.Ordinal);
-        Assert.Null(page.SelectedDay);
     }
 
     [Fact]
@@ -320,7 +363,8 @@ public sealed class CalendarViewModelTests
         await first;
 
         Assert.Equal(LibraryLoadState.Empty, page.State);
-        Assert.Empty(page.Rows);
+        Assert.Empty(page.Days);
+        Assert.Equal("", page.Summary);
         Assert.Equal("Nothing trending this week.", page.EmptyText);
     }
 
@@ -340,8 +384,9 @@ public sealed class CalendarViewModelTests
         await page.ActivateAsync(isReturn: false);
 
         Assert.StartsWith("start=2026-10-26&end=2026-11-01&filter=following&timezone=Europe%2FBerlin", LastQuery, StringComparison.Ordinal);
-        Assert.Equal("TODAY", page.Rows[0].Badge);
-        Assert.Equal(DateText.Time(new DateTime(2026, 1, 1, 20, 0, 0)), page.Rows[0].Cards[0].Caption);
+        Assert.Equal("TODAY", page.Days[0].Badge);
+        Assert.Equal(CalendarDayTime.Today, page.Days[0].When);
+        Assert.Equal(DateText.Time(new DateTime(2026, 1, 1, 20, 0, 0)), page.Days[0].Airings[0].Time);
     }
 
     [Theory]
@@ -410,7 +455,7 @@ public sealed class CalendarViewModelTests
         public override TimeZoneInfo LocalTimeZone => zone;
     }
 
-    private static List<CalendarDayRow> Aired(CalendarViewModel page) => [.. page.Rows.Where(r => r.HasAirings)];
+    private static List<CalendarWeekDay> Aired(CalendarViewModel page) => [.. page.Days.Where(r => r.HasAirings)];
 
     private static async Task WaitUntilAsync(Func<bool> condition)
     {

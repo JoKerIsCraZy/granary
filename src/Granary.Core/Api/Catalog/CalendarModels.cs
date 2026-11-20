@@ -51,6 +51,8 @@ public sealed record CalendarEvent
 
     public string? PosterUrl { get; init; }
 
+    public string? PosterThumbhash { get; init; }
+
     public bool Watched { get; init; }
 }
 

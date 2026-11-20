@@ -35,6 +35,13 @@ release's section is what its update says it changes (docs/release.md).
   and time format (12-hour or 24-hour), as on Silo's web: with DD/MM/YYYY the day comes first in English dates too.
   Choose them in Settings → Accessibility → Date & time; they apply at once.
 
+### Changed
+
+- **Calendar:** the week is now a grid of seven days side by side, each day a column of its airings with the episode's
+  picture, air time, PREMIERE, NEW SEASON or FINALE and a check once watched; today's column is tinted with your Silo
+  server's accent and past days are dimmed. A line under the title counts the week's episodes, premieres and finales.
+  In a narrow window the days are listed one under another.
+
 ### Fixed
 
 - **Downloads:** the download dialog downloads only for the profile it was opened in; after a profile switch, Download

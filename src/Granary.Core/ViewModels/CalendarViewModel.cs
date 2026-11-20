@@ -8,68 +8,24 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
 using Granary.Core.Texts;
-using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
 
-/// <summary>
-/// A day of the week strip: "Mon", "5", and a dot when it has airings. Picking a day only changes <see cref="IsSelected"/>,
-/// so the strip's buttons stay and keep the keyboard focus.
-/// </summary>
-/// <param name="selectCommand">Takes the chip.</param>
-public sealed partial class CalendarDayChip(DateOnly date, string label, string day, bool isToday, bool hasEvents, ICommand selectCommand) : ObservableObject
-{
-    public DateOnly Date { get; } = date;
-
-    public string Label { get; } = label;
-
-    public string Day { get; } = day;
-
-    public bool IsToday { get; } = isToday;
-
-    public bool HasEvents { get; } = hasEvents;
-
-    public ICommand SelectCommand { get; } = selectCommand;
-
-    [ObservableProperty]
-    public partial bool IsSelected { get; internal set; }
-
-    public string AccessibleName => HasEvents
-        ? AppText.Get("web.calendar.dayLabelWithEvents", ("weekday", Label), ("day", Day))
-        : AppText.Get("web.calendar.dayLabel", ("weekday", Label), ("day", Day));
-}
-
 /// <summary>Another preset, offered when the week is empty.</summary>
 /// <param name="Command">Takes <see cref="Preset"/>.</param>
 public sealed record CalendarPresetLink(string Label, SettingChoice Preset, ICommand Command);
 
-/// <summary>A day's airings under "Monday, October 5th", or none; today's says TODAY.</summary>
-/// <param name="OpenCommand">Takes the airing's <see cref="MediaCard"/>.</param>
-public sealed record CalendarDayRow(DateOnly Date, string Heading, bool IsToday, IReadOnlyList<MediaCard> Cards, ICommand OpenCommand)
-{
-    public string Badge => IsToday ? AppText.Upper(AppText.Get("web.calendar.today")) : "";
-
-    public bool HasBadge => IsToday;
-
-    public bool HasAirings => Cards.Count > 0;
-
-    public bool HasNoAirings => Cards.Count == 0;
-}
-
 /// <summary>
-/// The Calendar, as Silo's web shows it (<c>pages/Calendar.tsx</c>): a week of airings (<c>GET /api/v2/calendar</c>,
-/// Monday to Sunday in the viewer's zone) as a row per day, the week strip with a dot on days that have some, the
-/// presets Following, Trending and All, and a library filter when there are several. A day in the strip scrolls to its
-/// row. An airing opens its movie or series. Unlike the web, a week with airings lists its empty days too ("Nothing
-/// scheduled."), so a day picked in the strip always has its own place to scroll to.
+/// The Calendar: a week of airings (<c>GET /api/v2/calendar</c>, Monday to Sunday in the viewer's zone) as Granary's own
+/// week grid, a column per day, which the user chose over the web's rows (<c>pages/Calendar.tsx</c>). The presets
+/// Following, Trending and All, the library filter when there are several, the week's arrows and Today, and the texts are
+/// the web's. A summary under the title counts the week's episodes, premieres and finales. An airing opens its movie or
+/// series. A week with airings shows its empty days too ("Nothing scheduled"); an empty week offers the other presets.
 /// </summary>
 public sealed partial class CalendarViewModel : ObservableObject
 {
-    /// <summary>The <see cref="MediaCard.Type"/> of an airing: no card actions, the episode may not be in a library yet.</summary>
-    public const string CardType = "calendar";
-
     // The web's presets and library filter, worded when shown (pages/Calendar.tsx).
     private static SettingChoice Following => new(CalendarFilters.Following, AppText.Get("web.calendar.presetFollowing"));
     private static SettingChoice Trending => new(CalendarFilters.Trending, AppText.Get("web.calendar.presetTrending"));
@@ -97,11 +53,7 @@ public sealed partial class CalendarViewModel : ObservableObject
         _time = time;
         _logger = logger;
         WeekStart = CalendarText.WeekStart(Today);
-        Days = ChipsOf([]);
     }
-
-    /// <summary>Raised with the day whose row the page should scroll to.</summary>
-    public event EventHandler<DateOnly>? DayRequested;
 
     public IReadOnlyList<SettingChoice> Presets { get; } = [Following, Trending, Everything];
 
@@ -120,19 +72,17 @@ public sealed partial class CalendarViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(WeekLabel), nameof(WeekName))]
     public partial DateOnly WeekStart { get; private set; }
 
-    [ObservableProperty]
-    public partial IReadOnlyList<CalendarDayChip> Days { get; private set; }
-
-    public ObservableCollection<CalendarDayRow> Rows { get; } = [];
-
-    /// <summary>The day picked in the strip, while it is in the week shown.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SelectedDayEmptyText), nameof(HasSelectedDayEmpty))]
-    public partial DateOnly? SelectedDay { get; private set; }
+    /// <summary>The week's seven days, Monday first, once it has any airing; empty while loading, failed or empty.</summary>
+    public ObservableCollection<CalendarWeekDay> Days { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsLoading), nameof(IsEmpty), nameof(HasError), nameof(SelectedDayEmptyText), nameof(HasSelectedDayEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsLoading), nameof(IsEmpty), nameof(HasError), nameof(IsReady))]
     public partial LibraryLoadState State { get; private set; }
+
+    /// <summary>"9 episodes this week · 2 premieres · 1 finale"; empty while the week has no airings.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSummary))]
+    public partial string Summary { get; private set; } = "";
 
     /// <summary>"Nothing upcoming from shows you follow this week.", by preset.</summary>
     [ObservableProperty]
@@ -149,13 +99,9 @@ public sealed partial class CalendarViewModel : ObservableObject
 
     public string WeekName => AppText.Get("web.calendar.weekOf", ("range", WeekLabel));
 
-    /// <summary>"Nothing scheduled for Monday, October 5th." when a day is picked in a week without any airings.</summary>
-    public string SelectedDayEmptyText => HasSelectedDayEmpty
-        ? AppText.Get("web.calendar.nothingScheduledFor", ("date", CalendarText.DayHeading(SelectedDay!.Value)))
-        : "";
+    public bool HasSummary => Summary.Length > 0;
 
-    // A week with airings has a row for every day, which says so itself.
-    public bool HasSelectedDayEmpty => SelectedDay is not null && State == LibraryLoadState.Empty;
+    public bool IsReady => State == LibraryLoadState.Ready;
 
     public bool IsLoading => State == LibraryLoadState.Loading;
 
@@ -180,7 +126,6 @@ public sealed partial class CalendarViewModel : ObservableObject
         if (!isReturn)
         {
             WeekStart = CalendarText.WeekStart(Today);
-            SelectedDay = null;
             SetQuietly(() => SelectedLibrary = AllLibraries);
         }
         return LoadAsync();
@@ -194,21 +139,6 @@ public sealed partial class CalendarViewModel : ObservableObject
 
     [RelayCommand]
     private Task ThisWeekAsync() => ShowWeekAsync(CalendarText.WeekStart(Today));
-
-    [RelayCommand]
-    private void SelectDay(CalendarDayChip? chip)
-    {
-        if (chip is null)
-        {
-            return;
-        }
-        SelectedDay = chip.Date;
-        foreach (var day in Days)
-        {
-            day.IsSelected = day.Date == chip.Date;
-        }
-        DayRequested?.Invoke(this, chip.Date);
-    }
 
     /// <summary>One of <see cref="EmptyLinks"/>.</summary>
     [RelayCommand]
@@ -224,9 +154,9 @@ public sealed partial class CalendarViewModel : ObservableObject
     private Task RetryAsync() => LoadAsync();
 
     [RelayCommand]
-    private void Open(MediaCard? card)
+    private void Open(CalendarAiring? airing)
     {
-        if (card is not null && _opens.TryGetValue(card.Id, out string? id))
+        if (airing is not null && _opens.TryGetValue(airing.Id, out string? id))
         {
             _navigation.NavigateTo(AppRoute.Item, id);
         }
@@ -265,7 +195,6 @@ public sealed partial class CalendarViewModel : ObservableObject
             return Task.CompletedTask;
         }
         WeekStart = start;
-        SelectedDay = null;
         return LoadAsync();
     }
 
@@ -292,9 +221,9 @@ public sealed partial class CalendarViewModel : ObservableObject
         previous.Cancel();
         previous.Dispose();
         var token = _run.Token;
-        Rows.Clear();
+        Days.Clear();
         _opens.Clear();
-        Days = ChipsOf([]);
+        Summary = "";
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
             _loadedFor = null;
@@ -312,11 +241,11 @@ public sealed partial class CalendarViewModel : ObservableObject
             {
                 return;
             }
-            foreach (var row in RowsOf(week, server.BaseUri))
+            foreach (var day in DaysOf(week, server.BaseUri))
             {
-                Rows.Add(row);
+                Days.Add(day);
             }
-            Days = ChipsOf(Rows);
+            Summary = SummaryOf(week);
             EmptyText = SelectedPreset.Value switch
             {
                 CalendarFilters.Following => AppText.Get("web.calendar.emptyFollowing"),
@@ -325,7 +254,7 @@ public sealed partial class CalendarViewModel : ObservableObject
             };
             EmptyLinks = [.. Presets.Where(p => p != SelectedPreset)
                 .Select(p => new CalendarPresetLink(p == Everything ? AppText.Get("web.calendar.showEverything") : p.Label, p, ShowPresetCommand))];
-            State = Rows.Count == 0 ? LibraryLoadState.Empty : LibraryLoadState.Ready;
+            State = Days.Count == 0 ? LibraryLoadState.Empty : LibraryLoadState.Ready;
         }
         catch (Exception ex)
         {
@@ -347,14 +276,58 @@ public sealed partial class CalendarViewModel : ObservableObject
         }
     }
 
-    // A row for every day of the week once any day has airings, the empty ones too. A day the server names twice is one
-    // row; a day outside the week stays out, as the strip has no place for it.
-    private List<CalendarDayRow> RowsOf(CalendarWeek week, Uri server)
+    // A column for every day of the week once any day has airings, the empty ones too. A day the server names twice is one
+    // column; a day outside the week stays out, as the grid has no place for it.
+    private List<CalendarWeekDay> DaysOf(CalendarWeek week, Uri server)
     {
         var zone = _time.LocalTimeZone;
         var today = Today;
+        var aired = new Dictionary<DateOnly, List<CalendarAiring>>();
+        foreach (var (date, airing) in InWeek(week))
+        {
+            if (!aired.TryGetValue(date, out var airings))
+            {
+                airings = [];
+                aired.Add(date, airings);
+            }
+            // A movie opens itself; an airing of a series opens the series.
+            if (_opens.TryAdd(airing.ContentId, airing.Type == "movie" ? airing.ContentId : airing.SeriesId ?? airing.ContentId))
+            {
+                airings.Add(AiringOf(airing, server, zone));
+            }
+        }
+        if (aired.Values.All(airings => airings.Count == 0))
+        {
+            return [];
+        }
+        return [.. Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i)).Select(day => new CalendarWeekDay(day,
+            day < today ? CalendarDayTime.Past : day == today ? CalendarDayTime.Today : CalendarDayTime.Future,
+            aired.GetValueOrDefault(day) ?? []))];
+    }
+
+    private CalendarAiring AiringOf(CalendarEvent airing, Uri server, TimeZoneInfo zone)
+    {
+        string subtitle = CalendarText.Subtitle(airing);
+        string code = CalendarText.Code(airing);
+        return new CalendarAiring(airing.ContentId, airing.Title, OpenCommand)
+        {
+            Code = code,
+            Time = CalendarText.AirTime(airing, zone),
+            Badge = CalendarText.Badge(airing.Badges),
+            BadgeKind = CalendarText.BadgeKind(airing.Badges),
+            IsWatched = airing.Watched,
+            ImageUrl = ArtworkUrl.Resolve(server, airing.PosterUrl),
+            ImageThumbhash = airing.PosterThumbhash,
+            ToolTip = subtitle != code ? subtitle : null,
+            // As the calendar's cards were named before the grid: the title, then the episode in the web's capitals.
+            AccessibleName = subtitle.Length > 0 ? $"{airing.Title}, {AppText.Upper(subtitle)}" : airing.Title,
+        };
+    }
+
+    // The airings of the week shown with the day they are listed under.
+    private IEnumerable<(DateOnly Date, CalendarEvent Airing)> InWeek(CalendarWeek week)
+    {
         var weekEnd = WeekStart.AddDays(6);
-        var aired = new Dictionary<DateOnly, List<MediaCard>>();
         foreach (var day in week.Events)
         {
             if (!DateOnly.TryParseExact(day.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
@@ -362,45 +335,44 @@ public sealed partial class CalendarViewModel : ObservableObject
             {
                 continue;
             }
-            if (!aired.TryGetValue(date, out var cards))
-            {
-                cards = [];
-                aired.Add(date, cards);
-            }
             foreach (var airing in day.Items.Where(a => !string.IsNullOrWhiteSpace(a.ContentId)))
             {
-                // A movie opens itself; an airing of a series opens the series.
-                if (!_opens.TryAdd(airing.ContentId, airing.Type == "movie" ? airing.ContentId : airing.SeriesId ?? airing.ContentId))
-                {
-                    continue;
-                }
-                string subtitle = CalendarText.Subtitle(airing);
-                cards.Add(new MediaCard(airing.ContentId, CardType, airing.Title)
-                {
-                    Shape = MediaCardShape.Poster,
-                    Subtitle = subtitle.Length > 0 ? AppText.Upper(subtitle) : null,
-                    Caption = CalendarText.AirTime(airing, zone),
-                    ImageUrl = ArtworkUrl.Resolve(server, airing.PosterUrl),
-                    StatusBadge = CalendarText.Badge(airing.Badges),
-                    IsWatched = airing.Watched,
-                    ShowsWatchedMark = airing.Watched,
-                });
+                yield return (date, airing);
             }
         }
-        if (aired.Values.All(cards => cards.Count == 0))
-        {
-            return [];
-        }
-        return [.. Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i)).Select(day =>
-            new CalendarDayRow(day, CalendarText.DayHeading(day), day == today, aired.GetValueOrDefault(day) ?? [], OpenCommand))];
     }
 
-    private List<CalendarDayChip> ChipsOf(IEnumerable<CalendarDayRow> rows)
+    // "9 episodes this week · 2 premieres · 1 finale": episodes first, else movies. Premieres count only a series' first
+    // episodes, as only their cards say PREMIERE.
+    private string SummaryOf(CalendarWeek week)
     {
-        var withAirings = rows.Where(r => r.HasAirings).Select(r => r.Date).ToHashSet();
-        var today = Today;
-        return [.. Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i)).Select(day => new CalendarDayChip(day, CalendarText.ShortDay(day),
-            day.Day.ToString(CultureInfo.InvariantCulture), day == today, withAirings.Contains(day), SelectDayCommand) { IsSelected = day == SelectedDay })];
+        var airings = InWeek(week).Select(a => a.Airing).DistinctBy(a => a.ContentId, StringComparer.Ordinal).ToList();
+        int movies = airings.Count(a => a.Type == "movie");
+        int episodes = airings.Count - movies;
+        int premieres = airings.Count(a => a.Badges.Contains("series_premiere"));
+        int finales = airings.Count(a => a.Badges.Contains("finale"));
+        var parts = new List<string>();
+        if (episodes > 0)
+        {
+            parts.Add(AppText.Get("granary.calendar.summaryEpisodes", ("count", episodes)));
+            if (movies > 0)
+            {
+                parts.Add(AppText.Get("granary.calendar.summaryMovieCount", ("count", movies)));
+            }
+        }
+        else if (movies > 0)
+        {
+            parts.Add(AppText.Get("granary.calendar.summaryMovies", ("count", movies)));
+        }
+        if (premieres > 0)
+        {
+            parts.Add(AppText.Get("granary.calendar.summaryPremieres", ("count", premieres)));
+        }
+        if (finales > 0)
+        {
+            parts.Add(AppText.Get("granary.calendar.summaryFinales", ("count", finales)));
+        }
+        return string.Join(" · ", parts);
     }
 
     private object Key() => (_session.ActiveServer?.Id, _session.ProfileId, WeekStart, SelectedPreset.Value, SelectedLibrary.Value);
