@@ -81,6 +81,18 @@ public sealed class ProfilePickerAddProfileTests : IDisposable
         Assert.NotNull(_picker.Editor);
     }
 
+    // The editor holds the primary profile's proof: it never outlives the picker, whatever its dialog still does.
+    [Fact]
+    public async Task ThePickersEnd_DropsAnOpenEditor()
+    {
+        await LoadAsync(HouseholdJson.Replace("\"is_primary\": true, \"has_pin\": true", "\"is_primary\": true, \"has_pin\": false", StringComparison.Ordinal));
+        _picker.AddProfileCommand.Execute(null);
+
+        _picker.Dispose();
+
+        Assert.Null(_picker.Editor);
+    }
+
     [Fact]
     public async Task AddProfile_IsNotOffered_ForAFullHousehold_OrOneWithoutAPrimaryProfile()
     {
