@@ -86,6 +86,20 @@ internal static class CalendarText
         return airing.Type == "movie" ? AppText.Get("web.calendar.event.movie") : "";
     }
 
+    /// <summary>"S2 · E1", "Season 2" or "Movie": <see cref="Subtitle"/> without the episode's title, for the week grid's cards.</summary>
+    public static string Code(CalendarEvent airing) =>
+        Subtitle(airing with { EpisodeTitle = null });
+
+    /// <summary>How the first of <paramref name="badges"/>, the one <see cref="Badge"/> words, is drawn.</summary>
+    public static CalendarBadgeKind BadgeKind(IReadOnlyList<string> badges) => badges.FirstOrDefault() switch
+    {
+        null => CalendarBadgeKind.None,
+        "series_premiere" => CalendarBadgeKind.Premiere,
+        "season_premiere" => CalendarBadgeKind.NewSeason,
+        "finale" => CalendarBadgeKind.Finale,
+        _ => CalendarBadgeKind.Release,
+    };
+
     /// <summary>
     /// The airing's time on the viewer's clock, or the network's wall-clock time, as the web's formatUpcomingTime; null
     /// when neither is known.

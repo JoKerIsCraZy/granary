@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The web's PillGroup: one choice of a few, as round pills; the chosen one white with dark text (the accent with its label
-    when IsAccent), the others faint, lighter under the pointer. Arrow keys move between them.
+    The web's PillGroup: one choice of a few, as round pills; the chosen one white with dark text, the others faint, lighter under the pointer. Arrow keys move between them.
 -->
 <UserControl
     x:Class="Granary.App.Controls.PillChoices"
@@ -11,7 +10,7 @@
     IsTabStop="False">
 
     <UserControl.Resources>
-        <!-- The chosen pill's colours, looked up per pill so an accented group can override them. -->
+        <!-- The chosen pill's colours. -->
         <SolidColorBrush x:Key="PillChosenBackgroundBrush" Color="White" />
         <SolidColorBrush x:Key="PillChosenForegroundBrush" Color="Black" />
         <Style x:Key="PillStyle" TargetType="RadioButton">
@@ -70,7 +69,72 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!--
+            A segment of a segmented control (IsSegmented): no shape of its own until it is chosen, then filled light with
+            dark text, inside the track. The focus ring hugs the segment, so it stays inside the track too.
+        -->
+        <Style x:Key="SegmentStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#FFA4A4AE" />
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="14,7" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualMargin" Value="0" />
+            <Setter Property="FocusVisualPrimaryThickness" Value="2" />
+            <Setter Property="FocusVisualSecondaryThickness" Value="1" />
+            <Setter Property="controls:Pill.IsEnabled" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid x:Name="Root" Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="Hover.Opacity" Value="1" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="Hover.Opacity" Value="1" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled">
+                                        <VisualState.Setters>
+                                            <Setter Target="Root.Opacity" Value="0.4" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                                <VisualStateGroup x:Name="CheckStates">
+                                    <VisualState x:Name="Checked">
+                                        <VisualState.Setters>
+                                            <Setter Target="Chosen.Opacity" Value="1" />
+                                            <Setter Target="Content.Foreground" Value="#FF0E0E10" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Unchecked" />
+                                    <VisualState x:Name="Indeterminate" />
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <Border x:Name="Hover" Background="#0FFFFFFF" Opacity="0" />
+                            <Border x:Name="Chosen" Background="#FFE8E8EC" Opacity="0" />
+                            <ContentPresenter x:Name="Content" Padding="{TemplateBinding Padding}" HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" Content="{TemplateBinding Content}"
+                                              Foreground="{TemplateBinding Foreground}" AutomationProperties.AccessibilityView="Raw" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
-    <StackPanel x:Name="Pills" Orientation="Horizontal" Spacing="6" XYFocusKeyboardNavigation="Enabled" />
+    <!-- Bare, unless IsSegmented draws the track. -->
+    <Border x:Name="Track">
+        <StackPanel x:Name="Pills" Orientation="Horizontal" Spacing="6" XYFocusKeyboardNavigation="Enabled" />
+    </Border>
 </UserControl>

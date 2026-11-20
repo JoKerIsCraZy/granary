@@ -500,14 +500,31 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   cards are library titles, so they carry the same logo, backdrop and details as Home's; one without a logo shows its
   name in large type, one without a backdrop only the page's fade. With Title preview at the top off (Settings →
   Navigation & Cards → Pages) there is no hero: the title starts 24 px down, as on the web (`pt-6`).
-- Calendar (`CalendarPage`, the web's `pages/Calendar.tsx`): the title with the presets Following, Trending, All (the
-  chosen one in the accent) and "All Libraries" when there are several; the week strip pinned above the days (arrows, "Oct 19 –
-  25, 2026", Today, a button per day with a dot on days with airings, today tinted with the accent, the picked day filled with it,
-  which scrolls to its row); then a row per day ("Monday, October 19th", TODAY on today's) of airings: "S2 · E1 - TITLE",
-  the air time on the viewer's clock, the web's PREMIERE / NEW SEASON / FINALE, watched ones marked. Unlike the web,
-  a week with airings lists its empty days too, each with "Nothing scheduled" in a faint box, so picking one scrolls
-  to its place instead of the top; a day picked in an empty week says "Nothing scheduled for …". An airing opens its series (a movie itself); airings have no card menu. An empty week names the
-  other presets. The preset is kept while the app runs (the web keeps it in the browser).
+- Calendar (`CalendarPage`): Granary's own week grid, **the user's choice over the web's look** (the web's
+  `pages/Calendar.tsx` lists a row per day; the user found it and the earlier copy of it ugly and picked this design
+  from a mockup), so here, unlike the other pages, the web does not decide the look. The behaviour and the texts stay the
+  web's. On the page's background (#0E0E10): the title "Calendar" (32 px ExtraBold) with the week's summary under it
+  ("9 episodes this week · 2 premieres · 1 finale", muted 14 px; movies counted apart, "2 movies this week" when there
+  are no episodes; premieres are a series' first episodes, the cards that say PREMIERE, not NEW SEASON), and on the right
+  the presets Following, Trending, All as pills in a dark pill-shaped track (the chosen one light with dark text) and
+  "All Libraries" when there are several. The week bar: round 36 px previous and next buttons, the range ("Nov 16 –
+  22, 2026", the web's words, 18 px Bold, tabular numbers), an outlined Today pill on the right. Then seven equal
+  columns with 10 px between them, filling the rest of the page (#131316, 16 px corners, 12 px inside): the weekday
+  ("THU", 12 px Bold, spaced, muted) beside the date ("1", 22 px ExtraBold), TODAY in the accent on today's column,
+  which is tinted with the server's accent in a 1 px ring of it; past days' cards at 62 %. Each column scrolls on its own
+  (so the headers stay in place and a busy day does not stretch the others); a day without airings shows "Nothing
+  scheduled" in a dashed box. A card: a 16:9 still with 10 px corners, the middle of the airing's poster over its
+  thumbhash (the calendar carries no still or backdrop, docs/api-contract.md 7.13), decoded at the card's width; the
+  air time on the viewer's clock in a dark chip bottom left; the badge top left, PREMIERE filled with the accent, FINALE
+  outlined in it, NEW SEASON and a movie's release outlined plainly; a check in a dark circle top right once watched;
+  under it the title (13 px Bold, cut with an ellipsis) and "S3 · E4" (12 px muted; "Season 3", "Movie"), the episode's
+  title in the tooltip. A card presses in to 0.97 over 160 ms and opens the series (a movie itself); airings have no card
+  menu. Screen readers hear each column's day as a heading ("Thursday, October 1st") and each card as the title and
+  "S2 · E1 - TITLE". Arrow keys, a controller and a remote move up and down a column and across to the nearest card of
+  the next column with airings. A grid narrower than 1070 px (a page of about 1150 px, where a card would be under about 120 px) lists the days one under another instead
+  ("Thursday, October 1st", TODAY), their cards wrapping at least 200 px wide, and puts the presets and the library
+  menu on a line of their own under the title. A week with no airings shows the web's
+  empty box naming the other presets. The preset is kept while the app runs (the web keeps it in the browser).
 - Notifications (`NotificationsPage`, the web's `pages/Notifications.tsx`): one centred column of the web's width with
   the bell and title, Mark all read while anything is unread, Preferences (a flyout with the master switch and
   Favorites, Watchlist, Continue Watching, Next Up, read each time it opens and saved at once), All and "Unread (3)",

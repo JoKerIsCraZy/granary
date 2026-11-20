@@ -48,6 +48,13 @@ release's section is what its update says it changes (docs/release.md).
   Home. It fades into the wordmark or name as the sidebar opens, and the entries below no longer move as it opens and
   closes. Your profile picture at the bottom of the narrow sidebar is no longer cut off.
 
+### Changed
+
+- **Calendar:** the week is now a grid of seven days side by side, each day a column of its airings with the show's
+  poster, air time, PREMIERE, NEW SEASON or FINALE and a check once watched; today's column is tinted with your Silo
+  server's accent and past days are dimmed. A line under the title counts the week's episodes, premieres and finales.
+  In a narrow window the days are listed one under another.
+
 ### Fixed
 
 - **Downloads:** the download dialog downloads only for the profile it was opened in; after a profile switch, Download

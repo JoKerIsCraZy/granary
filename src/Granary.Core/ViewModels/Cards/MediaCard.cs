@@ -75,7 +75,7 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// </summary>
     public Overlays.OverlayData? Overlay { get; init; }
 
-    /// <summary>A badge of the card's own, outside the profile's set: "NEW", a request's "APPROVED", a calendar's "PREMIERE", "SHARED".</summary>
+    /// <summary>A badge of the card's own, outside the profile's set: "NEW", a request's "APPROVED", "SHARED".</summary>
     public string? StatusBadge { get; init; }
 
     /// <summary>Watched share between 0 and 1, or null without progress.</summary>

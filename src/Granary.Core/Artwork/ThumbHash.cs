@@ -11,10 +11,16 @@ public static class ThumbHash
     /// <summary>The picture: <see cref="Rgba"/> holds its pixels row by row as red, green, blue and alpha, not premultiplied.</summary>
     public sealed record Picture(int Width, int Height, byte[] Rgba);
 
-    /// <summary>The picture of a base64 hash, or null for none or one that does not decode.</summary>
+    /// <summary>
+    /// The longest base64 hash taken: a thumbhash is at most 25 bytes (36 characters), so anything far longer is not one, and
+    /// is never decoded into a copy of its own size.
+    /// </summary>
+    public const int MaxEncodedLength = 64;
+
+    /// <summary>The picture of a base64 hash, or null for none, one too long, or one that does not decode.</summary>
     public static Picture? FromBase64(string? hash)
     {
-        if (string.IsNullOrWhiteSpace(hash))
+        if (string.IsNullOrWhiteSpace(hash) || hash.Length > MaxEncodedLength)
         {
             return null;
         }

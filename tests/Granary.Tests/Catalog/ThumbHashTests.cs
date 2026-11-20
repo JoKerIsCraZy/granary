@@ -53,6 +53,16 @@ public sealed class ThumbHashTests
         Assert.Null(ThumbHash.FromBase64(hash));
     }
 
+    // A thumbhash is at most 25 bytes, 36 characters of base64: a server sending megabytes in its place is not decoded at all.
+    [Fact]
+    public void AnOversizedHash_IsNotDecoded()
+    {
+        string valid = "HwgKNRpwd4B3d3d4eHd3eIBwCPeI";
+        Assert.NotNull(ThumbHash.FromBase64(valid));
+
+        Assert.Null(ThumbHash.FromBase64(valid + new string('A', ThumbHash.MaxEncodedLength)));
+    }
+
     [Fact]
     public void AnyHash_GivesAPictureOfAtMost32PixelsOrNone()
     {

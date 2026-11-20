@@ -35,13 +35,17 @@ public sealed partial class PillChoices : UserControl
     }
 
     /// <summary>
-    /// The chosen pill in the accent with the label drawn on it, as the web's calendar presets
-    /// (<c>bg-primary text-primary-foreground</c>, pages/Calendar.tsx); set before the items.
+    /// One pill-shaped track holding the choices as segments, the chosen one filled light inside it (the Calendar's presets,
+    /// the user's chosen design); set before the items. The track is <see cref="SegmentedHeight"/> high.
     /// </summary>
-    public bool IsAccent { get; set; }
+    public bool IsSegmented { get; set; }
+
+    /// <summary>A segmented control's height, for a control beside it to match.</summary>
+    public const double SegmentedHeight = 40;
 
     private void Build()
     {
+        ShowTrack();
         Pills.Children.Clear();
         foreach (var choice in ItemsSource ?? [])
         {
@@ -50,13 +54,8 @@ public sealed partial class PillChoices : UserControl
                 Content = choice.Label,
                 Tag = choice,
                 GroupName = _group,
-                Style = (Style)Resources["PillStyle"],
+                Style = (Style)Resources[IsSegmented ? "SegmentStyle" : "PillStyle"],
             };
-            if (IsAccent)
-            {
-                pill.Resources["PillChosenBackgroundBrush"] = Application.Current.Resources["SiloPrimaryBrush"];
-                pill.Resources["PillChosenForegroundBrush"] = Application.Current.Resources["SiloOnPrimaryBrush"];
-            }
             AutomationProperties.SetName(pill, choice.Label);
             pill.Checked += (_, _) =>
             {
@@ -68,6 +67,22 @@ public sealed partial class PillChoices : UserControl
             Pills.Children.Add(pill);
         }
         Check();
+    }
+
+    // The mockup's track: #161619 in a 1 px ring of #242428, the segments 4 px in from its edge (the ring and 3 px).
+    private void ShowTrack()
+    {
+        if (!IsSegmented)
+        {
+            return;
+        }
+        Track.Height = SegmentedHeight;
+        Track.Padding = new Thickness(3);
+        Track.BorderThickness = new Thickness(1);
+        Track.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x16, 0x16, 0x19));
+        Track.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x24, 0x24, 0x28));
+        Pill.SetIsEnabled(Track, true);
+        Pills.Spacing = 2;
     }
 
     private void Check()

@@ -8,22 +8,63 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+using Windows.Foundation;
 
 namespace Granary.App.Views;
 
-/// <summary>A week of airings.</summary>
+/// <summary>A week of airings as a grid of days.</summary>
 public sealed partial class CalendarPage : Page
 {
+    public static readonly DependencyProperty IsWideProperty =
+        DependencyProperty.Register(nameof(IsWide), typeof(bool), typeof(CalendarPage), new PropertyMetadata(true));
+
+    // Below this width of the grid (a page of about 1150 px) a column would be narrower than about 144 px and its cards than
+    // about 120 px, too small for the badge, the time and the title: the days stack instead.
+    private const double GridMinWidth = 1070;
+
+    // The mockup's: past days' cards at 62 %.
+    private const double PastCardsOpacity = 0.62;
+
+    private static readonly Brush Plain = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x13, 0x13, 0x16));
     private static readonly Brush Transparent = new SolidColorBrush(Colors.Transparent);
 
     public CalendarPage()
     {
         ViewModel = App.Services.GetRequiredService<CalendarViewModel>();
         InitializeComponent();
-        ViewModel.DayRequested += OnDayRequested;
+        WeekGrid.ElementPrepared += OnColumnPrepared;
+    }
+
+    // A column the grid reuses for another day (another week) starts at its top, not where the last one was scrolled to.
+    private static void OnColumnPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
+    {
+        if (FirstScroller(args.Element) is { } scroller)
+        {
+            scroller.ChangeView(null, 0, null, disableAnimation: true);
+        }
+    }
+
+    private static ScrollViewer? FirstScroller(DependencyObject element)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            var child = VisualTreeHelper.GetChild(element, i);
+            if ((child as ScrollViewer ?? FirstScroller(child)) is { } found)
+            {
+                return found;
+            }
+        }
+        return null;
     }
 
     public CalendarViewModel ViewModel { get; }
+
+    /// <summary>Whether the days fit side by side; the page's own, from its width.</summary>
+    public bool IsWide
+    {
+        get => (bool)GetValue(IsWideProperty);
+        set => SetValue(IsWideProperty, value);
+    }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
@@ -40,35 +81,55 @@ public sealed partial class CalendarPage : Page
         }
     }
 
-    // The web's day buttons (components/calendar/WeekNavigator.tsx): the picked day filled with the accent and the label
-    // drawn on it (text-primary-foreground), today tinted with the accent, the others plain.
-    public static Brush DayBackground(bool isSelected, bool isToday) =>
-        isSelected ? Primary() : isToday ? new SolidColorBrush(PrimaryColor()) { Opacity = 0.15 } : Transparent;
+    // Only one of the two is made: a collapsed repeater realizes nothing.
+    public Visibility GridVisibility(bool isReady, bool isWide) => isReady && isWide ? Visibility.Visible : Visibility.Collapsed;
 
-    public static Brush DayLabelForeground(bool isSelected, bool isToday) =>
-        isSelected ? new SolidColorBrush(OnPrimary().Color) { Opacity = 0.85 } : isToday ? Primary() : Muted();
+    public Visibility ListVisibility(bool isReady, bool isWide) => isReady && !isWide ? Visibility.Visible : Visibility.Collapsed;
 
-    public static Brush DayNumberForeground(bool isSelected, bool isToday) => isSelected ? OnPrimary() : isToday ? Primary() : Text();
+    // Today's column: a faint tint of the server's accent, darker at the top, in a 1 px ring of it (the mockup's #ef444414 to
+    // #ef444408 and #ef44444d, with the accent for the red). The brush, not SiloPrimaryColor, carries the accent (AccentPainter).
+    public static Brush ColumnBackground(bool isToday)
+    {
+        if (!isToday)
+        {
+            return Plain;
+        }
+        var accent = PrimaryColor();
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1) };
+        brush.GradientStops.Add(new GradientStop { Color = WithAlpha(accent, 0x14), Offset = 0 });
+        brush.GradientStops.Add(new GradientStop { Color = WithAlpha(accent, 0x08), Offset = 1 });
+        return brush;
+    }
 
-    public static Brush DayDotFill(bool isSelected, bool isToday) =>
-        isSelected ? new SolidColorBrush(OnPrimary().Color) { Opacity = 0.85 } : isToday ? Primary() : Muted();
+    public static Brush ColumnRing(bool isToday) => isToday ? new SolidColorBrush(WithAlpha(PrimaryColor(), 0x4D)) : Transparent;
 
-    public static double DayDotOpacity(bool hasEvents) => hasEvents ? 1 : 0;
+    public static double CardsOpacity(bool isPast) => isPast ? PastCardsOpacity : 1;
 
     // Instance method because x:Bind function bindings call it on the page.
     public string LibraryName(SettingChoice library) => AppText.Get("granary.calendar.libraryName", ("library", library.Label));
 
-    private static Brush Primary() => (Brush)Application.Current.Resources["SiloPrimaryBrush"];
-
-    // The label on the accent: dark on a light accent, white on a dark one (AccentPainter).
-    private static SolidColorBrush OnPrimary() => (SolidColorBrush)Application.Current.Resources["SiloOnPrimaryBrush"];
-
-    // The brush, not SiloPrimaryColor: the brush carries the server's accent (AccentPainter).
     private static Windows.UI.Color PrimaryColor() => ((SolidColorBrush)Application.Current.Resources["SiloPrimaryBrush"]).Color;
 
-    private static Brush Muted() => (Brush)Application.Current.Resources["SiloMutedBrush"];
+    private static Windows.UI.Color WithAlpha(Windows.UI.Color color, byte alpha) => Windows.UI.Color.FromArgb(alpha, color.R, color.G, color.B);
 
-    private static Brush Text() => (Brush)Application.Current.Resources["SiloForegroundBrush"];
+    private void OnDaysSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        bool wide = e.NewSize.Width >= GridMinWidth;
+        if (wide != IsWide)
+        {
+            IsWide = wide;
+        }
+        PlaceHeaderControls(wide);
+    }
+
+    // Beside the title while the grid fits, else under it, so the summary keeps its line.
+    private void PlaceHeaderControls(bool wide)
+    {
+        Grid.SetRow(HeaderControls, wide ? 0 : 1);
+        Grid.SetColumn(HeaderControls, wide ? 1 : 0);
+        HeaderControls.HorizontalAlignment = wide ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+        HeaderControls.Margin = wide ? new Thickness(0) : new Thickness(0, 16, 0, 0);
+    }
 
     private void OnLibraryMenuOpening(object sender, object e)
     {
@@ -79,23 +140,5 @@ public sealed partial class CalendarPage : Page
             item.Click += (_, _) => ViewModel.SelectedLibrary = library;
             LibraryMenu.Items.Add(item);
         }
-    }
-
-    // A day picked in the strip brings its row to the top of the days, an empty day's too; in a week without airings
-    // the page says so at the top.
-    private void OnDayRequested(object? sender, DateOnly day)
-    {
-        for (int index = 0; index < ViewModel.Rows.Count; index++)
-        {
-            if (ViewModel.Rows[index].Date == day)
-            {
-                var row = DayRows.GetOrCreateElement(index);
-                // A row below the fold is only realized now: it needs its place before the scroll can reach it.
-                row.UpdateLayout();
-                row.StartBringIntoView(new BringIntoViewOptions { VerticalAlignmentRatio = 0, AnimationDesired = true });
-                return;
-            }
-        }
-        Scroller.ChangeView(null, 0, null);
     }
 }
