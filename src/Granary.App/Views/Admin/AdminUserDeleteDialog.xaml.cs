@@ -20,6 +20,7 @@ public sealed partial class AdminUserDeleteDialog : ContentDialog
     {
         ViewModel = App.Services.GetRequiredService<AdminUserDeleteViewModel>();
         InitializeComponent();
+        AdminDialogs.Dress(this, AdminDialogs.Default);
     }
 
     public AdminUserDeleteViewModel ViewModel { get; }
@@ -46,32 +47,31 @@ public sealed partial class AdminUserDeleteDialog : ContentDialog
         return Outcome;
     }
 
-    public string SecondaryText(bool offersDisable) => offersDisable ? AppText.Get("web.admin.users.deleteDialog.disableInstead") : "";
-
     public Visibility Shown(string text) => text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-    private async void OnDeleteClick(ContentDialog sender, ContentDialogButtonClickEventArgs args) =>
-        await RunAsync(args, ViewModel.DeleteAsync, AdminUserDeleteOutcome.Deleted);
+    public bool Not(bool value) => !value;
 
-    private async void OnDisableClick(ContentDialog sender, ContentDialogButtonClickEventArgs args) =>
-        await RunAsync(args, ViewModel.DisableAsync, AdminUserDeleteOutcome.Disabled);
+    private void OnCancelClick(object sender, RoutedEventArgs e) => Hide();
+
+    private async void OnDeleteClick(object sender, RoutedEventArgs e) => await RunAsync(ViewModel.DeleteAsync, AdminUserDeleteOutcome.Deleted);
+
+    private async void OnDisableClick(object sender, RoutedEventArgs e) => await RunAsync(ViewModel.DisableAsync, AdminUserDeleteOutcome.Disabled);
 
     // The dialog closes only once the request went through; a failure stays on it to be read.
-    private async Task RunAsync(ContentDialogButtonClickEventArgs args, Func<CancellationToken, Task<bool>> action, AdminUserDeleteOutcome done)
+    private async Task RunAsync(Func<CancellationToken, Task<bool>> action, AdminUserDeleteOutcome done)
     {
-        args.Cancel = true;
         if (_running)
         {
             return;
         }
         _running = true;
-        var deferral = args.GetDeferral();
+        bool close = false;
         try
         {
             if (await action(CancellationToken.None))
             {
                 Outcome = done;
-                args.Cancel = false;
+                close = true;
             }
         }
         catch (Exception ex)
@@ -82,7 +82,10 @@ public sealed partial class AdminUserDeleteDialog : ContentDialog
         finally
         {
             _running = false;
-            deferral.Complete();
+        }
+        if (close)
+        {
+            Hide();
         }
     }
 

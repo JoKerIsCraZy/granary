@@ -209,6 +209,49 @@
         <Setter Property="CharacterSpacing" Value="0" />
     </Style>
 
+    <!-- variant="destructive": the web's red with white text, at 90 % under the pointer. -->
+    <Style x:Key="AdminDestructiveButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource SiloDestructiveBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Opacity" Value="0.9" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Opacity" Value="0.8" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Opacity" Value="0.5" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <ContentPresenter Padding="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Content="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"
+                                          FontFamily="{TemplateBinding FontFamily}" FontSize="{TemplateBinding FontSize}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- size="sm": h-8 (32), px-3. -->
     <Style x:Key="AdminSmallPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource AdminPrimaryButtonStyle}">
         <Setter Property="MinHeight" Value="32" />
@@ -261,7 +304,7 @@
     </Style>
 
     <!-- The web's badge: rounded-md, px-2 py-0.5, text-xs medium. -->
-    <Style x:Key="AdminPillStyle" TargetType="Border">
+    <Style x:Key="AdminWebBadgeStyle" TargetType="Border">
         <Setter Property="Padding" Value="8,2" />
         <Setter Property="CornerRadius" Value="10" />
         <Setter Property="BorderThickness" Value="1" />
@@ -269,7 +312,7 @@
         <Setter Property="HorizontalAlignment" Value="Left" />
     </Style>
 
-    <Style x:Key="AdminPillTextStyle" TargetType="TextBlock">
+    <Style x:Key="AdminWebBadgeTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
         <Setter Property="FontSize" Value="12" />
     </Style>

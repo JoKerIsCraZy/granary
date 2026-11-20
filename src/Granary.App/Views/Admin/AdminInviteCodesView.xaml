@@ -123,9 +123,9 @@
                                 <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" Margin="12,8" VerticalAlignment="Center">
                                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind Enabled}" Toggled="OnToggled" Tag="{x:Bind Id}"
                                                   AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.table.status')}" />
-                                    <Border Style="{StaticResource AdminPillStyle}" Background="{x:Bind local:AdminInviteCodesView.StatusFill(Enabled)}"
+                                    <Border Style="{StaticResource AdminWebBadgeStyle}" Background="{x:Bind local:AdminInviteCodesView.StatusFill(Enabled)}"
                                             BorderBrush="{x:Bind local:AdminInviteCodesView.StatusBorder(Enabled)}">
-                                        <TextBlock Text="{x:Bind StatusText}" Style="{StaticResource AdminPillTextStyle}" />
+                                        <TextBlock Text="{x:Bind StatusText}" Style="{StaticResource AdminWebBadgeTextStyle}" />
                                     </Border>
                                 </StackPanel>
                                 <TextBlock Grid.Column="4" Text="{x:Bind CreatedText}" Style="{StaticResource CodeCellStyle}" FontSize="12"

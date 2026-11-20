@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The web's delete dialog (components/AdminUserDeleteDialog.tsx): what goes with the account, Disable instead where the
-    page offers it, and the account's name typed before Delete account does anything.
+    The web's delete dialog (components/AdminUserDeleteDialog.tsx, an AlertDialog: no X): the title and what goes with the
+    account, the blue note on Disable instead where the page offers it, the account's name typed before Delete account does
+    anything, the conflict with Reload, and the footer on the right: Cancel (ghost), Disable instead (outline) and Delete
+    account (destructive).
 -->
 <ContentDialog
     x:Class="Granary.App.Views.Admin.AdminUserDeleteDialog"
@@ -9,15 +11,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:admin="using:Granary.Core.ViewModels.Admin"
     xmlns:t="using:Granary.Core.Texts"
-    Title="{x:Bind ViewModel.Title, Mode=OneWay}"
-    PrimaryButtonText="{x:Bind t:AppText.Get('web.admin.users.deleteDialog.confirm')}"
-    SecondaryButtonText="{x:Bind SecondaryText(ViewModel.OffersDisable), Mode=OneWay}"
-    CloseButtonText="{x:Bind t:AppText.Get('common.cancel')}"
-    DefaultButton="Close"
-    IsPrimaryButtonEnabled="{x:Bind ViewModel.CanDelete, Mode=OneWay}"
-    IsSecondaryButtonEnabled="{x:Bind ViewModel.CanDisable, Mode=OneWay}"
-    PrimaryButtonClick="OnDeleteClick"
-    SecondaryButtonClick="OnDisableClick"
     Closing="OnClosing">
 
     <ContentDialog.Resources>
@@ -28,27 +21,41 @@
         </ResourceDictionary>
     </ContentDialog.Resources>
 
-    <StackPanel MinWidth="380" MaxWidth="480" Spacing="14">
-        <TextBlock Text="{x:Bind admin:AdminUserDeleteViewModel.Description}" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
-        <Border Visibility="{x:Bind ViewModel.OffersDisable, Mode=OneWay}" Padding="12,10" CornerRadius="12" BorderThickness="1"
+    <StackPanel Width="462" Spacing="16">
+        <!-- AlertDialogHeader: the title (text-lg semibold) and the description (muted text-sm), gap-2. -->
+        <StackPanel Spacing="8">
+            <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource AdminDialogTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+            <TextBlock Text="{x:Bind admin:AdminUserDeleteViewModel.Description}" Style="{StaticResource AdminDialogDescriptionStyle}" />
+        </StackPanel>
+        <!-- The info note: rounded-xl, px-3 py-2.5, the info blue at 25 % and 5 %, muted text-sm. -->
+        <Border Visibility="{x:Bind ViewModel.OffersDisable, Mode=OneWay}" Padding="12,10" CornerRadius="16" BorderThickness="1"
                 BorderBrush="{StaticResource AdminInfoBorderBrush}" Background="{StaticResource AdminInfoBackgroundBrush}">
             <Grid ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource AdminInfoIconBrush}" VerticalAlignment="Top" Margin="0,2,0,0" />
-                <TextBlock x:Name="DisableHint" Grid.Column="1" FontSize="13" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
+                <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{StaticResource AdminInfoIconBrush}" VerticalAlignment="Top" Margin="0,2,0,0" />
+                <TextBlock x:Name="DisableHint" Grid.Column="1" FontSize="14" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
             </Grid>
         </Border>
-        <StackPanel Spacing="6">
-            <TextBlock x:Name="ConfirmLabel" FontFamily="{StaticResource SiloFontMedium}" FontSize="13" TextWrapping="Wrap" />
-            <TextBox x:Name="TypedBox" Text="{x:Bind ViewModel.Typed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsSpellCheckEnabled="False"
-                     AutomationProperties.LabeledBy="{x:Bind ConfirmLabel}" />
+        <StackPanel Spacing="8">
+            <TextBlock x:Name="ConfirmLabel" Style="{StaticResource AdminFieldLabelStyle}" />
+            <TextBox x:Name="TypedBox" Style="{StaticResource AdminTextBoxStyle}" Text="{x:Bind ViewModel.Typed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     IsSpellCheckEnabled="False" AutomationProperties.LabeledBy="{x:Bind ConfirmLabel}" />
         </StackPanel>
-        <TextBlock Text="{x:Bind ViewModel.Error, Mode=OneWay}" Style="{StaticResource AdminErrorTextStyle}"
+        <TextBlock Text="{x:Bind ViewModel.Error, Mode=OneWay}" FontSize="14" TextWrapping="Wrap" Foreground="{StaticResource SiloDestructiveBrush}"
                    Visibility="{x:Bind Shown(ViewModel.Error), Mode=OneWay}" />
-        <Button Visibility="{x:Bind ViewModel.HasConflict, Mode=OneWay}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnReloadClick"
+        <Button Visibility="{x:Bind ViewModel.HasConflict, Mode=OneWay}" Style="{StaticResource AdminPrimaryButtonStyle}" Click="OnReloadClick"
                 Content="{x:Bind t:AppText.Get('web.admin.users.deleteDialog.reload')}" />
+        <!-- AlertDialogFooter: gap-2, on the right. -->
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Style="{StaticResource AdminGhostButtonStyle}" Click="OnCancelClick" IsEnabled="{x:Bind Not(ViewModel.IsBusy), Mode=OneWay}"
+                    Content="{x:Bind t:AppText.Get('common.cancel')}" />
+            <Button Style="{StaticResource AdminOutlineButtonStyle}" Click="OnDisableClick" Visibility="{x:Bind ViewModel.OffersDisable, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.CanDisable, Mode=OneWay}" Content="{x:Bind t:AppText.Get('web.admin.users.deleteDialog.disableInstead')}" />
+            <Button Style="{StaticResource AdminDestructiveButtonStyle}" Click="OnDeleteClick" IsEnabled="{x:Bind ViewModel.CanDelete, Mode=OneWay}"
+                    Content="{x:Bind t:AppText.Get('web.admin.users.deleteDialog.confirm')}" />
+        </StackPanel>
     </StackPanel>
 </ContentDialog>

@@ -26,6 +26,15 @@ release's section is what its update says it changes (docs/release.md).
   history lists every invitation with its status and delivery, 50 at a time, and a pending or expired one gets a new
   link, copied or emailed, and a pending one can be revoked. Without your Silo server's public URL nothing new can be
   made, and the tab says so.
+- **Admin → Users → Invite Codes:** the third tab of Users, as on Silo's web: create a signup code with a label and a
+  number of uses, copy it, switch it off and on, add uses and delete it. A note says whether public signups are on, as
+  codes only work then.
+- **Admin → Users, as Silo's web lays it out:** the page's header shows whether public signups are on and links Access
+  Groups, both opening those pages of your Silo server's web app; Users, Invitations and Invite Codes are tabs across
+  the page. Add User is the web's dialog with its Account, Access and Limits tabs: besides the account and its group, set
+  its libraries, downloads, requests, stream and transcode limits, bitrate caps, playback quality and profile limit
+  right away, each showing what it inherits until you override it. Invite someone, Reset password and Delete look as
+  they do on the web, with its choice cards, compact menus and buttons.
 - **Previews offline:** downloads keep the seek bar's preview pictures, so they show while you scrub without a
   connection too. Downloads you already have get them the next time Granary refreshes them with your Silo server.
 - **Read-ahead buffer:** Settings → Playback → This PC sets how much of a title streamed from your Silo server

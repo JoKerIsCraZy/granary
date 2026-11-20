@@ -1426,12 +1426,28 @@ shown, never logged. Source: `silo-server/internal/apiv2/admin_users.go`, `admin
   `last_active_at` (null when never). The viewer is the Owner when its own account in the list says `is_owner`.
 - `GET /api/v2/admin/users/capabilities` → `{ "available", "default_profile", "access_groups", "password_reset_link",
   "password_reset_email", "ownership_transfer", "login_sessions", … }`. Not available: Users says so and offers nothing.
-- `GET /api/v2/admin/access-groups?limit=200[&cursor=]` → `{ "items": [{ "id", "name", "is_default", … }], "page" }`, every
-  page read: the group names, the filter, and the group a new account starts in.
+- `GET /api/v2/admin/access-groups?limit=200[&cursor=]` → `{ "items": [{ "id", "name", "is_default", "library_ids",
+  "max_playback_quality", "max_streams", "max_transcodes", "max_remote_stream_bitrate_kbps",
+  "max_local_stream_bitrate_kbps", "max_profiles", "transcode_allowed", "audio_transcode_allowed", "download_allowed",
+  "download_transcode_allowed", "requests_allowed", … }], "page" }`, every page read: the group names, the filter, the
+  group a new account starts in, and what a grouped account's unset fields resolve to (Create User's "Inherited: …").
+- `GET /api/v2/admin/users/policy-defaults` → `{ "admin": PolicyDefaults, "ungrouped": PolicyDefaults }`, each with the
+  fields above (`library_ids` null for every library; 0 unlimited; an empty quality none): what an admin's, or an account
+  without a group's, unset fields resolve to. Create User names them ("Admin default: Unlimited"); a failed read shows
+  "Admin default" without a value. Source: `admin_policy_defaults.go`.
+- `GET /api/v2/admin/settings/effective` (7.16b): Users takes `signup.enabled` (the header's badge, Invite Codes' note),
+  `download.enabled` and `download.transcode_enabled` (the note beside a new account's downloads), each on only as the
+  text `"true"`, as the web's `useAdminServerSettings`. Nothing else of the answer is kept or logged; a failed read
+  shows neither badge nor note.
 - `POST /api/v2/admin/users` with `{ "username", "email", "password", "require_password_change"?, "role",
-  "permissions", "create_default_profile", "access_group_id"? }` → `201 { "id" }`. Left out, the group is the server's
-  default one; an admin stays ungrouped. 409 `conflict`: the username or email is taken; 501 `capability_unsupported`:
-  the server cannot make the profile with the account. Only the Owner may create an admin (403 otherwise).
+  "permissions", "create_default_profile", "access_group_id"?, and the policy overrides? }` → `201 { "id" }`. Left out,
+  the group is the server's default one; an admin stays ungrouped. The overrides are those of the web's Create User
+  (`policyCreateFields`): `library_ids`, `max_playback_quality` (`""` any, `"1080p"`, `"2160p"`), `max_streams`,
+  `max_transcodes`, `max_remote_stream_bitrate_kbps`, `max_local_stream_bitrate_kbps` (0 unlimited), `max_profiles` (1
+  or more), `transcode_allowed`, `audio_transcode_allowed`, `download_allowed`, `download_transcode_allowed`,
+  `requests_allowed`; one left on its default is left out and inherits, and 0, `""` and `[]` are sent as overrides. 409
+  `conflict`: the username or email is taken; 501 `capability_unsupported`: the server cannot make the profile with the
+  account. Only the Owner may create an admin (403 otherwise).
 - `GET /api/v2/admin/users/{id}` → `AdminUser` with its `ETag`. `PUT` and `DELETE` on it take that `If-Match` and answer
   204; 412 means another administrator changed it since, and Granary reads it again (never overwrites). The `PUT` body
   holds only what changes: a member left out stays, `null` on `access_group_id` or `library_ids` means no group and the
@@ -1481,6 +1497,26 @@ these writes takes `If-Match`, and none is retried.
 - `claim_url` is a bearer credential: shown once to the administrator who made it, copied only on request (off the
   clipboard's history), never logged or kept; the dialog forgets it when it closes. A create, resend or revoke that fails
   may still have happened, so the history is read again before another; failures are worded by their status, as 7.16a's.
+
+### 7.16c Invite codes
+
+Admin → Users → Invite Codes, as the web's `hooks/queries/admin/inviteCodes.ts`. A code is a secret anyone may sign up with
+while public signups are on: shown and copied (off the clipboard's history), never logged. Source:
+`silo-server/internal/apiv2/admin_invite_codes.go`. No code carries a version: none of these writes takes `If-Match`, and
+none is retried.
+
+- `GET /api/v2/admin/invite-codes?limit=50[&cursor=]` → `{ "items": AdminInviteCode[], "page": { "has_more", "next_cursor" }
+  }`, newest first; Load more reads the next page. A page that says there is more without a new cursor fails the read. An
+  `AdminInviteCode`: `id`, `code`, `label` (empty for none), `max_uses`, `use_count`, `created_by`, `enabled`,
+  `created_at`, `updated_at`.
+- `POST /api/v2/admin/invite-codes` with `{ "code", "label", "max_uses" }` → `201 AdminInviteCode`. The code is chosen by
+  the client (16 characters, upper case, as the web's), the label sent even when empty (`null` is refused), `max_uses` 1 or
+  more. 409 `conflict`: the code exists with other settings.
+- `PUT /api/v2/admin/invite-codes/{id}` with `{ "enabled" }` → 204: a row's switch.
+- `POST /api/v2/admin/invite-codes/{id}/top-up` with `{ "additional_uses" }` → `AdminInviteCode`. Not retryable: one that
+  fails may still have counted, so the list is read again either way.
+- `DELETE /api/v2/admin/invite-codes/{id}` → 204, asked first.
+- After each write the first page is read again, as the web's list is; failures are worded by their status, as 7.16a's.
 
 ### 7.17 A profile's own collections, made and changed
 

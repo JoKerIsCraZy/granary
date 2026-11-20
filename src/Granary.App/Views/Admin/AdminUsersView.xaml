@@ -43,19 +43,19 @@
                                      AutomationProperties.Name="{x:Bind SignupsText(ViewModel.SignupsOn), Mode=OneWay}">
                         <Grid>
                             <!-- On: the web's outline badge in emerald. -->
-                            <Border Style="{StaticResource AdminPillStyle}" Background="{StaticResource AdminEmeraldFillBrush}" BorderBrush="{StaticResource AdminEmeraldBorderBrush}"
+                            <Border Style="{StaticResource AdminWebBadgeStyle}" Background="{StaticResource AdminEmeraldFillBrush}" BorderBrush="{StaticResource AdminEmeraldBorderBrush}"
                                     Visibility="{x:Bind ViewModel.SignupsOn, Mode=OneWay}">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
-                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.signupsOn')}" Style="{StaticResource AdminPillTextStyle}"
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.signupsOn')}" Style="{StaticResource AdminWebBadgeTextStyle}"
                                                Foreground="{StaticResource AdminEmeraldBrush}" />
                                     <FontIcon Glyph="&#xE72A;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource AdminEmeraldBrush}" />
                                 </StackPanel>
                             </Border>
                             <!-- Off: its secondary badge. -->
-                            <Border Style="{StaticResource AdminPillStyle}" Background="{StaticResource AdminAccentBrush}" BorderBrush="{StaticResource AdminAccentBrush}"
+                            <Border Style="{StaticResource AdminWebBadgeStyle}" Background="{StaticResource AdminAccentBrush}" BorderBrush="{StaticResource AdminAccentBrush}"
                                     Visibility="{x:Bind local:AdminUsersView.Hidden(ViewModel.SignupsOn), Mode=OneWay}">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
-                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.signupsOff')}" Style="{StaticResource AdminPillTextStyle}"
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.signupsOff')}" Style="{StaticResource AdminWebBadgeTextStyle}"
                                                Foreground="{StaticResource AdminSecondaryForegroundBrush}" />
                                     <FontIcon Glyph="&#xE72A;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource AdminSecondaryForegroundBrush}" />
                                 </StackPanel>

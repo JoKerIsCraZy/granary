@@ -1846,12 +1846,12 @@ entry is chosen, and a controller's bumpers, which go from the chosen entry, do 
 For an administrator (`Account.IsAdmin`) the sidebar offers Admin above Settings, as the web's does. As Settings, the app's
 sidebar gives way to the area's own (`AdminPage`, 260 px): "← Back to App", "Admin", MONITOR with Dashboard and
 Activity (the web's "2 live" in red beside it while streams run), MANAGE with Users (the one page of the web's Users
-topic Granary has, with its Users and Invitations tabs), and BUILD at its foot ("1715 · 13ad7a74", "dev build", "load failed"); as in Settings, the head and
+topic Granary has, with its Users, Invitations and Invite Codes tabs), and BUILD at its foot ("1715 · 13ad7a74", "dev build", "load failed"); as in Settings, the head and
 BUILD stay and the pages between them scroll in a window too short for them. Granary has these three pages only; the
 rest of the web's admin stays on the web. The pages switch inside
 the area, not in the app's history, so Back to App leaves it in one step. Pages scroll in a centred column of at most
 1400 px, padded 40 px; cards are the surface with a hairline and 16 px corners. Nothing here changes the server except a
-stream's commands on Activity and what Users does to accounts and invitations.
+stream's commands on Activity and what Users does to accounts, invitations and invite codes.
 
 - **Words**: the web's admin pages', by their keys, so they come in the language on screen: the area's sidebar, the
   Dashboard's widgets, Activity with its IP lookup and a stream's commands and answers, and the activity indicator
@@ -1903,8 +1903,12 @@ stream's commands on Activity and what Users does to accounts and invitations.
   the web's. "No active streams" or "No streams match your filters" when nothing shows. The page's subtitle stays
   "2 active streams across 1 node": the web's summary line after it (video transcodes, the bandwidth out, remote and
   paused streams) is not taken yet.
-- **Users** (`AdminUsersView` on `AdminUsersViewModel`, the web's `pages/AdminUsers.tsx`): "Users", its line, and Add
-  User; "User administration is unavailable." (and every action off) on a server without it, "Could not load users."
+- **Users** (`AdminUsersView` on `AdminUsersViewModel`, the web's `pages/AdminUsers.tsx`): "Users", its line, and on
+  the right the web's badge "Public signups on →" (emerald outline) or "Public signups off →" (secondary), shown once the
+  settings are read, Access Groups (outline, small) and + Add User (small). The badge and Access Groups open those pages
+  of the server's own web app in the browser (its sign-in settings, its Access Groups), which Granary does not have
+  (`AdminWebLinks`: fixed paths of the server's address, http or https only); so do the links in the notes below (the
+  Downloads, Email and General settings). "User administration is unavailable." (and every action off) on a server without it, "Could not load users."
   with Reload users when the read fails (a list read before stays up). Every account is read, 200 a page, as the web
   reads them; the search ("Search by username or email..."), the group filter (All groups, each group, No group; admins
   only under All groups) and the sort happen here. The table, in a card: Username (opens the account), Email, Role (the
@@ -1913,18 +1917,39 @@ stream's commands on Activity and what Users does to accounts and invitations.
   row's Edit and Delete where the viewer may (`AdminAccountRules`, the web's `lib/accountOwner.ts`: never the Owner's or
   one's own Delete). Each heading but Group sorts, and again turns its order round; dates start newest first, the never
   seen last. Below, 25, 50 or 100 rows a page: "Showing 1-25 of 140", the page size, Previous and Next. "No users match
-  your search or filter." when nothing is left. Not taken: the web's View as, an account's playback history, the link
-  to Access Groups and the "Public signups on" badge, which lead to pages Granary does not have.
-  - **Add User** (a dialog, the web's Create User): "Create a default profile" (with "(unavailable; ...)" where the
-    server cannot), then Account (Username, Email, Password with "Require change at first sign-in", Role: User, or Admin
-    for the Owner only, else the web's note) and Access (Group, starting on the default group, off for an admin with
-    "Admin accounts can't join groups."; Marker Editing on and Metadata Curation off, each with its line). The web's
-    Limits tab and its per-account library choice are not offered: a new account takes its group's. Save says
-    "Saving..." and stays open with the failure: the web's email check, "Username or email already in use" (409), or the
-    words of docs/api-contract.md 7.16a.
-  - **Delete** (`AdminUserDeleteDialog`, the web's): the account is read fresh first; "Delete ana?", what goes with it,
-    and "Type ana to confirm" (the name in a fixed-width face) before Delete account does anything. A change by another
-    administrator meanwhile says "The user changed. Reload before trying again." with Reload current user.
+  your search or filter." when nothing is left. Not taken: the web's View as and an account's playback history.
+  - **The admin dialogs** are dressed as the web's `DialogContent` (`AdminDialogs`): 24 px padding, 12 px corners, a
+    hairline, the page's #141417, 512 px wide (672 for Add User). The title (18 px semibold), its line (14 px muted) and
+    the X top right are the dialog's own content, and so are its buttons, laid out as the web's: one full-width button, or
+    Cancel (ghost) beside the action on the right. The fields follow the web's Tailwind values (`Themes/AdminForms.xaml`):
+    labels 14 px medium, boxes and menus 36 px with 10 px corners, hints 12 px muted, bordered cards with 10 px corners,
+    choice cards with 16 px corners that turn amber when picked.
+  - **Add User** (the web's Create User, `components/admin/users/CreateUserForm.tsx`): the title and X, "Create a default
+    profile" (with "(unavailable; ...)" where the server cannot), the line tabs Account, Access and Limits over a body
+    that scrolls at one height, then a hairline and one full-width Save; the X and Esc close it, Enter in a box saves.
+    Account: Username and Email side by side, Password with the small "Require change at first sign-in" switch under it
+    (on the left, its label beside it) beside Role, a compact menu (User, or Admin for the Owner only, else the web's
+    note). Access: Group (a full-width menu starting on the default group; off for an admin with "Admin accounts can't
+    join groups."), the Marker Editing (on) and Metadata Curation (off) cards with their switch on the right, then the
+    web's `PolicyAccessFields` (`AdminPolicyFieldsView` on `AdminPolicyForm`): Library Access with "Inherit from group"
+    and its switch ("Inherited: 2 libraries" below, or a row a library, each with its switch, Disabled badge and kind),
+    the web's info line where downloads or their conversion are off on the server, Downloads and Download Transcodes side
+    by side, and Media Requests, each a card with a menu ("Inherited: Not allowed", Allowed, Not allowed). Limits: Max
+    Streams and Max Transcodes, then the remote and local bitrate caps, two a row, each with Override and its switch on
+    the right and the default in a dashed box ("Inherited: Unlimited") until overridden; a limit's box then starts from
+    what it inherits, with the web's help line ("0 = unlimited"); a cap's menu offers Unlimited, 40 to 1 Mbps and Custom,
+    which takes Mbps beside it. Video and Audio Transcoding cards, Max Playback Quality (a full-width menu, the default
+    "Inherited: Any", then Any, Standard, 4K, with the choice's line under it), and Max Profiles. Each default names
+    where it comes from and what it is now, following the role and group picked: the group's, "Admin default: …" for an
+    admin, "Server default: …" without a group (`GET /api/v2/admin/users/policy-defaults`). Only what is overridden is
+    sent. Save with a limit overridden but empty or invalid shows the Limits tab instead. Save says "Saving..." and stays
+    open with the failure: the web's email check, "Username or email already in use" (409), or the words of
+    docs/api-contract.md 7.16a.
+  - **Delete** (`AdminUserDeleteDialog`, the web's AlertDialog, no X): the account is read fresh first; "Delete ana?",
+    what goes with it, the blue note on Disable instead where offered, and "Type ana to confirm" (the name in a
+    fixed-width face) before Delete account (red) does anything; Cancel, Disable instead and Delete account on the right.
+    A change by another administrator meanwhile says "The user changed. Reload before trying again." with Reload current
+    user.
   - **An account** (`AdminUserDetailView` on `AdminUserDetailViewModel`, the web's `pages/AdminUserDetail.tsx`), opened
     from its name or Edit in place of the list, Users staying picked in the sidebar: "Users › ana" leads back. The
     header: the initial in a 56 px circle, the name, the role badge, Active (green outline) or Disabled, "Temporary
@@ -1949,27 +1974,27 @@ stream's commands on Activity and what Users does to accounts and invitations.
     more is saved until it read the account again. A group made after the list was read shows as "#12" rather than
     No group. The web's other cards (playback, downloads, requests, the profile limit) and its Overview, Profiles,
     Activity, Downloads and Preferences tabs stay on the web; so does View as.
-  - **Reset password** (`AdminPasswordResetDialog`, the web's): email a reset link (to the account's address, where
+  - **Reset password** (`AdminPasswordResetDialog`, the web's, with its X): three choice cards, email a reset link (to the account's address, where
     email is set up), create a link to share (where the server has its public URL), or set a temporary password ("They
     must choose a new one at next sign-in" on by default); each signs the account out everywhere, and a disabled
     account gets only the temporary password. A link shows once in a box with whom to share it and until when, and Copy
     link (off the clipboard's history); it and the password are forgotten when the dialog closes. Set password opens the
-    same dialog with only the temporary password.
+    same dialog with only the temporary password. Cancel and the way's button (or Done) sit on the right.
   - **Signed-in sessions** (where the server offers them; `AdminUserSessionsViewModel`, the web's admin
     LoginSessionsPanel): the browsers and apps signed in to the account, 50 at a time with Load more sessions, each with
     its name, last seen, when it signed in and the address; Sign out on one, or Sign out everywhere, each asked first. A
     later page that fails says so and Load more sessions asks for it again.
     The Owner-only note for an account the viewer may not sign out.
-  - **Tabs**: the web's line tabs under the header, Users and Invitations; its third, Invite Codes, stays on the web.
-    The Invitations tab opens by itself where the admin area is asked for `invitations` (`AdminPages.Invitations`, the
-    web's `/admin/users?tab=invitations`), and Back into the area returns to the tab last shown; a pick of Users in the
-    sidebar opens the Users tab.
+  - **Tabs**: the web's line tabs under the header, each a third of the width: Users, Invitations and Invite Codes. A tab
+    opens by itself where the admin area is asked for it (`AdminPages.Invitations`, `AdminPages.InviteCodes`, the web's
+    `/admin/users?tab=invitations` and `?tab=invite-codes`), and Back into the area returns to the tab last shown; a pick
+    of Users in the sidebar opens the Users tab.
   - **Invitations** (`AdminInvitationsView` on `AdminInvitationsViewModel`, the web's `InvitationsTab.tsx`,
     `InvitationList.tsx` and `CreateInvitationForm.tsx`): "Loading invitation capabilities...", "Could not load invitation
     capabilities." with Reload capabilities, or "Invitations are not configured on this server." Then the web's intro and
     Invite someone, which waits, as do the new links, while the server has no public URL: the web's amber notice says
-    "Set the Silo public URL to create invitation links." (its link to General settings left out); settings that cannot
-    be read block nothing. The history, 50 a page with Load more, in a card: Recipient (the address, or "Link
+    "Set the Silo public URL to create invitation links." (its link opening General settings in the server's web app); settings that cannot
+    be read block nothing. The history, 50 a page with Load more, in the web's bare table: Recipient (the address, or "Link
     invitation", with the web's details: "Joined by link · “note” · Invited by elena"), Role, Status (Pending filled with
     "expires …", Accepted, Expired, Revoked in outline), Delivery (Link created, Email sent, Email not confirmed in amber
     with the web's tooltip, or a dash), Created, and the row's actions: Replace with a new link (a link invitation) or
@@ -1978,18 +2003,31 @@ stream's commands on Activity and what Users does to accounts and invitations.
     will stop working."). "No invitations yet. Invite someone to get started." when there are none. A resend or revoke
     that fails may still have happened: it says so with Reload history, and the rows' actions wait until the history is
     read again. A history that cannot be read says "Could not load invitation history. …" with Reload history.
-    - **Invite someone** (a dialog): how they get it (Create link, or Send email where email is set up, else the web's
-      amber note naming its Email settings), the address for an email with its hint, Access group (the default group
+    - **Invite someone** (a dialog, the web's `CreateInvitationForm.tsx`): the title, "Choose their access and how they
+      get the invitation link." and the X; how they get it, two choice cards side by side with a radio dot (Create link,
+      or Send email where email is set up, else the web's amber note linking its Email settings; the picked card in amber),
+      the address for an email with its hint, then Access group and Role side by side as compact menus: Access group (the default group
       first, "Family (default)", or "Server default"; off for an admin), Role (Admin only for the Owner, else the web's
-      note), Library access (Inherit from access group, or the libraries ticked), the note (its label and hint for a
+      note), Library access (Inherit from access group and its switch, or a row a library with its switch), the note (its label and hint for a
       link or an email), Create their first profile (only off where the server cannot make it, with the web's line) and
-      the feature tour, and "Link expires in 7 days · single use". Create link or Send invite says "Creating..." or
+      the feature tour, each with its line and a switch on the right, and the footer: "Link expires in 7 days · single use" muted on the left, Cancel and Create link or Send invite on the right; the button says "Creating..." or
       "Sending...". A failure stays on the dialog with the web's "Reload history before another deliberate attempt" and
       Reload history, and Create waits until the history was read.
     - **The link**, after Invite someone or a new link (Fresh invitation link): what its delivery did, in the web's words
       ("Email sent to …", "Invitation link created. …", "New link created for …"), the link in a box, the web's fine
       print, and Copy link ("Copied to clipboard", off the clipboard's history), which is the only way it leaves the
       dialog; the link is forgotten when the dialog closes or the tab is left.
+  - **Invite Codes** (`AdminInviteCodesView` on `AdminInviteCodesViewModel`, the web's `InviteCodesTab.tsx` and
+    `InviteCodeList.tsx`): + Create Code on the right; "Codes only work while public signups are on. Public signups
+    setting" (muted, its link opening the server's web app) or, with signups off, the web's amber notice; "Loading invite
+    codes..." or "Unable to load invite codes." with Retry; then the web's bare table, 50 codes a page with Load more:
+    Code (in a muted fixed-width chip, Copy code beside it, off the clipboard's history), Label (a muted dash for none),
+    Usage ("3 / 10", red once used up), Status (its switch and an outline Active or secondary Disabled badge), Created,
+    and Add Uses and Delete (asked first, "Delete invite code "…"? This action cannot be undone."). "No invite codes yet.
+    Create one to get started." when there are none. What an action did shows in a line above the table, where the web
+    shows a toast ("Invite code created", "Copied to clipboard"). Create Invite Code (a dialog): Code (a fresh 16-character
+    one, upper case), Label and Max uses (10), and a full-width Create; Top Up Invite Code: what the code has, Additional
+    uses (1) and a full-width Add Uses. A top-up that fails may still have counted: the list is read again either way.
 
 ### Activity indicator
 
