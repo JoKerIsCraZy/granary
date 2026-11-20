@@ -718,10 +718,12 @@ for a server.
   NavigationView collapses the header in the rail (`ListSizeCompact`), and the entries moved up and down under it as the
   rail opened and closed. The custom content stays in both, and holds one link with both looks in one cell: the name or
   wordmark for the open pane, the mark for the rail, in the entries' icon column. `ShowPaneParts` switches them with the
-  pane, by opacity only (a 150 ms cross-fade, as the web's), so the top keeps its height. A rail without a mark (none,
-  Server logo off, or a picture that failed) shows nothing there, and the link is then neither clickable nor read out.
+  pane, by opacity only (a 150 ms cross-fade, as the web's), so the top keeps its height. A server without a mark, or one
+  whose picture failed, is shown by Silo's own mark (`SiloMarkFallback`, the brand file `silo-mark-flat.svg`, unaltered at
+  26 px with its clear space; Assets/Brand/NOTICE.txt). With Server logo off the rail shows nothing there, and the link is
+  then neither clickable nor read out.
 - Each picture decodes at its shown height only; a load failure logs a warning without the address and falls back (the
-  name for the wordmark, nothing for the mark).
+  name for the wordmark, Silo's mark for the mark).
 
 ## Server playback
 

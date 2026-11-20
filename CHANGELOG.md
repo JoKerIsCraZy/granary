@@ -35,8 +35,9 @@ release's section is what its update says it changes (docs/release.md).
   and time format (12-hour or 24-hour), as on Silo's web: with DD/MM/YYYY the day comes first in English dates too.
   Choose them in Settings → Accessibility → Date & time; they apply at once.
 - **Server mark in the narrow sidebar:** on a title's, a person's or a box set's page, the narrow sidebar shows your
-  Silo server's square logo at the top, as Silo's web does; click it to go Home. It fades into the wordmark or name as
-  the sidebar opens, and the entries below no longer move as it opens and closes.
+  Silo server's square logo at the top, or Silo's mark when your server has none, as Silo's web does; click it to go
+  Home. It fades into the wordmark or name as the sidebar opens, and the entries below no longer move as it opens and
+  closes. Your profile picture at the bottom of the narrow sidebar is no longer cut off.
 
 ### Fixed
 

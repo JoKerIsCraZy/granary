@@ -231,8 +231,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   keys, a remote and a controller have Home's entry). The rail (a title's, a person's or a box set's page) shows the
   server's square mark there instead, 36 x 36 px with rounded corners in the entries' icon column (`mark_url`, as the web's
   collapsed sidebar), cross-faded with the wordmark or name as the pane opens and closes; the top keeps its height, so the
-  entries stay put. Without a mark, or with Server logo off, the rail's top is empty: never the wordmark squeezed, never
-  Silo's mark. Then Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
+  entries stay put. A server without a mark of its own shows Silo's mark there, unaltered at 26 px in the 36 px square, as
+  the web's sidebar does (Assets/Brand/NOTICE.txt); with Server logo off the rail's top is empty, never the wordmark
+  squeezed. The profile's avatar at the bottom is 28 px in the open pane and 24 px in the rail, whose slot cut the
+  larger one off. Then Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in the accent), "YOUR STUFF" (Favorites, Watchlist, Watch
   Party while the server offers rooms, Collections, History, Downloads while the server lets the profile download or the profile

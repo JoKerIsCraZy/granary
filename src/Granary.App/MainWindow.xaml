@@ -117,6 +117,13 @@
                             <Border.Background>
                                 <ImageBrush x:Name="ServerMarkBrush" Stretch="Uniform" />
                             </Border.Background>
+                            <!--
+                                Silo's own mark while the server has none, as the web shows it (components/SiloBrand.tsx): it refers to the
+                                Silo server signed in to, unaltered, 26 px with the 20 % clear space Silo's brand page asks for
+                                (Assets/Brand/NOTICE.txt).
+                            -->
+                            <Image x:Name="SiloMarkFallback" Style="{StaticResource SiloAuthMarkStyle}" Width="26" Height="26" Margin="0"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
                         </Border>
                     </Grid>
                 </HyperlinkButton>
@@ -265,13 +272,13 @@
                     <NavigationViewItem.Resources>
                         <Thickness x:Key="NavigationViewCompactItemContentPresenterMargin">4,-1,8,-1</Thickness>
                     </NavigationViewItem.Resources>
-                    <Grid Margin="-6,0,0,0" ColumnSpacing="10">
+                    <Grid x:Name="ProfileItemContent" Margin="-6,0,0,0" ColumnSpacing="10">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="28" />
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <controls:ProfileAvatar Width="28" Height="28" FontSize="12" VerticalAlignment="Center"
+                        <controls:ProfileAvatar x:Name="ProfileItemAvatar" Width="28" Height="28" FontSize="12" VerticalAlignment="Center"
                                                 Image="{x:Bind Sidebar.Avatar, Mode=OneWay}" Initial="{x:Bind Sidebar.ProfileInitial, Mode=OneWay}" />
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="{x:Bind ProfileLabel(Sidebar.ProfileName, Sidebar.SignOutCommand.IsRunning), Mode=OneWay}"

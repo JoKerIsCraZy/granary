@@ -11,7 +11,7 @@ namespace Granary.App;
 // The sidebar's top: the server's wordmark once it has loaded, its name until then and for a server without one, or when
 // the picture does not load (a .webp needs Windows' WebP codec), or when the profile turned the logo off in Settings. The
 // rail shows the server's square mark there instead, cross-faded in the same place as the web's (components/AppSidebar.tsx),
-// and nothing without one: never the wordmark squeezed, and never Silo's own.
+// and Silo's own mark for a server without one, as the web does (Assets/Brand/NOTICE.txt); never the wordmark squeezed.
 public sealed partial class MainWindow
 {
     // The picture's height in the sidebar (MainWindow.xaml). Set before its address, so it never decodes any larger; the height
@@ -28,6 +28,9 @@ public sealed partial class MainWindow
     // The picture that counts: one replaced or turned off can still report that it opened or failed.
     private BitmapImage? _wordmarkImage;
     private Uri? _markShown;
+    // Whether the rail shows a mark at all: the server's, or Silo's own while the server has none (Assets/Brand/NOTICE.txt).
+    private bool _hasMark;
+    private bool? _logoOnShown;
     // The mark being shown, or null without one or once it failed. A mark still loading paints nothing.
     private BitmapImage? _markImage;
     // Whether the pane is open or opening (ShowPaneParts), as the top shows it.
@@ -110,12 +113,14 @@ public sealed partial class MainWindow
     // is as high as the name or wordmark alone.
     private void ShowMark()
     {
-        var mark = Layout.ShowsServerLogo ? _brand.Mark : null;
-        if (mark == _markShown)
+        bool logoOn = Layout.ShowsServerLogo;
+        var mark = logoOn ? _brand.Mark : null;
+        if (mark == _markShown && logoOn == _logoOnShown)
         {
             return;
         }
         _markShown = mark;
+        _logoOnShown = logoOn;
         _markImage = null;
         if (mark is { } url)
         {
@@ -124,13 +129,16 @@ public sealed partial class MainWindow
             image.UriSource = url;
             _markImage = image;
             ServerMarkBrush.ImageSource = image;
-            ServerMark.Visibility = Visibility.Visible;
+            SiloMarkFallback.Visibility = Visibility.Collapsed;
         }
         else
         {
+            // A server without a mark of its own is shown by Silo's, as the web's sidebar does (components/SiloBrand.tsx).
             ServerMarkBrush.ImageSource = null;
-            ServerMark.Visibility = Visibility.Collapsed;
+            SiloMarkFallback.Visibility = logoOn ? Visibility.Visible : Visibility.Collapsed;
         }
+        _hasMark = logoOn;
+        ServerMark.Visibility = _hasMark ? Visibility.Visible : Visibility.Collapsed;
         ShowBrand(_brandWide);
     }
 
@@ -142,8 +150,9 @@ public sealed partial class MainWindow
         }
         _logger.LogWarning("The server's mark could not be shown: {Error}", e.ErrorMessage);
         _markImage = null;
+        // Silo's own mark in its place, as for a server without one.
         ServerMarkBrush.ImageSource = null;
-        ServerMark.Visibility = Visibility.Collapsed;
+        SiloMarkFallback.Visibility = Visibility.Visible;
         ShowBrand(_brandWide);
     }
 
@@ -152,7 +161,7 @@ public sealed partial class MainWindow
     private void ShowBrand(bool open)
     {
         _brandWide = open;
-        bool hasMark = _markImage is not null;
+        bool hasMark = _hasMark;
         bool shown = open || hasMark;
         BrandWide.Opacity = open ? 1 : 0;
         ServerMark.Opacity = !open && hasMark ? 1 : 0;

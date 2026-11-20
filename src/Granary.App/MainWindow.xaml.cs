@@ -431,11 +431,23 @@ public sealed partial class MainWindow : Window
         ShowSections(open);
         PlaceDock(animate: true, open);
         ShowBrand(open);
+        ShowProfileAvatar(open);
         // Over the rail's pane while it is open over the page, the disc would sit on the sidebar.
         PageBackButton.Visibility = _showsPageBack && !(_isRail && open) ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void OnPageBackClick(object sender, RoutedEventArgs e) => _navigation.GoBack();
+
+    // The rail's slot is narrower than the open pane's: there the 28 px avatar was cut off at its edge, so the rail shows it at
+    // 24 px, its middle on the other icons' line.
+    private void ShowProfileAvatar(bool open)
+    {
+        double size = open ? 28 : 24;
+        ProfileItemAvatar.Width = size;
+        ProfileItemAvatar.Height = size;
+        ProfileItemAvatar.FontSize = open ? 12 : 11;
+        ProfileItemContent.Margin = new Thickness(open ? -6 : -4, 0, 0, 0);
+    }
 
     // A folded section hides its entries, all but the page shown, so the sidebar still says where the viewer is. The
     // icon-only pane shows them all, as the web's rail does: it has no headers to open them by. Requests and
