@@ -22,6 +22,8 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
     private AdminActivityView? _activity;
     private AdminUsersView? _users;
     private AdminUserDetailView? _detail;
+    // Users opens on its Invitations tab next: Open asked for it. A pick in the sidebar opens the Users tab, as the web's link.
+    private bool _invitationsNext;
 
     public AdminPage()
     {
@@ -61,14 +63,22 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
     /// <summary>Shows one of the area's pages (<see cref="AdminPages"/>), as picking it in the sidebar does.</summary>
     public void Open(string page)
     {
+        // Invitations is a tab of Users, as the web's /admin/users?tab=invitations.
+        _invitationsNext = page == AdminPages.Invitations;
+        string tag = _invitationsNext ? AdminPages.Users : page;
         var (list, item) = Lists.SelectMany(list => list.Items.OfType<ListViewItem>().Select(item => (list, item)))
-            .FirstOrDefault(entry => entry.item.Tag as string == page);
+            .FirstOrDefault(entry => entry.item.Tag as string == tag);
         if (item is null)
         {
             (list, item) = (Pages, (ListViewItem)Pages.Items[0]);
         }
         if (ReferenceEquals(list.SelectedItem, item))
         {
+            if (tag == AdminPages.Users)
+            {
+                DeactivateAll();
+                _ = ShowUsersAsync();
+            }
             return;
         }
         list.SelectedItem = item;
@@ -99,9 +109,7 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
                     await _activity.ActivateAsync();
                     break;
                 case AdminPages.Users:
-                    _users ??= CreateUsers();
-                    Show(_users);
-                    await _users.ActivateAsync();
+                    await ShowUsersAsync();
                     break;
                 default:
                     _dashboard ??= CreateDashboard();
@@ -133,10 +141,22 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
         CloseDetail();
     }
 
+    private Task ShowUsersAsync()
+    {
+        var users = _users ??= CreateUsers();
+        users.ShowTab(_invitationsNext);
+        _invitationsNext = false;
+        Sidebar.LastPage = users.ShowsInvitations ? AdminPages.Invitations : AdminPages.Users;
+        Show(users);
+        return users.ActivateAsync();
+    }
+
     private AdminUsersView CreateUsers()
     {
         var users = new AdminUsersView();
         users.UserRequested += (_, id) => OpenUser(users, id);
+        // Back into the area returns to the tab last shown.
+        users.TabChanged += (_, page) => Sidebar.LastPage = page;
         return users;
     }
 

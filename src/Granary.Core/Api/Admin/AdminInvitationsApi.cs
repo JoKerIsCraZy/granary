@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 namespace Granary.Core.Api.Admin;
 
 /// <summary>
@@ -28,6 +30,18 @@ public sealed class AdminInvitationsApi(SiloHttp http)
             throw new HttpRequestException(HttpRequestError.InvalidResponse, "The server's invitation pages do not continue.");
         }
         return page;
+    }
+
+    /// <summary>
+    /// Whether the server lacks its public URL, which every invitation link is built on, as the web's Invitations tab reads
+    /// <c>server.public_url</c> of the administrator settings. Only that value is taken from the answer; nothing of it is
+    /// kept or logged.
+    /// </summary>
+    public async Task<bool> IsPublicUrlMissingAsync(Uri server, CancellationToken cancellationToken = default)
+    {
+        var settings = await http.GetAsync(server, "api/v2/admin/settings/effective", SiloAuth.Profile, AdminJsonContext.Default.JsonObject,
+            cancellationToken);
+        return settings["server.public_url"] is not JsonValue url || !url.TryGetValue(out string? text) || string.IsNullOrWhiteSpace(text);
     }
 
     public async Task<InvitationDelivery> CreateAsync(Uri server, AdminInvitationDraft draft, CancellationToken cancellationToken = default) =>

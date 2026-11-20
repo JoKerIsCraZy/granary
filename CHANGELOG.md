@@ -17,6 +17,11 @@ release's section is what its update says it changes (docs/release.md).
   sign in; its access group, libraries, marker editing and metadata curation; reset its password by email, with a link
   to share or with a temporary password; disable or enable it, make another admin the server's owner, delete it, and
   see where it is signed in and sign it out there or everywhere.
+- **Admin → Users → Invitations:** invite someone by email or with a link to share, with their role, access group,
+  libraries, a note, their first profile and the feature tour, as on Silo's web. The link shows once, with Copy link; the
+  history lists every invitation with its status and delivery, 50 at a time, and a pending or expired one gets a new
+  link, copied or emailed, and a pending one can be revoked. Without your Silo server's public URL nothing new can be
+  made, and the tab says so.
 - **Previews offline:** downloads keep the seek bar's preview pictures, so they show while you scrub without a
   connection too. Downloads you already have get them the next time Granary refreshes them with your Silo server.
 - **Read-ahead buffer:** Settings → Playback → This PC sets how much of a title streamed from your Silo server

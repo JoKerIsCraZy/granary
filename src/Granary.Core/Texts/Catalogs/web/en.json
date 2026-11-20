@@ -3855,6 +3855,648 @@
       "value": "This session does not support live pause, resume, or messages. Stop and Terminate can still end playback."
     }
   ],
+  "web.admin.settings.invitations.capabilitiesFailed": [
+    {
+      "type": 0,
+      "value": "Could not load invitation capabilities. "
+    },
+    {
+      "type": 8,
+      "value": "button",
+      "children": [
+        {
+          "type": 0,
+          "value": "Reload capabilities"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.claimLink.copy": [
+    {
+      "type": 0,
+      "value": "Copy link"
+    }
+  ],
+  "web.admin.settings.invitations.copied": [
+    {
+      "type": 0,
+      "value": "Copied to clipboard"
+    }
+  ],
+  "web.admin.settings.invitations.copyFailed": [
+    {
+      "type": 0,
+      "value": "Could not copy the link. Select and copy it manually, or try again."
+    }
+  ],
+  "web.admin.settings.invitations.create.accessGroup": [
+    {
+      "type": 0,
+      "value": "Access group"
+    }
+  ],
+  "web.admin.settings.invitations.create.creating": [
+    {
+      "type": 0,
+      "value": "Creating..."
+    }
+  ],
+  "web.admin.settings.invitations.create.defaultGroup": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (default)"
+    }
+  ],
+  "web.admin.settings.invitations.create.deliveryQuestion": [
+    {
+      "type": 0,
+      "value": "How should they get it?"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailHint": [
+    {
+      "type": 0,
+      "value": "This becomes both the destination and their sign-in username."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailLabel": [
+    {
+      "type": 0,
+      "value": "Email address"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOption": [
+    {
+      "type": 0,
+      "value": "Send email"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOptionBody": [
+    {
+      "type": 0,
+      "value": "We email the link. You can copy it too."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOptionUnavailable": [
+    {
+      "type": 0,
+      "value": "Email isn't set up on this server."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailSetup": [
+    {
+      "type": 0,
+      "value": "To send invitations by email, set up the mail server in "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "Email settings"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.create.expiry": [
+    {
+      "type": 0,
+      "value": "Link expires in 7 days · single use"
+    }
+  ],
+  "web.admin.settings.invitations.create.failed": [
+    {
+      "type": 0,
+      "value": "Unable to create invitation."
+    }
+  ],
+  "web.admin.settings.invitations.create.finePrintEmail": [
+    {
+      "type": 0,
+      "value": "The link works once and expires in 7 days. Resending later mints a fresh link and kills this one."
+    }
+  ],
+  "web.admin.settings.invitations.create.finePrintLink": [
+    {
+      "type": 0,
+      "value": "The link works once and expires in 7 days. Anyone with the link can use it. Revoke it from the history if it ends up with the wrong person."
+    }
+  ],
+  "web.admin.settings.invitations.create.inheritGroup": [
+    {
+      "type": 0,
+      "value": "Inherit from access group"
+    }
+  ],
+  "web.admin.settings.invitations.create.libraryHint": [
+    {
+      "type": 0,
+      "value": "The account created at accept follows the selected group's library scope."
+    }
+  ],
+  "web.admin.settings.invitations.create.linkOption": [
+    {
+      "type": 0,
+      "value": "Create link"
+    }
+  ],
+  "web.admin.settings.invitations.create.linkOptionBody": [
+    {
+      "type": 0,
+      "value": "You share the link yourself, for example in a chat."
+    }
+  ],
+  "web.admin.settings.invitations.create.noDefaultProfile": [
+    {
+      "type": 0,
+      "value": "This server cannot create a default profile atomically. Turn off the profile option to create a profileless invitation."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteHintEmail": [
+    {
+      "type": 0,
+      "value": "Appears in the email and on the invitation page. Plain text."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteHintLink": [
+    {
+      "type": 0,
+      "value": "Shown on the invitation page, and in your invitation history so you can tell links apart."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteLabel": [
+    {
+      "type": 0,
+      "value": "Note (optional)"
+    }
+  ],
+  "web.admin.settings.invitations.create.notePlaceholder": [
+    {
+      "type": 0,
+      "value": "Hey — set yourself up whenever."
+    }
+  ],
+  "web.admin.settings.invitations.create.ownerOnly": [
+    {
+      "type": 0,
+      "value": "Only the server owner can invite an admin."
+    }
+  ],
+  "web.admin.settings.invitations.create.personalNoteLabel": [
+    {
+      "type": 0,
+      "value": "Personal note (optional)"
+    }
+  ],
+  "web.admin.settings.invitations.create.profileHintEmail": [
+    {
+      "type": 0,
+      "value": "Named from the part before the @. They can rename it later."
+    }
+  ],
+  "web.admin.settings.invitations.create.profileHintLink": [
+    {
+      "type": 0,
+      "value": "Named from the part before the @ in the email they enter. They can rename it later."
+    }
+  ],
+  "web.admin.settings.invitations.create.profileLabel": [
+    {
+      "type": 0,
+      "value": "Create their first profile"
+    }
+  ],
+  "web.admin.settings.invitations.create.reloadBeforeRetry": [
+    {
+      "type": 0,
+      "value": "Reload history before another deliberate attempt; the invitation may already exist."
+    }
+  ],
+  "web.admin.settings.invitations.create.reloadFailed": [
+    {
+      "type": 0,
+      "value": "Could not reload invitation history. Try again before creating another invitation."
+    }
+  ],
+  "web.admin.settings.invitations.create.role": [
+    {
+      "type": 0,
+      "value": "Role"
+    }
+  ],
+  "web.admin.settings.invitations.create.roleAdmin": [
+    {
+      "type": 0,
+      "value": "Admin"
+    }
+  ],
+  "web.admin.settings.invitations.create.roleUser": [
+    {
+      "type": 0,
+      "value": "User"
+    }
+  ],
+  "web.admin.settings.invitations.create.sending": [
+    {
+      "type": 0,
+      "value": "Sending..."
+    }
+  ],
+  "web.admin.settings.invitations.create.serverDefault": [
+    {
+      "type": 0,
+      "value": "Server default"
+    }
+  ],
+  "web.admin.settings.invitations.create.submitEmail": [
+    {
+      "type": 0,
+      "value": "Send invite"
+    }
+  ],
+  "web.admin.settings.invitations.create.submitLink": [
+    {
+      "type": 0,
+      "value": "Create link"
+    }
+  ],
+  "web.admin.settings.invitations.create.tourHint": [
+    {
+      "type": 0,
+      "value": "Walks through what this server can do, skipping anything turned off."
+    }
+  ],
+  "web.admin.settings.invitations.create.tourLabel": [
+    {
+      "type": 0,
+      "value": "Show the feature tour on first sign-in"
+    }
+  ],
+  "web.admin.settings.invitations.delivery.failed": [
+    {
+      "type": 0,
+      "value": "The invitation was created, but email delivery failed or is uncertain. This link remains active; deliver it yourself."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.linkCreated": [
+    {
+      "type": 0,
+      "value": "Invitation link created. Share it with the person you're inviting. They'll enter their email address and choose a password."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.newLinkForEmail": [
+    {
+      "type": 0,
+      "value": "New link created for "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". Nothing was emailed; share this link with them yourself."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.notConfigured": [
+    {
+      "type": 0,
+      "value": "Email is not configured. The invitation was created; deliver this link yourself."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.sent": [
+    {
+      "type": 0,
+      "value": "Email sent to "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". Recipient delivery is not guaranteed. You can copy the link below."
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailSent": [
+    {
+      "type": 0,
+      "value": "Email sent"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailUnconfirmed": [
+    {
+      "type": 0,
+      "value": "Email not confirmed"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailUnconfirmedTitle": [
+    {
+      "type": 0,
+      "value": "The email failed or its delivery is uncertain. The link still works."
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.link": [
+    {
+      "type": 0,
+      "value": "Link created"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.unknownTitle": [
+    {
+      "type": 0,
+      "value": "Created before delivery was recorded"
+    }
+  ],
+  "web.admin.settings.invitations.empty": [
+    {
+      "type": 0,
+      "value": "No invitations yet. Invite someone to get started."
+    }
+  ],
+  "web.admin.settings.invitations.historyFailed": [
+    {
+      "type": 0,
+      "value": "Could not load invitation history. "
+    },
+    {
+      "type": 1,
+      "value": "error"
+    }
+  ],
+  "web.admin.settings.invitations.intro": [
+    {
+      "type": 0,
+      "value": "Invite someone by email, or create a link to share yourself. Their email address becomes their username."
+    }
+  ],
+  "web.admin.settings.invitations.invite.button": [
+    {
+      "type": 0,
+      "value": "Invite someone"
+    }
+  ],
+  "web.admin.settings.invitations.invite.description": [
+    {
+      "type": 0,
+      "value": "Choose their access and how they get the invitation link."
+    }
+  ],
+  "web.admin.settings.invitations.invite.title": [
+    {
+      "type": 0,
+      "value": "Invite someone"
+    }
+  ],
+  "web.admin.settings.invitations.loadMore": [
+    {
+      "type": 0,
+      "value": "Load more"
+    }
+  ],
+  "web.admin.settings.invitations.loading": [
+    {
+      "type": 0,
+      "value": "Loading invitations..."
+    }
+  ],
+  "web.admin.settings.invitations.loadingCapabilities": [
+    {
+      "type": 0,
+      "value": "Loading invitation capabilities..."
+    }
+  ],
+  "web.admin.settings.invitations.notConfigured": [
+    {
+      "type": 0,
+      "value": "Invitations are not configured on this server."
+    }
+  ],
+  "web.admin.settings.invitations.publicUrlMissing": [
+    {
+      "type": 0,
+      "value": "Set the Silo public URL to create invitation links. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "General settings"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.reloadHistory": [
+    {
+      "type": 0,
+      "value": "Reload history"
+    }
+  ],
+  "web.admin.settings.invitations.resend.creating": [
+    {
+      "type": 0,
+      "value": "Creating a fresh invitation..."
+    }
+  ],
+  "web.admin.settings.invitations.resend.description": [
+    {
+      "type": 0,
+      "value": "A replacement invalidates the previous link."
+    }
+  ],
+  "web.admin.settings.invitations.resend.finePrint": [
+    {
+      "type": 0,
+      "value": "The link works once. Any previous link has stopped working."
+    }
+  ],
+  "web.admin.settings.invitations.resend.title": [
+    {
+      "type": 0,
+      "value": "Fresh invitation link"
+    }
+  ],
+  "web.admin.settings.invitations.resend.uncertain": [
+    {
+      "type": 0,
+      "value": "The outcome may be uncertain. Reload history before another deliberate resend."
+    }
+  ],
+  "web.admin.settings.invitations.resendFailed": [
+    {
+      "type": 0,
+      "value": "Unable to resend invitation. Reload history before continuing."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.confirm": [
+    {
+      "type": 0,
+      "value": "Revoke"
+    }
+  ],
+  "web.admin.settings.invitations.revoke.emailDescription": [
+    {
+      "type": 0,
+      "value": "Revoke the invitation for "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": "? Their link will stop working."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.linkDescription": [
+    {
+      "type": 0,
+      "value": "Revoke this link invitation? The link will stop working."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.title": [
+    {
+      "type": 0,
+      "value": "Revoke invitation"
+    }
+  ],
+  "web.admin.settings.invitations.revokeFailed": [
+    {
+      "type": 0,
+      "value": "Unable to revoke invitation."
+    }
+  ],
+  "web.admin.settings.invitations.row.copyNewLink": [
+    {
+      "type": 0,
+      "value": "Copy a new link without emailing"
+    }
+  ],
+  "web.admin.settings.invitations.row.emailNewLink": [
+    {
+      "type": 0,
+      "value": "Email a new link"
+    }
+  ],
+  "web.admin.settings.invitations.row.expires": [
+    {
+      "type": 0,
+      "value": "expires "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.admin.settings.invitations.row.invitedBy": [
+    {
+      "type": 0,
+      "value": "Invited by "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.admin.settings.invitations.row.joinedByLink": [
+    {
+      "type": 0,
+      "value": "Joined by link"
+    }
+  ],
+  "web.admin.settings.invitations.row.linkInvitation": [
+    {
+      "type": 0,
+      "value": "Link invitation"
+    }
+  ],
+  "web.admin.settings.invitations.row.note": [
+    {
+      "type": 0,
+      "value": "“"
+    },
+    {
+      "type": 1,
+      "value": "note"
+    },
+    {
+      "type": 0,
+      "value": "”"
+    }
+  ],
+  "web.admin.settings.invitations.row.replaceLink": [
+    {
+      "type": 0,
+      "value": "Replace with a new link"
+    }
+  ],
+  "web.admin.settings.invitations.row.revokeLink": [
+    {
+      "type": 0,
+      "value": "Revoke this link"
+    }
+  ],
+  "web.admin.settings.invitations.status.accepted": [
+    {
+      "type": 0,
+      "value": "Accepted"
+    }
+  ],
+  "web.admin.settings.invitations.status.expired": [
+    {
+      "type": 0,
+      "value": "Expired"
+    }
+  ],
+  "web.admin.settings.invitations.status.pending": [
+    {
+      "type": 0,
+      "value": "Pending"
+    }
+  ],
+  "web.admin.settings.invitations.status.revoked": [
+    {
+      "type": 0,
+      "value": "Revoked"
+    }
+  ],
+  "web.admin.settings.invitations.table.created": [
+    {
+      "type": 0,
+      "value": "Created"
+    }
+  ],
+  "web.admin.settings.invitations.table.delivery": [
+    {
+      "type": 0,
+      "value": "Delivery"
+    }
+  ],
+  "web.admin.settings.invitations.table.recipient": [
+    {
+      "type": 0,
+      "value": "Recipient"
+    }
+  ],
+  "web.admin.settings.invitations.table.role": [
+    {
+      "type": 0,
+      "value": "Role"
+    }
+  ],
+  "web.admin.settings.invitations.table.status": [
+    {
+      "type": 0,
+      "value": "Status"
+    }
+  ],
   "web.admin.shell.mobileHeader.eyebrow": [
     {
       "type": 0,
@@ -5193,6 +5835,18 @@
     {
       "type": 0,
       "value": "Manage access, defaults, and invite flow for the people using Silo."
+    }
+  ],
+  "web.admin.users.list.tab.invitations": [
+    {
+      "type": 0,
+      "value": "Invitations"
+    }
+  ],
+  "web.admin.users.list.tab.users": [
+    {
+      "type": 0,
+      "value": "Users"
     }
   ],
   "web.admin.users.list.title": [
@@ -14629,6 +15283,12 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.libraryAccess.label": [
+    {
+      "type": 0,
+      "value": "Library Access"
     }
   ],
   "web.profiles.librarySelect.libraryFallback": [

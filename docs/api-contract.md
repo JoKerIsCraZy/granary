@@ -1296,7 +1296,7 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 Every call needs an administrator account (`role` `admin`, `Account.IsAdmin`); anyone else gets 403, and so does an
 administrator account on a profile that is not its primary one (the server's "acting administrator"). Granary reads the
 web's Dashboard and Activity, sends Activity's commands and reads what the activity indicator shows (12.3), and manages
-accounts in Users (7.16a); nothing else of the admin API is used.
+accounts and invitations in Users (7.16a, 7.16b); nothing else of the admin API is used.
 
 - `GET /api/v2/admin/stats` → `{ "active_streams", "total_movies", "total_movie_files", "total_shows", "total_show_files",
   "total_files", "total_storage_bytes", "total_users", "advisory_titles", "watch_providers" }`.
@@ -1397,6 +1397,37 @@ shown, never logged. Source: `silo-server/internal/apiv2/admin_users.go`, `admin
 - `GET /api/v2/libraries` gives an account's page the libraries to choose from.
 - A failed action is worded by its status, as a load is (401/403 refused, 404 gone, 429/503 busy, no answer
   unreachable); anything else in the web's words for the action ("Could not save user.").
+
+### 7.16b Invitations
+
+Admin → Users → Invitations, as the web's `api/v2/invitations.ts`. An invitation's address, note and inviter are personal
+data: shown, never logged. Source: `silo-server/internal/apiv2/invitations.go`. No invitation carries a version: none of
+these writes takes `If-Match`, and none is retried.
+
+- `GET /api/v2/admin/invitations/capabilities` → `{ "state" ("available" where invitations work), "default_profile",
+  "profileless", "email_delivery" }`. Not available: the tab says so and reads nothing else.
+- `GET /api/v2/admin/settings/effective` → the administrator settings as `{ key: value }`, secrets left out. Granary
+  takes `server.public_url` only, as the web's tab does: empty, Invite someone and the new links wait. The rest of the
+  answer is neither kept nor logged, and a failed read blocks nothing.
+- `GET /api/v2/admin/invitations?limit=50[&cursor=]` → `{ "items": AdminInvitation[], "page": { "has_more",
+  "next_cursor" } }`, newest first. A page that says there is more without a new cursor, or less with one, or a cursor
+  named before, fails the read, as the web's. An `AdminInvitation`: `id`, `email` (empty for a pending link invitation),
+  `delivery` (`link`, `email_sent`, `email_unconfirmed`, or `unknown` for one made before delivery was recorded), `role`,
+  `access_group_id`, `library_ids`, `create_profile`, `show_tour`, `note`, `invited_by`, `invited_by_name`, `status`
+  (`pending`, `accepted`, `revoked`, `expired`), `expires_at`, `created_at`.
+- `POST /api/v2/admin/invitations` with `{ "delivery": "link" | "email", "email"? (an email's only), "role",
+  "access_group_id"? (left out for the default group, and for an admin), "library_ids"? (left out to take the group's),
+  "create_profile", "show_tour", "note"? }` → `201 InvitationDelivery`: `{ "invitation", "claim_url", "delivery_status"
+  ("sent", "not_configured", "failed_or_unknown", "not_requested") }`. An answer without its invitation's id, its link or
+  a known status fails, as the web's: it may still have made one. Only the Owner may invite an admin (403 otherwise);
+  `capability_not_configured` without the public URL.
+- `POST /api/v2/admin/invitations/{id}/resend` with `{ "delivery": "link" | "email" }` → `InvitationDelivery`: a new link
+  for a pending or expired invitation; the old one stops working. `link` emails nothing and keeps an emailed
+  invitation's address. Only the Owner resends an admin's invitation.
+- `DELETE /api/v2/admin/invitations/{id}` → 204: the pending invitation's link stops working.
+- `claim_url` is a bearer credential: shown once to the administrator who made it, copied only on request (off the
+  clipboard's history), never logged or kept; the dialog forgets it when it closes. A create, resend or revoke that fails
+  may still have happened, so the history is read again before another; failures are worded by their status, as 7.16a's.
 
 ### 7.17 A profile's own collections, made and changed
 

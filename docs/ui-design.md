@@ -1811,12 +1811,12 @@ entry is chosen, and a controller's bumpers, which go from the chosen entry, do 
 For an administrator (`Account.IsAdmin`) the sidebar offers Admin above Settings, as the web's does. As Settings, the app's
 sidebar gives way to the area's own (`AdminPage`, 260 px): "← Back to App", "Admin", MONITOR with Dashboard and
 Activity (the web's "2 live" in red beside it while streams run), MANAGE with Users (the one page of the web's Users
-topic Granary has), and BUILD at its foot ("1715 · 13ad7a74", "dev build", "load failed"); as in Settings, the head and
+topic Granary has, with its Users and Invitations tabs), and BUILD at its foot ("1715 · 13ad7a74", "dev build", "load failed"); as in Settings, the head and
 BUILD stay and the pages between them scroll in a window too short for them. Granary has these three pages only; the
 rest of the web's admin stays on the web. The pages switch inside
 the area, not in the app's history, so Back to App leaves it in one step. Pages scroll in a centred column of at most
 1400 px, padded 40 px; cards are the surface with a hairline and 16 px corners. Nothing here changes the server except a
-stream's commands on Activity and what Users does to accounts.
+stream's commands on Activity and what Users does to accounts and invitations.
 
 - **Words**: the web's admin pages', by their keys, so they come in the language on screen: the area's sidebar, the
   Dashboard's widgets, Activity with its IP lookup and a stream's commands and answers, and the activity indicator
@@ -1921,6 +1921,36 @@ stream's commands on Activity and what Users does to accounts.
     LoginSessionsPanel): the browsers and apps signed in to the account, 50 at a time with Load more sessions, each with
     its name, last seen, when it signed in and the address; Sign out on one, or Sign out everywhere, each asked first.
     The Owner-only note for an account the viewer may not sign out.
+  - **Tabs**: the web's line tabs under the header, Users and Invitations; its third, Invite Codes, stays on the web.
+    The Invitations tab opens by itself where the admin area is asked for `invitations` (`AdminPages.Invitations`, the
+    web's `/admin/users?tab=invitations`), and Back into the area returns to the tab last shown; a pick of Users in the
+    sidebar opens the Users tab.
+  - **Invitations** (`AdminInvitationsView` on `AdminInvitationsViewModel`, the web's `InvitationsTab.tsx`,
+    `InvitationList.tsx` and `CreateInvitationForm.tsx`): "Loading invitation capabilities...", "Could not load invitation
+    capabilities." with Reload capabilities, or "Invitations are not configured on this server." Then the web's intro and
+    Invite someone, which waits, as do the new links, while the server has no public URL: the web's amber notice says
+    "Set the Silo public URL to create invitation links." (its link to General settings left out); settings that cannot
+    be read block nothing. The history, 50 a page with Load more, in a card: Recipient (the address, or "Link
+    invitation", with the web's details: "Joined by link · “note” · Invited by elena"), Role, Status (Pending filled with
+    "expires …", Accepted, Expired, Revoked in outline), Delivery (Link created, Email sent, Email not confirmed in amber
+    with the web's tooltip, or a dash), Created, and the row's actions: Replace with a new link (a link invitation) or
+    Copy a new link without emailing, Email a new link where email is set up, both while pending or expired and an
+    admin's only for the Owner, and Revoke this link while pending, asked first ("Revoke the invitation for …? Their link
+    will stop working."). "No invitations yet. Invite someone to get started." when there are none. A resend or revoke
+    that fails may still have happened: it says so with Reload history, and the rows' actions wait until the history is
+    read again. A history that cannot be read says "Could not load invitation history. …" with Reload history.
+    - **Invite someone** (a dialog): how they get it (Create link, or Send email where email is set up, else the web's
+      amber note naming its Email settings), the address for an email with its hint, Access group (the default group
+      first, "Family (default)", or "Server default"; off for an admin), Role (Admin only for the Owner, else the web's
+      note), Library access (Inherit from access group, or the libraries ticked), the note (its label and hint for a
+      link or an email), Create their first profile (only off where the server cannot make it, with the web's line) and
+      the feature tour, and "Link expires in 7 days · single use". Create link or Send invite says "Creating..." or
+      "Sending...". A failure stays on the dialog with the web's "Reload history before another deliberate attempt" and
+      Reload history, and Create waits until the history was read.
+    - **The link**, after Invite someone or a new link (Fresh invitation link): what its delivery did, in the web's words
+      ("Email sent to …", "Invitation link created. …", "New link created for …"), the link in a box, the web's fine
+      print, and Copy link ("Copied to clipboard", off the clipboard's history), which is the only way it leaves the
+      dialog; the link is forgotten when the dialog closes or the tab is left.
 
 ### Activity indicator
 

@@ -533,6 +533,105 @@ web.admin.sessions.playback.toast.stopSent
 web.admin.sessions.playback.toast.terminateReceipt
 web.admin.sessions.playback.unsupportedControl
 
+# Admin → Users → Invitations, in the words of the web's Invitations tab (pages/admin-settings/InvitationsTab.tsx,
+# InvitationList.tsx, CreateInvitationForm.tsx, InvitationDisplay.tsx, invitationRules.ts):
+# src/Granary.App/Views/Admin/AdminInvitationsView.xaml(.cs) and src/Granary.Core/ViewModels/Admin (AdminInvitationRow,
+# AdminInvitationsViewModel, AdminNewInvitationViewModel).
+web.admin.settings.invitations.capabilitiesFailed
+web.admin.settings.invitations.claimLink.copy
+web.admin.settings.invitations.copied
+web.admin.settings.invitations.copyFailed
+web.admin.settings.invitations.create.accessGroup
+web.admin.settings.invitations.create.creating
+web.admin.settings.invitations.create.defaultGroup
+web.admin.settings.invitations.create.deliveryQuestion
+web.admin.settings.invitations.create.emailHint
+web.admin.settings.invitations.create.emailLabel
+web.admin.settings.invitations.create.emailOption
+web.admin.settings.invitations.create.emailOptionBody
+web.admin.settings.invitations.create.emailOptionUnavailable
+web.admin.settings.invitations.create.emailSetup
+web.admin.settings.invitations.create.expiry
+web.admin.settings.invitations.create.failed
+web.admin.settings.invitations.create.finePrintEmail
+web.admin.settings.invitations.create.finePrintLink
+web.admin.settings.invitations.create.inheritGroup
+web.admin.settings.invitations.create.libraryHint
+web.admin.settings.invitations.create.linkOption
+web.admin.settings.invitations.create.linkOptionBody
+web.admin.settings.invitations.create.noDefaultProfile
+web.admin.settings.invitations.create.noteHintEmail
+web.admin.settings.invitations.create.noteHintLink
+web.admin.settings.invitations.create.noteLabel
+web.admin.settings.invitations.create.notePlaceholder
+web.admin.settings.invitations.create.ownerOnly
+web.admin.settings.invitations.create.personalNoteLabel
+web.admin.settings.invitations.create.profileHintEmail
+web.admin.settings.invitations.create.profileHintLink
+web.admin.settings.invitations.create.profileLabel
+web.admin.settings.invitations.create.reloadBeforeRetry
+web.admin.settings.invitations.create.reloadFailed
+web.admin.settings.invitations.create.role
+web.admin.settings.invitations.create.roleAdmin
+web.admin.settings.invitations.create.roleUser
+web.admin.settings.invitations.create.sending
+web.admin.settings.invitations.create.serverDefault
+web.admin.settings.invitations.create.submitEmail
+web.admin.settings.invitations.create.submitLink
+web.admin.settings.invitations.create.tourHint
+web.admin.settings.invitations.create.tourLabel
+web.admin.settings.invitations.delivery.failed
+web.admin.settings.invitations.delivery.linkCreated
+web.admin.settings.invitations.delivery.newLinkForEmail
+web.admin.settings.invitations.delivery.notConfigured
+web.admin.settings.invitations.delivery.sent
+web.admin.settings.invitations.deliveryLabel.emailSent
+web.admin.settings.invitations.deliveryLabel.emailUnconfirmed
+web.admin.settings.invitations.deliveryLabel.emailUnconfirmedTitle
+web.admin.settings.invitations.deliveryLabel.link
+web.admin.settings.invitations.deliveryLabel.unknownTitle
+web.admin.settings.invitations.empty
+web.admin.settings.invitations.historyFailed
+web.admin.settings.invitations.intro
+web.admin.settings.invitations.invite.button
+web.admin.settings.invitations.invite.description
+web.admin.settings.invitations.invite.title
+web.admin.settings.invitations.loadMore
+web.admin.settings.invitations.loading
+web.admin.settings.invitations.loadingCapabilities
+web.admin.settings.invitations.notConfigured
+web.admin.settings.invitations.publicUrlMissing
+web.admin.settings.invitations.reloadHistory
+web.admin.settings.invitations.resend.creating
+web.admin.settings.invitations.resend.description
+web.admin.settings.invitations.resend.finePrint
+web.admin.settings.invitations.resend.title
+web.admin.settings.invitations.resend.uncertain
+web.admin.settings.invitations.resendFailed
+web.admin.settings.invitations.revoke.confirm
+web.admin.settings.invitations.revoke.emailDescription
+web.admin.settings.invitations.revoke.linkDescription
+web.admin.settings.invitations.revoke.title
+web.admin.settings.invitations.revokeFailed
+web.admin.settings.invitations.row.copyNewLink
+web.admin.settings.invitations.row.emailNewLink
+web.admin.settings.invitations.row.expires
+web.admin.settings.invitations.row.invitedBy
+web.admin.settings.invitations.row.joinedByLink
+web.admin.settings.invitations.row.linkInvitation
+web.admin.settings.invitations.row.note
+web.admin.settings.invitations.row.replaceLink
+web.admin.settings.invitations.row.revokeLink
+web.admin.settings.invitations.status.accepted
+web.admin.settings.invitations.status.expired
+web.admin.settings.invitations.status.pending
+web.admin.settings.invitations.status.revoked
+web.admin.settings.invitations.table.created
+web.admin.settings.invitations.table.delivery
+web.admin.settings.invitations.table.recipient
+web.admin.settings.invitations.table.role
+web.admin.settings.invitations.table.status
+
 # The admin area's own sidebar, in the words of the web's AdminSidebar and admin navigation (components/AdminSidebar.tsx,
 # lib/adminNavigation.ts): src/Granary.App/Views/AdminPage.xaml and AdminSidebarViewModel.cs.
 web.admin.shell.mobileHeader.eyebrow
@@ -745,6 +844,9 @@ web.admin.users.list.searchPlaceholder
 web.admin.users.list.status.active
 web.admin.users.list.status.disabled
 web.admin.users.list.subtitle
+# The tabs of Admin → Users (pages/AdminUsers.tsx): src/Granary.App/Views/Admin/AdminUsersView.xaml.
+web.admin.users.list.tab.invitations
+web.admin.users.list.tab.users
 web.admin.users.list.title
 web.admin.users.list.unavailable
 web.admin.users.list.unknownGroup
@@ -2186,6 +2288,9 @@ web.player.watchTogether.viewersLabel
 
 # More of the collection editor's words, as above under catalog.sort.author.
 web.profiles.libraries.count
+# The library access heading of Invite someone, as the web's LibraryAccessSelector (components/LibraryAccessSelector.tsx):
+# src/Granary.App/Views/Admin/AdminInvitationsView.xaml.
+web.profiles.libraryAccess.label
 web.profiles.librarySelect.libraryFallback
 web.profiles.librarySelect.more
 web.profiles.librarySelect.pair

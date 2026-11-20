@@ -5291,6 +5291,648 @@
       "value": "لا تدعم هذه الجلسة الإيقاف المؤقت أو الاستئناف أو الرسائل أثناء التشغيل. لا يزال بإمكان «إيقاف» و«إنهاء» إنهاء التشغيل."
     }
   ],
+  "web.admin.settings.invitations.capabilitiesFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل إمكانات الدعوات. "
+    },
+    {
+      "type": 8,
+      "value": "button",
+      "children": [
+        {
+          "type": 0,
+          "value": "إعادة تحميل الإمكانات"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.claimLink.copy": [
+    {
+      "type": 0,
+      "value": "نسخ الرابط"
+    }
+  ],
+  "web.admin.settings.invitations.copied": [
+    {
+      "type": 0,
+      "value": "تم النسخ إلى الحافظة"
+    }
+  ],
+  "web.admin.settings.invitations.copyFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر نسخ الرابط. حدّده وانسخه يدويًا، أو حاول مرة أخرى."
+    }
+  ],
+  "web.admin.settings.invitations.create.accessGroup": [
+    {
+      "type": 0,
+      "value": "مجموعة الوصول"
+    }
+  ],
+  "web.admin.settings.invitations.create.creating": [
+    {
+      "type": 0,
+      "value": "جارٍ الإنشاء..."
+    }
+  ],
+  "web.admin.settings.invitations.create.defaultGroup": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (افتراضية)"
+    }
+  ],
+  "web.admin.settings.invitations.create.deliveryQuestion": [
+    {
+      "type": 0,
+      "value": "كيف سيحصل المدعو على الدعوة؟"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailHint": [
+    {
+      "type": 0,
+      "value": "يصبح هذا العنوان الوجهة واسم المستخدم لتسجيل الدخول معًا."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailLabel": [
+    {
+      "type": 0,
+      "value": "عنوان البريد الإلكتروني"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOption": [
+    {
+      "type": 0,
+      "value": "إرسال بريد إلكتروني"
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOptionBody": [
+    {
+      "type": 0,
+      "value": "نرسل الرابط بالبريد الإلكتروني. يمكنك نسخه أيضًا."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailOptionUnavailable": [
+    {
+      "type": 0,
+      "value": "البريد الإلكتروني غير مُعدّ على هذا الخادم."
+    }
+  ],
+  "web.admin.settings.invitations.create.emailSetup": [
+    {
+      "type": 0,
+      "value": "لإرسال الدعوات بالبريد الإلكتروني، اضبط خادم البريد في "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "إعدادات البريد الإلكتروني"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.create.expiry": [
+    {
+      "type": 0,
+      "value": "تنتهي صلاحية الرابط خلال 7 أيام · استخدام واحد"
+    }
+  ],
+  "web.admin.settings.invitations.create.failed": [
+    {
+      "type": 0,
+      "value": "تعذّر إنشاء الدعوة."
+    }
+  ],
+  "web.admin.settings.invitations.create.finePrintEmail": [
+    {
+      "type": 0,
+      "value": "يعمل الرابط مرة واحدة وتنتهي صلاحيته خلال 7 أيام. إعادة الإرسال لاحقًا تُنشئ رابطًا جديدًا وتُبطل هذا الرابط."
+    }
+  ],
+  "web.admin.settings.invitations.create.finePrintLink": [
+    {
+      "type": 0,
+      "value": "يعمل الرابط مرة واحدة وتنتهي صلاحيته خلال 7 أيام. يمكن لأي شخص لديه الرابط استخدامه. ألغِه من السجل إذا وصل إلى الشخص الخطأ."
+    }
+  ],
+  "web.admin.settings.invitations.create.inheritGroup": [
+    {
+      "type": 0,
+      "value": "الوراثة من مجموعة الوصول"
+    }
+  ],
+  "web.admin.settings.invitations.create.libraryHint": [
+    {
+      "type": 0,
+      "value": "يتبع الحساب المُنشأ عند القبول نطاق المكتبات الخاص بالمجموعة المحددة."
+    }
+  ],
+  "web.admin.settings.invitations.create.linkOption": [
+    {
+      "type": 0,
+      "value": "إنشاء رابط"
+    }
+  ],
+  "web.admin.settings.invitations.create.linkOptionBody": [
+    {
+      "type": 0,
+      "value": "تشارك الرابط بنفسك، في محادثة مثلًا."
+    }
+  ],
+  "web.admin.settings.invitations.create.noDefaultProfile": [
+    {
+      "type": 0,
+      "value": "لا يستطيع هذا الخادم إنشاء ملف شخصي افتراضي بشكل ذري. عطّل خيار الملف الشخصي لإنشاء دعوة بلا ملف شخصي."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteHintEmail": [
+    {
+      "type": 0,
+      "value": "تظهر في البريد الإلكتروني وفي صفحة الدعوة. نص عادي."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteHintLink": [
+    {
+      "type": 0,
+      "value": "تظهر في صفحة الدعوة وفي سجل دعواتك لتمييز الروابط بعضها من بعض."
+    }
+  ],
+  "web.admin.settings.invitations.create.noteLabel": [
+    {
+      "type": 0,
+      "value": "ملاحظة (اختيارية)"
+    }
+  ],
+  "web.admin.settings.invitations.create.notePlaceholder": [
+    {
+      "type": 0,
+      "value": "مرحبًا — أعدّ حسابك متى شئت."
+    }
+  ],
+  "web.admin.settings.invitations.create.ownerOnly": [
+    {
+      "type": 0,
+      "value": "مالك الخادم وحده يمكنه دعوة مسؤول."
+    }
+  ],
+  "web.admin.settings.invitations.create.personalNoteLabel": [
+    {
+      "type": 0,
+      "value": "ملاحظة شخصية (اختيارية)"
+    }
+  ],
+  "web.admin.settings.invitations.create.profileHintEmail": [
+    {
+      "type": 0,
+      "value": "يُسمّى بالجزء الذي يسبق @. يمكن للمدعو إعادة تسميته لاحقًا."
+    }
+  ],
+  "web.admin.settings.invitations.create.profileHintLink": [
+    {
+      "type": 0,
+      "value": "يُسمّى بالجزء الذي يسبق @ في البريد الإلكتروني الذي يُدخله المدعو. يمكنه إعادة تسميته لاحقًا."
+    }
+  ],
+  "web.admin.settings.invitations.create.profileLabel": [
+    {
+      "type": 0,
+      "value": "إنشاء أول ملف شخصي للمدعو"
+    }
+  ],
+  "web.admin.settings.invitations.create.reloadBeforeRetry": [
+    {
+      "type": 0,
+      "value": "أعد تحميل السجل قبل أي محاولة مقصودة أخرى؛ فقد تكون الدعوة موجودة بالفعل."
+    }
+  ],
+  "web.admin.settings.invitations.create.reloadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة تحميل سجل الدعوات. حاول مرة أخرى قبل إنشاء دعوة أخرى."
+    }
+  ],
+  "web.admin.settings.invitations.create.role": [
+    {
+      "type": 0,
+      "value": "الدور"
+    }
+  ],
+  "web.admin.settings.invitations.create.roleAdmin": [
+    {
+      "type": 0,
+      "value": "مسؤول"
+    }
+  ],
+  "web.admin.settings.invitations.create.roleUser": [
+    {
+      "type": 0,
+      "value": "مستخدم"
+    }
+  ],
+  "web.admin.settings.invitations.create.sending": [
+    {
+      "type": 0,
+      "value": "جارٍ الإرسال..."
+    }
+  ],
+  "web.admin.settings.invitations.create.serverDefault": [
+    {
+      "type": 0,
+      "value": "الإعداد الافتراضي للخادم"
+    }
+  ],
+  "web.admin.settings.invitations.create.submitEmail": [
+    {
+      "type": 0,
+      "value": "إرسال الدعوة"
+    }
+  ],
+  "web.admin.settings.invitations.create.submitLink": [
+    {
+      "type": 0,
+      "value": "إنشاء رابط"
+    }
+  ],
+  "web.admin.settings.invitations.create.tourHint": [
+    {
+      "type": 0,
+      "value": "تستعرض ما يمكن لهذا الخادم فعله، متجاوزةً كل ما هو معطّل."
+    }
+  ],
+  "web.admin.settings.invitations.create.tourLabel": [
+    {
+      "type": 0,
+      "value": "عرض جولة الميزات عند أول تسجيل دخول"
+    }
+  ],
+  "web.admin.settings.invitations.delivery.failed": [
+    {
+      "type": 0,
+      "value": "تم إنشاء الدعوة، لكن إرسال البريد الإلكتروني فشل أو غير مؤكد. يظل هذا الرابط فعّالًا؛ أرسله بنفسك."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.linkCreated": [
+    {
+      "type": 0,
+      "value": "تم إنشاء رابط الدعوة. شاركه مع الشخص الذي تدعوه. سيُدخل عنوان بريده الإلكتروني ويختار كلمة مرور."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.newLinkForEmail": [
+    {
+      "type": 0,
+      "value": "تم إنشاء رابط جديد لـ "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". لم يُرسَل أي بريد إلكتروني؛ شارك هذا الرابط مع المدعو بنفسك."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.notConfigured": [
+    {
+      "type": 0,
+      "value": "البريد الإلكتروني غير مُعدّ. تم إنشاء الدعوة؛ أرسل هذا الرابط بنفسك."
+    }
+  ],
+  "web.admin.settings.invitations.delivery.sent": [
+    {
+      "type": 0,
+      "value": "تم إرسال البريد الإلكتروني إلى "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": ". وصوله إلى المستلم غير مضمون. يمكنك نسخ الرابط أدناه."
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailSent": [
+    {
+      "type": 0,
+      "value": "تم إرسال البريد"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailUnconfirmed": [
+    {
+      "type": 0,
+      "value": "البريد غير مؤكد"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.emailUnconfirmedTitle": [
+    {
+      "type": 0,
+      "value": "فشل البريد الإلكتروني أو أن وصوله غير مؤكد. لا يزال الرابط يعمل."
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.link": [
+    {
+      "type": 0,
+      "value": "تم إنشاء رابط"
+    }
+  ],
+  "web.admin.settings.invitations.deliveryLabel.unknownTitle": [
+    {
+      "type": 0,
+      "value": "أُنشئت قبل بدء تسجيل طريقة الإرسال"
+    }
+  ],
+  "web.admin.settings.invitations.empty": [
+    {
+      "type": 0,
+      "value": "لا توجد دعوات بعد. ادعُ شخصًا للبدء."
+    }
+  ],
+  "web.admin.settings.invitations.historyFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل سجل الدعوات. "
+    },
+    {
+      "type": 1,
+      "value": "error"
+    }
+  ],
+  "web.admin.settings.invitations.intro": [
+    {
+      "type": 0,
+      "value": "ادعُ شخصًا عبر البريد الإلكتروني، أو أنشئ رابطًا لتشاركه بنفسك. يصبح عنوان بريده الإلكتروني اسم المستخدم الخاص به."
+    }
+  ],
+  "web.admin.settings.invitations.invite.button": [
+    {
+      "type": 0,
+      "value": "دعوة شخص"
+    }
+  ],
+  "web.admin.settings.invitations.invite.description": [
+    {
+      "type": 0,
+      "value": "اختر صلاحيات وصوله وطريقة حصوله على رابط الدعوة."
+    }
+  ],
+  "web.admin.settings.invitations.invite.title": [
+    {
+      "type": 0,
+      "value": "دعوة شخص"
+    }
+  ],
+  "web.admin.settings.invitations.loadMore": [
+    {
+      "type": 0,
+      "value": "تحميل المزيد"
+    }
+  ],
+  "web.admin.settings.invitations.loading": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل الدعوات..."
+    }
+  ],
+  "web.admin.settings.invitations.loadingCapabilities": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل إمكانات الدعوات..."
+    }
+  ],
+  "web.admin.settings.invitations.notConfigured": [
+    {
+      "type": 0,
+      "value": "الدعوات غير مهيأة على هذا الخادم."
+    }
+  ],
+  "web.admin.settings.invitations.publicUrlMissing": [
+    {
+      "type": 0,
+      "value": "اضبط عنوان URL العام لـ Silo لإنشاء روابط الدعوة. "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 0,
+          "value": "الإعدادات العامة"
+        }
+      ]
+    }
+  ],
+  "web.admin.settings.invitations.reloadHistory": [
+    {
+      "type": 0,
+      "value": "إعادة تحميل السجل"
+    }
+  ],
+  "web.admin.settings.invitations.resend.creating": [
+    {
+      "type": 0,
+      "value": "جارٍ إنشاء دعوة جديدة..."
+    }
+  ],
+  "web.admin.settings.invitations.resend.description": [
+    {
+      "type": 0,
+      "value": "يُبطل الرابط البديل الرابط السابق."
+    }
+  ],
+  "web.admin.settings.invitations.resend.finePrint": [
+    {
+      "type": 0,
+      "value": "يعمل الرابط مرة واحدة. توقف أي رابط سابق عن العمل."
+    }
+  ],
+  "web.admin.settings.invitations.resend.title": [
+    {
+      "type": 0,
+      "value": "رابط دعوة جديد"
+    }
+  ],
+  "web.admin.settings.invitations.resend.uncertain": [
+    {
+      "type": 0,
+      "value": "قد تكون النتيجة غير مؤكدة. أعد تحميل السجل قبل إعادة الإرسال مرة أخرى عن قصد."
+    }
+  ],
+  "web.admin.settings.invitations.resendFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة إرسال الدعوة. أعد تحميل السجل قبل المتابعة."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.confirm": [
+    {
+      "type": 0,
+      "value": "إلغاء"
+    }
+  ],
+  "web.admin.settings.invitations.revoke.emailDescription": [
+    {
+      "type": 0,
+      "value": "هل تريد إلغاء الدعوة المرسلة إلى "
+    },
+    {
+      "type": 1,
+      "value": "email"
+    },
+    {
+      "type": 0,
+      "value": "؟ سيتوقف رابطها عن العمل."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.linkDescription": [
+    {
+      "type": 0,
+      "value": "هل تريد إلغاء دعوة الرابط هذه؟ سيتوقف الرابط عن العمل."
+    }
+  ],
+  "web.admin.settings.invitations.revoke.title": [
+    {
+      "type": 0,
+      "value": "إلغاء الدعوة"
+    }
+  ],
+  "web.admin.settings.invitations.revokeFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر إلغاء الدعوة."
+    }
+  ],
+  "web.admin.settings.invitations.row.copyNewLink": [
+    {
+      "type": 0,
+      "value": "نسخ رابط جديد دون إرساله بالبريد الإلكتروني"
+    }
+  ],
+  "web.admin.settings.invitations.row.emailNewLink": [
+    {
+      "type": 0,
+      "value": "إرسال رابط جديد بالبريد الإلكتروني"
+    }
+  ],
+  "web.admin.settings.invitations.row.expires": [
+    {
+      "type": 0,
+      "value": "تنتهي في "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.admin.settings.invitations.row.invitedBy": [
+    {
+      "type": 0,
+      "value": "دعاه "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.admin.settings.invitations.row.joinedByLink": [
+    {
+      "type": 0,
+      "value": "انضم عبر الرابط"
+    }
+  ],
+  "web.admin.settings.invitations.row.linkInvitation": [
+    {
+      "type": 0,
+      "value": "دعوة برابط"
+    }
+  ],
+  "web.admin.settings.invitations.row.note": [
+    {
+      "type": 0,
+      "value": "«"
+    },
+    {
+      "type": 1,
+      "value": "note"
+    },
+    {
+      "type": 0,
+      "value": "»"
+    }
+  ],
+  "web.admin.settings.invitations.row.replaceLink": [
+    {
+      "type": 0,
+      "value": "الاستبدال برابط جديد"
+    }
+  ],
+  "web.admin.settings.invitations.row.revokeLink": [
+    {
+      "type": 0,
+      "value": "إلغاء هذا الرابط"
+    }
+  ],
+  "web.admin.settings.invitations.status.accepted": [
+    {
+      "type": 0,
+      "value": "مقبولة"
+    }
+  ],
+  "web.admin.settings.invitations.status.expired": [
+    {
+      "type": 0,
+      "value": "منتهية الصلاحية"
+    }
+  ],
+  "web.admin.settings.invitations.status.pending": [
+    {
+      "type": 0,
+      "value": "معلّقة"
+    }
+  ],
+  "web.admin.settings.invitations.status.revoked": [
+    {
+      "type": 0,
+      "value": "ملغاة"
+    }
+  ],
+  "web.admin.settings.invitations.table.created": [
+    {
+      "type": 0,
+      "value": "تاريخ الإنشاء"
+    }
+  ],
+  "web.admin.settings.invitations.table.delivery": [
+    {
+      "type": 0,
+      "value": "طريقة الإرسال"
+    }
+  ],
+  "web.admin.settings.invitations.table.recipient": [
+    {
+      "type": 0,
+      "value": "المستلم"
+    }
+  ],
+  "web.admin.settings.invitations.table.role": [
+    {
+      "type": 0,
+      "value": "الدور"
+    }
+  ],
+  "web.admin.settings.invitations.table.status": [
+    {
+      "type": 0,
+      "value": "الحالة"
+    }
+  ],
   "web.admin.shell.mobileHeader.eyebrow": [
     {
       "type": 0,
@@ -6715,6 +7357,18 @@
     {
       "type": 0,
       "value": "إدارة الوصول والإعدادات الافتراضية وآلية الدعوة للأشخاص الذين يستخدمون Silo."
+    }
+  ],
+  "web.admin.users.list.tab.invitations": [
+    {
+      "type": 0,
+      "value": "الدعوات"
+    }
+  ],
+  "web.admin.users.list.tab.users": [
+    {
+      "type": 0,
+      "value": "المستخدمون"
     }
   ],
   "web.admin.users.list.title": [
@@ -17890,6 +18544,12 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.libraryAccess.label": [
+    {
+      "type": 0,
+      "value": "الوصول إلى المكتبات"
     }
   ],
   "web.profiles.librarySelect.libraryFallback": [

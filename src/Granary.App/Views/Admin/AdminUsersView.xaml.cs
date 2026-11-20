@@ -12,11 +12,13 @@ namespace Granary.App.Views.Admin;
 
 /// <summary>
 /// Admin → Users. The table and its search, filter, sort and pages are the view model's; here are the dialogs: Add User,
-/// and Delete, which reads the account fresh before it asks.
+/// and Delete, which reads the account fresh before it asks, and the tabs: Users and Invitations, as the web's.
 /// </summary>
 public sealed partial class AdminUsersView : UserControl
 {
     private bool _creating;
+    private bool _active;
+    private AdminInvitationsView? _invitations;
 
     public AdminUsersView()
     {
@@ -30,6 +32,7 @@ public sealed partial class AdminUsersView : UserControl
         PageSizeBox.SelectedIndex = 0;
         ViewModel.PropertyChanged += OnViewModelChanged;
         ShowSort();
+        UsersTab.IsChecked = true;
     }
 
     public AdminUsersViewModel ViewModel { get; }
@@ -43,12 +46,23 @@ public sealed partial class AdminUsersView : UserControl
         remove => ViewModel.UserRequested -= value;
     }
 
-    /// <summary>Reads the accounts.</summary>
+    /// <summary>The tab chosen changed: Users' own page or <see cref="AdminPages.Invitations"/>, for the sidebar to return to.</summary>
+    public event EventHandler<string>? TabChanged;
+
+    /// <summary>The Invitations tab shows.</summary>
+    public bool ShowsInvitations => InvitationsTab.IsChecked == true;
+
+    /// <summary>Reads the accounts, then the invitations when their tab shows: they need to know whether the viewer is the Owner.</summary>
     public async Task ActivateAsync()
     {
+        _active = true;
         try
         {
             await ViewModel.LoadAsync();
+            if (_active && ShowsInvitations)
+            {
+                await Invitations().ActivateAsync(ViewModel.ViewerIsOwner, ViewModel.Groups);
+            }
         }
         catch (Exception ex)
         {
@@ -56,10 +70,26 @@ public sealed partial class AdminUsersView : UserControl
         }
     }
 
-    public void Deactivate() => ViewModel.Deactivate();
+    /// <summary>Shows a tab, as the web's <c>?tab=</c> does; read on the next <see cref="ActivateAsync"/>.</summary>
+    public void ShowTab(bool invitations)
+    {
+        _active = false;
+        (invitations ? InvitationsTab : UsersTab).IsChecked = true;
+    }
+
+    public void Deactivate()
+    {
+        _active = false;
+        ViewModel.Deactivate();
+        _invitations?.Deactivate();
+    }
 
     /// <summary>The page leaves for good.</summary>
-    public void Release() => Bindings.StopTracking();
+    public void Release()
+    {
+        _invitations?.Release();
+        Bindings.StopTracking();
+    }
 
     public static bool Not(bool value) => !value;
 
@@ -93,6 +123,38 @@ public sealed partial class AdminUsersView : UserControl
     }
 
     private static Brush Resource(string key) => (Brush)Application.Current.Resources[key];
+
+    private AdminInvitationsView Invitations() => _invitations ??= new AdminInvitationsView();
+
+    // A tab the viewer picks shows at once; while the page is not active it only shows on the next activation.
+    private async void OnTabChecked(object sender, RoutedEventArgs e)
+    {
+        bool invitations = ReferenceEquals(sender, InvitationsTab);
+        UsersPanel.Visibility = invitations ? Visibility.Collapsed : Visibility.Visible;
+        InvitationsHost.Visibility = invitations ? Visibility.Visible : Visibility.Collapsed;
+        if (invitations)
+        {
+            InvitationsHost.Content ??= Invitations();
+        }
+        else
+        {
+            _invitations?.Deactivate();
+        }
+        TabChanged?.Invoke(this, invitations ? AdminPages.Invitations : AdminPages.Users);
+        if (!_active || !invitations)
+        {
+            return;
+        }
+        try
+        {
+            await Invitations().ActivateAsync(ViewModel.ViewerIsOwner, ViewModel.Groups);
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape.
+            Log(ex, "The invitations could not be shown");
+        }
+    }
 
     private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
     {

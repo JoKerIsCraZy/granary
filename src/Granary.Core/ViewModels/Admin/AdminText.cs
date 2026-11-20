@@ -87,6 +87,14 @@ public static class AdminText
     public static string WithoutLink(string key, params ReadOnlySpan<(string Name, object? Value)> values) =>
         string.Concat(AppText.Runs(key, values).Where(run => !run.Tags.Contains("link")).Select(run => run.Text)).Trim();
 
+    /// <summary>A web text without the part in <paramref name="tag"/>, which Granary shows on its own (a button).</summary>
+    public static string WithoutTag(string key, string tag) =>
+        string.Concat(AppText.Runs(key).Where(run => !run.Tags.Contains(tag)).Select(run => run.Text)).Trim();
+
+    /// <summary>The part of a web text in <paramref name="tag"/> alone: the words of a button the web puts in the sentence.</summary>
+    public static string TagText(string key, string tag) =>
+        string.Concat(AppText.Runs(key).Where(run => run.Tags.Contains(tag)).Select(run => run.Text)).Trim();
+
     /// <summary>An administrator's role badge: "owner" for the server's Owner, else "admin", as the web's accountRoleLabel.</summary>
     public static string Role(string role, bool isOwner) =>
         AppText.Get("web.admin.common.accounts.role", ("role", isOwner ? "owner" : role));

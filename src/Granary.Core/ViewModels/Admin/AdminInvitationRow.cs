@@ -6,7 +6,8 @@ namespace Granary.Core.ViewModels.Admin;
 /// <summary>
 /// One invitation of the history, as the web's <c>InvitationList</c> row: who it is for, its details, status and delivery,
 /// and the actions its status allows: a new link (and an emailed one) while pending or expired, Revoke while pending.
-/// Only the Owner resends an admin's invitation, as resending grants the role again.
+/// Only the Owner resends an admin's invitation, as resending grants the role again. A new link needs the server's public
+/// URL; revoking does not.
 /// </summary>
 public sealed record AdminInvitationRow(
     AdminInvitation Invitation,
@@ -24,11 +25,12 @@ public sealed record AdminInvitationRow(
     bool CanResendLink,
     string ResendLinkText,
     bool CanResendEmail,
-    bool CanRevoke)
+    bool CanRevoke,
+    bool ResendEnabled)
 {
     public string Id => Invitation.Id;
 
-    public static AdminInvitationRow From(AdminInvitation invitation, bool viewerIsOwner, bool emailDelivery)
+    public static AdminInvitationRow From(AdminInvitation invitation, bool viewerIsOwner, bool emailDelivery, bool publicUrlMissing = false)
     {
         bool link = invitation.IsLink;
         // A link invitation's note is how the administrator told it apart, so it stays after acceptance fills in the address.
@@ -82,7 +84,8 @@ public sealed record AdminInvitationRow(
             resendable,
             AppText.Get(link ? "web.admin.settings.invitations.row.replaceLink" : "web.admin.settings.invitations.row.copyNewLink"),
             resendable && !link && emailDelivery,
-            invitation.Status == "pending");
+            invitation.Status == "pending",
+            !publicUrlMissing);
     }
 
     /// <summary>The web's deliveryMessage: what a made or resent invitation's delivery did.</summary>

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Admin → Users, as the web's (pages/AdminUsers.tsx; docs/ui-design.md, Admin): every account in a table that searches,
-    filters by group, sorts by its headings and shows a page at a time; Add User, and an account's Edit and Delete.
+    filters by group, sorts by its headings and shows a page at a time; Add User, and an account's Edit and Delete. Its
+    Invitations tab is AdminInvitationsView.
 -->
 <UserControl
     x:Class="Granary.App.Views.Admin.AdminUsersView"
@@ -51,7 +52,19 @@
             <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.list.unavailable')}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                        Visibility="{x:Bind local:AdminUsersView.Hidden(ViewModel.IsAvailable), Mode=OneWay}" />
 
-            <ContentControl x:Name="TabsHost" IsTabStop="False" HorizontalContentAlignment="Stretch" />
+            <!-- The web's line tabs: Users and Invitations. Its third, Invite Codes, stays on the web. -->
+            <Grid>
+                <Border Height="1" VerticalAlignment="Bottom" Background="{StaticResource SiloBorderBrush}" />
+                <StackPanel Orientation="Horizontal" Spacing="4" XYFocusKeyboardNavigation="Enabled"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.title')}">
+                    <RadioButton x:Name="UsersTab" GroupName="AdminUsersTabs" Style="{StaticResource SiloLineTabStyle}"
+                                 Content="{x:Bind t:AppText.Get('web.admin.users.list.tab.users')}" Checked="OnTabChecked" />
+                    <RadioButton x:Name="InvitationsTab" GroupName="AdminUsersTabs" Style="{StaticResource SiloLineTabStyle}"
+                                 Content="{x:Bind t:AppText.Get('web.admin.users.list.tab.invitations')}" Checked="OnTabChecked" />
+                </StackPanel>
+            </Grid>
+
+            <ContentControl x:Name="InvitationsHost" IsTabStop="False" HorizontalContentAlignment="Stretch" Visibility="Collapsed" />
 
             <StackPanel x:Name="UsersPanel" Spacing="16">
                 <!-- The search and the group filter. -->

@@ -123,6 +123,9 @@ public sealed partial class AdminNewInvitationViewModel(ISessionManager session,
         _ => "web.admin.settings.invitations.create.sending",
     });
 
+    /// <summary>Without the server's default profile the switch only turns off, as the web's.</summary>
+    public bool CanChangeProfile => _defaultProfile || CreateProfile;
+
     public bool CanSubmit => !IsSaving && !NeedsReload && (_defaultProfile || !CreateProfile) && Result is null;
 
     public string ResultMessage => Result is { } result ? AdminInvitationRow.DeliveryMessage(result) : "";
@@ -159,6 +162,7 @@ public sealed partial class AdminNewInvitationViewModel(ISessionManager session,
         ];
         SelectedGroup = GroupChoices[0];
         OnPropertyChanged(nameof(HasNoDefaultProfile));
+        OnPropertyChanged(nameof(CanChangeProfile));
         OnPropertyChanged(nameof(EmailOptionBody));
         OnPropertyChanged(nameof(CanSubmit));
         Libraries.Clear();
@@ -227,7 +231,11 @@ public sealed partial class AdminNewInvitationViewModel(ISessionManager session,
     /// <summary>Forgets the claim link when the dialog closes.</summary>
     public void Clear() => Result = null;
 
-    partial void OnCreateProfileChanged(bool value) => OnPropertyChanged(nameof(CanSubmit));
+    partial void OnCreateProfileChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanSubmit));
+        OnPropertyChanged(nameof(CanChangeProfile));
+    }
 
     partial void OnInheritLibrariesChanged(bool value)
     {

@@ -10,4 +10,7 @@ public static class AdminPages
 
     /// <summary>The accounts, their invitations and invite codes.</summary>
     public const string Users = "users";
+
+    /// <summary>Users on its Invitations tab, as the web's <c>/admin/users?tab=invitations</c>.</summary>
+    public const string Invitations = "invitations";
 }

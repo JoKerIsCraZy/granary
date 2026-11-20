@@ -46,6 +46,7 @@ public sealed class AdminInvitationsViewModelTests
             ? Created("9", "not_requested", "")
             : BrowseFakeSilo.Json(request.RequestUri!.Query.Contains("cursor=i2") ? Page2 : Page1));
         _silo.Map("api/v2/libraries", """{ "items": [ { "id": "5", "name": "Films" }, { "id": "6", "name": "Shows" } ] }""");
+        _silo.Map("api/v2/admin/settings/effective", """{ "server.public_url": "https://silo.example", "smtp.password": "" }""");
     }
 
     private static HttpResponseMessage Created(string id, string status, string email) => BrowseFakeSilo.Json($$"""
@@ -191,5 +192,156 @@ public sealed class AdminInvitationsViewModelTests
         Assert.False(form.CanSubmit);
         form.ReloadDone();
         Assert.True(form.CanSubmit);
+    }
+    [Fact]
+    public async Task AMissingPublicUrl_StopsInvitesAndNewLinks_ButNotRevoke()
+    {
+        _silo.Map("api/v2/admin/settings/effective", """{ "server.public_url": "  " }""");
+        var tab = await OpenedAsync();
+
+        Assert.True(tab.PublicUrlMissing);
+        Assert.False(tab.CanInvite);
+        Assert.Equal("Set the Silo public URL to create invitation links.", tab.PublicUrlMissingText);
+        Assert.True(tab.Rows[0].CanResendLink);
+        Assert.False(tab.Rows[0].ResendEnabled);
+        Assert.True(tab.Rows[0].CanRevoke);
+    }
+
+    [Fact]
+    public async Task UnreadableSettings_BlockNothing()
+    {
+        _silo.Map("api/v2/admin/settings/effective", _ => BrowseFakeSilo.Problem(403, "forbidden"));
+        var tab = await OpenedAsync();
+
+        Assert.False(tab.PublicUrlMissing);
+        Assert.True(tab.CanInvite);
+        Assert.True(tab.Rows[0].ResendEnabled);
+    }
+
+    [Fact]
+    public async Task FailedCapabilities_ReadNoHistory_AndCanBeReadAgain()
+    {
+        _silo.Map("api/v2/admin/invitations/capabilities", _ => BrowseFakeSilo.Problem(503, "dependency_unavailable"));
+        var tab = await OpenedAsync();
+
+        Assert.Equal(LibraryLoadState.Error, tab.State);
+        Assert.Equal("Could not load invitation capabilities.", tab.CapabilitiesFailedText);
+        Assert.Empty(_silo.To("api/v2/admin/invitations"));
+
+        _silo.Map("api/v2/admin/invitations/capabilities", Capabilities);
+        await tab.ReloadCapabilitiesCommand.ExecuteAsync(null);
+        Assert.Equal(LibraryLoadState.Ready, tab.State);
+        Assert.Equal(2, tab.Rows.Count);
+    }
+
+    [Fact]
+    public async Task APageThatArrivesAfterLeaving_IsDropped()
+    {
+        var page2 = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map("api/v2/admin/invitations", (request, _) => request.RequestUri!.Query.Contains("cursor=i2")
+            ? page2.Task
+            : Task.FromResult(BrowseFakeSilo.Json(Page1)));
+        var tab = await OpenedAsync();
+
+        var more = tab.LoadMoreCommand.ExecuteAsync(null);
+        Assert.False(tab.LoadMoreCommand.CanExecute(null));
+        tab.Deactivate();
+        page2.SetResult(BrowseFakeSilo.Json(Page2));
+        await more;
+
+        Assert.Equal(2, tab.Rows.Count);
+        Assert.False(tab.IsHistoryLoading);
+    }
+
+    [Fact]
+    public async Task AReloadWhileMoreLoads_DropsTheOlderPage()
+    {
+        var page2 = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map("api/v2/admin/invitations", (request, _) => request.RequestUri!.Query.Contains("cursor=i2")
+            ? page2.Task
+            : Task.FromResult(BrowseFakeSilo.Json(Page1)));
+        var tab = await OpenedAsync();
+
+        var more = tab.LoadMoreCommand.ExecuteAsync(null);
+        await tab.RestartCommand.ExecuteAsync(null);
+        page2.SetResult(BrowseFakeSilo.Json(Page2));
+        await more;
+
+        Assert.Equal(["1", "2"], tab.Rows.Select(row => row.Id));
+        Assert.True(tab.HasMore);
+    }
+
+    [Fact]
+    public async Task Leaving_ForgetsTheNewLink()
+    {
+        _silo.Map("api/v2/admin/invitations/1/resend", _ => Created("1", "not_requested", "ana@example.com"));
+        var tab = await OpenedAsync();
+        Assert.True(await tab.ResendAsync(tab.Rows[0], InvitationDeliveries.Link));
+
+        tab.Deactivate();
+
+        Assert.Null(tab.Resent);
+    }
+
+    [Theory]
+    [InlineData(403)]
+    [InlineData(404)]
+    public async Task ARefusedOrGoneRevoke_IsWordedByItsStatus(int status)
+    {
+        string text = status == 403 ? LibraryErrors.Denied : LibraryErrors.Gone;
+        _silo.Map("api/v2/admin/invitations/1", _ => BrowseFakeSilo.Problem(status, status == 403 ? "forbidden" : "not_found"));
+        var tab = await OpenedAsync();
+
+        await tab.RevokeCommand.ExecuteAsync(tab.Rows[0]);
+
+        Assert.Equal(text, tab.ActionError);
+        Assert.False(tab.IsBlocked);
+        Assert.DoesNotContain("Silo internal detail", tab.ActionError, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(403)]
+    [InlineData(404)]
+    public async Task ARefusedOrGoneResend_IsWordedByItsStatus(int status)
+    {
+        string text = status == 403 ? LibraryErrors.Denied : LibraryErrors.Gone;
+        _silo.Map("api/v2/admin/invitations/1/resend", _ => BrowseFakeSilo.Problem(status, status == 403 ? "forbidden" : "not_found"));
+        var tab = await OpenedAsync();
+
+        Assert.False(await tab.ResendAsync(tab.Rows[0], InvitationDeliveries.Link));
+
+        Assert.StartsWith(text, tab.ActionError, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(403)]
+    [InlineData(404)]
+    public async Task ARefusedInvite_IsWordedByItsStatus(int status)
+    {
+        string text = status == 403 ? LibraryErrors.Denied : LibraryErrors.Gone;
+        _silo.Map("api/v2/admin/invitations", _ => BrowseFakeSilo.Problem(status, status == 403 ? "forbidden" : "not_found"));
+        var form = new AdminNewInvitationViewModel(_session, new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
+            _silo.Logs.For<AdminNewInvitationViewModel>());
+        await form.StartAsync(new AdminInvitationCapabilities { State = "available", DefaultProfile = true }, [], viewerIsOwner: true);
+
+        Assert.False(await form.SaveAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(text, form.Error);
+    }
+
+    [Fact]
+    public async Task NothingSecret_IsLogged()
+    {
+        _silo.Map("api/v2/admin/invitations/1/resend", _ => Created("1", "sent", "ana@example.com"));
+        var tab = await OpenedAsync();
+        await tab.ResendAsync(tab.Rows[0], InvitationDeliveries.Email);
+        _silo.Map("api/v2/admin/invitations/1/resend", _ => BrowseFakeSilo.Problem(500, "internal_error"));
+        await tab.RestartCommand.ExecuteAsync(null);
+        await tab.ResendAsync(tab.Rows[0], InvitationDeliveries.Email);
+
+        string logs = _silo.Logs.All;
+        Assert.DoesNotContain("tok3n", logs, StringComparison.Ordinal);
+        Assert.DoesNotContain("ana@example.com", logs, StringComparison.Ordinal);
+        Assert.DoesNotContain("elena", logs, StringComparison.Ordinal);
     }
 }
