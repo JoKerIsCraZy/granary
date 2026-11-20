@@ -382,4 +382,45 @@ public sealed class AdminUserDetailViewModelTests
 
         Assert.Equal("""{"username":"ana2"}""", _writes.Single().Body);
     }
+    [Fact]
+    public async Task MakeOwner_WhoseFreshReadIsRefused_SaysSoAndAsksNothing()
+    {
+        _account = AdminUserPayloads.User(role: "admin", group: "null");
+        _silo.Map("api/v2/admin/users/3/transfer-ownership", _ => BrowseFakeSilo.NoContent());
+        var detail = await OpenedAsync();
+        _readStatus = 503;
+
+        await detail.MakeOwnerCommand.ExecuteAsync(null);
+        Assert.Equal(LibraryErrors.Busy, detail.Notice);
+
+        _readStatus = 200;
+        _silo.Acting = _session;
+        _session.Account = new Granary.Core.Api.Auth.Account("2", "kim", "kim@example.com", "admin", [], true, false, null);
+        await detail.MakeOwnerCommand.ExecuteAsync(null);
+        Assert.Equal(LibraryErrors.Denied, detail.Notice);
+
+        Assert.Empty(_confirmation.Asked);
+        Assert.Empty(_silo.To("api/v2/admin/users/3/transfer-ownership"));
+    }
+
+    [Fact]
+    public async Task CancelAfterAnUnreadSave_ReadsTheAccountAgain()
+    {
+        var detail = await OpenedAsync();
+        detail.Username = "ana2";
+        _readStatus = 503;
+        await detail.SaveSignInCommand.ExecuteAsync(null);
+        Assert.True(detail.SignInCard.HasConflict);
+
+        await detail.CancelSignInCommand.ExecuteAsync(null);
+        Assert.True(detail.SignInCard.HasConflict);
+
+        _readStatus = 200;
+        _version = 2;
+        await detail.CancelSignInCommand.ExecuteAsync(null);
+        Assert.False(detail.SignInCard.HasConflict);
+        detail.Username = "ana3";
+        await detail.SaveSignInCommand.ExecuteAsync(null);
+        Assert.Equal("\"v2\"", _writes[^1].IfMatch);
+    }
 }

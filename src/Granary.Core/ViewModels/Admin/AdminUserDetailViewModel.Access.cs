@@ -105,11 +105,7 @@ public sealed partial class AdminUserDetailViewModel
     }
 
     [RelayCommand]
-    private void CancelAccess()
-    {
-        ResetAccess(null);
-        AccessCard.Clear();
-    }
+    private Task CancelAccessAsync() => CancelAsync(AccessCard, () => ResetAccess(null));
 
     [RelayCommand]
     private Task ReviewAccessAsync() => ReviewAsync(AccessCard);

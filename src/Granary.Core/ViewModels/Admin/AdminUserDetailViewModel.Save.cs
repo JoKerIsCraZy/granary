@@ -88,6 +88,29 @@ public sealed partial class AdminUserDetailViewModel
         }
     }
 
+    /// <summary>
+    /// Cancel: the card's drafts go. After a save that was not read back the account is read again first, so Reload and
+    /// review is not lost with the drafts and the next save has a version.
+    /// </summary>
+    private async Task CancelAsync(AdminEditCard card, Action reset)
+    {
+        if (_version.Length == 0 && Account is not null)
+        {
+            if (await ReadAsync(keepDrafts: false))
+            {
+                card.Clear();
+            }
+            else
+            {
+                card.HasConflict = true;
+                card.Error = AppText.Get("web.admin.users.detail.access.card.reloadFailed");
+            }
+            return;
+        }
+        reset();
+        card.Clear();
+    }
+
     /// <summary>Reload and review: the account read again, the card's edits kept on it.</summary>
     internal async Task ReviewAsync(AdminEditCard card)
     {

@@ -24,6 +24,8 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
     private string _id = "";
     // The account and profile the page was opened as: everything it sends goes only as them.
     private AdminActor? _actor;
+    // Why the last read failed, for an action that needed it.
+    private Exception? _readFailure;
     private string _version = "";
     private CancellationTokenSource? _load;
 
@@ -148,6 +150,7 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
         catch (Exception ex) when (AdminFailures.IsExpected(ex) && !load.Token.IsCancellationRequested)
         {
             _logger.LogWarning(ex, "Could not read an account");
+            _readFailure = ex;
             // A 404 means it is gone (another administrator deleted it), and outranks a copy read before.
             if (ex is SiloApiException { Status: 404 })
             {

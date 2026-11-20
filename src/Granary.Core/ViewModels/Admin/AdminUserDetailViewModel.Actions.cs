@@ -40,9 +40,13 @@ public sealed partial class AdminUserDetailViewModel
         try
         {
             // Read fresh first: the account may have been renamed, disabled or demoted since the page read it.
+            _readFailure = null;
             if (!await ReadAsync(keepDrafts: true) || Account is not { } account)
             {
-                Say(AppText.Get("web.admin.users.detail.access.card.reloadFailed"), isError: true);
+                // Worded by what went wrong: a switch or a 403 is a refusal, as the transfer's own failure would be.
+                Say(_readFailure is { } failure
+                    ? AdminFailures.Describe(failure, AppText.Get("web.admin.users.detail.access.card.reloadFailed"))
+                    : AppText.Get("web.admin.users.detail.access.card.reloadFailed"), isError: true);
                 return;
             }
             if (!AdminAccountRules.CanTransferOwnership(account, ViewerId, ViewerIsOwner))

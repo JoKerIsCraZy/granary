@@ -113,7 +113,11 @@ public sealed partial class AdminNewUserViewModel(AdminUsersApi users, ILogger<A
         {
             choices.Add(new AdminGroupFilter(AdminGroupFilter.None, AppText.Get("web.admin.users.list.noGroup")));
         }
-        choices.AddRange(groups.Select(group => new AdminGroupFilter(group.Id, group.Name)));
+        // Groups not read this time may be out of date: the server places the account then.
+        if (groupsKnown)
+        {
+            choices.AddRange(groups.Select(group => new AdminGroupFilter(group.Id, group.Name)));
+        }
         GroupChoices = choices;
         SelectedGroupChoice = choices.FirstOrDefault(choice => choice.Value == defaultGroup?.Id) ?? choices.FirstOrDefault();
         OnPropertyChanged(nameof(CanPickGroup));

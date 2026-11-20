@@ -24,10 +24,10 @@ public sealed partial class AdminUserDetailView : UserControl
         Sessions = App.Services.GetRequiredService<AdminUserSessionsViewModel>();
         InitializeComponent();
         ViewModel.Closed += (_, _) => BackRequested?.Invoke(this, EventArgs.Empty);
-        // After Make owner the viewer is no longer the Owner: Sign out is offered only where it still may be.
+        // Sign out is offered only where the header still allows it: after Make owner, or a change another admin made.
         ViewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(AdminUserDetailViewModel.ViewerIsOwner))
+            if (e.PropertyName == nameof(AdminUserDetailViewModel.Header))
             {
                 Sessions.SetManageable(ViewModel.Header?.Manageable == true && ViewModel.Capabilities.Available);
             }

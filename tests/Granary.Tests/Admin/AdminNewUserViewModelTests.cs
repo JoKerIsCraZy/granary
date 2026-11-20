@@ -130,4 +130,18 @@ public sealed class AdminNewUserViewModelTests
         var body = Sent();
         Assert.Equal(("ana", "ana@example.com"), (body.GetProperty("username").GetString(), body.GetProperty("email").GetString()));
     }
+    [Fact]
+    public async Task GroupsNotReadAgain_LetTheServerChoose_EvenWithOldOnesAtHand()
+    {
+        _silo.Map("api/v2/admin/users", _ => BrowseFakeSilo.Json("""{ "id": "9" }""", System.Net.HttpStatusCode.Created));
+        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
+        form.Start(AdminActors.Of(_session), new AdminUserCapabilities { Available = true, DefaultProfile = true }, Groups, groupsKnown: false,
+            viewerIsOwner: true);
+        (form.Username, form.Email, form.Password) = ("ana", "ana@example.com", "margin fossil");
+
+        Assert.Single(form.GroupChoices);
+        Assert.True(await form.SaveAsync(TestContext.Current.CancellationToken));
+
+        Assert.False(Sent().TryGetProperty("access_group_id", out _));
+    }
 }

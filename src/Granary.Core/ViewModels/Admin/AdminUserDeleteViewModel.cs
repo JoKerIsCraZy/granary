@@ -50,12 +50,12 @@ public sealed partial class AdminUserDeleteViewModel(AdminUsersApi users, ILogge
 
     public static string Description => AppText.Get("web.admin.users.deleteDialog.description");
 
-    public bool OffersDisable => DisableOffered && Account is { Enabled: true };
+    public bool OffersDisable => DisableOffered && Account is { Enabled: true } account && Deletable(account);
 
     /// <summary>The name typed, and never the Owner: ownership can have moved to this account since the list was read.</summary>
     public bool CanDelete => Account is { } account && Deletable(account) && !IsBusy && !HasConflict && Typed == account.Username;
 
-    public bool CanDisable => !IsBusy && !HasConflict;
+    public bool CanDisable => Account is { } account && Deletable(account) && !IsBusy && !HasConflict;
 
     /// <summary>Reads the account fresh, so the delete carries its current version. False when it could not be read.</summary>
     public async Task<bool> StartAsync(AdminActor? actor, string id, bool viewerIsOwner, CancellationToken cancellationToken = default)
@@ -124,7 +124,7 @@ public sealed partial class AdminUserDeleteViewModel(AdminUsersApi users, ILogge
     private async Task<bool> RunAsync(Func<AdminActor, AdminUser, Task> action, string fallbackKey, bool requireName)
     {
         if (_actor is not { } actor || Account is not { } account || IsBusy || HasConflict
-            || (requireName && (Typed != account.Username || !Deletable(account))))
+            || !Deletable(account) || (requireName && Typed != account.Username))
         {
             return false;
         }

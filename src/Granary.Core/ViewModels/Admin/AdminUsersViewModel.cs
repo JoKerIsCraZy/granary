@@ -79,6 +79,10 @@ public sealed partial class AdminUsersViewModel : ObservableObject
             _load?.Cancel();
             _accounts = [];
             Groups = [];
+            _groupNames = new Dictionary<string, string>();
+            GroupsFailed = false;
+            GroupFilters = DefaultFilters();
+            SelectedGroup = GroupFilters[0];
             Capabilities = new AdminUserCapabilities();
             IsAvailable = false;
             ViewerIsOwner = false;

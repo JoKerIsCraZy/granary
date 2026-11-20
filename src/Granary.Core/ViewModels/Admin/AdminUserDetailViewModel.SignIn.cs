@@ -118,11 +118,7 @@ public sealed partial class AdminUserDetailViewModel
     }
 
     [RelayCommand]
-    private void CancelSignIn()
-    {
-        ResetSignIn(null);
-        SignInCard.Clear();
-    }
+    private Task CancelSignInAsync() => CancelAsync(SignInCard, () => ResetSignIn(null));
 
     [RelayCommand]
     private Task ReviewSignInAsync() => ReviewAsync(SignInCard);

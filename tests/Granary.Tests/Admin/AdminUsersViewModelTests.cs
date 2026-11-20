@@ -182,4 +182,18 @@ public sealed class AdminUsersViewModelTests
 
         Assert.Equal(4, users.Rows.Count);
     }
+    [Fact]
+    public async Task OpeningAsAnotherAccount_ResetsTheGroupFilter()
+    {
+        var users = await LoadedAsync();
+        users.SelectedGroup = users.GroupFilters.Single(filter => filter.Name == "Family");
+        _session.Account = new Granary.Core.Api.Auth.Account("2", "kim", "kim@example.com", "admin", [], true, false, null);
+        _silo.Map("api/v2/admin/access-groups", _ => BrowseFakeSilo.Problem(503, "dependency_unavailable"));
+
+        await users.OpenAsync();
+
+        Assert.DoesNotContain(users.GroupFilters, filter => filter.Name == "Family");
+        Assert.Equal(users.GroupFilters[0], users.SelectedGroup);
+        Assert.Equal(4, users.Rows.Count);
+    }
 }

@@ -115,4 +115,18 @@ public sealed class AdminUserDeleteViewModelTests
 
         Assert.False(dialog.CanDelete);
     }
+    [Fact]
+    public async Task AnOwner_IsNotOfferedDisableInstead()
+    {
+        _silo.Map("api/v2/admin/users/3", request => request.Method == HttpMethod.Get
+            ? AdminUserPayloads.Versioned(AdminUserPayloads.User().Replace("\"is_owner\": false", "\"is_owner\": true", StringComparison.Ordinal))
+            : BrowseFakeSilo.NoContent());
+        var dialog = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>()) { DisableOffered = true };
+        Assert.True(await dialog.StartAsync(AdminActors.Of(_session), "3", viewerIsOwner: true, TestContext.Current.CancellationToken));
+
+        Assert.False(dialog.OffersDisable);
+        Assert.False(dialog.CanDisable);
+        Assert.False(await dialog.DisableAsync(TestContext.Current.CancellationToken));
+        Assert.DoesNotContain(_silo.To("api/v2/admin/users/3"), request => request.Method == HttpMethod.Put);
+    }
 }
