@@ -34,6 +34,7 @@ public sealed class AdminUsersViewModelTests
         Assert.Equal("200", _silo.To("api/v2/admin/users")[0].Query("limit"));
         Assert.True(users.ViewerIsOwner);
         Assert.True(users.IsAvailable);
+        Assert.True(users.SignupsOn);
     }
 
     [Fact]

@@ -6,13 +6,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.System;
 
 namespace Granary.App.Views.Admin;
 
 /// <summary>
 /// Admin → Users. The table and its search, filter, sort and pages are the view model's; here are the dialogs: Add User,
-/// and Delete, which reads the account fresh before it asks, and the tabs: Users and Invitations, as the web's.
+/// and Delete, which reads the account fresh before it asks; the header's links to the web's pages Granary does not have;
+/// and the tabs: Users, Invitations and Invite Codes, as the web's.
 /// </summary>
 public sealed partial class AdminUsersView : UserControl
 {
@@ -21,12 +24,14 @@ public sealed partial class AdminUsersView : UserControl
     private bool _deleting;
     private bool _active;
     private AdminInvitationsView? _invitations;
+    private AdminInviteCodesView? _inviteCodes;
 
     public AdminUsersView()
     {
         ViewModel = App.Services.GetRequiredService<AdminUsersViewModel>();
         NewUser = App.Services.GetRequiredService<AdminNewUserViewModel>();
         InitializeComponent();
+        AdminDialogs.Dress(CreateDialog, AdminDialogs.Wide);
         foreach (int size in AdminUsersViewModel.PageSizes)
         {
             PageSizeBox.Items.Add(new ComboBoxItem { Content = ViewModel.PageSizeText(size), Tag = size });
@@ -48,22 +53,24 @@ public sealed partial class AdminUsersView : UserControl
         remove => ViewModel.UserRequested -= value;
     }
 
-    /// <summary>The tab chosen changed: Users' own page or <see cref="AdminPages.Invitations"/>, for the sidebar to return to.</summary>
+    /// <summary>The tab chosen changed (<see cref="Tab"/>), for the sidebar to return to.</summary>
     public event EventHandler<string>? TabChanged;
 
-    /// <summary>The Invitations tab shows.</summary>
-    public bool ShowsInvitations => InvitationsTab.IsChecked == true;
+    /// <summary>The tab shown: <see cref="AdminPages.Users"/>, <see cref="AdminPages.Invitations"/> or <see cref="AdminPages.InviteCodes"/>.</summary>
+    public string Tab => InvitationsTab.IsChecked == true ? AdminPages.Invitations
+        : InviteCodesTab.IsChecked == true ? AdminPages.InviteCodes
+        : AdminPages.Users;
 
-    /// <summary>Reads the accounts, then the invitations when their tab shows: they need to know whether the viewer is the Owner.</summary>
+    /// <summary>Reads the accounts, then the tab shown: invitations need to know whether the viewer is the Owner.</summary>
     public async Task ActivateAsync()
     {
         _active = true;
         try
         {
             await ViewModel.OpenAsync();
-            if (_active && ShowsInvitations)
+            if (_active)
             {
-                await Invitations().ActivateAsync(ViewModel.ViewerIsOwner, ViewModel.Groups);
+                await ActivateTabAsync(Tab);
             }
         }
         catch (Exception ex)
@@ -89,11 +96,16 @@ public sealed partial class AdminUsersView : UserControl
         }
     }
 
-    /// <summary>Shows a tab, as the web's <c>?tab=</c> does; read on the next <see cref="ActivateAsync"/>.</summary>
-    public void ShowTab(bool invitations)
+    /// <summary>Shows a tab (<see cref="AdminPages"/>), as the web's <c>?tab=</c> does; read on the next <see cref="ActivateAsync"/>.</summary>
+    public void ShowTab(string tab)
     {
         _active = false;
-        (invitations ? InvitationsTab : UsersTab).IsChecked = true;
+        (tab switch
+        {
+            AdminPages.Invitations => InvitationsTab,
+            AdminPages.InviteCodes => InviteCodesTab,
+            _ => UsersTab,
+        }).IsChecked = true;
     }
 
     public void Deactivate()
@@ -101,12 +113,15 @@ public sealed partial class AdminUsersView : UserControl
         _active = false;
         ViewModel.Deactivate();
         _invitations?.Deactivate();
+        _inviteCodes?.Deactivate();
+        CreateDialog.Hide();
     }
 
     /// <summary>The page leaves for good.</summary>
     public void Release()
     {
         _invitations?.Release();
+        _inviteCodes?.Release();
         Bindings.StopTracking();
     }
 
@@ -122,6 +137,11 @@ public sealed partial class AdminUsersView : UserControl
 
     public static Visibility Ready(LibraryLoadState state) => state == LibraryLoadState.Ready ? Visibility.Visible : Visibility.Collapsed;
 
+    /// <summary>Create User's tab <paramref name="tab"/> is the one picked.</summary>
+    public static bool IsTab(int selected, int tab) => selected == tab;
+
+    public static Visibility TabShown(int selected, int tab) => selected == tab ? Visibility.Visible : Visibility.Collapsed;
+
     /// <summary>An admin's role in the web's default badge, a user's in its secondary one.</summary>
     public static Brush RoleBackground(bool isAdmin) => Resource(isAdmin ? "SiloPrimaryBrush" : "SiloSurfaceRaisedBrush");
 
@@ -132,7 +152,8 @@ public sealed partial class AdminUsersView : UserControl
 
     public static object? TipOrNull(string text) => text.Length > 0 ? text : null;
 
-    public static string SaveText(bool saving) => AppText.Get(saving ? "web.admin.users.list.create.saving" : "common.save");
+    /// <summary>The header's badge, for a screen reader: "Public signups on" or "… off".</summary>
+    public string SignupsText(bool on) => AppText.Get(on ? "web.admin.users.list.signupsOn" : "web.admin.users.list.signupsOff");
 
     /// <summary>Shows a failure of a row's action above the table, as the web's alert line.</summary>
     internal void ShowActionError(string text)
@@ -145,13 +166,16 @@ public sealed partial class AdminUsersView : UserControl
 
     private AdminInvitationsView Invitations() => _invitations ??= new AdminInvitationsView();
 
+    private AdminInviteCodesView InviteCodes() => _inviteCodes ??= new AdminInviteCodesView();
+
     // A tab the viewer picks shows at once; while the page is not active it only shows on the next activation.
     private async void OnTabChecked(object sender, RoutedEventArgs e)
     {
-        bool invitations = ReferenceEquals(sender, InvitationsTab);
-        UsersPanel.Visibility = invitations ? Visibility.Collapsed : Visibility.Visible;
-        InvitationsHost.Visibility = invitations ? Visibility.Visible : Visibility.Collapsed;
-        if (invitations)
+        string tab = Tab;
+        UsersPanel.Visibility = tab == AdminPages.Users ? Visibility.Visible : Visibility.Collapsed;
+        InvitationsHost.Visibility = tab == AdminPages.Invitations ? Visibility.Visible : Visibility.Collapsed;
+        InviteCodesHost.Visibility = tab == AdminPages.InviteCodes ? Visibility.Visible : Visibility.Collapsed;
+        if (tab == AdminPages.Invitations)
         {
             InvitationsHost.Content ??= Invitations();
         }
@@ -159,21 +183,36 @@ public sealed partial class AdminUsersView : UserControl
         {
             _invitations?.Deactivate();
         }
-        TabChanged?.Invoke(this, invitations ? AdminPages.Invitations : AdminPages.Users);
-        if (!_active || !invitations)
+        if (tab == AdminPages.InviteCodes)
+        {
+            InviteCodesHost.Content ??= InviteCodes();
+        }
+        else
+        {
+            _inviteCodes?.Deactivate();
+        }
+        TabChanged?.Invoke(this, tab);
+        if (!_active)
         {
             return;
         }
         try
         {
-            await Invitations().ActivateAsync(ViewModel.ViewerIsOwner, ViewModel.Groups);
+            await ActivateTabAsync(tab);
         }
         catch (Exception ex)
         {
             // async void: nothing may escape.
-            Log(ex, "The invitations could not be shown");
+            Log(ex, "The tab could not be shown");
         }
     }
+
+    private Task ActivateTabAsync(string tab) => tab switch
+    {
+        AdminPages.Invitations => Invitations().ActivateAsync(ViewModel.ViewerIsOwner, ViewModel.Groups),
+        AdminPages.InviteCodes => InviteCodes().ActivateAsync(),
+        _ => Task.CompletedTask,
+    };
 
     private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -223,6 +262,12 @@ public sealed partial class AdminUsersView : UserControl
         }
     }
 
+    // The web's badge links to its sign-in settings, and Access Groups to its page: Granary has neither, so the server's web
+    // app opens them.
+    private void OnSignupsClick(object sender, RoutedEventArgs e) => AdminWebLinks.Open(ViewModel.Actor?.Server, AdminWebLinks.SignInSettings);
+
+    private void OnAccessGroupsClick(object sender, RoutedEventArgs e) => AdminWebLinks.Open(ViewModel.Actor?.Server, AdminWebLinks.AccessGroups);
+
     private async void OnDeleteClick(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: string id } || !ViewModel.IsAvailable || XamlRoot is null || _deleting)
@@ -262,10 +307,17 @@ public sealed partial class AdminUsersView : UserControl
         }
         try
         {
+            bool made = false;
             NewUser.Start(ViewModel.Actor, ViewModel.Capabilities, ViewModel.Groups, !ViewModel.GroupsFailed && ViewModel.State == LibraryLoadState.Ready,
                 ViewModel.ViewerIsOwner);
+            AccessFields.Server = ViewModel.Actor?.Server;
             CreateDialog.XamlRoot = XamlRoot;
-            if (await CreateDialog.ShowAsync() == ContentDialogResult.Primary)
+            _createdAccount = false;
+            var read = NewUser.ReadAsync();
+            await CreateDialog.ShowAsync();
+            made = _createdAccount;
+            await read;
+            if (made)
             {
                 await ViewModel.LoadAsync();
             }
@@ -276,19 +328,47 @@ public sealed partial class AdminUsersView : UserControl
         }
     }
 
-    // Save stays on the dialog until the account is made; a failure shows on it.
-    private async void OnCreateClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    // The account was made: the dialog closed on it, and the list is read again.
+    private bool _createdAccount;
+
+    private void OnCreateTabChecked(object sender, RoutedEventArgs e)
     {
-        args.Cancel = true;
+        if (sender is FrameworkElement { Tag: string tag } && int.TryParse(tag, out int tab))
+        {
+            NewUser.SelectedTab = tab;
+        }
+    }
+
+    private void OnCreateCloseClick(object sender, RoutedEventArgs e) => CreateDialog.Hide();
+
+    // Enter in a one-line field saves, as the web's form submits.
+    private void OnCreateKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == VirtualKey.Enter && e.OriginalSource is TextBox { AcceptsReturn: false } or PasswordBox)
+        {
+            e.Handled = true;
+            SaveNewUser();
+        }
+    }
+
+    private void OnCreateSaveClick(object sender, RoutedEventArgs e) => SaveNewUser();
+
+    // Save stays on the dialog until the account is made; a failure shows on it, an invalid limit on its tab.
+    private async void SaveNewUser()
+    {
         if (_creating)
         {
             return;
         }
         _creating = true;
-        var deferral = args.GetDeferral();
         try
         {
-            args.Cancel = !await NewUser.SaveAsync();
+            if (await NewUser.SaveAsync())
+            {
+                _createdAccount = true;
+                _creating = false;
+                CreateDialog.Hide();
+            }
         }
         catch (Exception ex)
         {
@@ -297,7 +377,6 @@ public sealed partial class AdminUsersView : UserControl
         finally
         {
             _creating = false;
-            deferral.Complete();
         }
     }
 

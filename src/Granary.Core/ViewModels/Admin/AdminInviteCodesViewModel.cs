@@ -27,9 +27,12 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
 
     public ObservableCollection<AdminInviteCodeRow> Rows { get; } = [];
 
+    /// <summary>The account and profile the tab was opened as.</summary>
+    public AdminActor? Actor => _actor;
+
     /// <summary>"Loading invite codes...": the first page is on its way.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsEmpty), nameof(IsFirstLoad))]
     [NotifyCanExecuteChangedFor(nameof(LoadMoreCommand))]
     public partial bool IsLoading { get; private set; }
 
@@ -59,6 +62,9 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
     public partial bool MessageIsError { get; private set; }
 
     public bool HasMessage => Message.Length > 0;
+
+    /// <summary>"Loading invite codes...": the first page is on its way.</summary>
+    public bool IsFirstLoad => IsLoading && Rows.Count == 0;
 
     /// <summary>"No invite codes yet. Create one to get started.", once read.</summary>
     public bool IsEmpty => !IsLoading && !LoadFailed && Rows.Count == 0;

@@ -23,8 +23,9 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
     private AdminActivityView? _activity;
     private AdminUsersView? _users;
     private AdminUserDetailView? _detail;
-    // Users opens on its Invitations tab next: Open asked for it. A pick in the sidebar opens the Users tab, as the web's link.
-    private bool _invitationsNext;
+    // The Users tab to show next: its own, or Invitations or Invite Codes when Open asked for one. A pick in the sidebar opens
+    // the Users tab, as the web's link.
+    private string _usersTabNext = AdminPages.Users;
 
     public AdminPage()
     {
@@ -64,9 +65,10 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
     /// <summary>Shows one of the area's pages (<see cref="AdminPages"/>), as picking it in the sidebar does.</summary>
     public void Open(string page)
     {
-        // Invitations is a tab of Users, as the web's /admin/users?tab=invitations.
-        _invitationsNext = page == AdminPages.Invitations;
-        string tag = _invitationsNext ? AdminPages.Users : page;
+        // Invitations and Invite Codes are tabs of Users, as the web's /admin/users?tab=invitations and ?tab=invite-codes.
+        bool usersTab = page is AdminPages.Invitations or AdminPages.InviteCodes;
+        _usersTabNext = usersTab ? page : AdminPages.Users;
+        string tag = usersTab ? AdminPages.Users : page;
         var (list, item) = Lists.SelectMany(list => list.Items.OfType<ListViewItem>().Select(item => (list, item)))
             .FirstOrDefault(entry => entry.item.Tag as string == tag);
         if (item is null)
@@ -155,11 +157,11 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
         }
     }
 
-    // Users picked while it is already picked, which changes no selection: from an account or the Invitations tab back to the
+    // Users picked while it is already picked, which changes no selection: from an account or another tab back to the
     // list, as the web's sidebar link does.
     private void OnUsersTapped(object sender, TappedRoutedEventArgs e)
     {
-        if (ReferenceEquals(ManagePages.SelectedItem, sender) && (_detail is not null || _users?.ShowsInvitations == true))
+        if (ReferenceEquals(ManagePages.SelectedItem, sender) && (_detail is not null || _users?.Tab is AdminPages.Invitations or AdminPages.InviteCodes))
         {
             Open(AdminPages.Users);
         }
@@ -168,9 +170,9 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
     private Task ShowUsersAsync()
     {
         var users = _users ??= CreateUsers();
-        users.ShowTab(_invitationsNext);
-        _invitationsNext = false;
-        Sidebar.LastPage = users.ShowsInvitations ? AdminPages.Invitations : AdminPages.Users;
+        users.ShowTab(_usersTabNext);
+        _usersTabNext = AdminPages.Users;
+        Sidebar.LastPage = users.Tab;
         Show(users);
         return users.ActivateAsync();
     }
