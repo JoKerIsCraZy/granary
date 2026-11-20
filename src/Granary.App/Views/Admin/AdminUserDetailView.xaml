@@ -177,8 +177,15 @@
                             <TextBlock Text="{x:Bind ViewModel.RoleNote, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}" />
                         </StackPanel>
                         <StackPanel Spacing="2">
-                            <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" Header="{x:Bind t:AppText.Get('web.admin.users.detail.access.signIn.canSignIn')}"
-                                          IsOn="{x:Bind ViewModel.CanSignIn, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.CanToggleSignIn, Mode=OneWay}" OnContent="" OffContent="" />
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.detail.access.signIn.canSignIn')}" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                <ToggleSwitch Grid.Column="1" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.CanSignIn, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.CanToggleSignIn, Mode=OneWay}"
+                                              AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.detail.access.signIn.canSignIn')}" />
+                            </Grid>
                             <TextBlock Text="{x:Bind ViewModel.SignInNote, Mode=OneWay}" Style="{StaticResource AdminHintTextStyle}"
                                        Visibility="{x:Bind local:AdminUsersView.Shown(ViewModel.SignInNote), Mode=OneWay}" />
                         </StackPanel>
@@ -202,7 +209,7 @@
                         <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.detail.common.cardTitle.library')}" Style="{StaticResource CardTitleStyle}"
                                    AutomationProperties.HeadingLevel="Level2" />
                         <ComboBox Header="{x:Bind t:AppText.Get('web.admin.users.detail.access.library.accessGroup')}" Style="{StaticResource SiloSettingsComboBoxStyle}"
-                                  HorizontalAlignment="Stretch" ItemsSource="{x:Bind ViewModel.GroupChoices, Mode=OneWay}"
+                                  Width="Auto" HorizontalAlignment="Stretch" ItemsSource="{x:Bind ViewModel.GroupChoices, Mode=OneWay}"
                                   SelectedItem="{x:Bind ViewModel.SelectedGroup, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.CanPickGroup, Mode=OneWay}"
                                   Visibility="{x:Bind local:AdminUserDetailView.NotAdmin(ViewModel.IsAdminAccount), Mode=OneWay}" />
                         <TextBlock Text="{x:Bind t:AppText.Get('web.admin.users.detail.access.library.adminDescription')}" Style="{StaticResource AdminHintTextStyle}"
