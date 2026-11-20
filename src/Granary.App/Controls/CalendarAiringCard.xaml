@@ -4,7 +4,7 @@
     is the middle of the airing's poster over its thumbhash (the calendar carries no still or backdrop), the badge top left
     (PREMIERE filled with the accent, FINALE outlined in it, the others outlined plainly), a check top right once watched,
     the air time in a chip bottom left; the title and "S3 · E4" under it. The button around it opens the airing and carries
-    its name, so the texts here are left to the eye.
+    its name; the badge, the time and the check stay readable inside it, as the earlier cards' were.
 -->
 <UserControl
     x:Class="Granary.App.Controls.CalendarAiringCard"
@@ -21,21 +21,22 @@
 
         <Grid x:Name="Still" CornerRadius="10" Background="{StaticResource SiloSurfaceBrush}">
             <Image x:Name="BlurImage" Stretch="UniformToFill" AutomationProperties.AccessibilityView="Raw" />
-            <Image x:Name="ArtImage" Stretch="UniformToFill" ImageFailed="OnImageFailed" AutomationProperties.AccessibilityView="Raw" />
+            <Image x:Name="ArtImage" Stretch="UniformToFill" ImageOpened="OnImageOpened" ImageFailed="OnImageFailed"
+                   AutomationProperties.AccessibilityView="Raw" />
 
             <Border x:Name="BadgeBox" Margin="6" Padding="6,3,6,4" CornerRadius="5" BorderThickness="1"
-                    HorizontalAlignment="Left" VerticalAlignment="Top" AutomationProperties.AccessibilityView="Raw">
+                    HorizontalAlignment="Left" VerticalAlignment="Top">
                 <TextBlock x:Name="BadgeText" FontSize="9.5" FontFamily="{StaticResource SiloFontExtraBold}" FontWeight="ExtraBold"
-                           CharacterSpacing="80" LineHeight="0" TextLineBounds="Tight" />
+                           CharacterSpacing="80" LineHeight="0" TextLineBounds="Tight" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
             </Border>
 
             <Border x:Name="WatchedMark" Width="20" Height="20" Margin="6" CornerRadius="10" Background="#CC0E0E10"
-                    HorizontalAlignment="Right" VerticalAlignment="Top" AutomationProperties.AccessibilityView="Raw">
-                <FontIcon Glyph="&#xE73E;" FontSize="11" FontWeight="Bold" Foreground="{StaticResource SiloForegroundBrush}" />
+                    HorizontalAlignment="Right" VerticalAlignment="Top">
+                <FontIcon x:Name="WatchedIcon" Glyph="&#xE73E;" FontSize="11" FontWeight="Bold" Foreground="{StaticResource SiloForegroundBrush}" />
             </Border>
 
             <Border x:Name="TimeChip" Margin="6" Padding="7,3,7,4" CornerRadius="6" Background="#CC0E0E10"
-                    HorizontalAlignment="Left" VerticalAlignment="Bottom" AutomationProperties.AccessibilityView="Raw">
+                    HorizontalAlignment="Left" VerticalAlignment="Bottom">
                 <TextBlock x:Name="TimeText" FontSize="11" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold"
                            Foreground="{StaticResource SiloForegroundBrush}" Typography.NumeralAlignment="Tabular"
                            LineHeight="0" TextLineBounds="Tight" />
@@ -44,11 +45,9 @@
 
         <StackPanel Grid.Row="1" Spacing="2" Padding="2,0">
             <TextBlock x:Name="TitleText" FontSize="13" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold"
-                       Foreground="{StaticResource SiloForegroundBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
-                       AutomationProperties.AccessibilityView="Raw" />
+                       Foreground="{StaticResource SiloForegroundBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
             <TextBlock x:Name="CodeText" FontSize="12" FontFamily="{StaticResource SiloFontRegular}" Foreground="{StaticResource SiloMutedBrush}"
-                       TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular"
-                       AutomationProperties.AccessibilityView="Raw" />
+                       TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" />
         </StackPanel>
     </Grid>
 </UserControl>

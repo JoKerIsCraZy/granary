@@ -18,8 +18,9 @@ public sealed partial class CalendarPage : Page
     public static readonly DependencyProperty IsWideProperty =
         DependencyProperty.Register(nameof(IsWide), typeof(bool), typeof(CalendarPage), new PropertyMetadata(true));
 
-    // Below this width the seven columns would squeeze their cards under about 130 px: the days stack instead.
-    private const double GridMinWidth = 920;
+    // Below this width of the grid (a page of about 1150 px) a column would be narrower than about 144 px and its cards than
+    // about 120 px, too small for the badge, the time and the title: the days stack instead.
+    private const double GridMinWidth = 1070;
 
     // The mockup's: past days' cards at 62 %.
     private const double PastCardsOpacity = 0.62;

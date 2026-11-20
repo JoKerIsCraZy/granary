@@ -37,8 +37,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
-- **Calendar:** the week is now a grid of seven days side by side, each day a column of its airings with the episode's
-  picture, air time, PREMIERE, NEW SEASON or FINALE and a check once watched; today's column is tinted with your Silo
+- **Calendar:** the week is now a grid of seven days side by side, each day a column of its airings with the show's
+  poster, air time, PREMIERE, NEW SEASON or FINALE and a check once watched; today's column is tinted with your Silo
   server's accent and past days are dimmed. A line under the title counts the week's episodes, premieres and finales.
   In a narrow window the days are listed one under another.
 

@@ -47,9 +47,6 @@ public sealed partial class MediaRow : UserControl
     public static readonly DependencyProperty CardRemoveLabelProperty =
         DependencyProperty.Register(nameof(CardRemoveLabel), typeof(string), typeof(MediaRow), new PropertyMetadata(""));
 
-    public static readonly DependencyProperty TitleBadgeProperty =
-        DependencyProperty.Register(nameof(TitleBadge), typeof(string), typeof(MediaRow), new PropertyMetadata(""));
-
     /// <summary>How far the row reaches past its own edges to the window's (RowBleed); the page's gutter.</summary>
     public static readonly DependencyProperty BleedProperty =
         DependencyProperty.Register(nameof(Bleed), typeof(double), typeof(MediaRow), new PropertyMetadata(RowBleed.PageGutter, (sender, _) => ((MediaRow)sender).ApplyBleed()));
@@ -139,13 +136,6 @@ public sealed partial class MediaRow : UserControl
     {
         get => (string)GetValue(CardRemoveLabelProperty);
         set => SetValue(CardRemoveLabelProperty, value);
-    }
-
-    /// <summary>A pill in the accent beside the title ("TODAY" on the calendar); empty for none.</summary>
-    public string TitleBadge
-    {
-        get => (string)GetValue(TitleBadgeProperty);
-        set => SetValue(TitleBadgeProperty, value);
     }
 
     // Explore all and the title's link show only while the row opens something. Set here, not by x:Bind functions: those

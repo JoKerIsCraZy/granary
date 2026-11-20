@@ -1,4 +1,6 @@
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -14,6 +16,10 @@ public sealed partial class CalendarAiringCard : UserControl
     // A width change of more than this part decodes the poster again (a window resized past a few pixels).
     private const double RedecodeChange = 0.1;
 
+    // The badge's room: the still's width less its 6 px margins, and less the 20 px check and a gap while it shows.
+    private const double BadgeMargins = 12;
+    private const double CheckRoom = 26;
+
     private static readonly Brush Shade = new SolidColorBrush(Windows.UI.Color.FromArgb(0xCC, 0x0E, 0x0E, 0x10));
     private static readonly Brush PlainRing = new SolidColorBrush(Windows.UI.Color.FromArgb(0x66, 0xE8, 0xE8, 0xEC));
     private static readonly Brush Transparent = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
@@ -24,10 +30,12 @@ public sealed partial class CalendarAiringCard : UserControl
     private double _width;
     private double _decodedWidth;
     private bool _loadQueued;
+    private bool _opened;
 
     public CalendarAiringCard()
     {
         InitializeComponent();
+        AutomationProperties.SetName(WatchedIcon, AppText.Get("web.item.card.watched"));
     }
 
     public CalendarAiring? Airing
@@ -44,6 +52,7 @@ public sealed partial class CalendarAiringCard : UserControl
     {
         StopArtwork();
         ArtImage.Source = null;
+        _opened = false;
         _decodedWidth = 0;
         BlurImage.Source = Thumbhashes.Get(airing?.ImageThumbhash);
         TitleText.Text = airing?.Title ?? "";
@@ -53,6 +62,7 @@ public sealed partial class CalendarAiringCard : UserControl
         TimeChip.Visibility = Visible(airing?.HasTime == true);
         WatchedMark.Visibility = Visible(airing?.IsWatched == true);
         ShowBadge(airing);
+        FitBadge();
         QueueArtwork();
     }
 
@@ -87,9 +97,19 @@ public sealed partial class CalendarAiringCard : UserControl
         {
             _width = width;
             Still.Height = width * 9 / 16;
+            FitBadge();
             QueueArtwork();
         }
         return base.MeasureOverride(availableSize);
+    }
+
+    // A narrow column cuts a long badge ("NEW SEASON") short rather than run it under the check.
+    private void FitBadge()
+    {
+        if (_width > 0)
+        {
+            BadgeBox.MaxWidth = Math.Max(0, _width - BadgeMargins - (Airing?.IsWatched == true ? CheckRoom : 0));
+        }
     }
 
     // Loaded once the card has its width, after the layout pass: a source set while measuring would start another one.
@@ -120,6 +140,7 @@ public sealed partial class CalendarAiringCard : UserControl
         }
         StopArtwork();
         _artwork = new CancellationTokenSource();
+        _opened = false;
         _decodedWidth = _width;
         ArtImage.Source = Artwork.Load(url, (int)Math.Ceiling(_width), _artwork.Token);
     }
@@ -129,6 +150,8 @@ public sealed partial class CalendarAiringCard : UserControl
         _artwork?.Cancel();
         _artwork = null;
     }
+
+    private void OnImageOpened(object sender, RoutedEventArgs e) => _opened = true;
 
     // An expired or broken poster leaves the blur, or the plain still, in place.
     private void OnImageFailed(object sender, ExceptionRoutedEventArgs e) => ArtImage.Source = null;
@@ -143,7 +166,8 @@ public sealed partial class CalendarAiringCard : UserControl
         }
     }
 
-    // A poster on its way when the card leaves the tree (the page left) stops loading.
+    // A poster on its way when the card leaves the tree (the page left) stops loading; one that is in stays, so Back to the
+    // cached page shows it at once.
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         // WinUI can raise Unloaded while the card is still in the tree (DetailExtraCard): such an Unloaded changes nothing.
@@ -151,7 +175,7 @@ public sealed partial class CalendarAiringCard : UserControl
         {
             return;
         }
-        if (_artwork is not null)
+        if (_artwork is not null && !_opened)
         {
             StopArtwork();
             ArtImage.Source = null;

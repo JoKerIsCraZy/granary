@@ -194,7 +194,11 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <!-- Read as the day's heading, "Thursday, October 1st", then TODAY on today's. -->
-                            <Grid Padding="6,2,6,4">
+                            <Grid Padding="6,2,6,4" ColumnSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <TextBlock Text="{x:Bind Weekday}" FontSize="12" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold"
                                                CharacterSpacing="100" Foreground="{StaticResource SiloMutedBrush}" VerticalAlignment="Bottom" Margin="0,0,0,3"
@@ -204,7 +208,7 @@
                                                AutomationProperties.AccessibilityView="Raw" />
                                 </StackPanel>
                                 <TextBlock Text="{x:Bind Badge}" FontSize="10" FontFamily="{StaticResource SiloFontExtraBold}" FontWeight="ExtraBold"
-                                           CharacterSpacing="100" Foreground="{StaticResource SiloPrimaryBrush}" HorizontalAlignment="Right"
+                                           CharacterSpacing="100" Foreground="{StaticResource SiloPrimaryBrush}" Grid.Column="1"
                                            VerticalAlignment="Bottom" Margin="0,0,0,4" Visibility="{x:Bind IsToday}" />
                             </Grid>
                             <ScrollViewer Grid.Row="1" Visibility="{x:Bind HasAirings}" HorizontalScrollMode="Disabled"

@@ -515,7 +515,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   title in the tooltip. A card presses in to 0.97 over 160 ms and opens the series (a movie itself); airings have no card
   menu. Screen readers hear each column's day as a heading ("Thursday, October 1st") and each card as the title and
   "S2 · E1 - TITLE". Arrow keys, a controller and a remote move up and down a column and across to the nearest card of
-  the next column with airings. A page narrower than 920 px of grid lists the days one under another instead
+  the next column with airings. A grid narrower than 1070 px (a page of about 1150 px, where a card would be under about 120 px) lists the days one under another instead
   ("Thursday, October 1st", TODAY), their cards wrapping at least 200 px wide. A week with no airings shows the web's
   empty box naming the other presets. The preset is kept while the app runs (the web keeps it in the browser).
 - Notifications (`NotificationsPage`, the web's `pages/Notifications.tsx`): one centred column of the web's width with

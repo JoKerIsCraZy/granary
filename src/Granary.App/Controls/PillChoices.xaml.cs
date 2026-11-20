@@ -34,12 +34,6 @@ public sealed partial class PillChoices : UserControl
         set => SetValue(SelectedItemProperty, value);
     }
 
-    /// <summary>
-    /// The chosen pill in the accent with the label drawn on it, as the web's calendar presets
-    /// (<c>bg-primary text-primary-foreground</c>, pages/Calendar.tsx); set before the items.
-    /// </summary>
-    public bool IsAccent { get; set; }
-
     private void Build()
     {
         Pills.Children.Clear();
@@ -52,11 +46,6 @@ public sealed partial class PillChoices : UserControl
                 GroupName = _group,
                 Style = (Style)Resources["PillStyle"],
             };
-            if (IsAccent)
-            {
-                pill.Resources["PillChosenBackgroundBrush"] = Application.Current.Resources["SiloPrimaryBrush"];
-                pill.Resources["PillChosenForegroundBrush"] = Application.Current.Resources["SiloOnPrimaryBrush"];
-            }
             AutomationProperties.SetName(pill, choice.Label);
             pill.Checked += (_, _) =>
             {
