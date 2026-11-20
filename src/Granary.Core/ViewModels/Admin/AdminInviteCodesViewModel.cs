@@ -48,6 +48,13 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
     [NotifyCanExecuteChangedFor(nameof(LoadMoreCommand))]
     public partial bool HasMore { get; private set; }
 
+    /// <summary>A switch or delete runs, until the list is read again: the rows' switches and actions wait, as the web's.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RowsEnabled))]
+    public partial bool IsChanging { get; private set; }
+
+    public bool RowsEnabled => !IsChanging;
+
     /// <summary>Public signups: null until read, which shows neither note.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SignupsOnShown), nameof(SignupsOffShown))]
@@ -109,7 +116,13 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
 
     public string TopUpText => AppText.Get(IsToppingUp ? "web.admin.settings.inviteCodes.topUpForm.adding" : "web.admin.settings.inviteCodes.topUpForm.submit");
 
-    public string TopUpDescription => TopUpRow is { } row
+    /// <summary>A failed top-up whose code could not be read again: its uses are not known.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TopUpDescription))]
+    public partial bool TopUpUnconfirmed { get; private set; }
+
+    public string TopUpDescription => TopUpUnconfirmed ? AppText.Get("web.admin.settings.hooks.inviteCodes.topUpUnconfirmed")
+        : TopUpRow is { } row
         ? AppText.Get("web.admin.settings.inviteCodes.topUp.description", ("code", row.Code), ("used", row.UseCount.ToString(CultureInfo.InvariantCulture)),
             ("max", row.MaxUses.ToString(CultureInfo.InvariantCulture)))
         : "";
@@ -208,26 +221,35 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
     /// <summary>A row's switch: turns its code on or off, then reads the list again.</summary>
     public async Task ToggleAsync(AdminInviteCodeRow row)
     {
-        if (_actor is not { } actor)
+        if (_actor is not { } actor || IsChanging)
         {
             return;
         }
+        IsChanging = true;
         try
         {
-            await codes.SetEnabledAsync(actor, row.Id, !row.Enabled);
-            Message = "";
+            try
+            {
+                await codes.SetEnabledAsync(actor, row.Id, !row.Enabled);
+                Message = "";
+            }
+            catch (Exception ex) when (AdminFailures.IsExpected(ex))
+            {
+                logger.LogWarning(ex, "Could not change an invite code");
+                Fail(AdminFailures.Describe(ex, AppText.Get("web.admin.settings.hooks.inviteCodes.updateFailed")));
+            }
+            await RestartAsync();
         }
-        catch (Exception ex) when (AdminFailures.IsExpected(ex))
+        finally
         {
-            logger.LogWarning(ex, "Could not change an invite code");
-            Fail(AdminFailures.Describe(ex, AppText.Get("web.admin.settings.hooks.inviteCodes.updateFailed")));
+            IsChanging = false;
         }
-        await RestartAsync();
     }
 
     /// <summary>Starts Add Uses for a row: one more use, as the web's form.</summary>
     public void StartTopUp(AdminInviteCodeRow row)
     {
+        TopUpUnconfirmed = false;
         TopUpRow = row;
         AdditionalUses = "1";
         FormError = "";
@@ -245,53 +267,76 @@ public sealed partial class AdminInviteCodesViewModel(ISessionManager session, A
             FormError = AppText.Get("web.admin.settings.inviteCodes.topUpForm.invalid");
             return false;
         }
+        // Held until the list is read again, so a second submit cannot add the uses twice.
         IsToppingUp = true;
         FormError = "";
+        TopUpUnconfirmed = false;
         bool done = false;
         try
         {
-            await codes.TopUpAsync(actor, row.Id, amount);
-            Say("web.admin.settings.hooks.inviteCodes.toppedUp");
-            done = true;
-        }
-        catch (Exception ex) when (AdminFailures.IsExpected(ex))
-        {
-            logger.LogWarning(ex, "Could not top up an invite code");
-            FormError = AppText.Get("web.admin.settings.hooks.inviteCodes.topUpFailed", ("detail",
-                AdminFailures.Describe(ex, AppText.Get("web.admin.settings.hooks.inviteCodes.topUpUnconfirmed"))));
+            try
+            {
+                await codes.TopUpAsync(actor, row.Id, amount);
+                Say("web.admin.settings.hooks.inviteCodes.toppedUp");
+                done = true;
+            }
+            catch (Exception ex) when (AdminFailures.IsExpected(ex))
+            {
+                logger.LogWarning(ex, "Could not top up an invite code");
+                FormError = AppText.Get("web.admin.settings.hooks.inviteCodes.topUpFailed", ("detail",
+                    AdminFailures.Describe(ex, AppText.Get("web.admin.settings.hooks.inviteCodes.topUpUnconfirmed"))));
+            }
+            await RestartAsync();
+            if (done)
+            {
+                TopUpRow = null;
+            }
+            else if (!LoadFailed && Rows.FirstOrDefault(fresh => fresh.Id == row.Id) is { } fresh)
+            {
+                // The form shows the code as it is now, which may already have the uses.
+                TopUpRow = fresh;
+            }
+            else
+            {
+                // Its maximum before may be out of date: the form says the result is unconfirmed instead.
+                TopUpUnconfirmed = true;
+            }
+            return done;
         }
         finally
         {
             IsToppingUp = false;
         }
-        await RestartAsync();
-        if (done)
-        {
-            TopUpRow = null;
-        }
-        return done;
     }
 
     /// <summary>Delete, asked first as the web's: the code no longer signs anyone up.</summary>
     public async Task DeleteAsync(AdminInviteCodeRow row)
     {
-        if (_actor is not { } actor || !await confirmation.AskAsync(AppText.Get("web.admin.settings.inviteCodes.delete.title"),
+        if (_actor is not { } actor || IsChanging || !await confirmation.AskAsync(AppText.Get("web.admin.settings.inviteCodes.delete.title"),
             AppText.Get("web.admin.settings.inviteCodes.delete.description", ("code", row.Code)),
             AppText.Get("web.admin.settings.inviteCodes.delete.confirm")))
         {
             return;
         }
+        IsChanging = true;
         try
         {
-            await codes.DeleteAsync(actor, row.Id);
-            Say("web.admin.settings.hooks.inviteCodes.deleted");
+            try
+            {
+                await codes.DeleteAsync(actor, row.Id);
+                Say("web.admin.settings.hooks.inviteCodes.deleted");
+            }
+            catch (Exception ex) when (AdminFailures.IsExpected(ex))
+            {
+                logger.LogWarning(ex, "Could not delete an invite code");
+                Fail(AdminFailures.Describe(ex, AppText.Get("web.admin.settings.hooks.inviteCodes.deleteFailed")));
+            }
+            await RestartAsync();
         }
-        catch (Exception ex) when (AdminFailures.IsExpected(ex))
+        finally
         {
-            logger.LogWarning(ex, "Could not delete an invite code");
-            Fail(AdminFailures.Describe(ex, AppText.Get("web.admin.settings.hooks.inviteCodes.deleteFailed")));
+            IsChanging = false;
         }
-        await RestartAsync();
     }
 
     /// <summary>What Copy did, said as the web's toast.</summary>

@@ -28,6 +28,7 @@
 
     <Style x:Key="AdminColumnHeadingStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
@@ -72,6 +73,7 @@
 
     <Style x:Key="AdminBadgeTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="FontSize" Value="11" />
     </Style>
 
@@ -126,6 +128,7 @@
     <!-- The web's DialogTitle: text-lg (18), semibold, leading-none. -->
     <Style x:Key="AdminDialogTitleStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="FontSize" Value="18" />
         <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
         <Setter Property="TextWrapping" Value="Wrap" />
@@ -154,6 +157,7 @@
     <!-- The web's TableHead: text-sm medium in the foreground. -->
     <Style x:Key="AdminTableHeadStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
@@ -163,6 +167,7 @@
     <!-- The web's Label: text-sm, medium, leading-none. -->
     <Style x:Key="AdminFieldLabelStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
         <Setter Property="TextWrapping" Value="Wrap" />
@@ -217,6 +222,7 @@
         <Setter Property="MinHeight" Value="36" />
         <Setter Property="Padding" Value="16,0" />
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="UseSystemFocusVisuals" Value="True" />
         <Setter Property="Template">
@@ -275,6 +281,7 @@
         <Setter Property="Padding" Value="16,0" />
         <Setter Property="CornerRadius" Value="10" />
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
     </Style>
@@ -317,6 +324,7 @@
 
     <Style x:Key="AdminWebBadgeTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="FontSize" Value="12" />
     </Style>
 

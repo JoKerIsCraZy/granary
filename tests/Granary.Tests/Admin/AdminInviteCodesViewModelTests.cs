@@ -105,6 +105,113 @@ public sealed class AdminInviteCodesViewModelTests
     }
 
     [Fact]
+    public async Task ARowActionDuringLoadMore_ReadsThePageOneAgain_AndTheOlderPageIsDropped()
+    {
+        var page2 = new TaskCompletionSource<HttpResponseMessage>();
+        _silo.Map("api/v2/admin/invite-codes", (request, _) => request.RequestUri!.Query.Contains("cursor=p2")
+            ? page2.Task
+            : Task.FromResult(BrowseFakeSilo.Json(Page1)));
+        _silo.Map("api/v2/admin/invite-codes/2", _ => BrowseFakeSilo.NoContent());
+        var tab = Tab();
+        await tab.OpenAsync();
+
+        var more = tab.LoadMoreCommand.ExecuteAsync(null);
+        await tab.ToggleAsync(tab.Rows[0]);
+        page2.SetResult(BrowseFakeSilo.Json(Page2));
+        await more;
+
+        Assert.Equal(["SPRING2026AB"], tab.Rows.Select(row => row.Code));
+        Assert.True(tab.HasMore);
+        Assert.False(tab.IsLoading);
+    }
+
+    [Fact]
+    public async Task OpeningAgainWhileAReadRuns_ReadsThePageOne()
+    {
+        var first = new TaskCompletionSource<HttpResponseMessage>();
+        int reads = 0;
+        _silo.Map("api/v2/admin/invite-codes", (request, _) => ++reads == 1 ? first.Task : Task.FromResult(BrowseFakeSilo.Json(Page1)));
+        var tab = Tab();
+
+        var opening = tab.OpenAsync();
+        await tab.OpenAsync();
+        first.SetResult(BrowseFakeSilo.Json(Page2));
+        await opening;
+
+        Assert.Equal(["SPRING2026AB"], tab.Rows.Select(row => row.Code));
+        Assert.False(tab.IsLoading);
+    }
+
+    [Fact]
+    public async Task ATopUp_HoldsItsButtonUntilTheListIsReadAgain()
+    {
+        _silo.Map("api/v2/admin/invite-codes/2/top-up", _ => BrowseFakeSilo.Json(
+            """{ "id": "2", "code": "SPRING2026AB", "label": "", "max_uses": 15, "use_count": 10, "enabled": true }"""));
+        var tab = Tab();
+        await tab.OpenAsync();
+        var reread = new TaskCompletionSource<HttpResponseMessage>();
+        _silo.Map("api/v2/admin/invite-codes", (request, _) => reread.Task);
+        tab.StartTopUp(tab.Rows[0]);
+
+        var topUp = tab.TopUpAsync();
+        Assert.True(tab.IsToppingUp);
+        Assert.False(await tab.TopUpAsync());
+        reread.SetResult(BrowseFakeSilo.Json(Page1));
+
+        Assert.True(await topUp);
+        Assert.False(tab.IsToppingUp);
+        Assert.Single(_silo.To("api/v2/admin/invite-codes/2/top-up"));
+    }
+
+    [Fact]
+    public async Task AFailedTopUp_ShowsTheCodeAsReadAgain()
+    {
+        _silo.Map("api/v2/admin/invite-codes/2/top-up", _ => BrowseFakeSilo.Problem(500, "internal_error"));
+        var tab = Tab();
+        await tab.OpenAsync();
+        tab.StartTopUp(tab.Rows[0]);
+        _silo.Map("api/v2/admin/invite-codes", request => BrowseFakeSilo.Json(Page1.Replace("\"max_uses\": 10", "\"max_uses\": 12")));
+
+        Assert.False(await tab.TopUpAsync());
+
+        Assert.Equal(12, tab.TopUpRow?.MaxUses);
+        Assert.Contains("12", tab.TopUpDescription, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AFailedTopUp_WhoseCodeCannotBeReadAgain_SaysItIsUnconfirmed()
+    {
+        _silo.Map("api/v2/admin/invite-codes/2/top-up", _ => BrowseFakeSilo.Problem(500, "internal_error"));
+        var tab = Tab();
+        await tab.OpenAsync();
+        tab.StartTopUp(tab.Rows[0]);
+        _silo.Map("api/v2/admin/invite-codes", _ => BrowseFakeSilo.Problem(500, "internal_error"));
+
+        Assert.False(await tab.TopUpAsync());
+
+        Assert.Equal("The result could not be confirmed.", tab.TopUpDescription);
+    }
+
+    [Fact]
+    public async Task ASwitch_HoldsTheRowsUntilTheListIsReadAgain_AndASecondIsNotSent()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>();
+        _silo.Map("api/v2/admin/invite-codes/2", (request, _) => answer.Task);
+        var tab = Tab();
+        await tab.OpenAsync();
+        var row = tab.Rows[0];
+
+        var first = tab.ToggleAsync(row);
+        Assert.True(tab.IsChanging);
+        await tab.ToggleAsync(row);
+        answer.SetResult(BrowseFakeSilo.NoContent());
+        await first;
+
+        Assert.False(tab.IsChanging);
+        Assert.Single(_silo.To("api/v2/admin/invite-codes/2"), request => request.Method == HttpMethod.Put);
+    }
+
+    [Fact]
     public async Task AMaxUsesNotPositive_IsNotSent()
     {
         var tab = Tab();

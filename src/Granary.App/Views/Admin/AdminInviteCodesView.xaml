@@ -91,7 +91,7 @@
                 </Grid>
                 <TextBlock Text="{x:Bind t:AppText.Get('web.admin.settings.inviteCodes.empty')}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
                            HorizontalAlignment="Center" Margin="0,8" Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" />
-                <ItemsControl ItemsSource="{x:Bind ViewModel.Rows}" IsTabStop="False"
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Rows}" IsTabStop="False" IsEnabled="{x:Bind ViewModel.RowsEnabled, Mode=OneWay}"
                               AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.users.list.tab.inviteCodes')}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="admin:AdminInviteCodeRow">
