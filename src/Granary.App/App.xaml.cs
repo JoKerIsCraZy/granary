@@ -149,6 +149,8 @@ public partial class App : Application
         _ = Services.GetRequiredService<TitlePageSettings>().StartAsync();
         // Its app language, kept on this PC for the next start.
         _ = Services.GetRequiredService<AppLanguageSetting>().StartAsync();
+        // And its date and time formats, which apply at once.
+        _ = Services.GetRequiredService<DateTimeFormatSetting>().StartAsync();
         // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
         // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();
@@ -192,7 +194,11 @@ public partial class App : Application
 #endif
         var formats = FormatLocale.For(culture);
         AppText.Apply(TextLanguage.Load(language, Services.GetRequiredService<ILogger<TextLanguage>>(), formats));
-        _logger?.LogInformation("Texts in {Language}, dates and numbers as {Formats}", AppText.Language.Tag, formats.Culture.Name);
+        // The profile's date and time formats as kept on this PC, until its own are read (DateTimeFormatSetting).
+        var dateTime = Services.GetRequiredService<DateTimeFormatFile>().AtStart;
+        DateText.Apply(dateTime);
+        _logger?.LogInformation("Texts in {Language}, dates and numbers as {Formats}, dates {DateFormat}, times {TimeFormat}", AppText.Language.Tag,
+            formats.Culture.Name, dateTime.DateFormat, dateTime.TimeFormat);
     }
 
 #if DEBUG

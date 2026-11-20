@@ -16,16 +16,18 @@ internal static partial class IcuDates
     private const int BufferOverflow = 15; // U_BUFFER_OVERFLOW_ERROR
     private const int Capacity = 128;
     private const string Utc = "UTC";
+    private const int MatchHourFieldLength = 1 << 11; // UDATPG_MATCH_HOUR_FIELD_LENGTH
 
     // A pattern once found serves every later date; ICU's generator itself is not shared between threads.
-    private static readonly ConcurrentDictionary<(string Locale, string Skeleton), string> Patterns = new();
+    private static readonly ConcurrentDictionary<(string Locale, string Skeleton, bool HourLength), string> Patterns = new();
     private static volatile bool _unavailable;
 
     /// <summary>
     /// <paramref name="wallClock"/> as it reads, whatever its kind, written in <paramref name="locale"/>'s best pattern for
-    /// <paramref name="skeleton"/>; null where ICU cannot be used.
+    /// <paramref name="skeleton"/>; null where ICU cannot be used. With <paramref name="matchHourLength"/> the hour keeps the
+    /// skeleton's width (<c>HH</c> is "09"), as Intl's <c>hour: "2-digit"</c>; otherwise the pattern's own.
     /// </summary>
-    public static string? Format(string locale, string skeleton, DateTime wallClock)
+    public static string? Format(string locale, string skeleton, DateTime wallClock, bool matchHourLength = false)
     {
         if (_unavailable)
         {
@@ -33,7 +35,8 @@ internal static partial class IcuDates
         }
         try
         {
-            string pattern = Patterns.GetOrAdd((locale, skeleton), static key => BestPattern(key.Locale, key.Skeleton) ?? "");
+            string pattern = Patterns.GetOrAdd((locale, skeleton, matchHourLength),
+                static key => BestPattern(key.Locale, key.Skeleton, key.HourLength ? MatchHourFieldLength : 0) ?? "");
             return pattern.Length == 0 ? null : FormatWith(locale, pattern, wallClock);
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException)
@@ -43,7 +46,7 @@ internal static partial class IcuDates
         }
     }
 
-    private static string? BestPattern(string locale, string skeleton)
+    private static string? BestPattern(string locale, string skeleton, int options)
     {
         int status = 0;
         nint generator = OpenGenerator(locale, ref status);
@@ -54,7 +57,9 @@ internal static partial class IcuDates
         try
         {
             char[] buffer = new char[Capacity];
-            int length = GetBestPattern(generator, skeleton, skeleton.Length, buffer, buffer.Length, ref status);
+            int length = options == 0
+                ? GetBestPattern(generator, skeleton, skeleton.Length, buffer, buffer.Length, ref status)
+                : GetBestPatternWithOptions(generator, skeleton, skeleton.Length, options, buffer, buffer.Length, ref status);
             return status > 0 || length > buffer.Length ? null : new string(buffer, 0, length);
         }
         finally
@@ -98,6 +103,11 @@ internal static partial class IcuDates
     [LibraryImport(Library, EntryPoint = "udatpg_getBestPattern", StringMarshalling = StringMarshalling.Utf16)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial int GetBestPattern(nint generator, string skeleton, int length, [Out] char[] pattern, int capacity, ref int status);
+
+    [LibraryImport(Library, EntryPoint = "udatpg_getBestPatternWithOptions", StringMarshalling = StringMarshalling.Utf16)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static partial int GetBestPatternWithOptions(
+        nint generator, string skeleton, int length, int options, [Out] char[] pattern, int capacity, ref int status);
 
     [LibraryImport(Library, EntryPoint = "udatpg_close")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]

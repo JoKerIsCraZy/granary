@@ -88,8 +88,11 @@ public sealed record PlaybackStreamInfo(
 /// <param name="AudioChannels">That track's channels; 0 when not known.</param>
 public sealed record PlaybackLocalFile(string? Container, long FileSize, string? VideoCodec, bool Hdr, string? AudioCodec, int AudioChannels);
 
-/// <summary>A chapter of the playing file, in source seconds, with its picture when the server has one.</summary>
-public sealed record PlaybackChapter(string Title, double StartSeconds, double EndSeconds, Uri? ThumbnailUrl)
+/// <summary>
+/// A chapter of the playing file, in source seconds, with its picture when the server has one and the picture's blur
+/// (<paramref name="Thumbhash"/>), shown behind it and in its place while it loads or when there is none.
+/// </summary>
+public sealed record PlaybackChapter(string Title, double StartSeconds, double EndSeconds, Uri? ThumbnailUrl, string? Thumbhash = null)
 {
     public bool Contains(double seconds) => seconds >= StartSeconds && seconds < EndSeconds;
 }

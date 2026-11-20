@@ -9,11 +9,11 @@
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <!-- The Discord status (docs/architecture.md, "Discord status"); brings Newtonsoft.Json. -->
     <PackageVersion Include="DiscordRichPresence" Version="1.6.1.70" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.14" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.14" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="11.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0" />
     <!--
       The Windows App SDK parts Granary uses, not the Microsoft.WindowsAppSDK metapackage: the app is self-contained, so
       every part referenced ships with it (docs/architecture.md, "Windows App SDK"). The versions are the ones
@@ -24,14 +24,14 @@
     <PackageVersion Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.6.5" />
     <PackageVersion Include="Microsoft.WindowsAppSDK.WinUI" Version="2.6.5" />
     <PackageVersion Include="QRCoder" Version="1.8.1" />
-    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.14" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="11.0.0" />
     <!-- Installer and updates; keep in step with the vpk tool in dotnet-tools.json. -->
     <PackageVersion Include="Velopack" Version="1.2.161" />
 
     <!-- Tests (Microsoft Testing Platform, see global.json) -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
     <PackageVersion Include="Vortice.Direct3D11" Version="3.8.3" />
-    <PackageVersion Include="xunit.v3" Version="4.0.2" />
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
   </ItemGroup>
 
 </Project>

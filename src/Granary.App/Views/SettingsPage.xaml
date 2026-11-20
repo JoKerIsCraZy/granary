@@ -70,12 +70,13 @@
                     -->
                     <StackPanel Margin="0,-4,0,12">
                         <Grid>
-                            <TextBox x:Name="SearchBox" Text="{x:Bind Search.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            <controls:SearchField x:Name="SearchBox" Style="{StaticResource DefaultTextBoxStyle}"
+                                     Text="{x:Bind Search.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      PlaceholderText="{x:Bind t:AppText.Get('web.settings.search.placeholder')}"
                                      AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.search.placeholder')}" AutomationProperties.AcceleratorKey="Control+F"
                                      MinHeight="44" CornerRadius="12" FontSize="14" Padding="{x:Bind SearchPadding(Search.HasQuery), Mode=OneWay}"
                                      IsSpellCheckEnabled="False" InputScope="Search"
-                                     KeyDown="OnSearchBoxKeyDown" Loaded="OnSearchBoxLoaded" />
+                                     KeyDown="OnSearchBoxKeyDown" />
                             <FontIcon Glyph="&#xE721;" FontSize="16" Margin="12,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
                                       Foreground="{StaticResource SiloMutedBrush}" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw" />
                             <Button Style="{StaticResource SiloSettingsGhostButtonStyle}" Width="42" Margin="1" Padding="0" CornerRadius="11"

@@ -56,6 +56,17 @@
             </InfoBar>
 
             <!--
+                Episodes of a season or a series wait for your Silo server's download limit (Core's DownloadManager.Waiting.cs):
+                how many, and Cancel, which takes them out of line. Collapsed with the note, as the one above.
+            -->
+            <InfoBar IsOpen="{x:Bind ViewModel.ShowsWaitingNote, Mode=OneWay}" Visibility="{x:Bind ViewModel.ShowsWaitingNote, Mode=OneWay}"
+                     Severity="Informational" IsClosable="False" Message="{x:Bind ViewModel.WaitingNote, Mode=OneWay}">
+                <InfoBar.ActionButton>
+                    <Button Content="{x:Bind t:AppText.Get('common.cancel')}" Command="{x:Bind ViewModel.CancelWaitingCommand}" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+
+            <!--
                 Watched downloads can go: the Android app's button, by its name (DownloadsViewModel.ReclaimTitle). It asks
                 first, with how many they are and what they free (ReclaimCommand); Settings → Downloads → Keep watched
                 downloads hides it. Beside it, quieter and always there, the way to Settings → Downloads, which opens over the

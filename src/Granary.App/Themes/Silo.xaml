@@ -920,16 +920,28 @@
               BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
             <VisualStateManager.VisualStateGroups>
                 <VisualStateGroup x:Name="CommonStates">
+                    <!--
+                        The highlight fades over 0.1 s as a storyboard of the state, not as an implicit OpacityTransition: one
+                        that was running as the controls faded out stopped where it was, and the grey box stayed lit in Normal,
+                        its text already back to grey. A state's storyboard is always taken back with its state.
+                    -->
+                    <VisualStateGroup.Transitions>
+                        <VisualTransition GeneratedDuration="0:0:0.1" />
+                    </VisualStateGroup.Transitions>
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="PointerOver">
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="Highlight" Storyboard.TargetProperty="Opacity" To="0.09" Duration="0" />
+                        </Storyboard>
                         <VisualState.Setters>
-                            <Setter Target="Highlight.Opacity" Value="0.09" />
                             <Setter Target="Content.Foreground" Value="{StaticResource SiloPlayerForegroundBrush}" />
                         </VisualState.Setters>
                     </VisualState>
                     <VisualState x:Name="Pressed">
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="Highlight" Storyboard.TargetProperty="Opacity" To="0.05" Duration="0" />
+                        </Storyboard>
                         <VisualState.Setters>
-                            <Setter Target="Highlight.Opacity" Value="0.05" />
                             <Setter Target="Content.Foreground" Value="{StaticResource SiloPlayerForegroundBrush}" />
                         </VisualState.Setters>
                     </VisualState>
@@ -940,11 +952,7 @@
                     </VisualState>
                 </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
-            <Border x:Name="Highlight" Background="White" Opacity="0" CornerRadius="{TemplateBinding CornerRadius}">
-                <Border.OpacityTransition>
-                    <ScalarTransition Duration="0:0:0.1" />
-                </Border.OpacityTransition>
-            </Border>
+            <Border x:Name="Highlight" Background="White" Opacity="0" CornerRadius="{TemplateBinding CornerRadius}" />
             <ContentPresenter
                 x:Name="Content"
                 Padding="{TemplateBinding Padding}"

@@ -21,9 +21,9 @@ internal static class CalendarText
     {
         var end = start.AddDays(6);
         return start.Month == end.Month && start.Year == end.Year
-            ? AppText.Get("web.calendar.weekRangeSameMonth", ("month", Date(start, DateText.ShortMonth)), ("start_day", start.Day),
+            ? AppText.Get("web.calendar.weekRangeSameMonth", ("month", LocaleDate(start, DateText.ShortMonth)), ("start_day", start.Day),
                 ("end_day", end.Day), ("year", start.Year))
-            : AppText.Get("web.calendar.weekRange", ("start", Date(start, DateText.MonthDay)), ("end", Date(end, DateText.MediumDay)));
+            : AppText.Get("web.calendar.weekRange", ("start", LocaleDate(start, DateText.MonthDay)), ("end", LocaleDate(end, DateText.MediumDay)));
     }
 
     /// <summary>
@@ -32,8 +32,8 @@ internal static class CalendarText
     /// </summary>
     public static string DayHeading(DateOnly day)
     {
-        string heading = AppText.Get("web.calendar.dayHeading", ("weekday", Date(day, DateText.Weekday)),
-            ("month", Date(day, DateText.Month)), ("day", day.Day));
+        string heading = AppText.Get("web.calendar.dayHeading", ("weekday", LocaleDate(day, DateText.Weekday)),
+            ("month", LocaleDate(day, DateText.Month)), ("day", day.Day));
         if (AppText.Language.Tag == AppLanguage.English)
         {
             return heading;
@@ -51,7 +51,7 @@ internal static class CalendarText
     }
 
     /// <summary>"Mon" (the web's formatShortDay).</summary>
-    public static string ShortDay(DateOnly day) => Date(day, DateText.ShortWeekday);
+    public static string ShortDay(DateOnly day) => LocaleDate(day, DateText.ShortWeekday);
 
     /// <summary>"Thu, Nov 19", as the web's formatUpcomingDate.</summary>
     public static string ShortDate(DateOnly day) => Date(day, DateText.WeekdayMonthDay);
@@ -136,5 +136,9 @@ internal static class CalendarText
         return hours == 0 ? "Etc/UTC" : string.Create(English, $"Etc/GMT{(hours > 0 ? "-" : "+")}{Math.Abs(hours)}");
     }
 
+    // As the web's toLocaleDateString(preferredDateLocale(), …): in the order of the profile's date format.
     private static string Date(DateOnly day, string skeleton) => DateText.Format(day.ToDateTime(TimeOnly.MinValue), skeleton);
+
+    // As lib/calendarWeek.ts writes the week and its days, toLocaleDateString(formatLocale(), …): the format locale's order.
+    private static string LocaleDate(DateOnly day, string skeleton) => DateText.InFormatLocale(day.ToDateTime(TimeOnly.MinValue), skeleton);
 }

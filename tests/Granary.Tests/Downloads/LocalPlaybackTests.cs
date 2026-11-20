@@ -71,7 +71,7 @@ public sealed class LocalPlaybackTests : IAsyncDisposable
         // selected_audio_track_index, as the server chose it for the download; mpv counts from 1.
         Assert.Equal(1, playback.AudioTrack);
         Assert.Equal(2, _fixture.Engine.Loaded[0].AudioStream);
-        Assert.Equal([new PlaybackChapter("Cold Open", 0, 142.5, null)], playback.Chapters);
+        Assert.Equal([new PlaybackChapter("Cold Open", 0, 142.5, null, "iC")], playback.Chapters);
         Assert.Equal([new PlaybackMarker(WatchMarkerKinds.Intro, 60, 90), new PlaybackMarker(WatchMarkerKinds.Credits, 7100, 7200)], playback.Markers);
         // Nothing of a server stream: no quality, no other version, no file to add subtitles to or edit markers of.
         Assert.Empty(playback.Qualities);

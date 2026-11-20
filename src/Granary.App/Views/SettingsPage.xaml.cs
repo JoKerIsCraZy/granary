@@ -50,7 +50,7 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
     public SettingsPage()
     {
         Sidebar = App.Services.GetRequiredService<SidebarViewModel>();
-        Search = new SettingsSearchViewModel(BuildSearchIndex);
+        Search = new SettingsSearchViewModel(BuildSearchIndex, App.Services.GetRequiredService<ILogger<SettingsSearchViewModel>>());
         InitializeComponent();
         AutomationProperties.SetName(this, AppText.Get("web.settings.sidebar.title"));
         foreach (var (heading, pages, nameKey) in Groups())
@@ -126,7 +126,7 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
             if (_editor is { } editor && !await editor.ViewModel.ConfirmDiscardAsync())
             {
                 // The press that chose the page goes with it.
-                _focusOnShow = null;
+                _press.Forget();
                 if (ReferenceEquals(_editor, editor))
                 {
                     Select(Pages, PlaybackPage);

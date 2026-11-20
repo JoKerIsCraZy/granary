@@ -48,6 +48,10 @@ public sealed class DownloadQueueTests : IAsyncDisposable
         await CompletedAsync("dl_3");
         Assert.Equal(DownloadState.Completed, _h.Find("dl_1")!.Record.State);
         Assert.Equal(DownloadState.Downloading, _h.Find("dl_2")!.Record.State);
+        // Every request of an entry, its manifest, artwork, file and reports, goes as the account and profile it is for.
+        var entries = _h.Silo.Sent.Where(r => r.Uri.AbsolutePath.Contains("/api/v2/downloads/dl_", StringComparison.Ordinal)).ToList();
+        Assert.NotEmpty(entries);
+        Assert.All(entries, r => Assert.Equal(("7", "1"), (r.AsProfile, r.AsAccount)));
     }
 
     [Fact]

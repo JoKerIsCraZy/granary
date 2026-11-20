@@ -17,7 +17,8 @@ namespace Granary.Core.Downloads;
 /// engine, and the title, tracks, chapters and marked parts come from the manifest kept beside it. As in Silo's apps
 /// (Android's <c>PlayerViewModel.tryLocalPlayback</c>, Apple's <c>OfflinePlaybackContext</c>), it opens no playback session
 /// on the server, online or not. While the server answers, it adds what only the server knows: the profile's settings, its
-/// subtitle preference and where the profile left the title on another device. Without the server, the settings are the
+/// subtitle preference, where the profile left the title on another device, and the chapter pictures and seek-bar previews
+/// of the file the download was made from. Without the server, the settings are the
 /// ones last read on this PC (<see cref="KeptPlaybackSettings"/>) and the subtitle preference the one the title last had
 /// (<see cref="DownloadRecord.SubtitlePreference"/>).
 /// </summary>
@@ -98,6 +99,7 @@ public sealed partial class LocalPlayback : IServerPlayback
         _download = media.Download;
         _manifest = media.Manifest;
         _files = media.Files;
+        _keptPreviews = media.Previews;
         _engine = engine;
         _dispatcher = dispatcher;
         _session = session;
@@ -122,12 +124,10 @@ public sealed partial class LocalPlayback : IServerPlayback
 
     public event EventHandler<ServerPlaybackStatus>? StatusChanged;
 
-#pragma warning disable CS0067 // No server session: nobody sends this player a message, replaces its stream or previews its seek bar.
+#pragma warning disable CS0067 // No server session: nobody sends this player a message or replaces its stream.
     public event EventHandler<PlaybackNotice>? NoticeRaised;
 
     public event EventHandler? MarkersChanged;
-
-    public event EventHandler? TrickplayChanged;
 
     public event EventHandler? PlanChangeChanged;
 
@@ -168,8 +168,6 @@ public sealed partial class LocalPlayback : IServerPlayback
                 _manifest.CodecVideo, _manifest.Hdr, audio?.Codec ?? _manifest.CodecAudio, audio?.Channels ?? 0);
         }
     }
-
-    public PlayerTrickplay? Trickplay => null;
 
     public PlanChange PlanChange => PlanChange.None;
 
@@ -234,6 +232,7 @@ public sealed partial class LocalPlayback : IServerPlayback
         TakeStartTracks(request, detail);
         SetStatus(Status);
         TracksChanged?.Invoke(this, EventArgs.Empty);
+        ReadTrickplay();
         double start = StartSeconds(request, detail);
         _position = start;
         _logger.LogInformation("Playing download {DownloadId} from this PC at {Start:F1} s (audio track {Audio})", _download.Record.DownloadId, start,
@@ -352,6 +351,7 @@ public sealed partial class LocalPlayback : IServerPlayback
         _stopping = true;
         StopProgress();
         StopAudioDelay();
+        StopTrickplay();
         SaveSettingsNow();
         return EndStopAsync();
     }
@@ -390,6 +390,7 @@ public sealed partial class LocalPlayback : IServerPlayback
         _engine.Ended -= OnEngineEnded;
         StopAudioDelay();
         StopProgress();
+        StopTrickplay();
         _speedSave?.Dispose();
         _subtitleDelaySave?.Dispose();
         _playingMark?.Dispose();

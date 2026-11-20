@@ -100,6 +100,9 @@ public sealed partial class DownloadStore
     /// <summary>What the last load's look for download folders did.</summary>
     internal ScanCount LastScan { get; private set; } = new(0, 0, false);
 
+    /// <summary>For tests: the calling thread holds the store's lock, which no follower of <see cref="Changed"/> may find held.</summary>
+    internal bool HoldsLock => _gate.IsHeldByCurrentThread;
+
     private Snapshot Current
     {
         get
@@ -118,7 +121,10 @@ public sealed partial class DownloadStore
         {
             if (_load is null || _load.IsFaulted || _load.IsCanceled)
             {
-                _load = LoadOnceAsync();
+                // Started on the thread pool, never on this thread: a read that is done at once would otherwise raise Changed
+                // while this lock is held, and a handler that takes its own lock first (the waiting line's reads the store
+                // under the manager's) could then wait on a thread that waits on it.
+                _load = Task.Run(LoadOnceAsync, CancellationToken.None);
             }
             return _load.WaitAsync(cancellationToken);
         }
@@ -179,13 +185,24 @@ public sealed partial class DownloadStore
     /// </summary>
     /// <exception cref="InvalidOperationException">The scope already has a download with this id.</exception>
     /// <exception cref="IOException">The folder or the record could not be written, or the index not before the folder was made.</exception>
-    public async Task<StoredDownload?> AddUnlessClearedAsync(DownloadRecord record, long clearGeneration, CancellationToken cancellationToken)
+    public Task<StoredDownload?> AddUnlessClearedAsync(DownloadRecord record, long clearGeneration, CancellationToken cancellationToken) =>
+        AddUnlessClearedAsync(record, clearGeneration, onlyWhileWaiting: false, cancellationToken);
+
+    /// <summary>
+    /// As the other <c>AddUnlessClearedAsync</c>; with <paramref name="onlyWhileWaiting"/>, also null, and nothing kept, when its
+    /// episode no longer waits in its scope's line (<see cref="WaitingEpisode"/>): the viewer took it out while its create was
+    /// under way. Asked in the same change that keeps it, which also takes it out of the line, so a removal of the line comes
+    /// either before (nothing kept) or after (the download is kept, and goes with the series' others).
+    /// </summary>
+    public async Task<StoredDownload?> AddUnlessClearedAsync(DownloadRecord record, long clearGeneration, bool onlyWhileWaiting,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(record);
         await LoadAsync(cancellationToken);
         string folder = DownloadPaths.Folder(_preferences.Folder, record.Scope, record.DownloadId);
         var stored = new StoredDownload(record, folder, FilesMissing: false);
         StoredDownload? kept;
+        NotKept why;
         await _writes.WaitAsync(cancellationToken);
         try
         {
@@ -193,7 +210,7 @@ public sealed partial class DownloadStore
             {
                 throw new InvalidOperationException("This download is kept already.");
             }
-            kept = await Task.Run(() => AddToDisk(stored, clearGeneration), CancellationToken.None);
+            (kept, why) = await Task.Run(() => AddToDisk(stored, clearGeneration, onlyWhileWaiting), CancellationToken.None);
         }
         finally
         {
@@ -201,7 +218,14 @@ public sealed partial class DownloadStore
         }
         if (kept is null)
         {
-            _logger.LogInformation("Download {DownloadId} is not kept: its account's downloads were cleared meanwhile", record.DownloadId);
+            if (why == NotKept.LeftLine)
+            {
+                _logger.LogInformation("Download {DownloadId} is not kept: its episode left the line meanwhile", record.DownloadId);
+            }
+            else
+            {
+                _logger.LogInformation("Download {DownloadId} is not kept: its account's downloads were cleared meanwhile", record.DownloadId);
+            }
             return null;
         }
         Changed?.Invoke(this, EventArgs.Empty);
@@ -289,7 +313,8 @@ public sealed partial class DownloadStore
             return new Snapshot(
                 [.. state.Downloads.Where(d => d != removed)],
                 queueServerDelete && !queued ? [.. state.PendingDeletes, delete] : state.PendingDeletes,
-                [.. state.FolderDeletes, new FolderDelete(scope, downloadId, removed.Folder)]);
+                [.. state.FolderDeletes, new FolderDelete(scope, downloadId, removed.Folder)],
+                state.Waiting);
         });
         if (removed is null)
         {
@@ -300,9 +325,9 @@ public sealed partial class DownloadStore
     }
 
     /// <summary>
-    /// Takes every download and pending delete of the scopes <paramref name="match"/> picks off this PC (a sign-out whose clear
-    /// is <paramref name="clearGeneration"/>, from <see cref="MarkCleared"/>). Only downloads and deletes queued before that clear
-    /// go, those read from the disk included: a removal that waits for a slow drive to be read takes no download, and no
+    /// Takes every download, pending delete and waiting episode of the scopes <paramref name="match"/> picks off this PC (a
+    /// sign-out whose clear is <paramref name="clearGeneration"/>, from <see cref="MarkCleared"/>). Only those kept before that
+    /// clear go, those read from the disk included: a removal that waits for a slow drive to be read takes no download, and no
     /// delete still to send, of the same account signed in again since. The rows go at once, and the call ends once the index without them is written, or could not be
     /// (it is written again with the next change). Their folders go after that, beside the caller (<see cref="FolderWork"/>),
     /// and are tried again as any removed download's: a drive or a share that does not answer holds no sign-out up.
@@ -316,10 +341,11 @@ public sealed partial class DownloadStore
         {
             var removed = state.Downloads.Where(d => match(d.Record.Scope) && d.ClearsSeen < clearGeneration).ToList();
             var deletes = state.PendingDeletes.Where(d => !match(d.Scope) || d.ClearsSeen >= clearGeneration).ToList();
-            changed = removed.Count > 0 || deletes.Count != state.PendingDeletes.Count;
+            var waiting = state.Waiting.Where(w => !match(w.Scope) || w.ClearsSeen >= clearGeneration).ToList();
+            changed = removed.Count > 0 || deletes.Count != state.PendingDeletes.Count || waiting.Count != state.Waiting.Count;
             return changed
                 ? new Snapshot([.. state.Downloads.Except(removed)], deletes,
-                    [.. state.FolderDeletes, .. removed.Select(d => new FolderDelete(d.Record.Scope, d.Record.DownloadId, d.Folder))])
+                    [.. state.FolderDeletes, .. removed.Select(d => new FolderDelete(d.Record.Scope, d.Record.DownloadId, d.Folder))], waiting)
                 : state;
         });
         if (!changed)
@@ -420,7 +446,9 @@ public sealed partial class DownloadStore
                 {
                     if (FolderWork.IsCompleted)
                     {
-                        FolderWork = FolderWorkAsync();
+                        // On the thread pool, as LoadAsync starts its load: work that is done at once raises Changed, never
+                        // under this lock.
+                        FolderWork = Task.Run(() => FolderWorkAsync(), CancellationToken.None);
                     }
                 }
             }
@@ -603,9 +631,10 @@ public sealed partial class DownloadStore
     /// <summary>When a folder that could not be deleted is tried again, and how many tries in a row failed.</summary>
     private readonly record struct FolderRetry(DateTimeOffset At, int Failures);
 
+    // Waiting: the episodes waiting for the server's limit of downloads, every scope's, in line (DownloadStore.Waiting.cs).
     private sealed record Snapshot(IReadOnlyList<StoredDownload> Downloads, IReadOnlyList<PendingDelete> PendingDeletes,
-        IReadOnlyList<FolderDelete> FolderDeletes)
+        IReadOnlyList<FolderDelete> FolderDeletes, IReadOnlyList<WaitingEpisode> Waiting)
     {
-        public static readonly Snapshot Empty = new([], [], []);
+        public static readonly Snapshot Empty = new([], [], [], []);
     }
 }

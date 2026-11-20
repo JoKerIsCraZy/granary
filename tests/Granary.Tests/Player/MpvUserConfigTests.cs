@@ -16,6 +16,7 @@ public sealed class MpvUserConfigTests : IDisposable
     private readonly LogSink _logs = new();
     private readonly MpvConfigStatus _status = new();
     private readonly List<string> _files = [];
+    private readonly InMemoryPlaybackDevicePreferences _device = new();
 
     public void Dispose()
     {
@@ -47,7 +48,7 @@ public sealed class MpvUserConfigTests : IDisposable
             File.WriteAllText(Path.Combine(_directory, name), text);
         }
         return new MpvPlaybackEngine(new MpvEngineOptions { VideoOutput = output, ConfigDirectory = _directory },
-            _logs.For<MpvPlaybackEngine>(), null, _status);
+            _logs.For<MpvPlaybackEngine>(), null, _status, _device);
     }
 
     private bool Logged(string text) => _logs.Lines.Any(line => line.Contains(text, StringComparison.Ordinal));
@@ -103,6 +104,72 @@ public sealed class MpvUserConfigTests : IDisposable
         // keep-open, idle and vo; load-scripts=no is what Granary sets anyway.
         Assert.Equal(new MpvConfigState(MpvConfigUse.Used, "", 3), _status.Current);
         await PlaysAWav(engine);
+    }
+
+    [Fact]
+    public async Task WithoutAFile_AStreamPlaysWithThisPcsReadAheadBuffer_AndTheNextWithItsNewChoice()
+    {
+        using var engine = CreateEngine(config: null);
+        await using var server = new TinyHttpServer(200, "OK", WavFile.Sine(2), "audio/wav");
+
+        await Plays(engine, new MediaSource(server.Url("media.wav"), []));
+        Assert.Equal("yes", engine.Option("cache"));
+        Assert.Equal(MiB(384), Bytes(engine.Option("demuxer-max-bytes")));
+        Assert.Equal(MiB(64), Bytes(engine.Option("demuxer-max-back-bytes")));
+        Assert.Equal(120, double.Parse(engine.Option("demuxer-readahead-secs")!, CultureInfo.InvariantCulture));
+
+        _device.ReadAhead = ReadAheadBuffer.Gb2;
+        await Plays(engine, new MediaSource(server.Url("media.wav"), []));
+        Assert.Equal(MiB(2048), Bytes(engine.Option("demuxer-max-bytes")));
+        Assert.Equal(MiB(256), Bytes(engine.Option("demuxer-max-back-bytes")));
+    }
+
+    [Fact]
+    public async Task AFileOnThisPc_PlaysWithoutTheReadAheadBuffer()
+    {
+        _device.ReadAhead = ReadAheadBuffer.Gb2;
+        using var engine = CreateEngine(config: null);
+
+        await PlaysAWav(engine);
+
+        // mpv's own: no cache for a local file, and its default sizes.
+        Assert.Equal("auto", engine.Option("cache"));
+        Assert.Equal(MiB(150), Bytes(engine.Option("demuxer-max-bytes")));
+    }
+
+    [Fact]
+    public async Task WhatTheViewersMpvConfSetsOfTheBuffer_Wins_AndGranarySetsTheRest()
+    {
+        _device.ReadAhead = ReadAheadBuffer.Gb1;
+        using var engine = CreateEngine("demuxer-max-bytes=50MiB\n[extension.wav]\ndemuxer-max-back-bytes=10MiB\n");
+        await using var server = new TinyHttpServer(200, "OK", WavFile.Sine(2), "audio/wav");
+
+        await Plays(engine, new MediaSource(server.Url("media.wav"), []));
+
+        Assert.Equal(MiB(50), Bytes(engine.Option("demuxer-max-bytes")));
+        // Only in a profile, which applies as the file opens: still the file's.
+        Assert.Equal(MiB(10), Bytes(engine.Option("demuxer-max-back-bytes")));
+        Assert.Equal("yes", engine.Option("cache"));
+        Assert.Equal(120, double.Parse(engine.Option("demuxer-readahead-secs")!, CultureInfo.InvariantCulture));
+        Assert.True(Logged("mpv.conf sets demuxer-max-back-bytes, demuxer-max-bytes; Granary's read-ahead buffer leaves them to it"), _logs.All);
+    }
+
+    private static long MiB(long count) => count * 1024 * 1024;
+
+    // mpv writes a size in its own words, such as "384.000 MiB".
+    private static long Bytes(string? size)
+    {
+        Assert.NotNull(size);
+        string[] parts = size.Split(' ');
+        double number = double.Parse(parts[0], CultureInfo.InvariantCulture);
+        long unit = parts.Length == 1 ? 1 : parts[1] switch
+        {
+            "KiB" => 1024,
+            "MiB" => 1024 * 1024,
+            "GiB" => 1024 * 1024 * 1024,
+            _ => throw new FormatException(size),
+        };
+        return (long)Math.Round(number * unit);
     }
 
     [Fact]
@@ -306,7 +373,7 @@ public sealed class MpvUserConfigTests : IDisposable
 
     [Theory]
     [InlineData("input-commands=quit\ndeband=yes\n")]
-    [InlineData("deband=yes\n[protocol.file]\ninput-commands=quit\n")]
+    [InlineData("deband=yes\n[extension.wav]\ninput-commands=quit\n")]
     public void AFileThatRunsCommands_IsNotUsed(string config)
     {
         using var engine = CreateEngine(config);
@@ -486,7 +553,7 @@ public sealed class MpvUserConfigTests : IDisposable
     [InlineData("player-operation-mode=cplayer\nload-scripts=yes\n", "sets player-operation-mode")]
     [InlineData("[pseudo-gui]\nvo=gpu\n", "sets vo in its [pseudo-gui] profile")]
     [InlineData("[pseudo-gui]\nload-scripts=yes\n", "sets load-scripts, which Granary does not let mpv.conf change")]
-    [InlineData("[protocol.file]\ninput-commands=quit\n", "sets input-commands, which Granary does not let mpv.conf change")]
+    [InlineData("[extension.wav]\ninput-commands=quit\n", "sets input-commands, which Granary does not let mpv.conf change")]
     [InlineData("[protocol.http]\nlog-file=~~/mpv.log\n", "sets log-file, which Granary does not let mpv.conf change")]
     public void AnIncludeThatWouldUndoGranarysOptions_IsRefusedBeforeMpvStarts(string included, string reason)
     {
@@ -560,16 +627,29 @@ public sealed class MpvUserConfigTests : IDisposable
     {
         string wav = WavFile.WriteTemp(1.0);
         _files.Add(wav);
+        await Plays(engine, MediaSource.Local(wav));
+    }
+
+    private static async Task Plays(MpvPlaybackEngine engine, MediaSource source)
+    {
         var loaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        engine.StateChanged += (_, s) =>
+        long load = -1;
+        void OnState(object? sender, PlaybackSnapshot s)
         {
-            if (s.IsLoaded)
+            if (s.IsLoaded && s.LoadId == Volatile.Read(ref load))
             {
                 loaded.TrySetResult();
             }
-        };
-        engine.Load(MediaSource.Local(wav));
+        }
+        engine.StateChanged += OnState;
+        Volatile.Write(ref load, engine.Load(source));
+        // Loaded already, before the load's number was known here.
+        if (engine.Current is { IsLoaded: true } now && now.LoadId == load)
+        {
+            loaded.TrySetResult();
+        }
         await loaded.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        engine.StateChanged -= OnState;
     }
 
     // mpv applies a profile and reports its options on its own threads.

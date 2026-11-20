@@ -82,7 +82,18 @@ public static class SettingsSearch
     // Lower case, accents taken off, and every run of what is not a letter, digit or mark of any script made one space.
     internal static string Normalize(string text)
     {
-        string decomposed = text.ToLowerInvariant().Normalize(NormalizationForm.FormKD);
+        string lower = text.ToLowerInvariant();
+        string decomposed;
+        try
+        {
+            decomposed = lower.Normalize(NormalizationForm.FormKD);
+        }
+        catch (ArgumentException)
+        {
+            // A lone half of a surrogate pair, as an input method leaves it while it composes an emoji, is no character:
+            // it becomes U+FFFD, which is no letter either.
+            decomposed = Whole(lower).Normalize(NormalizationForm.FormKD);
+        }
         var normalized = new StringBuilder(decomposed.Length);
         bool gap = false;
         foreach (var rune in decomposed.EnumerateRunes())
@@ -105,6 +116,17 @@ public static class SettingsSearch
             normalized.Append(rune.ToString());
         }
         return normalized.ToString();
+    }
+
+    // The text with each lone half of a surrogate pair as U+FFFD, as reading it rune by rune gives it.
+    private static string Whole(string text)
+    {
+        var whole = new StringBuilder(text.Length);
+        foreach (var rune in text.EnumerateRunes())
+        {
+            whole.Append(rune.ToString());
+        }
+        return whole.ToString();
     }
 
     private static bool IsWordPart(UnicodeCategory category) => category is UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter

@@ -151,6 +151,13 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
     public static PlaybackSnapshot Frame(double seconds, bool paused = false) =>
         new(true, paused, TimeSpan.FromSeconds(seconds), TimeSpan.FromSeconds(7200), null, HasStarted: true);
 
+    /// <summary>Moves the clock on, and gives the work its timers start a moment to reach the scripted server.</summary>
+    public async Task AdvanceAsync(TimeSpan by)
+    {
+        Harness.Time.Advance(by);
+        await Task.Delay(50, Token);
+    }
+
     /// <summary>Lets the flush a record asked for run, and waits for it and for what it wrote.</summary>
     public async Task FlushedAsync()
     {

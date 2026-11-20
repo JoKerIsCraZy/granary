@@ -43,10 +43,16 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     public static string StartFailed => AppText.Get("web.downloads.versionPicker.startFailed");
 
     /// <summary>
-    /// The server refused for the account's limit of downloads (429): the web's words for that problem
-    /// (<c>error.rate_limited</c>).
+    /// The server refused a film or an episode for the account's limit of downloads (429 <c>rate_limited</c>): Granary's words,
+    /// which name that limit.
     /// </summary>
-    public static string RateLimited => AppText.Get("error.rate_limited");
+    public static string LimitReached => AppText.Get("granary.downloadOptions.limitReached");
+
+    /// <summary>
+    /// A season or a series past the server's limit of downloads: "Your Silo server's download limit is reached. 6 episodes wait
+    /// on this PC and start once the server allows more."
+    /// </summary>
+    public static string WaitingText(int count) => AppText.Get("granary.downloads.waitingForLimit", ("count", count));
 
     /// <summary>The web's words while a card's dialog reads its item (<c>web.item.menu.loadingDetails</c>).</summary>
     public static string LoadingDetails => AppText.Get("web.item.menu.loadingDetails");
@@ -75,6 +81,13 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     private readonly ILogger<DownloadOptionsViewModel> _logger;
     private readonly SeriesMonitors? _monitors;
     private readonly MonitorSchedule? _schedule;
+
+    // What the dialog offers, as given or read; the choices the viewer makes in it pick from it what Download starts.
+    private DownloadOffer? _offer;
+
+    // The profile active as the dialog opened, or as its last read of the offer began: Download starts for it, and sends
+    // nothing once another one is active.
+    private DownloadScope? _openedFor;
 
     private DownloadRequest? _title;
     private SeasonDownloadRequest? _season;
@@ -191,10 +204,18 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     public partial bool IsStarting { get; private set; }
 
     /// <summary>
+    /// What is chosen starts something: a film or an episode, or at least one episode of a season or a series. "Only unwatched
+    /// episodes" can leave none.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanStart))]
+    public partial bool HasSelection { get; private set; }
+
+    /// <summary>
     /// Download can be pressed: there is something to download, nothing is starting and the selection fits, as far as the free
     /// space is known yet.
     /// </summary>
-    public bool CanStart => IsMonitorChosen ? CanSaveMonitor : HasOffer && !IsStarting && !IsShortOfSpace;
+    public bool CanStart => IsMonitorChosen ? CanSaveMonitor : HasOffer && HasSelection && !IsStarting && !IsShortOfSpace;
 
     /// <summary>Why the last press of Download did not start it; empty when it did, or before.</summary>
     [ObservableProperty]
@@ -202,6 +223,19 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     public partial string ErrorText { get; private set; } = "";
 
     public bool HasError => ErrorText.Length > 0;
+
+    /// <summary>
+    /// What the last press of Download left waiting, as information rather than an error (<see cref="WaitingText"/>); empty when
+    /// nothing waits, or before.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNotice), nameof(CloseText))]
+    public partial string NoticeText { get; private set; } = "";
+
+    public bool HasNotice => NoticeText.Length > 0;
+
+    /// <summary>The dialog's other button: the web's Cancel, or Done once a press left episodes waiting, which stay as they are.</summary>
+    public string CloseText => HasNotice ? AppText.Get("common.done") : AppText.Get("common.cancel");
 
     /// <summary>The read of the free space this dialog started; done once <see cref="SpaceText"/> shows it.</summary>
     public Task SpaceRead { get; private set; } = Task.CompletedTask;
@@ -221,7 +255,14 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     public void ForSeason(SeasonDownloadRequest request, string seasonTitle, long knownBytes)
     {
         ArgumentNullException.ThrowIfNull(request);
-        Open(Take(new SeasonDownloadOffer(request, seasonTitle, knownBytes)));
+        ForSeason(new SeasonDownloadOffer(request, seasonTitle, knownBytes));
+    }
+
+    /// <summary>A season's episodes as its page offers them, one download each, with Only unwatched when one of them is watched.</summary>
+    public void ForSeason(SeasonDownloadOffer offer)
+    {
+        ArgumentNullException.ThrowIfNull(offer);
+        Open(Take(offer));
     }
 
     /// <summary>
@@ -234,6 +275,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(read);
         _read = read;
+        _offer = null;
         _title = null;
         _season = null;
         _series = null;
@@ -242,6 +284,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         Title = PlainTitle;
         Versions = [];
         HasOffer = false;
+        HasSelection = false;
         Open(null);
         SetUpMonitor(monitor, startsOnMonitor);
         Reading = ReadOfferAsync();
@@ -285,12 +328,15 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
                 _stopping = null;
             }
         }
-        if (IsStarting || (_title is null && _season is null && _series is null))
+        // Nothing chosen starts nothing: a season with every episode left watched and Only unwatched on would otherwise count
+        // as started with no create sent.
+        if (IsStarting || !HasSelection || (_title is null && _season is null && _series is null))
         {
             return false;
         }
         IsStarting = true;
         ErrorText = "";
+        NoticeText = "";
         using var stopping = new CancellationTokenSource();
         _stopping = stopping;
         try
@@ -308,7 +354,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             {
                 return false;
             }
-            StartOutcome outcome;
+            (StartOutcome Kind, int Waiting) outcome;
             try
             {
                 outcome = await StartSelectionAsync(stopping.Token);
@@ -317,20 +363,22 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             {
                 // Whatever went wrong, the dialog says it did not start, and Download can be pressed again.
                 _logger.LogWarning("A download could not be started ({Failure})", DownloadLog.Failure(ex));
-                outcome = StartOutcome.Failed;
+                outcome = (StartOutcome.Failed, 0);
             }
             await _dispatcher.ResumeOnUi();
             if (stopping.IsCancellationRequested)
             {
                 return true;
             }
-            ErrorText = outcome switch
+            ErrorText = outcome.Kind switch
             {
                 StartOutcome.Failed => StartFailed,
-                StartOutcome.Limited => RateLimited,
+                StartOutcome.Limited => LimitReached,
                 _ => "",
             };
-            return outcome == StartOutcome.Started;
+            // The dialog stays to say what waits; Done closes it, and they wait all the same.
+            NoticeText = outcome.Waiting > 0 ? WaitingText(outcome.Waiting) : "";
+            return outcome.Kind == StartOutcome.Started;
         }
         finally
         {
@@ -359,9 +407,27 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         ShowSize();
     }
 
-    // What the offer downloads, its title and files; answers the version to choose first, none for a season or a series.
+    // What the offer downloads as the viewer's choices take it, its title and files; answers the version to choose first, none
+    // for a season or a series.
     private DownloadVersionRow? Take(DownloadOffer offer)
     {
+        _offer = offer;
+        ShowRows(offer);
+        return Choose();
+    }
+
+    // The offer as the choices take it (DownloadOptionsViewModel.Episodes.cs), shown: its title, files and whether it starts
+    // anything. Answers the version to choose first, none for a season or a series.
+    private DownloadVersionRow? Choose()
+    {
+        var offer = Chosen();
+        HasSelection = offer switch
+        {
+            TitleDownloadOffer => ChosenRowIsAvailable(),
+            SeasonDownloadOffer season => season.Request.Episodes.Count > 0,
+            SeriesDownloadOffer series => series.Request.EpisodeCount > 0,
+            _ => false,
+        };
         _title = (offer as TitleDownloadOffer)?.Request;
         _season = (offer as SeasonDownloadOffer)?.Request;
         _series = (offer as SeriesDownloadOffer)?.Request;
@@ -380,10 +446,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
                 HasOffer = true;
                 return title.Versions.FirstOrDefault(v => v.FileId == title.Request.MediaFileId) ?? title.Versions.FirstOrDefault();
             case SeasonDownloadOffer season:
-                string name = string.IsNullOrWhiteSpace(season.SeasonTitle)
-                    ? AppText.Get("web.detail.seasons.numbered", ("season", season.Request.SeasonNumber))
-                    : season.SeasonTitle.Trim();
-                Title = TitleWithName($"{season.Request.SeriesTitle} · {name}");
+                Title = TitleWithName($"{season.Request.SeriesTitle} · {SeasonName(season.Request.SeasonNumber, season.SeasonTitle)}");
                 Versions = [];
                 HasOffer = true;
                 return null;
@@ -407,6 +470,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         {
             return;
         }
+        // Each read is for the profile active as it begins, and so is Download: Try Again after a switch of profile reads, and
+        // downloads, for the new one.
+        _openedFor = _downloads.ActiveScope;
         StopReading();
         var reading = new CancellationTokenSource();
         _reading = reading;
@@ -466,6 +532,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         var version = Take(offer);
         if (offer is SeriesDownloadOffer series)
         {
+            // Every season left, whatever Only unwatched leaves out of a one-time download.
             NoteSeasons(series.Request);
         }
         DescriptionText = Description;
@@ -476,6 +543,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     // The rows as the dialog opens: the server's qualities with the viewer's default chosen, the size, and a fresh read of the space.
     private void Open(DownloadVersionRow? version)
     {
+        _openedFor = _downloads.ActiveScope;
         ErrorText = "";
         var options = OfferedQualities();
         _options = options.ToDictionary(o => o.Preset, StringComparer.Ordinal);
@@ -594,43 +662,49 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             : AppText.Get("granary.downloadOptions.freeSpace", ("free", Size(free)));
     }
 
-    // What a press of Download came to.
+    // What a press of Download came to. Waiting: started as far as the server's limit of downloads let it, the rest waiting.
     private enum StartOutcome
     {
         Started,
         Failed,
         Limited,
+        Waiting,
     }
 
     // A season's or a series' run stops between two episodes once the viewer stops it; a film's or an episode's one create is
-    // never cut off.
-    private async Task<StartOutcome> StartSelectionAsync(CancellationToken stopping)
+    // never cut off. Each is for the profile the dialog was opened in: another one active by now (or none then) sends nothing.
+    private async Task<(StartOutcome Kind, int Waiting)> StartSelectionAsync(CancellationToken stopping)
     {
+        if (_openedFor is not { } scope)
+        {
+            return (StartOutcome.Failed, 0);
+        }
         string quality = SelectedQuality?.Preset ?? DownloadQualities.Original;
         if (_season is { } season)
         {
-            var result = await _downloads.StartSeasonAsync(season with { Quality = quality }, stopping).ConfigureAwait(false);
+            var result = await _downloads.StartSeasonAsync(season with { Quality = quality }, scope, stopping).ConfigureAwait(false);
             // A season cut short (another profile took over) counts none of the episodes after that: it did not all start.
             return OutcomeOf(result, season.Episodes.Count);
         }
         if (_series is { } series)
         {
-            var result = await _downloads.StartSeriesAsync(series with { Quality = quality }, stopping).ConfigureAwait(false);
+            var result = await _downloads.StartSeriesAsync(series with { Quality = quality }, scope, stopping).ConfigureAwait(false);
             return OutcomeOf(result, series.EpisodeCount);
         }
         var request = _title! with { MediaFileId = SelectedVersion?.FileId ?? _title.MediaFileId, Quality = quality };
-        return await _downloads.StartAsync(request, CancellationToken.None).ConfigureAwait(false) switch
+        return (await _downloads.StartAsync(request, scope, CancellationToken.None).ConfigureAwait(false) switch
         {
             DownloadStartResult.Started or DownloadStartResult.AlreadyDownloading => StartOutcome.Started,
             DownloadStartResult.Limited => StartOutcome.Limited,
             _ => StartOutcome.Failed,
-        };
+        }, 0);
     }
 
-    private static StartOutcome OutcomeOf(SeasonStartResult result, int episodes) =>
-        result.ReachedLimit ? StartOutcome.Limited
-        : result.Failed == 0 && result.Started + result.AlreadyThere == episodes ? StartOutcome.Started
-        : StartOutcome.Failed;
+    // A season or a series the server's limit stopped waits for the rest (the run kept them), unless another episode failed.
+    private static (StartOutcome Kind, int Waiting) OutcomeOf(SeasonStartResult result, int episodes) =>
+        result.ReachedLimit
+            ? (result.Waiting == 0 ? StartOutcome.Limited : result.Failed == 0 ? StartOutcome.Waiting : StartOutcome.Failed, result.Waiting)
+            : (result.Failed == 0 && result.Started + result.AlreadyThere == episodes ? StartOutcome.Started : StartOutcome.Failed, 0);
 
     // The web's "Download: {title}".
     private static string TitleWithName(string title) => AppText.Get("web.downloads.versionPicker.titleWithName", ("title", title));

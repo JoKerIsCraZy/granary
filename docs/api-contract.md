@@ -608,6 +608,7 @@ Profile and device settings live on the server (manifest
 | `ui.title_art` | profile, profile_device (the profile's wins) | `true`, or the administrator's | a title's page names it with its logo ([6.6.4](#664-title-pages)) |
 | `ui.theme_music_enabled`, `ui.theme_music_loop` | profile, profile_device | `false`, `false` | title pages' theme music ([6.6.4](#664-title-pages), [7.19](#719-theme-music)) |
 | `ui.app_language` | profile, profile_device (resolved device, profile, default) | `null` (follow the device) | the language Granary starts in ([6.6.5](#665-app-language)) |
+| `ui.date_format`, `ui.time_format` | profile | `auto`, `auto` | how dates and times are written ([6.6.6](#666-date-and-time-formats)) |
 
 #### 6.6.1 Card badges
 
@@ -724,6 +725,20 @@ acts as if it were `null`.
   effective value, as the profile's may have changed since. Both go out as the profile the choice was made for
   (`SettingsApi.SetValueAsProfileAsync`, `ClearValueAsProfileAsync`). A stored tag Granary does not offer is shown, not
   rewritten.
+
+#### 6.6.6 Date and time formats
+
+`ui.date_format` (`auto`, `DD/MM/YYYY`, `MM/DD/YYYY`, `YYYY-MM-DD`) and `ui.time_format` (`auto`, `12h`, `24h`): enums of
+the profile alone (settings manifest, `scopes: ["profile"]`), default `auto`. A value Granary does not know reads as
+`auto`, as the web parses it (`lib/datetime.ts`).
+
+- Read: both effective values in one request, with the app language's reads: at sign-in, with every server or profile,
+  and each time Settings → Accessibility shows. They apply at once and are kept on this PC for the next start. A read
+  that fails keeps the formats in use; a server that knows neither key (each `422`) offers no choice.
+- Write (Settings → Accessibility → Date & time, as the web's `DateTimeFormatProvider`): `PUT …/ui.date_format?scope=profile`
+  or `…/ui.time_format?scope=profile` with the value, applied before it lands; a refused write goes back to what the
+  server has and reads the values again. Each goes out as the profile it was made for (`SettingsApi.SetValueAsProfileAsync`).
+  The values carry no version, so the writes send no `If-Match`.
 
 ### 6.7 Managing the household's profiles
 
@@ -2587,6 +2602,14 @@ presigned S3 URL. Refetch after `expires_at`. Thumbnail `i` is on sheet
 `i / (cols·rows)`, column `i % cols`, row `(i % (cols·rows)) / cols`
 (`silo-server/internal/apiv2/watch_trickplay.go:60-110`). Android does not implement trickplay.
 
+A download (14) reads the previews of its manifest's `media_file_id` with the same request while the server answers and
+the watch detail lists that file with `trickplay_available`, bound to the download's account and profile as its watch
+detail is (`WatchApi.GetTrickplayAsAccountProfileAsync`; refused unsent once another acts, `ProfileChangedException`). The
+id names the catalog file the download was made from, also for a remuxed or transcoded copy, whose timeline is the same
+(the server's `prepare_file.go` cuts nothing). The same read, with the download's assets, keeps the set in the download's
+folder: every sheet is fetched once, without credentials, and the set is read from the disk from then on, also offline
+(docs/architecture.md, "Assets"). A `404` there means the file has none.
+
 ## 12. Realtime events
 
 `/api/v2/events/ws` keeps Home and detail views fresh; a minimal client can skip it and refetch on
@@ -3043,7 +3066,12 @@ signup, invitations, setup wizard, audiobooks, ebooks, watch together, admin.
 Granary keeps films and episodes on the PC as the server's **managed downloads**: every request carries
 `X-Silo-Device-Id` and `X-Profile-Id` (6.4), so each entry belongs to one account, profile and PC. Every call goes through
 `Api/Downloads/DownloadsApi`, bound to the profile its download belongs to (`SiloRequestOptions.Profile`): while the server
-acts as another profile, the request is not sent (`ProfileChangedException`). Problems follow 2.2; the downloads ones Granary
+acts as another profile, the request is not sent (`ProfileChangedException`). Every call about an entry (create, registry
+read, status event, prepare again, delete, manifest, artwork and subtitles, file) is bound to its account as well
+(`SiloRequestOptions.Account`, the `*AsAccountProfileAsync` calls of `SiloHttp`), so none made for an account goes out under
+another signed in on the same server, also with a profile of the same id: a registry read after an uncertain create could
+otherwise take another account's entry as this one's. Only the capability (14.1), which names no entry, goes as the
+profile alone. Problems follow 2.2; the downloads ones Granary
 branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCodes`). Sources:
 `silo-server/docs/downloads-api.md` (sections 3 to 6, 9 and 12), `silo-server/internal/apiv2/download_*.go`.
 
@@ -3083,14 +3111,23 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   `revision` from the registry and `expected_download_id` to its `id`, which reuses, revives or replaces it; a second 409,
   or no clear answer, fails without a third. An answer whose item is another title is a failure. 403, 404, 501, or an
   episode in `skipped`, means the profile cannot download it.
-  A 429 or another client error fails it. A season is one single-item request per episode, in order, for the episodes the
-  PC does not have, and so is a whole series, season after season (the specials last), its episodes read through 7.7
+  A 429 or another client error fails it (for a film or an episode alone; a season's 429 `rate_limited`, below). A season
+  is one single-item request per episode, in order, for the episodes the PC does not have or keep waiting, and so is a whole series, season after season (the specials last), its episodes read through 7.7
   (`/series/{id}/seasons`, then each season's `/episodes`). Silo's apps send a series as the server's batch (`series:
   true` with a `batch_id`, followed by `page.next_cursor`); Granary does not send `series`, `season_number`, `batch_id` or
-  `expected_entries`, so every episode asks for the file the dialog counted and gets the guards above. A 429
-  (`rate_limited`: the account's limit of downloads at once or in a period, `silo-server/internal/downloads/limiter.go`),
-  to a create or its revival, stops a season or a series there: the creates after it would be refused alike. A 403, 404
-  or 501 for one episode does not: the server's batch skips such an episode and goes on.
+  `expected_entries`, so every episode asks for the file the dialog counted and gets the guards above. A 429 with the
+  problem code `rate_limited` (the account's limit of downloads at once or in a period, `QuantityLimiter` in
+  `silo-server/internal/downloads/limiter.go`), to a create or its revival, stops a season or a series there: the creates
+  after it would be refused alike, so that episode and the ones after it wait on this PC and are created later, one at a
+  time (docs/architecture.md, "Waiting episodes"). The problem says neither which limit nor when (its `detail` differs,
+  but is not branched on), carries no `Retry-After` and no extension, and the capability lists no limits. Of a device's
+  entries only a `preparing` one holds a place of the limit at once (`concurrentSlotPredicate` in `downloads/repo.go`): an
+  original, or a preset whose file is ready, registers `ready` and counts toward the period alone, which only time frees
+  (`CountByUserSince` leaves out `cancelled` and `failed` entries). A device's `DELETE` drops its entry
+  (`deleteManagedSQL`), which then counts toward neither limit. A 429 with another code (a proxy's) fails the create. A
+  waiting episode's create refused with a 4xx the server would give again (all but 401, 408, 409, 425 and 429; 403, 404 and
+  501 as above) leaves the line; a `Retry-After` is kept to 30 minutes.
+  A 403, 404 or 501 for one episode does not stop a season: the server's batch skips such an episode and goes on.
 
 ### 14.3 Registry and status events
 
@@ -3145,7 +3182,9 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   `series_title`, `season_number`, `episode_number`, `poster_thumbhash`, `backdrop_thumbhash`, `series_poster_thumbhash`,
   `artwork_urls { poster, backdrop, logo, series_poster }`, `container`, `duration_seconds`, `selected_audio_track_index`,
   `audio_tracks [{ index, title, language, codec, layout, channels, default }]`, `chapters [{ index, title, start_seconds,
-  end_seconds }]`, `marker_segments [{ kind, start_seconds, end_seconds }]`, `subtitles [{ language, title, format, forced,
+  end_seconds, thumbnail_thumbhash }]` (the hash only for the blur in the Chapters menu; the manifest has no chapter
+  picture, so while the server answers the watch detail's `thumbnail_url` of the same chapter of the `media_file_id`
+  file is shown over it, 7.8), `marker_segments [{ kind, start_seconds, end_seconds }]`, `subtitles [{ language, title, format, forced,
   hearing_impaired, external, fetch_url, file_size, revision }]`, `integrity { expected_bytes, media_file_hash }` and
   `manifest_version` (3).
 - `GET /api/v2/downloads/{id}/artwork/{kind}` (`poster`, `backdrop`, `logo`, `series_poster`) and

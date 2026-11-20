@@ -342,7 +342,13 @@ public sealed class CardDownloadsTests : IAsyncDisposable
     {
         Creates(Created(DownloadPayloads.Entry("dl_5", "ready", episodeId: "ep_5")), Created(DownloadPayloads.Entry("dl_21", "ready", episodeId: "ep_21")),
             Created(DownloadPayloads.Entry("dl_s1", "ready", episodeId: "sp_1")));
-        PressDownloadOnceRead();
+        _dialog.WhileShown = async options =>
+        {
+            await options.Reading;
+            // The dialog opens on the episode the series plays next, or the first row that can be chosen; every episode is its last.
+            options.SelectedOneTimeRow = options.OneTimeRows.Single(r => r.Choice == OneTimeChoice.AllEpisodes);
+            await options.StartAsync();
+        };
         await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_1");
         var cards = await CardsAsync();
 

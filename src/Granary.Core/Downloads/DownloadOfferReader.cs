@@ -76,7 +76,7 @@ public sealed class DownloadOfferReader(CatalogApi catalog, ISessionManager sess
         {
             return new NoDownloadOffer(DownloadOffers.NoFiles);
         }
-        return (DownloadOffer?)DownloadOffers.ForSeries(series, seriesId, seasons, id => downloads.ForItem(id) is not null)
+        return (DownloadOffer?)DownloadOffers.ForSeries(series, seriesId, seasons, IsOnItsWay)
             ?? new NoDownloadOffer(DownloadOffers.SeriesOnThisPc);
     }
 
@@ -87,9 +87,12 @@ public sealed class DownloadOfferReader(CatalogApi catalog, ISessionManager sess
         {
             return new NoDownloadOffer(DownloadOffers.NoFiles);
         }
-        return (DownloadOffer?)DownloadOffers.ForSeason(season, episodes, id => downloads.ForItem(id) is not null)
+        return (DownloadOffer?)DownloadOffers.ForSeason(season, episodes, IsOnItsWay)
             ?? new NoDownloadOffer(season.SeriesId is { Length: > 0 } && season.SeasonNumber is not null ? DownloadOffers.SeasonOnThisPc : DownloadOffers.NoFiles);
     }
+
+    // On this PC, coming, or waiting for the server's limit of downloads: not offered again.
+    private bool IsOnItsWay(string mediaItemId) => downloads.ForItem(mediaItemId) is not null || downloads.IsWaiting(mediaItemId);
 
     // An answer that came after another server, account or profile became the active one is dropped.
     private void StillFor(DownloadScope? scope)

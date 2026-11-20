@@ -107,12 +107,6 @@
       "value": "Erneut versuchen"
     }
   ],
-  "error.rate_limited": [
-    {
-      "type": 0,
-      "value": "Zu viele Anfragen. Warte kurz und versuche es erneut."
-    }
-  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 0,
@@ -955,6 +949,12 @@
       "value": "Sprache der Menüs, Schaltflächen und Meldungen der App. Unabhängig von den Sprachen für Audio, Untertitel und Metadaten."
     }
   ],
+  "settingsManifest.ui.date_format.option.auto": [
+    {
+      "type": 0,
+      "value": "Wie Gerät"
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -977,6 +977,12 @@
     {
       "type": 0,
       "value": "Titelmusik wiederholen"
+    }
+  ],
+  "settingsManifest.ui.time_format.option.auto": [
+    {
+      "type": 0,
+      "value": "Wie Gerät"
     }
   ],
   "settingsManifest.ui.title_art.label": [
@@ -14619,6 +14625,50 @@
       "value": "App-Sprache konnte nicht gespeichert werden"
     }
   ],
+  "web.settings.accessibility.dateFormat": [
+    {
+      "type": 0,
+      "value": "Datumsformat"
+    }
+  ],
+  "web.settings.accessibility.dateTimeDescription": [
+    {
+      "type": 0,
+      "value": "Wähle, wie Datum und Uhrzeit in der App angezeigt werden. Wird für das aktive Profil gespeichert."
+    }
+  ],
+  "web.settings.accessibility.dateTimePreview": [
+    {
+      "type": 0,
+      "value": "Vorschau: "
+    },
+    {
+      "type": 1,
+      "value": "short"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "medium"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.settings.accessibility.dateTimeTitle": [
+    {
+      "type": 0,
+      "value": "Datum & Uhrzeit"
+    }
+  ],
   "web.settings.accessibility.languageTitle": [
     {
       "type": 0,
@@ -14629,6 +14679,24 @@
     {
       "type": 0,
       "value": "Wie Gerät"
+    }
+  ],
+  "web.settings.accessibility.time12h": [
+    {
+      "type": 0,
+      "value": "12 Stunden"
+    }
+  ],
+  "web.settings.accessibility.time24h": [
+    {
+      "type": 0,
+      "value": "24 Stunden"
+    }
+  ],
+  "web.settings.accessibility.timeFormat": [
+    {
+      "type": 0,
+      "value": "Uhrzeitformat"
     }
   ],
   "web.settings.accessibility.title": [

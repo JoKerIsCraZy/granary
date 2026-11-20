@@ -30,8 +30,8 @@ public enum DownloadStartResult
     Failed,
 
     /// <summary>
-    /// The server's limit of downloads for the account was reached (429): it refuses every create until downloads finish or
-    /// time passes, so a season or a series asks for none after it.
+    /// The server's limit of downloads for the account was reached (429 <c>rate_limited</c>): it refuses every create until a
+    /// download it prepares is ready or time passes, so a season or a series keeps the rest waiting.
     /// </summary>
     Limited,
 }
@@ -52,10 +52,11 @@ public sealed record SeriesDownloadRequest(string SeriesId, string SeriesTitle, 
 public sealed record SeriesSeason(int SeasonNumber, IReadOnlyList<SeasonEpisode> Episodes);
 
 /// <summary>
-/// How many episodes of a season or a series started, were there already, or could not start; <paramref name="ReachedLimit"/>:
-/// the server's limit of downloads stopped it (<see cref="DownloadStartResult.Limited"/>).
+/// How many episodes of a season or a series started, were there already (or waiting already), or could not start;
+/// <paramref name="ReachedLimit"/>: the server's limit of downloads refused one (<see cref="DownloadStartResult.Limited"/>);
+/// <paramref name="Waiting"/>: how many of them, that one on, wait on this PC for the limit (<see cref="WaitingEpisode"/>).
 /// </summary>
-public sealed record SeasonStartResult(int Started, int AlreadyThere, int Failed, bool ReachedLimit = false);
+public sealed record SeasonStartResult(int Started, int AlreadyThere, int Failed, bool ReachedLimit = false, int Waiting = 0);
 
 /// <summary>
 /// What <see cref="DownloadManager.Changed"/> carries when only a transfer went further: the download it is, so a page can show
@@ -112,6 +113,11 @@ public sealed partial class DownloadManager
         // "Paused · metered connection" comes and goes with the link and Settings → Downloads.
         queue.ConditionsChanged += OnChanged;
         feature.PropertyChanged += OnFeatureChanged;
+        // The episodes waiting for the server's limit of downloads: asked again as places free or the profile comes, and once now
+        // when the store is read already (DownloadManager.Waiting.cs).
+        store.Changed += OnStoreChangedForWaiting;
+        session.Changed += OnSessionChangedForWaiting;
+        OnStoreChangedForWaiting(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -143,6 +149,17 @@ public sealed partial class DownloadManager
             var holds = _queue.HoldsOf(scope);
             return [.. _store.In(scope).OrderByDescending(d => d.Record.CreatedAt).Select(d => ItemOf(d, waits, holds.GetValueOrDefault(d.Record.DownloadId)))];
         }
+    }
+
+    /// <summary>
+    /// The ids of <paramref name="scope"/>'s downloads, of the series <paramref name="seriesId"/> alone when given, also when
+    /// another profile is active now: what a delete the viewer said yes to reads again in the profile it was asked in.
+    /// </summary>
+    public IReadOnlyList<string> DownloadIdsIn(DownloadScope scope, string? seriesId = null)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        return [.. _store.In(scope).Where(d => seriesId is null || string.Equals(d.Record.SeriesId, seriesId, StringComparison.Ordinal))
+            .Select(d => d.Record.DownloadId)];
     }
 
     /// <summary>The active profile's download of a film or an episode, by its own id.</summary>

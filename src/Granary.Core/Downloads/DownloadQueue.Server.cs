@@ -182,7 +182,7 @@ public sealed partial class DownloadQueue
         {
             for (int page = 0; page < MaxPages; page++)
             {
-                var read = await _api.ListAsync(server, scope.ProfileId, cursor, cancellationToken).ConfigureAwait(false);
+                var read = await _api.ListAsync(server, scope.AccountId, scope.ProfileId, cursor, cancellationToken).ConfigureAwait(false);
                 foreach (var entry in read.Items)
                 {
                     entries.TryAdd(entry.Id, entry);
@@ -452,6 +452,8 @@ public sealed partial class DownloadQueue
                     ArtworkFiles = fetched.ArtworkFiles,
                     SubtitleRevisions = fetched.SubtitleRevisions,
                 }).ConfigureAwait(false);
+                // Then the seek-bar previews, within their own deadline; what does not come is tried at the next refresh.
+                await _assets.FetchPreviewsAsync(server, download, refresh.Token).ConfigureAwait(false);
             }
             catch (ManifestRevisionException)
             {
@@ -490,7 +492,7 @@ public sealed partial class DownloadQueue
         {
             try
             {
-                await _api.PrepareAsync(run.Server, key.Scope.ProfileId, key.Id, stop).ConfigureAwait(false);
+                await _api.PrepareAsync(run.Server, key.Scope.AccountId, key.Scope.ProfileId, key.Id, stop).ConfigureAwait(false);
             }
             catch (Exception ex) when (IsServerFailure(ex, stop))
             {
@@ -548,7 +550,7 @@ public sealed partial class DownloadQueue
             }
             try
             {
-                await _api.DeleteAsync(server, scope.ProfileId, delete.DownloadId, stop).ConfigureAwait(false);
+                await _api.DeleteAsync(server, scope.AccountId, scope.ProfileId, delete.DownloadId, stop).ConfigureAwait(false);
             }
             catch (SiloApiException ex) when (IsFinal(ex))
             {

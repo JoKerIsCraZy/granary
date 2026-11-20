@@ -544,6 +544,7 @@
                                                             <Border Width="80" Height="48" CornerRadius="4" Background="#0FFFFFFF">
                                                                 <Grid>
                                                                     <FontIcon Glyph="&#xE714;" FontSize="16" Foreground="#33FFFFFF" />
+                                                                    <Image Source="{x:Bind controls:PlayerMenus.ChapterBlur(Thumbhash)}" Stretch="UniformToFill" />
                                                                     <Image Source="{x:Bind controls:PlayerMenus.ChapterThumbnail(Thumbnail)}" Stretch="UniformToFill" />
                                                                 </Grid>
                                                             </Border>
