@@ -405,14 +405,15 @@ public sealed class SiloHttp(HttpClient http)
         return request;
     }
 
-    // The acting profile binds the write as CreateAsProfile does; a lent one goes with the account's credentials and its own
-    // headers, which the authentication handler adds in place of the session's.
+    // The acting profile binds the write to itself and its account as CreateAsAccountProfile does; a lent one goes with the
+    // account's credentials and its own headers, which the authentication handler adds in place of the session's only while
+    // its account is signed in on its server.
     private static HttpRequestMessage CreateAsManager(HttpMethod method, Uri server, string path, ManagingProfile manager)
     {
         ArgumentNullException.ThrowIfNull(manager);
         if (!manager.IsLent)
         {
-            return CreateAsProfile(method, server, path, manager.ProfileId);
+            return CreateAsAccountProfile(method, server, path, manager.ProfileId, manager.AccountId);
         }
         var request = Create(method, server, path, SiloAuth.Account);
         request.SetLent(manager);

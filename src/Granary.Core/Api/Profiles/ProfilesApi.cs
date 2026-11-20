@@ -11,12 +11,6 @@ public sealed class ProfilesApi(SiloHttp http)
 {
     private const string ProfilesPath = "api/v2/profiles";
 
-    /// <summary>The largest picture the server takes for a profile (10 MiB).</summary>
-    public const int AvatarMaxBytes = 10 << 20;
-
-    /// <summary>The image types a profile's picture may be, as the web's upload field takes them.</summary>
-    public static IReadOnlyList<string> AvatarTypes { get; } = ["image/jpeg", "image/png", "image/webp"];
-
     public Task<ProfileCollection> ListAsync(Uri server, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, ProfilesPath, SiloAuth.Account, SiloJsonContext.Default.ProfileCollection, cancellationToken);
 
@@ -44,14 +38,17 @@ public sealed class ProfilesApi(SiloHttp http)
         http.SendAsManagerAsync(HttpMethod.Delete, server, PathOf(profileId), manager, cancellationToken);
 
     /// <summary>
-    /// Gives a profile a picture from an image file (one of <see cref="AvatarTypes"/>, at most <see cref="AvatarMaxBytes"/>);
-    /// the server makes its sizes. 503 when the server keeps no uploads.
+    /// Gives a profile a picture (<see cref="AvatarUpload"/>); the server makes its sizes. 503 when the server keeps no uploads.
+    /// A picture the server would refuse is not sent, and like every household write it goes out only as
+    /// <paramref name="manager"/>, while its account is signed in.
     /// </summary>
-    public async Task<Profile> UploadAvatarAsync(Uri server, string profileId, ReadOnlyMemory<byte> image, string fileName, string contentType,
+    /// <exception cref="AvatarRejectedException">The picture is too large or not a JPEG, PNG or WebP image; nothing was sent.</exception>
+    public async Task<Profile> UploadAvatarAsync(Uri server, string profileId, ReadOnlyMemory<byte> image, string fileName,
         ManagingProfile manager, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
+        ArgumentNullException.ThrowIfNull(manager);
+        string contentType = AvatarUpload.Check(image.Span);
         var part = new ReadOnlyMemoryContent(image);
         part.Headers.ContentType = new MediaTypeHeaderValue(contentType);
         using var form = new MultipartFormDataContent { { part, "avatar", fileName } };

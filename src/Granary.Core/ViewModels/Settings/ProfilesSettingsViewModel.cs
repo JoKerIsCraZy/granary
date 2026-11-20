@@ -25,8 +25,8 @@ public sealed partial class ProfilesSettingsViewModel : ObservableObject
     private readonly SidebarViewModel? _sidebar;
     private readonly ILogger<ProfilesSettingsViewModel> _logger;
 
-    // The server and acting profile the list was read for; a write goes out only while they still are.
-    private (ServerEntry Server, string ProfileId)? _target;
+    // The server, account and acting profile the list was read for; a write goes out only while they still are.
+    private (ServerEntry Server, string AccountId, string ProfileId)? _target;
     private int _load;
 
     public ProfilesSettingsViewModel(ProfilesApi profiles, ISessionManager session, IConfirmation confirmation, ILogger<ProfilesSettingsViewModel> logger,
@@ -78,7 +78,7 @@ public sealed partial class ProfilesSettingsViewModel : ObservableObject
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
         int load = ++_load;
-        if (_session is not { State: SessionState.Ready, ActiveServer: { } server, ProfileId: { } profileId })
+        if (_session is not { State: SessionState.Ready, ActiveServer: { } server, Account.Id: { } accountId, ProfileId: { } profileId })
         {
             _target = null;
             Show(null, null);
@@ -93,7 +93,7 @@ public sealed partial class ProfilesSettingsViewModel : ObservableObject
             {
                 return;
             }
-            _target = (server, profileId);
+            _target = (server, accountId, profileId);
             Show(household, server.BaseUri);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
@@ -143,7 +143,7 @@ public sealed partial class ProfilesSettingsViewModel : ObservableObject
         Status = "";
         try
         {
-            await _profiles.DeleteAsync(target.Server.BaseUri, row.Id, ManagingProfile.Acting(target.ProfileId));
+            await _profiles.DeleteAsync(target.Server.BaseUri, row.Id, ManagingProfile.Acting(target.AccountId, target.ProfileId));
             Status = AppText.Get("web.common.toast.profiles.deleted");
         }
         catch (SiloApiException ex) when (ex.Status == 404)
@@ -177,9 +177,9 @@ public sealed partial class ProfilesSettingsViewModel : ObservableObject
     }
 
     // The server and profile the list belongs to, while they are still the ones in use.
-    private (ServerEntry Server, string ProfileId)? Target() =>
+    private (ServerEntry Server, string AccountId, string ProfileId)? Target() =>
         _target is { } target && _session.State == SessionState.Ready && _session.ActiveServer?.Id == target.Server.Id
-            && _session.ProfileId == target.ProfileId
+            && _session.Account?.Id == target.AccountId && _session.ProfileId == target.ProfileId
             ? target
             : null;
 

@@ -47,6 +47,12 @@ public sealed class AuthenticationHandler(
             logger.LogInformation("A write made for another account's profile was not sent");
             throw new ProfileChangedException();
         }
+        if (request.GetLent() is { } lent && !MayLend(auth, server, session, lent))
+        {
+            // A lent profile's id and proof go only to its own server, as its own account, on an account request.
+            logger.LogInformation("A household write lent to another server or account was not sent");
+            throw new ProfileChangedException();
+        }
         if (server is null || session is null)
         {
             // Without credentials the server answers 401, and the caller gets exactly that.
@@ -98,6 +104,13 @@ public sealed class AuthenticationHandler(
                 return response;
         }
     }
+
+    // The server is only found for a URL beneath its base (SiloRequestOptions.GetServer).
+    private static bool MayLend(SiloAuth auth, ServerEntry? server, SessionCredentials? session, ManagingProfile lent) =>
+        auth == SiloAuth.Account
+        && server is not null
+        && lent.BelongsTo(server.BaseUri)
+        && session?.Account?.Id == lent.AccountId;
 
     private ServerEntry? FindServer(HttpRequestMessage request)
     {

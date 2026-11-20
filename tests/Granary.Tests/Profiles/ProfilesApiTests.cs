@@ -18,6 +18,9 @@ public sealed class ProfilesApiTests
          "allowed_library_ids": ["2", "5"], "max_playback_quality": "1080p"}
         """;
 
+    // A PNG's signature is all the client looks at; the server decodes the rest.
+    private static readonly byte[] Png = [0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0];
+
     private readonly ScriptedSilo _silo = new();
 
     private ProfilesApi Api => new(_silo.Http);
@@ -86,11 +89,11 @@ public sealed class ProfilesApiTests
             RequestsAllowed = false,
             LibraryRestrictionsEnabled = true,
             AllowedLibraryIds = ["2", "5"],
-        }, ManagingProfile.Acting("p-owner"), Ct);
+        }, ManagingProfile.Acting("1", "p-owner"), Ct);
 
         Assert.Equal("p-elena", created.Id);
         var sent = Assert.Single(_silo.Sent);
-        Assert.Equal((SiloAuth.Profile, "p-owner"), (sent.Auth, sent.AsProfile));
+        Assert.Equal((SiloAuth.Profile, "p-owner", "1"), (sent.Auth, sent.AsProfile, sent.AsAccount));
         Assert.Null(sent.Lent);
         Assert.Equal("""
             {"name":"Elena","avatar":"preset:dicebear:identicon:cosmic-otter","pin":"2580","is_child":true,"max_content_rating":"PG","requests_allowed":false,"library_restrictions_enabled":true,"allowed_library_ids":["2","5"]}
@@ -102,7 +105,7 @@ public sealed class ProfilesApiTests
     {
         _silo.On(HttpMethod.Post, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.Created, ElenaJson));
 
-        await Api.CreateAsync(ScriptedSilo.Base, new ProfileCreate("Elena"), ManagingProfile.Lent("p-owner", "pvt_owner"), Ct);
+        await Api.CreateAsync(ScriptedSilo.Base, new ProfileCreate("Elena"), ManagingProfile.Lent(ScriptedSilo.Base, "1", "p-owner", "pvt_owner"), Ct);
 
         var sent = Assert.Single(_silo.Sent);
         Assert.Equal(SiloAuth.Account, sent.Auth);
@@ -117,7 +120,7 @@ public sealed class ProfilesApiTests
         _silo.On(HttpMethod.Patch, ProfilesPath + "/p-elena", ScriptedSilo.Json(HttpStatusCode.OK, ElenaJson));
 
         await Api.UpdateAsync(ScriptedSilo.Base, "p-elena", new ProfileUpdate("Elena") { Avatar = Change<string>.Clear },
-            ManagingProfile.Acting("p-owner"), Ct);
+            ManagingProfile.Acting("1", "p-owner"), Ct);
 
         var sent = Assert.Single(_silo.Sent);
         Assert.Equal(HttpMethod.Patch, sent.Method);
@@ -144,14 +147,14 @@ public sealed class ProfilesApiTests
             MaxPlaybackQuality = "1080p",
             LibraryRestrictionsEnabled = true,
             AllowedLibraryIds = ["2"],
-        }, ManagingProfile.Acting("p-owner"), Ct);
+        }, ManagingProfile.Acting("1", "p-owner"), Ct);
         await Api.UpdateAsync(ScriptedSilo.Base, "p-elena", new ProfileUpdate("Elena")
         {
             Pin = Change<string>.Clear,
             MaxAdvisoryAge = Change<int>.Clear,
             RequireAdvisoryAge = false,
             RequestsAllowed = true,
-        }, ManagingProfile.Acting("p-owner"), Ct);
+        }, ManagingProfile.Acting("1", "p-owner"), Ct);
 
         Assert.Equal(
             [
@@ -166,7 +169,7 @@ public sealed class ProfilesApiTests
     {
         string create = new ProfileCreate("Elena") { Pin = "2580" }.ToString();
         string update = new ProfileUpdate("Elena") { Pin = Change<string>.To("2580") }.ToString();
-        string lent = ManagingProfile.Lent("p-owner", "pvt_secret").ToString();
+        string lent = ManagingProfile.Lent(ScriptedSilo.Base, "1", "p-owner", "pvt_secret").ToString();
 
         Assert.DoesNotContain("2580", create, StringComparison.Ordinal);
         Assert.DoesNotContain("2580", update, StringComparison.Ordinal);
@@ -178,7 +181,7 @@ public sealed class ProfilesApiTests
     [InlineData("p-owner", "pvt with space")]
     public void AProfileOrProofThatCannotBeSentBack_IsNotLent(string profileId, string? token)
     {
-        var error = Assert.Throws<HttpRequestException>(() => ManagingProfile.Lent(profileId, token));
+        var error = Assert.Throws<HttpRequestException>(() => ManagingProfile.Lent(ScriptedSilo.Base, "1", profileId, token));
 
         Assert.Equal(HttpRequestError.InvalidResponse, error.HttpRequestError);
     }
@@ -189,8 +192,8 @@ public sealed class ProfilesApiTests
         _silo.On(HttpMethod.Delete, ProfilesPath + "/p-elena", ScriptedSilo.NoContent());
         _silo.On(HttpMethod.Delete, ProfilesPath + "/p-elena/avatar", ScriptedSilo.NoContent());
 
-        await Api.DeleteAsync(ScriptedSilo.Base, "p-elena", ManagingProfile.Acting("p-owner"), Ct);
-        await Api.DeleteAvatarAsync(ScriptedSilo.Base, "p-elena", ManagingProfile.Acting("p-owner"), Ct);
+        await Api.DeleteAsync(ScriptedSilo.Base, "p-elena", ManagingProfile.Acting("1", "p-owner"), Ct);
+        await Api.DeleteAvatarAsync(ScriptedSilo.Base, "p-elena", ManagingProfile.Acting("1", "p-owner"), Ct);
 
         Assert.Equal(
             ["https://nas.example/silo/api/v2/profiles/p-elena", "https://nas.example/silo/api/v2/profiles/p-elena/avatar"],
@@ -203,8 +206,7 @@ public sealed class ProfilesApiTests
     {
         _silo.On(HttpMethod.Put, ProfilesPath + "/p-elena/avatar", ScriptedSilo.Json(HttpStatusCode.OK, ElenaJson));
 
-        await Api.UploadAvatarAsync(ScriptedSilo.Base, "p-elena", new byte[] { 1, 2, 3 }, "elena.png", "image/png",
-            ManagingProfile.Lent("p-owner", null), Ct);
+        await Api.UploadAvatarAsync(ScriptedSilo.Base, "p-elena", Png, "elena.png", ManagingProfile.Lent(ScriptedSilo.Base, "1", "p-owner", null), Ct);
 
         var sent = Assert.Single(_silo.Sent);
         Assert.Equal(HttpMethod.Put, sent.Method);
@@ -216,13 +218,71 @@ public sealed class ProfilesApiTests
     }
 
     [Fact]
+    public async Task APicture_TakesItsTypeFromItsBytes_NotItsName()
+    {
+        _silo.On(HttpMethod.Put, ProfilesPath + "/p-elena/avatar", ScriptedSilo.Json(HttpStatusCode.OK, ElenaJson));
+
+        await Api.UploadAvatarAsync(ScriptedSilo.Base, "p-elena", new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0, 0 }, "elena.png", ManagingProfile.Acting("1", "p-owner"), Ct);
+        await Api.UploadAvatarAsync(ScriptedSilo.Base, "p-elena", "RIFF\0\0\0\0WEBPVP8 "u8.ToArray(), "elena", ManagingProfile.Acting("1", "p-owner"), Ct);
+
+        Assert.Collection(_silo.Sent,
+            r => Assert.Contains("Content-Type: image/jpeg", r.Body, StringComparison.Ordinal),
+            r => Assert.Contains("Content-Type: image/webp", r.Body, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task APictureTheServerWouldRefuse_IsNotSent()
+    {
+        var manager = ManagingProfile.Acting("1", "p-owner");
+
+        var tooLarge = await Assert.ThrowsAsync<AvatarRejectedException>(() =>
+            Api.UploadAvatarAsync(ScriptedSilo.Base, "p-elena", Png.Concat(new byte[AvatarUpload.MaxBytes]).ToArray(), "big.png", manager, Ct));
+        var empty = await Assert.ThrowsAsync<AvatarRejectedException>(() =>
+            Api.UploadAvatarAsync(ScriptedSilo.Base, "p-elena", Array.Empty<byte>(), "empty.png", manager, Ct));
+        var notAnImage = await Assert.ThrowsAsync<AvatarRejectedException>(() =>
+            Api.UploadAvatarAsync(ScriptedSilo.Base, "p-elena", "GIF89a......"u8.ToArray(), "elena.png", manager, Ct));
+
+        Assert.Equal((AvatarProblem.TooLarge, AvatarProblem.TooLarge, AvatarProblem.NotAnImage), (tooLarge.Problem, empty.Problem, notAnImage.Problem));
+        Assert.Empty(_silo.Sent);
+    }
+
+    [Fact]
+    public async Task APictureOfTheLargestSize_IsSent()
+    {
+        _silo.On(HttpMethod.Put, ProfilesPath + "/p-elena/avatar", ScriptedSilo.Json(HttpStatusCode.OK, ElenaJson));
+        byte[] image = new byte[AvatarUpload.MaxBytes];
+        Png.CopyTo(image, 0);
+
+        await Api.UploadAvatarAsync(ScriptedSilo.Base, "p-elena", image, "elena.png", ManagingProfile.Acting("1", "p-owner"), Ct);
+
+        Assert.Single(_silo.Sent);
+    }
+
+    [Fact]
+    public async Task APicture_IsBoundToTheActingProfileAndItsAccount_AndASwitchMeanwhileSendsNothing()
+    {
+        _silo.On(HttpMethod.Put, ProfilesPath + "/p-elena/avatar", ScriptedSilo.Json(HttpStatusCode.OK, ElenaJson));
+        string account = "1";
+        _silo.ActingProfile = () => "p-owner";
+        _silo.ActingAccount = () => account;
+
+        await Api.UploadAvatarAsync(ScriptedSilo.Base, "p-elena", Png, "elena.png", ManagingProfile.Acting("1", "p-owner"), Ct);
+        account = "2";
+        await Assert.ThrowsAsync<ProfileChangedException>(() =>
+            Api.UploadAvatarAsync(ScriptedSilo.Base, "p-elena", Png, "elena.png", ManagingProfile.Acting("1", "p-owner"), Ct));
+
+        var sent = Assert.Single(_silo.Sent);
+        Assert.Equal((SiloAuth.Profile, "p-owner", "1"), (sent.Auth, sent.AsProfile, sent.AsAccount));
+    }
+
+    [Fact]
     public async Task TheLibrariesAProfileCanBeLimitedTo_IncludeTheOnesTheManagerHid()
     {
         _silo.On(HttpMethod.Get, "api/v2/user/libraries", ScriptedSilo.Json(HttpStatusCode.OK, """
             {"items": [{"id": "2", "name": "Movies", "type": "movies", "sort_order": 1}], "page": null}
             """));
 
-        var libraries = await Api.ListLibrariesAsync(ScriptedSilo.Base, ManagingProfile.Acting("p-owner"), Ct);
+        var libraries = await Api.ListLibrariesAsync(ScriptedSilo.Base, ManagingProfile.Acting("1", "p-owner"), Ct);
 
         Assert.Equal("Movies", Assert.Single(libraries.Items).Name);
         var sent = Assert.Single(_silo.Sent);

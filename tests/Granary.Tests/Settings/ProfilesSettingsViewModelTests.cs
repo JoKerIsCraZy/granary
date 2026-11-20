@@ -33,6 +33,7 @@ public sealed class ProfilesSettingsViewModelTests
     {
         State = SessionState.Ready,
         ActiveServer = ScriptedSilo.Server,
+        Account = new Granary.Core.Api.Auth.Account("1", "elena", "", "user", [], true, false, null),
         ProfileId = "p-owner",
     };
 

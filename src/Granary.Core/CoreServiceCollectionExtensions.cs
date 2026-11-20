@@ -462,8 +462,9 @@ public static class CoreServiceCollectionExtensions
         PooledConnectionLifetime = TimeSpan.FromMinutes(5),
     };
 
-    // Long-lived services keep their typed clients, so connections are recycled to follow DNS changes.
-    private static SocketsHttpHandler CreateSocketsHandler() =>
+    // Long-lived services keep their typed clients, so connections are recycled to follow DNS changes. No redirect is
+    // followed: the profile headers (a lent profile's proof among them) would go along to wherever it points.
+    internal static SocketsHttpHandler CreateSocketsHandler() =>
         new() { AllowAutoRedirect = false, PooledConnectionLifetime = TimeSpan.FromMinutes(5) };
 
     [SupportedOSPlatform("windows")]

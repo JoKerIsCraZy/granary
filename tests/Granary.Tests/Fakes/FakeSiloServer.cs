@@ -32,6 +32,9 @@ internal sealed class FakeSiloServer : HttpMessageHandler
     /// <summary>Answers a request itself when it returns a response; null falls through to the default behaviour.</summary>
     public Func<RecordedRequest, HttpResponseMessage?>? Intercept { get; set; }
 
+    /// <summary>Awaited before a request is answered, so a test can keep one in flight while others go out.</summary>
+    public Func<RecordedRequest, Task>? Hold { get; set; }
+
     public TimeSpan RefreshDelay { get; set; }
 
     public bool PasswordChangeRequired { get; set; }
@@ -62,6 +65,10 @@ internal sealed class FakeSiloServer : HttpMessageHandler
     {
         var recorded = await RecordedRequest.FromAsync(request, cancellationToken);
         Requests.Enqueue(recorded);
+        if (Hold?.Invoke(recorded) is { } held)
+        {
+            await held;
+        }
         if (Intercept?.Invoke(recorded) is { } intercepted)
         {
             return intercepted;
