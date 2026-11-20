@@ -2063,6 +2063,14 @@ web.profiles.helpers.access.noRequests
 web.profiles.helpers.access.quality
 web.profiles.helpers.advisoryAge.agesAndUnder
 web.profiles.helpers.advisoryAge.noLimit
+web.profiles.helpers.avatar.legacy.cometCat
+web.profiles.helpers.avatar.legacy.neonPup
+web.profiles.helpers.avatar.legacy.novaGecko
+web.profiles.helpers.avatar.legacy.orbitBunny
+web.profiles.helpers.avatar.legacy.pixelPenguin
+web.profiles.helpers.avatar.legacy.skyFox
+web.profiles.helpers.avatar.legacy.solarOwl
+web.profiles.helpers.avatar.legacy.starBear
 web.profiles.helpers.avatar.style.botttsNeutral.label
 web.profiles.helpers.avatar.style.botttsNeutral.summary
 web.profiles.helpers.avatar.style.funEmoji.label

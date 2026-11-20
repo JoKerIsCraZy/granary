@@ -17142,6 +17142,54 @@
       "value": "بلا حد"
     }
   ],
+  "web.profiles.helpers.avatar.legacy.cometCat": [
+    {
+      "type": 0,
+      "value": "قطة المذنّب"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.neonPup": [
+    {
+      "type": 0,
+      "value": "جرو النيون"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.novaGecko": [
+    {
+      "type": 0,
+      "value": "وزغة نوفا"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.orbitBunny": [
+    {
+      "type": 0,
+      "value": "أرنب المدار"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.pixelPenguin": [
+    {
+      "type": 0,
+      "value": "بطريق البكسل"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.skyFox": [
+    {
+      "type": 0,
+      "value": "ثعلب السماء"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.solarOwl": [
+    {
+      "type": 0,
+      "value": "البومة الشمسية"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.starBear": [
+    {
+      "type": 0,
+      "value": "دب النجوم"
+    }
+  ],
   "web.profiles.helpers.avatar.style.botttsNeutral.label": [
     {
       "type": 0,

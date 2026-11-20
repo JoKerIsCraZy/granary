@@ -14682,6 +14682,54 @@
       "value": "Sin límite"
     }
   ],
+  "web.profiles.helpers.avatar.legacy.cometCat": [
+    {
+      "type": 0,
+      "value": "Gato Cometa"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.neonPup": [
+    {
+      "type": 0,
+      "value": "Cachorro Neón"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.novaGecko": [
+    {
+      "type": 0,
+      "value": "Geco Nova"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.orbitBunny": [
+    {
+      "type": 0,
+      "value": "Conejito Órbita"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.pixelPenguin": [
+    {
+      "type": 0,
+      "value": "Pingüino Píxel"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.skyFox": [
+    {
+      "type": 0,
+      "value": "Zorro Celeste"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.solarOwl": [
+    {
+      "type": 0,
+      "value": "Búho Solar"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.starBear": [
+    {
+      "type": 0,
+      "value": "Oso Estelar"
+    }
+  ],
   "web.profiles.helpers.avatar.style.botttsNeutral.label": [
     {
       "type": 0,

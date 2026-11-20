@@ -12759,6 +12759,54 @@
       "value": "制限なし"
     }
   ],
+  "web.profiles.helpers.avatar.legacy.cometCat": [
+    {
+      "type": 0,
+      "value": "コメットキャット"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.neonPup": [
+    {
+      "type": 0,
+      "value": "ネオンパピー"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.novaGecko": [
+    {
+      "type": 0,
+      "value": "ノヴァゲッコー"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.orbitBunny": [
+    {
+      "type": 0,
+      "value": "オービットバニー"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.pixelPenguin": [
+    {
+      "type": 0,
+      "value": "ピクセルペンギン"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.skyFox": [
+    {
+      "type": 0,
+      "value": "スカイフォックス"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.solarOwl": [
+    {
+      "type": 0,
+      "value": "ソーラーアウル"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.starBear": [
+    {
+      "type": 0,
+      "value": "スターベア"
+    }
+  ],
   "web.profiles.helpers.avatar.style.botttsNeutral.label": [
     {
       "type": 0,
