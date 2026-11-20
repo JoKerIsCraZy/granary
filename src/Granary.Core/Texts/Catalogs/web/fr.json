@@ -107,12 +107,6 @@
       "value": "Réessayer"
     }
   ],
-  "error.rate_limited": [
-    {
-      "type": 0,
-      "value": "Trop de demandes. Patientez un instant et réessayez."
-    }
-  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 0,
@@ -947,6 +941,12 @@
       "value": "Langue des menus, boutons et messages de l’application. Distincte des langues de l’audio, des sous-titres et des métadonnées."
     }
   ],
+  "settingsManifest.ui.date_format.option.auto": [
+    {
+      "type": 0,
+      "value": "Identique à l’appareil"
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -969,6 +969,12 @@
     {
       "type": 0,
       "value": "Musique de générique en boucle"
+    }
+  ],
+  "settingsManifest.ui.time_format.option.auto": [
+    {
+      "type": 0,
+      "value": "Selon l’appareil"
     }
   ],
   "settingsManifest.ui.title_art.label": [
@@ -16949,6 +16955,50 @@
       "value": "Impossible d’enregistrer la langue de l’application"
     }
   ],
+  "web.settings.accessibility.dateFormat": [
+    {
+      "type": 0,
+      "value": "Format de date"
+    }
+  ],
+  "web.settings.accessibility.dateTimeDescription": [
+    {
+      "type": 0,
+      "value": "Choisissez l’affichage des dates et des heures dans toute l’application. Enregistré pour le profil actif."
+    }
+  ],
+  "web.settings.accessibility.dateTimePreview": [
+    {
+      "type": 0,
+      "value": "Aperçu : "
+    },
+    {
+      "type": 1,
+      "value": "short"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "medium"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.settings.accessibility.dateTimeTitle": [
+    {
+      "type": 0,
+      "value": "Date et heure"
+    }
+  ],
   "web.settings.accessibility.languageTitle": [
     {
       "type": 0,
@@ -16959,6 +17009,24 @@
     {
       "type": 0,
       "value": "Suivre l’appareil"
+    }
+  ],
+  "web.settings.accessibility.time12h": [
+    {
+      "type": 0,
+      "value": "12 heures"
+    }
+  ],
+  "web.settings.accessibility.time24h": [
+    {
+      "type": 0,
+      "value": "24 heures"
+    }
+  ],
+  "web.settings.accessibility.timeFormat": [
+    {
+      "type": 0,
+      "value": "Format de l’heure"
     }
   ],
   "web.settings.accessibility.title": [
@@ -18921,6 +18989,70 @@
     {
       "type": 0,
       "value": "Réinitialiser"
+    }
+  ],
+  "web.settings.search.clear": [
+    {
+      "type": 0,
+      "value": "Effacer la recherche dans les paramètres"
+    }
+  ],
+  "web.settings.search.matchCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " résultat"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de résultats"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " résultats"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.search.noMatches": [
+    {
+      "type": 0,
+      "value": "Aucun paramètre correspondant"
+    }
+  ],
+  "web.settings.search.placeholder": [
+    {
+      "type": 0,
+      "value": "Chercher un paramètre"
     }
   ],
   "web.settings.sessions.admin.empty": [

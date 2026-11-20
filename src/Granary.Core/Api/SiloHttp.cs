@@ -99,7 +99,7 @@ public sealed class SiloHttp(HttpClient http)
     public async Task<TResponse> SendAsAccountProfileAsync<TRequest, TResponse>(HttpMethod method, Uri server, string path, string accountId,
         string profileId, TRequest body, JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
     {
-        using var request = CreateAsProfile(method, server, path, profileId, accountId);
+        using var request = CreateAsAccountProfile(method, server, path, profileId, accountId);
         request.Content = JsonContent.Create(body, requestType);
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
     }
@@ -108,7 +108,7 @@ public sealed class SiloHttp(HttpClient http)
     public async Task SendAsAccountProfileAsync<TRequest>(HttpMethod method, Uri server, string path, string accountId, string profileId, TRequest body,
         JsonTypeInfo<TRequest> requestType, CancellationToken cancellationToken)
     {
-        using var request = CreateAsProfile(method, server, path, profileId, accountId);
+        using var request = CreateAsAccountProfile(method, server, path, profileId, accountId);
         request.Content = JsonContent.Create(body, requestType);
         using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
@@ -118,7 +118,7 @@ public sealed class SiloHttp(HttpClient http)
     public async Task SendAsAccountProfileAsync(HttpMethod method, Uri server, string path, string accountId, string profileId,
         CancellationToken cancellationToken)
     {
-        using var request = CreateAsProfile(method, server, path, profileId, accountId);
+        using var request = CreateAsAccountProfile(method, server, path, profileId, accountId);
         using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
     }
@@ -127,7 +127,15 @@ public sealed class SiloHttp(HttpClient http)
     public async Task<TResponse> GetAsAccountProfileAsync<TResponse>(Uri server, string path, string accountId, string profileId,
         JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
     {
-        using var request = CreateAsProfile(HttpMethod.Get, server, path, profileId, accountId);
+        using var request = CreateAsAccountProfile(HttpMethod.Get, server, path, profileId, accountId);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As the bodiless <c>SendAsProfileAsync</c> that answers JSON, bound to account <paramref name="accountId"/> as well.</summary>
+    public async Task<TResponse> SendAsAccountProfileAsync<TResponse>(HttpMethod method, Uri server, string path, string accountId, string profileId,
+        JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsAccountProfile(method, server, path, profileId, accountId);
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
     }
 
@@ -144,10 +152,22 @@ public sealed class SiloHttp(HttpClient http)
     /// headers are in, whatever its status, for the caller to read and dispose. <paramref name="range"/> asks for the rest of a
     /// file from an offset; <paramref name="ifNoneMatch"/> sends back the version kept, so an unchanged file answers 304.
     /// </summary>
-    public async Task<HttpResponseMessage> OpenAsProfileAsync(Uri server, string path, string profileId, ByteRange? range, string? ifNoneMatch,
-        CancellationToken cancellationToken)
+    public Task<HttpResponseMessage> OpenAsProfileAsync(Uri server, string path, string profileId, ByteRange? range, string? ifNoneMatch,
+        CancellationToken cancellationToken) =>
+        OpenAsAsync(server, path, null, profileId, range, ifNoneMatch, cancellationToken);
+
+    /// <summary>As <see cref="OpenAsProfileAsync"/>, bound to account <paramref name="accountId"/> as well.</summary>
+    public Task<HttpResponseMessage> OpenAsAccountProfileAsync(Uri server, string path, string accountId, string profileId, ByteRange? range,
+        string? ifNoneMatch, CancellationToken cancellationToken)
     {
-        using var request = CreateAsProfile(HttpMethod.Get, server, path, profileId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(accountId);
+        return OpenAsAsync(server, path, accountId, profileId, range, ifNoneMatch, cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> OpenAsAsync(Uri server, string path, string? accountId, string profileId, ByteRange? range,
+        string? ifNoneMatch, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(HttpMethod.Get, server, path, profileId, accountId);
         request.Headers.Accept.Clear();
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
         request.Headers.CacheControl = new CacheControlHeaderValue { NoStore = true };
@@ -296,7 +316,7 @@ public sealed class SiloHttp(HttpClient http)
         string profileId, string version, TRequest body, JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType,
         CancellationToken cancellationToken)
     {
-        using var request = CreateAsProfile(method, server, path, profileId, accountId);
+        using var request = CreateAsAccountProfile(method, server, path, profileId, accountId);
         IfMatch(request, version);
         request.Content = JsonContent.Create(body, requestType);
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
@@ -306,7 +326,7 @@ public sealed class SiloHttp(HttpClient http)
     public async Task SendIfMatchAsAccountProfileAsync(HttpMethod method, Uri server, string path, string accountId, string profileId, string version,
         CancellationToken cancellationToken)
     {
-        using var request = CreateAsProfile(method, server, path, profileId, accountId);
+        using var request = CreateAsAccountProfile(method, server, path, profileId, accountId);
         IfMatch(request, version);
         using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
@@ -335,6 +355,14 @@ public sealed class SiloHttp(HttpClient http)
         request.SetAuth(auth);
         request.SetServer(server);
         return request;
+    }
+
+    // Bound to account accountId's profile profileId. The account is required: a request meant for one account that went
+    // without it would be sent as whichever account is signed in now.
+    private static HttpRequestMessage CreateAsAccountProfile(HttpMethod method, Uri server, string path, string profileId, string accountId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(accountId);
+        return CreateAsProfile(method, server, path, profileId, accountId);
     }
 
     // Bound to the one profile it may be sent as (SiloRequestOptions.Profile), and to its account when one is named.

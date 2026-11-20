@@ -444,17 +444,37 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.Equal("", options.ErrorText);
     }
 
+    // Issue #166: the episodes past the server's limit wait on this PC, and the dialog says so as information, with Done.
     [Fact]
-    public async Task TheServersDownloadLimit_SaysSoInTheWebsWords()
+    public async Task TheServersDownloadLimit_KeepsTheRestWaiting_AndSaysSo()
     {
         Creates(Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1")), ScriptedSilo.Problem(429, ProblemCodes.RateLimited));
         var options = await OptionsAsync();
         options.ForSeason(Season, "Season 1", 6 * GB);
+        Assert.Equal("Cancel", options.CloseText);
 
         Assert.False(await options.StartAsync());
 
-        Assert.Equal("Too many requests. Wait a moment and try again.", options.ErrorText);
+        Assert.Equal(("", "Your Silo server's download limit is reached. 2 episodes wait on this PC and start once the server allows more.", "Done"),
+            (options.ErrorText, options.NoticeText, options.CloseText));
         Assert.Equal(["ep_1", "ep_2"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
+        Assert.Equal(["ep_2", "ep_3"], _h.Store.WaitingIn(Scope7).Select(w => w.EpisodeId));
+
+        // Pressed again, it sends nothing: every episode is here or waits.
+        Assert.True(await options.StartAsync());
+        Assert.Equal(2, CreateBodies().Count);
+    }
+
+    [Fact]
+    public async Task AFilmPastTheServersDownloadLimit_SaysSoInWordsThatNameIt()
+    {
+        Creates(ScriptedSilo.Problem(429, ProblemCodes.RateLimited));
+        var options = await ForTitleAsync(Movie, [OneFile]);
+
+        Assert.False(await options.StartAsync());
+
+        Assert.Equal(("Your Silo server's download limit is reached. Try again later.", ""), (options.ErrorText, options.NoticeText));
+        Assert.Equal(DownloadOptionsViewModel.LimitReached, options.ErrorText);
     }
 
     // A long season or series takes a while: Cancel stops it after the episode under way, whose download is kept, and the
@@ -476,5 +496,58 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.Equal(("", false), (options.ErrorText, options.IsStarting));
         Assert.Equal(["ep_1"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
         Assert.NotNull(_h.Find("dl_1"));
+    }
+    // Issue #173: the dialog downloads for the profile it was opened in. Another profile active by the time Download is pressed
+    // sends nothing, for a film as for a season, and the dialog says it did not start.
+    [Fact]
+    public async Task AProfileSwitchWhileATitlesDialogShows_SendsNoCreate()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready")));
+        var options = await ForTitleAsync(Movie, [OneFile]);
+
+        _h.SwitchProfile("8");
+
+        Assert.False(await options.StartAsync());
+        Assert.Empty(CreateBodies());
+        Assert.Equal(DownloadOptionsViewModel.StartFailed, options.ErrorText);
+        Assert.Empty(_h.Store.In(Scope8));
+    }
+
+    // Review of #179: a card's dialog whose read failed as the profile switched reads again with Try Again for the profile
+    // active then, and downloads for that one: the profile goes with the offer on screen.
+    [Fact]
+    public async Task TryAgainAfterAProfileSwitch_DownloadsForTheProfileItReadFor()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready")));
+        var options = await OptionsAsync();
+        int reads = 0;
+        options.ForReading(_ => ++reads == 1
+            ? Task.FromException<DownloadOffer>(new ProfileChangedException())
+            : Task.FromResult<DownloadOffer>(new TitleDownloadOffer(Movie, [OneFile], 7200)));
+        await options.Reading;
+        Assert.True(options.ReadFailed);
+
+        _h.SwitchProfile("8");
+        await options.TryAgainCommand.ExecuteAsync(null);
+        await options.SpaceRead;
+
+        Assert.True(await options.StartAsync());
+        Assert.Equal("8", _h.Silo.SentTo(HttpMethod.Post, CreatePath).Single().AsProfile);
+        Assert.NotNull(_h.Find("dl_1", Scope8));
+    }
+
+    [Fact]
+    public async Task AProfileSwitchWhileASeasonsDialogShows_SendsNoCreate()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1")));
+        var options = await OptionsAsync();
+        options.ForSeason(Season, "Season 1", 6 * GB);
+        await options.SpaceRead;
+
+        _h.SwitchProfile("8");
+
+        Assert.False(await options.StartAsync());
+        Assert.Empty(CreateBodies());
+        Assert.Empty(_h.Store.WaitingIn(Scope8));
     }
 }

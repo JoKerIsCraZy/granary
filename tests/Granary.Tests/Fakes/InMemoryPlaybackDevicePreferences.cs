@@ -20,6 +20,17 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         return Task.CompletedTask;
     }
 
+    public ReadAheadBuffer ReadAhead { get; set; }
+
+    public List<ReadAheadBuffer> SavedReadAhead { get; } = [];
+
+    public Task SetReadAheadAsync(ReadAheadBuffer readAhead)
+    {
+        ReadAhead = readAhead;
+        SavedReadAhead.Add(readAhead);
+        return Task.CompletedTask;
+    }
+
     public bool TimeLeft { get; set; }
 
     public List<bool> SavedTimeLeft { get; } = [];

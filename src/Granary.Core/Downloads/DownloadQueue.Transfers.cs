@@ -70,10 +70,20 @@ public sealed partial class DownloadQueue
         // A transfer stopped while it waited for its report asks for nothing more.
         run.Cancel.Token.ThrowIfCancellationRequested();
         (download, var failed) = await FetchAssetsFirstAsync(run, download).ConfigureAwait(false);
-        long from = failed?.Bytes ?? ResumePoint(download);
-        var outcome = failed ?? await _transfer.RunAsync(JobOf(run, download, from), bytes => OnProgress(key, bytes),
-            (validator, token) => KeepValidatorAsync(run, validator, token), run.Cancel.Token).ConfigureAwait(false);
-        await OnOutcomeAsync(run, download, from, outcome).ConfigureAwait(false);
+        // The seek-bar previews come beside the media, never before it: a slow sheet host holds no byte of the file back. The
+        // transfer ends with them (within DownloadAssets.PreviewDeadline), so a stop or a replacement stops them too.
+        var previews = failed is null ? _assets.FetchPreviewsAsync(run.Server, download, run.Cancel.Token) : Task.CompletedTask;
+        try
+        {
+            long from = failed?.Bytes ?? ResumePoint(download);
+            var outcome = failed ?? await _transfer.RunAsync(JobOf(run, download, from), bytes => OnProgress(key, bytes),
+                (validator, token) => KeepValidatorAsync(run, validator, token), run.Cancel.Token).ConfigureAwait(false);
+            await OnOutcomeAsync(run, download, from, outcome).ConfigureAwait(false);
+        }
+        finally
+        {
+            await previews.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        }
     }
 
     // The server hears "downloading" before the file is asked for, so "completed" always comes after it. The transfer sends it
@@ -658,7 +668,7 @@ public sealed partial class DownloadQueue
     {
         try
         {
-            await _api.ReportAsync(server, key.Scope.ProfileId, key.Id, report, stop).ConfigureAwait(false);
+            await _api.ReportAsync(server, key.Scope.AccountId, key.Scope.ProfileId, key.Id, report, stop).ConfigureAwait(false);
         }
         catch (SiloApiException ex) when (IsFinal(ex))
         {

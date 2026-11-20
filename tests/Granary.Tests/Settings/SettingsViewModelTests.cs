@@ -559,6 +559,29 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public void TheReadAheadBuffer_IsThisPcsChoice_ByTheSizeAhead_TheDefaultFirst()
+    {
+        var page = Playback();
+        Assert.Equal(["Default (384 MB)", "150 MB", "768 MB", "1 GB", "2 GB"], page.ReadAheadChoices.Select(c => c.Label));
+        Assert.Equal("default", page.SelectedReadAhead?.Value);
+        Assert.Empty(_device.SavedReadAhead);
+
+        page.SelectedReadAhead = page.ReadAheadChoices[3];
+
+        Assert.Equal([ReadAheadBuffer.Gb1], _device.SavedReadAhead);
+        Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public void AReadAheadBufferChosenBefore_ShowsAsSaved()
+    {
+        _device.ReadAhead = ReadAheadBuffer.Gb2;
+
+        Assert.Equal("2gb", Playback().SelectedReadAhead?.Value);
+        Assert.Empty(_device.SavedReadAhead);
+    }
+
+    [Fact]
     public void UpAndDownForTheVolume_ShowsAsSaved()
     {
         _device.UpDown = PlayerUpDown.Volume;

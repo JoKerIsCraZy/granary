@@ -26,6 +26,8 @@ public sealed partial class DownloadOptionsPanel : UserControl
 
     public string StopMessage => DownloadOptionsViewModel.StopMessage;
 
+    public string OnlyUnwatchedLabel => DownloadOptionsViewModel.OnlyUnwatchedLabel;
+
     /// <summary>The small heading over the files, in capitals as the language writes them.</summary>
     public string VersionEyebrow => AppText.Upper(AppText.Get("granary.downloadOptions.version"));
 
@@ -54,6 +56,16 @@ public sealed partial class DownloadOptionsPanel : UserControl
     /// <summary>The free space line, red when the download does not fit.</summary>
     public static Brush SpaceForeground(bool isShortOfSpace) =>
         (Brush)Application.Current.Resources[isShortOfSpace ? "SiloDestructiveBrush" : "SiloMutedBrush"];
+
+    // A screen reader says a series' One time row as it shows it, "Season 2, 3 episodes"; a row with nothing to download is off.
+    private void OnOneTimeContainerChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+    {
+        if (args.Item is OneTimeRow row)
+        {
+            AutomationProperties.SetName(args.ItemContainer, $"{row.Title}, {row.Detail}");
+            args.ItemContainer.IsEnabled = row.IsAvailable;
+        }
+    }
 
     // A screen reader says a rule as its row shows it: "Future episodes, Only episodes that air from now on".
     private void OnRuleContainerChanging(ListViewBase sender, ContainerContentChangingEventArgs args)

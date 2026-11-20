@@ -29,7 +29,7 @@ public sealed partial class DownloadTransfer
             HttpResponseMessage response;
             try
             {
-                response = await owner._api.OpenFileAsync(job.Server, job.Scope.ProfileId, job.DownloadId, range, token)
+                response = await owner._api.OpenFileAsync(job.Server, job.Scope.AccountId, job.Scope.ProfileId, job.DownloadId, range, token)
                     .ConfigureAwait(false);
             }
             catch (ProfileChangedException)

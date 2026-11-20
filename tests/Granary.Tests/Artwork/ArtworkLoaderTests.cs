@@ -206,6 +206,18 @@ public sealed class ArtworkLoaderTests : IDisposable
         Assert.Null(await loader.GetAsync(Poster, Token));
     }
 
+    // What the server said the image is goes with its bytes: a preset avatar is drawn as SVG only when labelled so.
+    [Fact]
+    public async Task TheAnswersMediaType_StaysWithTheBytes()
+    {
+        _server.ContentType = "image/svg+xml";
+        var loader = Create();
+
+        using var image = await loader.GetAsync(Poster, Token);
+
+        Assert.Equal("image/svg+xml", image!.Bytes.MediaType);
+    }
+
     [Fact]
     public async Task ImagesLargerThanTheLimit_AreRefused()
     {

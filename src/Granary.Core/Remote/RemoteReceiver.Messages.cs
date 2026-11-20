@@ -182,6 +182,9 @@ public sealed partial class RemoteReceiver
         }
         _logger.LogInformation("Connection {Number}: a phone {Verdict}", controller.Number,
             verdict == HelloVerdict.Authorized ? "on this server" : "on another server");
+        // The phone joins the list before it hears anything: the state goes out on a task of its own, and a phone (or a test)
+        // that acts on it must find the list already told.
+        RaisePhonesChanged();
         if (controller.IsAuthorized)
         {
             controller.OfferState(_currentState);
@@ -190,7 +193,6 @@ public sealed partial class RemoteReceiver
                 Announce(session);
             }
         }
-        RaisePhonesChanged();
     }
 
     private void OnPresence(Session session, SiloCastMessage.Presence presence)

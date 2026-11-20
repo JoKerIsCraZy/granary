@@ -54,6 +54,10 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
             {
                 dialog.PrimaryButtonText = options.PrimaryText;
             }
+            else if (e.PropertyName == nameof(DownloadOptionsViewModel.CloseText))
+            {
+                dialog.CloseButtonText = options.CloseText;
+            }
         }
         void Close()
         {
@@ -109,7 +113,7 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
                 Title = options.DialogTitle,
                 Content = new DownloadOptionsPanel(options),
                 PrimaryButtonText = options.PrimaryText,
-                CloseButtonText = AppText.Get("common.cancel"),
+                CloseButtonText = options.CloseText,
                 DefaultButton = ContentDialogButton.Primary,
                 IsPrimaryButtonEnabled = options.CanStart,
             };

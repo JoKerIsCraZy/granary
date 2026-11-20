@@ -454,7 +454,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         }
         var ids = store.In(scope).Select(d => d.Record.DownloadId).Concat(store.PendingDeletes(scope).Select(d => d.DownloadId))
             .Distinct(StringComparer.Ordinal).ToList();
-        return ids.Count == 0 ? null : new ServerDeletes(server.BaseUri, scope.ProfileId, ids);
+        return ids.Count == 0 ? null : new ServerDeletes(server.BaseUri, scope.AccountId, scope.ProfileId, ids);
     }
 
     // The server's deletes, one at a time, as that profile: one the server refuses for itself does not stop the others; no
@@ -467,7 +467,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         {
             try
             {
-                await api.DeleteAsync(deletes.Server, deletes.ProfileId, id, linked.Token).ConfigureAwait(false);
+                await api.DeleteAsync(deletes.Server, deletes.AccountId, deletes.ProfileId, id, linked.Token).ConfigureAwait(false);
             }
             catch (SiloApiException ex) when (ex.Status is 401 or 429)
             {
@@ -490,7 +490,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     }
 
     /// <summary>The deletes a sign-out sends: the server, the profile they go as, and the entries.</summary>
-    private sealed record ServerDeletes(Uri Server, string ProfileId, IReadOnlyList<string> Ids);
+    private sealed record ServerDeletes(Uri Server, string AccountId, string ProfileId, IReadOnlyList<string> Ids);
 
     /// <summary>A sign-out's clear while the sign-out is under way; disposing it ends the clear. Twice is no change.</summary>
     private sealed class PendingClear(DownloadStore store, long generation) : IDisposable

@@ -80,6 +80,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         ReadMpvConfigStatus();
         DecodesInSoftware = devicePreferences.DecodesInSoftware;
         SelectedUpDown = UpDownChoices[devicePreferences.UpDown == PlayerUpDown.Volume ? 1 : 0];
+        SelectedReadAhead = ReadAheadChoices.First(c => c.Value == ReadAheadBuffers.Name(devicePreferences.ReadAhead));
         ShowStillWatching(devicePreferences.PassoutThreshold);
         ResumeRewindSeconds = devicePreferences.ResumeRewindSeconds;
         DiscordStatus = devicePreferences.DiscordStatus;

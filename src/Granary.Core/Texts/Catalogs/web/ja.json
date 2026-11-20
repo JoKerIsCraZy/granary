@@ -107,12 +107,6 @@
       "value": "再試行"
     }
   ],
-  "error.rate_limited": [
-    {
-      "type": 0,
-      "value": "リクエストが多すぎます。しばらく待ってからもう一度お試しください。"
-    }
-  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 1,
@@ -947,6 +941,12 @@
       "value": "アプリのメニュー、ボタン、メッセージの言語です。音声、字幕、メタデータの言語とは別に設定します。"
     }
   ],
+  "settingsManifest.ui.date_format.option.auto": [
+    {
+      "type": 0,
+      "value": "デバイスに合わせる"
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -969,6 +969,12 @@
     {
       "type": 0,
       "value": "テーマ音楽をループ"
+    }
+  ],
+  "settingsManifest.ui.time_format.option.auto": [
+    {
+      "type": 0,
+      "value": "デバイスに合わせる"
     }
   ],
   "settingsManifest.ui.title_art.label": [
@@ -14766,6 +14772,50 @@
       "value": "アプリの言語を保存できませんでした"
     }
   ],
+  "web.settings.accessibility.dateFormat": [
+    {
+      "type": 0,
+      "value": "日付の形式"
+    }
+  ],
+  "web.settings.accessibility.dateTimeDescription": [
+    {
+      "type": 0,
+      "value": "アプリ全体での日付と時刻の表示方法を選択します。使用中のプロフィールに保存されます。"
+    }
+  ],
+  "web.settings.accessibility.dateTimePreview": [
+    {
+      "type": 0,
+      "value": "プレビュー："
+    },
+    {
+      "type": 1,
+      "value": "short"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "medium"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.settings.accessibility.dateTimeTitle": [
+    {
+      "type": 0,
+      "value": "日付と時刻"
+    }
+  ],
   "web.settings.accessibility.languageTitle": [
     {
       "type": 0,
@@ -14776,6 +14826,24 @@
     {
       "type": 0,
       "value": "デバイスに合わせる"
+    }
+  ],
+  "web.settings.accessibility.time12h": [
+    {
+      "type": 0,
+      "value": "12時間制"
+    }
+  ],
+  "web.settings.accessibility.time24h": [
+    {
+      "type": 0,
+      "value": "24時間制"
+    }
+  ],
+  "web.settings.accessibility.timeFormat": [
+    {
+      "type": 0,
+      "value": "時刻の形式"
     }
   ],
   "web.settings.accessibility.title": [
@@ -16318,6 +16386,46 @@
     {
       "type": 0,
       "value": "リセット"
+    }
+  ],
+  "web.settings.search.clear": [
+    {
+      "type": 0,
+      "value": "設定の検索をクリア"
+    }
+  ],
+  "web.settings.search.matchCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件一致"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.search.noMatches": [
+    {
+      "type": 0,
+      "value": "一致する設定がありません"
+    }
+  ],
+  "web.settings.search.placeholder": [
+    {
+      "type": 0,
+      "value": "設定を検索"
     }
   ],
   "web.settings.sessions.admin.empty": [

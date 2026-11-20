@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
+using Granary.Core.Api.Playback;
 using Granary.Core.IO;
 using Microsoft.Extensions.Logging;
 
@@ -24,9 +25,12 @@ public sealed class ManifestRevisionException() : Exception("The manifest is of 
 /// A download's manifest, artwork and subtitles, kept beside its media so it plays and shows without the server
 /// (docs/architecture.md, "What the server says"). The manifest is kept as the server sent it; artwork and subtitles that do not
 /// come are logged and left out, to be tried at the next refresh. Only this download's own asset paths are asked for
-/// (<see cref="DownloadsApi.AssetPath"/>): they carry the profile's credentials.
+/// (<see cref="DownloadsApi.AssetPath"/>): they carry the profile's credentials. With <paramref name="watch"/> and
+/// <paramref name="http"/>, the seek-bar previews of the file the download was made from can be kept as well, apart from the
+/// rest (<see cref="FetchPreviewsAsync"/>).
 /// </summary>
-public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<DownloadAssets> logger)
+public sealed partial class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<DownloadAssets> logger, WatchApi? watch = null,
+    IHttpClientFactory? http = null)
 {
     /// <summary>The artwork kept: an episode's poster is its still, and its series' poster comes as well.</summary>
     public static readonly IReadOnlyList<string> ArtworkKinds = ["poster", "backdrop", "series_poster"];
@@ -56,7 +60,7 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
     {
         ArgumentNullException.ThrowIfNull(download);
         var record = download.Record;
-        byte[] bytes = await api.GetManifestAsync(server, record.Scope.ProfileId, record.DownloadId, cancellationToken).ConfigureAwait(false);
+        byte[] bytes = await api.GetManifestAsync(server, record.Scope.AccountId, record.Scope.ProfileId, record.DownloadId, cancellationToken).ConfigureAwait(false);
         var manifest = OfflineManifest.Read(bytes);
         if (manifest.DownloadId != record.DownloadId)
         {
@@ -173,7 +177,7 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
         var record = download.Record;
         try
         {
-            using var response = await api.OpenAssetAsync(server, record.Scope.ProfileId, path, null, cancellationToken).ConfigureAwait(false);
+            using var response = await api.OpenAssetAsync(server, record.Scope.AccountId, record.Scope.ProfileId, path, null, cancellationToken).ConfigureAwait(false);
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 // A 404 will not change; a busy store (503) is tried at the next refresh.
@@ -182,7 +186,7 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
                 return null;
             }
             string name = nameOf(response);
-            await SaveAsync(response, Path.Combine(download.Folder, name), cancellationToken).ConfigureAwait(false);
+            await SaveAsync(response, Path.Combine(download.Folder, name), MaxBytes, cancellationToken).ConfigureAwait(false);
             return name;
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException or UnauthorizedAccessException
@@ -195,16 +199,18 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
         }
     }
 
-    // The body into a file beside the target, then moved over it whole; at most MaxAssetBytes, and given up after a stall.
-    private async Task SaveAsync(HttpResponseMessage response, string target, CancellationToken cancellationToken)
+    // The body into a file beside the target, then moved over it whole; at most limit bytes, and given up after a stall. The
+    // bytes it wrote.
+    private async Task<long> SaveAsync(HttpResponseMessage response, string target, long limit, CancellationToken cancellationToken)
     {
-        if (response.Content.Headers.ContentLength > MaxBytes)
+        if (response.Content.Headers.ContentLength > limit)
         {
-            throw new HttpRequestException(HttpRequestError.InvalidResponse, "The asset is larger than Granary keeps.");
+            throw new TooLargeException();
         }
         string arriving = $"{target}.{Guid.NewGuid():N}.arriving";
         using var stall = new CancellationTokenSource(StallTimeout, time);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, stall.Token);
+        long written;
         try
         {
             await using (var file = new FileStream(arriving, FileMode.CreateNew, FileAccess.Write, FileShare.None, BufferSize, FileOptions.Asynchronous))
@@ -219,14 +225,16 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
                     {
                         break;
                     }
-                    if (file.Length + read > MaxBytes)
+                    if (file.Length + read > limit)
                     {
-                        throw new HttpRequestException(HttpRequestError.InvalidResponse, "The asset is larger than Granary keeps.");
+                        throw new TooLargeException();
                     }
                     await file.WriteAsync(buffer.AsMemory(0, read), linked.Token).ConfigureAwait(false);
                 }
+                written = file.Length;
             }
             SafeFile.WriteWhole(target, temp => File.Move(arriving, temp));
+            return written;
         }
         catch (OperationCanceledException) when (stall.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {

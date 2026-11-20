@@ -538,10 +538,16 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
             return;
         }
         string[] asked = [.. _downloads.Items.Select(i => i.DownloadId)];
-        if (asked.Length > 0 && await _confirmation.AskAsync(RemoveAllTitle, AppText.Get("granary.settings.downloads.removeAllMessage"),
+        // Episodes waiting for the server's limit alone are something to remove too: a profile whose first episode was refused.
+        if ((asked.Length > 0 || _downloads.WaitingCount() > 0) && await _confirmation.AskAsync(RemoveAllTitle, AppText.Get("granary.settings.downloads.removeAllMessage"),
             RemoveAllAction))
         {
-            await _downloads.DeleteAllAsync(scope, asked, CancellationToken.None);
+            // The episodes waiting for the server's limit go first: a delete that reaches the server frees a place, and would
+            // start one of them on this PC again. A create of the line under way then keeps nothing, unless its download was kept
+            // before: then it is among the downloads read here, and goes too.
+            await _downloads.DropWaitingAsync(scope, null, CancellationToken.None);
+            // Read for the profile the question was asked in, whichever is active now.
+            await _downloads.DeleteAllAsync(scope, [.. asked.Union(_downloads.DownloadIdsIn(scope), StringComparer.Ordinal)], CancellationToken.None);
         }
         await _dispatcher.ResumeOnUi();
         ShowStorage();
@@ -598,7 +604,7 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         }
         long used = _downloads.BytesUsed();
         UsedText = used > 0 ? PrePlayText.FileSize(used) : AppText.Get("web.common.format.size.bytes", ("size", 0));
-        CanRemoveAll = _downloads.Items.Count > 0;
+        CanRemoveAll = _downloads.Items.Count > 0 || _downloads.WaitingCount() > 0;
     }
 
     // The Apple app's footer: Original, then the presets (with "at up to the resolution shown" when the labels name one), then

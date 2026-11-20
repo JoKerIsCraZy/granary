@@ -69,6 +69,12 @@ public sealed class DownloadActions
         {
             return new TitleDownloadState(true, DownloadText.Status(download), OpensDownloads: true, CanDelete: true);
         }
+        // An episode waiting for the server's limit of downloads is on its way: the Downloads page says why, and nothing is
+        // there to delete yet.
+        if (_downloads.IsWaiting(mediaItemId))
+        {
+            return new TitleDownloadState(true, DownloadText.Queued, OpensDownloads: true, CanDelete: false);
+        }
         return CanDownload ? new TitleDownloadState(true, DownloadLabel, OpensDownloads: false, CanDelete: false) : TitleDownloadState.Hidden;
     }
 
@@ -96,11 +102,11 @@ public sealed class DownloadActions
         return _dialog.ShowAsync(options);
     }
 
-    /// <summary>The download dialog for a season's episodes.</summary>
-    public Task OfferSeasonAsync(SeasonDownloadRequest request, string seasonTitle, long knownBytes)
+    /// <summary>The download dialog for a season's episodes, with Only unwatched when one of them is watched.</summary>
+    public Task OfferSeasonAsync(SeasonDownloadOffer offer)
     {
         var options = _options();
-        options.ForSeason(request, seasonTitle, knownBytes);
+        options.ForSeason(offer);
         return _dialog.ShowAsync(options);
     }
 

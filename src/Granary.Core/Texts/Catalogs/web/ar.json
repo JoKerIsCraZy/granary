@@ -107,12 +107,6 @@
       "value": "إعادة المحاولة"
     }
   ],
-  "error.rate_limited": [
-    {
-      "type": 0,
-      "value": "طلبات كثيرة جدًا. انتظر قليلًا وحاول مرة أخرى."
-    }
-  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 0,
@@ -947,6 +941,12 @@
       "value": "لغة قوائم التطبيق وأزراره ورسائله. منفصلة عن لغات الصوت والترجمة والبيانات الوصفية."
     }
   ],
+  "settingsManifest.ui.date_format.option.auto": [
+    {
+      "type": 0,
+      "value": "مطابقة الجهاز"
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -969,6 +969,12 @@
     {
       "type": 0,
       "value": "تكرار موسيقى الشارة"
+    }
+  ],
+  "settingsManifest.ui.time_format.option.auto": [
+    {
+      "type": 0,
+      "value": "مطابقة الجهاز"
     }
   ],
   "settingsManifest.ui.title_art.label": [
@@ -19526,6 +19532,50 @@
       "value": "تعذّر حفظ لغة التطبيق"
     }
   ],
+  "web.settings.accessibility.dateFormat": [
+    {
+      "type": 0,
+      "value": "تنسيق التاريخ"
+    }
+  ],
+  "web.settings.accessibility.dateTimeDescription": [
+    {
+      "type": 0,
+      "value": "اختر طريقة عرض التواريخ والأوقات في التطبيق. يُحفظ هذا الخيار للملف الشخصي النشط."
+    }
+  ],
+  "web.settings.accessibility.dateTimePreview": [
+    {
+      "type": 0,
+      "value": "معاينة: "
+    },
+    {
+      "type": 1,
+      "value": "short"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "medium"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.settings.accessibility.dateTimeTitle": [
+    {
+      "type": 0,
+      "value": "التاريخ والوقت"
+    }
+  ],
   "web.settings.accessibility.languageTitle": [
     {
       "type": 0,
@@ -19536,6 +19586,24 @@
     {
       "type": 0,
       "value": "مطابقة الجهاز"
+    }
+  ],
+  "web.settings.accessibility.time12h": [
+    {
+      "type": 0,
+      "value": "12 ساعة"
+    }
+  ],
+  "web.settings.accessibility.time24h": [
+    {
+      "type": 0,
+      "value": "24 ساعة"
+    }
+  ],
+  "web.settings.accessibility.timeFormat": [
+    {
+      "type": 0,
+      "value": "تنسيق الوقت"
     }
   ],
   "web.settings.accessibility.title": [
@@ -21974,6 +22042,102 @@
     {
       "type": 0,
       "value": "إعادة تعيين"
+    }
+  ],
+  "web.settings.search.clear": [
+    {
+      "type": 0,
+      "value": "مسح البحث في الإعدادات"
+    }
+  ],
+  "web.settings.search.matchCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " نتيجة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " نتيجة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتيجتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " نتائج"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " نتيجة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " نتيجة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.search.noMatches": [
+    {
+      "type": 0,
+      "value": "لا توجد إعدادات مطابقة"
+    }
+  ],
+  "web.settings.search.placeholder": [
+    {
+      "type": 0,
+      "value": "البحث في الإعدادات"
     }
   ],
   "web.settings.sessions.admin.empty": [

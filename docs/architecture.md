@@ -190,6 +190,19 @@ starts. All of them exist in v0.41.0-dev (`ThisMpv_KnowsEveryOptionGranaryKeepsW
 and start position go with each title (`loadfile` options), over the file's own. Everything else is the file's to
 change, `hwdec` included.
 
+**Read-ahead buffer** (`MpvReadAhead`; Settings → Playback → This PC, `read_ahead` in `playback-device.json`). Not one of
+Granary's kept options: each stream gets it as `loadfile` options as its title opens, so a change counts from the next
+title. Every choice sets `cache=yes`, `demuxer-max-bytes` and `demuxer-max-back-bytes` (Default 384 MiB ahead and
+64 MiB behind, then 150/50, 768/128, 1 GiB/192 MiB and 2 GiB/256 MiB) and `demuxer-readahead-secs=120`, as byte counts.
+With the cache on, mpv's `cache-secs` stands over `demuxer-readahead-secs` and is very high by default, so
+`demuxer-max-bytes` is the real limit. `demuxer-hysteresis-secs` stays at mpv's 0: mpv then tops the cache up all the time
+while it plays, not in bursts, so the connection never sits idle long enough for a proxy before the server (nginx's
+`send_timeout` of 60 s) to close it, which is what makes a large buffer safe; a mpv.conf that sets it has its way. The
+viewer's mpv.conf wins: any of the four it names, at the top, in a profile or in an include (the pre-scan's entries), is
+left out for the whole run of that mpv, and the log says so once. One that sets `cache` (`cache=no` keeps memory and
+delay low) has all four left to it. A profile counts though it may never apply. A file on this PC (a download, `--play`) gets none of
+them: mpv does not cache a local file by default, and the seek bar shows no cache for one.
+
 **The log** says once per start which file mpv read (`mpv started with …`), names the options of Granary's that the file
 sets (`mpv.conf sets vo; Granary keeps its own`, read from the file and its includes by mpv's rules for option names),
 and passes on mpv's own messages about the file (an unknown option, a shader it cannot open),
@@ -368,10 +381,23 @@ differently; a text only Granary has keeps its English under a key of its own. A
   sees other formats than Windows'. Tests get the language's own (`TextLanguage.Load(tag, formats: …)`).
   - `DateText` writes a date by the fields Intl is asked for, as an ICU skeleton (`yMd`, `yMMMd`, `jmm`, `MMMEd`, …),
     in the locale's best pattern for them, through ICU (`icu.dll`, which .NET's globalization loads too), as
-    Intl.DateTimeFormat does: .NET's own patterns differ ("05.11.2026" for Intl's "5.11.2026"). The clock is Windows'
-    own, 12 or 24 hours as its time format says (a user's choice included), as the web's 12h/24h preference sets Intl's
-    hour cycle; Granary does not read the web's date and time preferences. Without ICU it writes .NET's nearest pattern.
-    A value is written as it reads; callers convert to the viewer's zone first.
+    Intl.DateTimeFormat does: .NET's own patterns differ ("05.11.2026" for Intl's "5.11.2026"). Without ICU it writes
+    .NET's nearest pattern. A value is written as it reads; callers convert to the viewer's zone first.
+  - The profile's date and time formats (`DateTimePreferences`, `DateText.Preferences`; the web's `lib/datetime.ts`)
+    set the order and the clock. A date in digits takes the exact pattern (`DD/MM/YYYY` is "12/09/2013", in Latin
+    digits). A medium date and every date fragment with a month's name (`DateText.Format`, the web's
+    `toLocaleDateString(preferredDateLocale(), …)`) take British or American English for DD/MM/YYYY and MM/DD/YYYY,
+    unless the texts are in a language other than English and the format locale is of that language
+    (`TextLanguage.LocalizedFormats`, the web's `pinnedLocaleUnlessLocalized`): German month names keep German order.
+    YYYY-MM-DD writes medium dates in digits too; fragments without a year keep the format locale's order. The
+    calendar's week and day labels keep the format locale whatever the format (`DateText.InFormatLocale`, as
+    `lib/calendarWeek.ts`). The clock: 12h and 24h set the hour cycle, 24h with two-digit hours ("09:04"); auto is
+    Windows' own clock, 12 or 24 hours as its time format says (a user's choice included). Auto in both changes nothing.
+  - Those formats (`DateTimeFormatSetting`) are read with the app language, for every profile and each time Settings →
+    Accessibility shows, and apply at once: every date written from then on follows them (pages open already follow
+    once they word their rows again). They are kept on this PC (`date-time-format.json`, `DateTimeFormatFile`), which
+    the next start applies before it knows who is watching, as the web seeds them from its storage. A failed read and
+    signing out keep the formats in use.
   - `NumberText.Decimal` is the web's `formatDecimal` (no grouping, `toFixed`'s rounding of the binary value),
     `NumberText.Grouped` and `AppText.Number` its `toLocaleString(formatLocale())`, and `NumberText.Digits` its
     `numberText`, for clocks ("1:05:09") and years in the messages' digits. Codes such as "S01E05" keep Latin digits.
@@ -453,6 +479,30 @@ differently; a text only Granary has keeps its English under a key of its own. A
 - **`Accept-Language`**: `ClientIdentityHandler` puts the language on screen on every request to a Silo server
   (docs/api-contract.md, 6.4).
 
+## Settings search
+
+The search box of the settings' sidebar (docs/ui-design.md, Settings) finds what the pages show without a list of its own,
+where Silo's web keeps one by hand (lib/userSettingsNav.ts):
+
+- **The markup is the index.** The App embeds `Views/SettingsPage.xaml` and every `Views/Settings/*SettingsView.xaml` as
+  resources. `SettingsMarkup` (Core) reads the sidebar's lists (each entry's tag and name) and each page's sections
+  (`SettingsGroup` title and description), rows (`SettingsRow` label and description), headings below the page's title,
+  controls named for screen readers, and the text under the title, all by the key of a text given as
+  `{x:Bind t:AppText.Get('…')}`. A text from a view model names a state, not a setting, and what a template or the
+  resources hold shows per item or not at all; both are left out, and `SettingsMarkupTests` says which rows are labelled
+  otherwise. English keywords sit next to a setting or a sidebar entry (`controls:SearchKeywords.Terms`). `SettingsPage`
+  names each page's view and markup in one table, and reads the markup once a run, on the thread pool as Settings first
+  opens. The reading never fails: a markup that cannot be read is logged by the kind of failure and leaves its page found
+  by its name alone, and an index that cannot be built leaves the search finding nothing rather than failing at every key.
+- **As written, not as shown**: the index does not know which settings this profile or PC hides at the moment, so a
+  hidden one still matches its page (docs/ui-design.md, Settings). Only the open page's elements are realized, so
+  checking every page's visibility would mean making every view, with its view models and their reads.
+- **In the language on screen**: `SettingsSearchIndex` writes every key in the language shown, and in another language
+  adds the English text as a keyword, as the web's `englishTerms` does. `SettingsSearch` is the web's rule
+  (settingsSearch.ts) unchanged; `SettingsSearchViewModel` holds the query, the pages that match and the line under the box.
+- **Showing a match**: the page, once laid out, is searched for the element of the first setting that matched on its
+  own, by its kind and text, outside anything collapsed; it comes to the page's top, and a press focuses it.
+
 ## Networking and security
 
 - `HttpClient` instances come from `IHttpClientFactory`. The server probe uses a client without
@@ -526,6 +576,22 @@ minute (its renewed URL is), and the bitmap then tries the URL itself.
   decoder (`AsRandomAccessStream`) made a managed buffer as large as each of its reads, and every WinRT object .NET
   holds adds 1,000 bytes of memory pressure (CsWinRT's `IObjectReference`), enough of which starts blocking full
   collections: the remaining gen2 collections while scrolling are those.
+- Avatars: the sidebar's profile avatar (`ProfileAvatar`) takes a picture once it is decoded (`Artwork.PictureAsync`, null
+  when it cannot be had), never a bitmap still filling: an avatar's address is signed anew every 15 minutes and read
+  again every 5, and the picture shown stays until the new one is ready, with only the newest load counting
+  (`AvatarPicture`). It shows its letter at once when there is no picture. The presets the server offers are SVG, its
+  own (`/profile-avatars/<id>.svg`) and DiceBear's (`https://api.dicebear.com/9.x/<style>/svg?…`), which the bitmap decoder
+  cannot read. They alone are drawn as SVG, and only when everything holds:
+  - the profile says `avatar_source: preset` and the address is on the active server's origin or https on
+    api.dicebear.com (`ProfileItemViewModel.IsPresetHost`, the one place that names the hosts); any other host is not;
+  - the answer was labelled `image/svg+xml` (`ArtworkBytes.MediaType`, kept by the loader), never guessed from the bytes;
+  - `AvatarSvg` lets the markup through: at most 256 KB of UTF-8, `<svg>` as its root after an optional `<?xml?>`
+    declaration, no doctype or entity declarations, no script, foreign object or `@import`, and every `href` and `url()`
+    a `#` fragment, so nothing is fetched from elsewhere; and no text, which Direct2D does not draw (DiceBear's initials
+    style shows the avatar's own letter instead).
+
+  Refused markup leaves the letter, as does markup Direct2D cannot read. The drawing's surface is the avatar's size
+  (`RasterizePixelWidth`/`Height`), whatever size the markup declares. Every other picture goes to the bitmap decoder.
 - Disk: images the server marks `immutable`, in `cache\artwork` under the data directory, 512 MB, the
   least recently used deleted first, in the background. File names are hashes of the URL without its
   signature. Temporary files of writes that never finished are swept on the first write of a run.
@@ -853,11 +919,14 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   as the Sleep timer does; an open marker panel stays with its draft. F11 is the window's (`MainWindow.FullScreen.cs`)
   and always works.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
-  transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
+  transcode), in order, empty ones left out, pictures resolved against the server, each with its `thumbnail_thumbhash`
+  for the blur behind the picture; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,
   a pure function of the chapters and the position).
 - **Seek-bar previews** (11.4): for a file with `trickplay_available`, the manifest is read after its first frame and
-  again 5 minutes before its sheets expire (a minute after a transient failure; a 404 means none). Thumbnail `i` of
+  again 5 minutes before its sheets expire (a minute after a transient failure; a 404 means none). `TrickplayReads`
+  keeps these reads for one file, for a stream and for a download alike (see "Playing a download"); disposing it ends
+  them, and calls off a read on its way. Thumbnail `i` of
   `interval_ms` sits on sheet `i / (cols·rows)`; the seek bar keeps three sheets decoded at the bubble's width and
   loads the next one ahead. Markers carry their segment's picture for the bubble; it plays no part in their equality.
 - **Settings pages** (6.6): `ProfileSettings` reads the page's keys in one batch, key by key when an older server
@@ -1371,15 +1440,18 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   gets `-` and 16 hex digits of the value's SHA-256. So no id the server sends names another path, and two ids never share
   a folder, also where Windows ignores case. The folder holds `download.json` (the `DownloadRecord`, so the folder
   describes itself), `manifest.json` as the server sent it, `media.part` while the file arrives, then `media.<container>`,
-  the artwork as `<kind>.<ext>` and the subtitles as `sub-<reference>.<format>` (the reference made a name as a folder is
-  from an id, so a file holds the same subtitle whatever its place in the manifest); extensions are short plain names or a
-  fallback, never what the server sent unchecked. A record's media file is used only when it is such a `media.<ext>` name.
+  the artwork as `<kind>.<ext>`, the subtitles as `sub-<reference>.<format>` (the reference made a name as a folder is
+  from an id, so a file holds the same subtitle whatever its place in the manifest) and the seek-bar previews as
+  `trickplay.json` (their layout, the file and revision they were fetched for, the number of sheets and the set's
+  generation) and `tp-<generation>-<n>.jpg`, one per sheet in the server's order; extensions are short plain names or a fallback, never what the server sent
+  unchecked. A record's media file is used only when it is such a `media.<ext>` name.
 - **Root.** `<root>` is the downloads folder chosen when the download started (`IDownloadPreferences.Folder`, in
   `download-settings.json`; `downloads` in the data folder by default). Choosing another applies to new downloads only:
   the ones there keep their folders. It is a full path below a drive's or a share's root, never the root itself.
 - **Index.** `downloads.json` in the data folder lists each download's scope, id and folder, with its row's description
-  (`media_item_id`, `title`, series, season and episode), the server deletes still to be sent (`pending_deletes`) and the
-  removed downloads' folders still to be deleted (`folder_deletes`). At every start the `download.json` files four folders
+  (`media_item_id`, `title`, series, season and episode), the server deletes still to be sent (`pending_deletes`), the
+  removed downloads' folders still to be deleted (`folder_deletes`) and the episodes waiting for the server's limit of
+  downloads (`waiting_episodes`, below under "Waiting episodes"). At every start the `download.json` files four folders
   under the downloads folder and the data folder's own `downloads` are looked for, and one the index lacks (a write that did
   not get through, an index that was lost) is taken in. An index that cannot be read is set aside and made again from them.
   The downloads folder can be any folder, a media library too, so that look goes only into names the layout makes (a
@@ -1605,7 +1677,26 @@ client guide.
   profile's credentials. Artwork or a subtitle that does not come (404, a busy store's 503, a stall of 60 s, over 512 MiB)
   is logged and left out, to be tried at the next refresh; a manifest that does not come ends the attempt as the file
   would have. The record keeps the artwork's file names and each subtitle's revision; a refresh fetches the artwork the
-  folder lacks and the subtitles whose revision changed. A refresh that finds the manifest of another revision than the
+  folder lacks and the subtitles whose revision changed. The seek-bar previews come apart from them
+  (`DownloadAssets.FetchPreviewsAsync`, in `DownloadAssets.Previews.cs`): beside the media's first transfer, which they
+  never hold back (the transfer ends with them, so a stop or a replacement stops them too), and after each refresh.
+  They are the previews (11.4) of the kept manifest's `media_file_id`, read as the download's account and profile, their
+  sheets fetched one after another without credentials through the artwork client (signed addresses, possibly on another
+  host; never logged). The read and all sheets together have `PreviewDeadline` (60 s); a set slower than that is tried
+  at the next refresh. Each set kept gets a generation of its own (8 hex digits) that its sheets are named after, so a
+  new set never overwrites the sheets of the one before. Once all its sheets came, `trickplay.json` is written whole and
+  names it. The set it named before stays beside it, since a play that began with that set reads its sheets only as it
+  shows them; older generations go, with pieces of sheets that never came whole (`*.arriving`), as far as nothing holds
+  them. A set that does not come whole leaves the one kept before as it was. A list with an empty entry, or a grid past
+  the seek bar's bounds (`PlayerTrickplay.IsDrawableGrid`: thumbnails up to 4096 px a side, sheets up to 100 by 100,
+  which streams' previews share), is not kept. A set is fetched again when the download's revision, the file or the
+  server's layout differs from the kept one, or a sheet is missing; otherwise a refresh costs only the previews' read. A
+  set over `MaxPreviewSetBytes` (64 MiB; a 2-hour film's takes a few), counted as its bodies arrive, is not kept, and its
+  `trickplay.json` says so, so it is not fetched again while the layout stays the same. The set is kept under the file
+  asked for. A 404 keeps a set of the same bytes and drops one of another revision or file (a replacement deletes only
+  the media and the manifest); any other failure is logged and leaves the download as it is. A download made before
+  this gets its previews at its next refresh (a day after its manifest was read). Deleting a download deletes its
+  folder, previews included, and the space a scope's downloads take (`DownloadStore.BytesOnDisk`) counts every file. A refresh that finds the manifest of another revision than the
   finished media keeps nothing of it, since its tracks and subtitles describe other bytes, and reads the registry again,
   which replaces the download for the new ones (the Apple app's subtitle refresh passes such a manifest over too). A
   replacement stops a refresh of its download that is under way and waits for it to end before the old files go, as it
@@ -1649,7 +1740,11 @@ client guide.
   (revoked, failed or cancelled), one explicit second create revives it: `expected_revision` the registry's revision of that
   entry and `expected_download_id` its id. Whatever that answers, nothing is sent again; a second conflict fails. An entry
   whose delete this PC still has to send is never taken over or revived (the delete would end it under the new download):
-  that start fails, and works once the queue has sent the delete. An answer for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
+  that start fails, and works once the queue has sent the delete. The download dialog binds its start to the profile active
+  as it opened, or as a card's dialog began its last read of the offer, so Try Again after a switch reads and downloads for
+  the new one (`StartAsync`, `StartSeasonAsync` and `StartSeriesAsync` with `onlyFor`): with another profile active by the
+  time Download is pressed it sends nothing (`Unavailable`; a season or a series counts nothing) and says it did not start,
+  so a download never lands on a profile the dialog was not opened for. An answer for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
   kept with the request's title, series, season and episode, queued, or Preparing while the server prepares a copy, and the
   queue is woken. Once the server made it, a cancel does not keep it from being kept. A download kept again takes its unsent
   server delete off the index in the same write. A create takes the store's `ClearGeneration` before anything else, and its
@@ -1664,13 +1759,71 @@ client guide.
   so the queue, which takes the oldest first, brings the first episode first. Both stop, with those counts, when they are
   cancelled (between two episodes: a create under way is not cut off, since one the server made is kept), the profile
   they started for is no longer the active one, or the server refused a create, or its revival, for the account's limit
-  of downloads (429, `DownloadStartResult.Limited`, counted as failed, `SeasonStartResult.ReachedLimit`): every create
-  after it would be refused alike. An episode the server will not let the profile have (403, 404, 501: a preset it
+  of downloads (429 `rate_limited`, `DownloadStartResult.Limited`, `SeasonStartResult.ReachedLimit`): every create after it
+  would be refused alike, so that episode and the ones after it wait (`SeasonStartResult.Waiting`, below). An episode
+  waiting already counts as there, so Download pressed again sends nothing for it. An episode the server will not let the
+  profile have (403, 404, 501: a preset it
   cannot prepare from that episode's source) does not stop them, as the server's own batch skips such episodes and goes
   on. Silo's apps send a series as the server's batch (`series: true`, a page of 50 episodes at a time); Granary asks per
   episode, as for a season, so each episode gets the file the dialog's size counted (its first) and the create's guards
   above. Neither app caps a series or asks about it; Granary's dialog says how many episodes and how much space, and its
   free space check holds back one that does not fit. However many there are, the queue runs them as many at a time as Simultaneous Downloads says.
+- **Waiting episodes.** The episodes a season's or a series' run could not register past the server's limit
+  (`WaitingEpisode`: the profile, the series, the numbers and title, the file and quality the dialog chose) wait in line in
+  the store, `waiting_episodes` in `downloads.json`, so they hold across starts. A sign-out takes its account's along, as
+  it takes its downloads (`RemoveWhereAsync`, by the clear generation the run began at), and an episode that gets
+  downloaded, however, leaves the line in the change that keeps its download. `DownloadManager.Waiting.cs` asks the active
+  profile's line again, the first first, one create each through `StartAsync` and its guards, bound to the profile the line
+  is for (and the create to its account and profile, as every create is; a season's run binds its creates to the profile
+  it started for the same way): a switch to another profile leaves it waiting for its own, and the head is looked at again right before its
+  create, so one the viewer took out of line is not asked for. The server's 429 says neither which limit it is nor when to
+  come back, so one rule serves both: the line is asked again once one of the profile's downloads leaves Preparing while it
+  is kept here (its file is ready on the server: an entry the server prepares holds a place of the limit at once), or its
+  delete reached the server (the queue sent the pending delete: the server drops a device's deleted entry, which then
+  counts toward neither limit; a download deleted here holds its place until then), or after a wait of 1, 2, 5, 10, then
+  every 30 minutes while the server still refuses, or the server's `Retry-After` when it names a longer one, kept to 30
+  minutes (a date years ahead included), as the sign-in's and the token refresh's are. A place freed while the head's
+  create is under way is not lost to that create's refusal: a free count is taken before the create and compared after
+  (`_freeGenerations`, per server and account, since the limit is the account's: a place another profile of the account
+  frees counts, one another account frees does not). The same holds for a season's or a series' own create, before anything waits: a store change keeps
+  what it compares with whether or not episodes wait, so a download leaving Preparing while that create is refused lets the
+  line it starts be asked at once; a switch of profile takes the new profile's as that, so one of its downloads leaving
+  Preparing before any store change counts too. Of two refusals, the later free count is kept: an older one, from a create sent earlier,
+  would make a place freed before the later refusal look freed after it. A timer that fires before the wait is over (the clock stepped back) is set again for the rest of it.
+  Then it goes on as far as the server takes them. Its outcomes:
+  - taken, or the download is here already (found in the store): the episode leaves the line;
+  - another start of it under way (the viewer's own Download, `AlreadyDownloading` from the create guard): it stays until
+    that download is here, since that start can still fail or meet the limit, and the line waits;
+  - an episode the server no longer offers the profile (403, 404, 501, skipped), or a refusal it would give again (another
+    4xx but 401, 408, 409, 425 and 429; an answer for another title): it leaves the line, logged without its title or id;
+  - no clear answer (none, a 5xx, a conflict the registry does not explain, an answer that is no Silo answer, which
+    `SiloHttp` reports as unreachable): the line waits as after a refusal, and after 3 such tries in a row the head goes to
+    the back of the line, since it may have reached the server but must not hold the others back;
+  - a run that fails unexpectedly waits as a refusal does, so it is not tried again at every store change.
+  At a start, and at a switch to the profile, the line is asked once, then waits. One run at a time: a store change only
+  notes what it freed and starts one when episodes wait; a timer starts one when the wait is over.
+  Its state sits under the manager's lock, which is never held while the store writes, a create runs or a timer fires. The
+  store change's handler reads the profile's downloads and deletes under it, so two changes on two threads leave the later
+  read as what the next one compares with: those reads take the store's own lock inside the manager's, never the other way
+  round, as the queue's lock comes before the store's. So the store raises `Changed` under no lock of its own: its first
+  load and the folder work a recheck starts begin on the thread pool, since work that is done at once would otherwise
+  raise it on the thread holding the store's lock. The creates take no token of their own: `SiloHttp`'s client bounds each at 100 s. A season's
+  or a series' run that the viewer cancels while its create is under way keeps nothing waiting when that create meets the
+  limit; the cancel is looked at again in the store change that would put them in line (`AddWaitingUnlessClearedAsync`
+  with the run's token), so one that comes just before it keeps none either. The run answers how many of the series'
+  episodes wait as they went in line, not as the line is read after, which a place freed meanwhile may have shortened. A waiting episode counts as on its way wherever a download does: a season's or a series' offer leaves it out
+  (`DownloadOfferReader`, the season page's `DownloadActions.StateOf`, which says "Queued" and opens the Downloads page),
+  and the series dialog's This Episode cannot be chosen. The dialog's count is the series' whole line. The Downloads page
+  says how many wait (`DownloadManager.WaitingCount`) with Cancel (`DropWaitingAsync` for the profile), and a series'
+  Delete all episodes drops that series' line too, as Settings → Downloads → Remove all downloads drops the profile's:
+  before the deletes, since a delete that reaches the server frees a place and would start one of them again.
+  `DropWaitingAsync` never waits for a create of the line under way, which may hang on the network: such a create keeps
+  its download only while its episode is still in line, asked in the store change that keeps it (`AddUnlessClearedAsync`
+  with `onlyWhileWaiting`), so the download is either kept before the line went, and the deletes, which read the series'
+  (or the profile's) downloads after it, take it along, or never kept, the server hearing the delete of the entry it
+  made (`QueueServerDeleteAsync`, which queues each entry's delete once, and none for a download kept here). That read is
+  for the profile the question was asked in (`DownloadIdsIn`), whichever is active by then. The store logs whether such a
+  download was kept out because its episode left the line or because its account's downloads were cleared. The head is looked at again right before its create, too.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
   it, and has one that waited out a retry delay tried at once.
@@ -1700,7 +1853,13 @@ client guide.
   none, so one under way is kept), and `StartAsync` then answers true, which closes the dialog. `ItemDetailPage` follows
   from `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
   (`ItemDetailDownloadsTests`). The page and the cards offer a title the same way (`DownloadOffers`: the request, the
-  version rows with their sizes, the runtime, a season's or a series' episodes with a file that are not on this PC). A
+  version rows with their sizes, the runtime, a season's or a series' episodes with a file that are not on this PC, and
+  of those the ones watched to their end with each one's size, `EpisodeFacts`). The offers stay whole: whether a season's
+  Download season shows, and the "on this PC" words, go by every episode left; the dialog's "Only unwatched episodes"
+  takes the watched ones out of what it counts and starts (`Unwatched()`), and starts nothing when none is left. A
+  series' offer also carries the Apple app's This Episode and Season N (`SeriesDownloadOffer.Episode` and `Season`, from
+  the series' `play_content_id` and `play_season_number`, else the Apple app's next episode), so its page, its card and
+  the Downloads page give the same rows; whether This Episode is on this PC is the dialog's to word. A
   series' page lists one season's episodes at most, so its Download series reads them as a card does
   (`DownloadOfferReader`, through `DownloadActions.OfferReadAsync`) and stays whatever is on this PC.
 - **The cards.** `CardDownloads` (one for the app) gives every film's, episode's, season's and series' card its entries,
@@ -2098,11 +2257,18 @@ while the server answers.
   volume, full screen kept for the next title, Windows' media controls, the taskbar's buttons and the Discord status. It
   loads the media file straight into the engine (`MediaSource.Local`, no proxy route, no headers) and opens no playback
   session, online or not, as both apps: the server's Activity page does not list it, and there is no quality, no other
-  version, no trickplay, no subtitle sync, no Add Subtitles and no marker editing (`PlayingFileId` is null, which hides
-  the last two). `SessionId` is null.
+  version, no subtitle sync, no Add Subtitles and no marker editing (`PlayingFileId` is null, which hides the last two).
+  `SessionId` is null. Seek-bar previews come from the set kept with the download, else from the server while it
+  answers (see "Seek-bar previews"); pictures taken from the file itself, as the Apple app does, are not done: decoding
+  stills costs CPU while the title plays (#169).
 - **What comes from where.** The title's two lines, its length, its audio tracks, chapters and marked parts come from
   the manifest (`PlaybackStarter.EpisodeTitles` and `PlaybackMediaInfo.OfEpisode`/`OfTitle`, shared with a stream's; the
-  first intro and every recap, credits and preview part, as `PlaybackMarker.Of` takes a stream's). The picture for
+  first intro and every recap, credits and preview part, as `PlaybackMarker.Of` takes a stream's). Each chapter carries
+  its picture's blur from the manifest (`thumbnail_thumbhash`; an older manifest without it shows the placeholder). Once
+  the watch detail came (see "What the server adds"), its version whose `file_id` is the manifest's `media_file_id`
+  (the file the download was made from, also for a copy the server converted, whose timeline is the same) lends a chapter
+  its picture, `thumbnail_url`, where the two lists agree: the same index, and starts within a second of each other.
+  After a rescan they can differ, and a chapter that does not match keeps only its blur. The picture for
   Windows' media controls is the poster or still kept in the folder, a `file:` address the app reads from the disk
   (`WindowsMediaControls`), as the Apple app shows its `posterFileURL`. The Discord status words the title from the same
   `PlaybackMediaInfo`; its poster and page come from TMDB through the server, so without a connection it shows without
@@ -2119,6 +2285,24 @@ while the server answers.
   account and profile are no longer the active ones as it starts (another became active between the two), nothing is
   asked, since another server's ids may be the same too, and settings that answered for another profile that became
   active during the read are not taken: the download plays with the defaults.
+- **Seek-bar previews.** The set kept in the folder (see "Assets") is read with the manifest, on the thread pool
+  (`KeptPreviews.Read`, carried on `LocalMedia`). It is used when it is of the record's revision and the manifest's
+  `media_file_id`, its layout can be drawn and every sheet is there; a set that does not fit or does not read is left
+  aside and the title plays. A kept set shows from the start, online or not, and the server is not asked: it is the same
+  pictures of the same file, without a read, an expiry or a swap mid-play. Its sheets are files
+  (`PlayerTrickplay.SheetFiles`), which the seek bar reads on the thread pool as a download's artwork, never as
+  addresses. Without a kept set, the server's are read as follows.
+- **Seek-bar previews while the server answers.** When the watch detail came and its version whose `file_id` is the
+  manifest's `media_file_id` has `trickplay_available`, `LocalPlayback` reads that file's previews (11.4) through
+  `TrickplayReads`, as a stream does: again 5 minutes before their sheets expire, a minute after a transient failure,
+  none after a 404. The file is the one the download was made from, also for a copy the server converted: the server
+  cuts nothing when it prepares a download, so the timelines match. The reads are the download's account and profile's
+  (`WatchApi.GetTrickplayAsAccountProfileAsync`), as the watch detail's: once another profile acts on the server, the
+  next read is refused unsent and the reads end quietly, keeping the previews already read until the play ends. The stop
+  (or a dispose) ends the reads and their timer. Without the server and without a kept set there is no watch detail, so
+  nothing is asked and the seek bar's bubble shows the time only. Silo's apps show no server previews for a download: Android none, and the Apple
+  app only stills it takes from the file (`PlayerViewModel.loadServerTrickplay` needs `trickplayAvailable`, which its
+  offline `FileVersion` never sets).
 - **Without the server.** The profile's own settings still hold, as this PC last read them. Every answer
   `PlaybackPreferencesReader` gets, for a stream or a download, is kept by `KeptPlaybackSettings` in
   `playback-settings.json` in the data folder, for the server's entry, the account and the profile, one batch of keys

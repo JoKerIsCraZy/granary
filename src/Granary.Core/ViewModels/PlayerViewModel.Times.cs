@@ -28,9 +28,10 @@ public sealed partial class PlayerViewModel
     private DateTimeOffset? _endsAtBasis;
     private DateTimeOffset? _endsAt;
 
-    // The zone and the format locale the end was written in: another zone, or another language applied, writes it again.
+    // The zone, the format locale and the time format the end was written in: another of any writes it again.
     private TimeZoneInfo? _endsAtZone;
     private FormatLocale? _endsAtFormats;
+    private DateTimePreferences? _endsAtPreferences;
 
     // The engine's latest load as the title began, and whether a position of the title's own has come since: until then
     // the position is the title before's, whose end would be the new one's wrong end.
@@ -146,13 +147,15 @@ public sealed partial class PlayerViewModel
     {
         var zone = _time.LocalTimeZone;
         var formats = AppText.Language.Formats;
-        if (minute == _endsAt && ReferenceEquals(zone, _endsAtZone) && ReferenceEquals(formats, _endsAtFormats))
+        var preferences = DateText.Preferences;
+        if (minute == _endsAt && ReferenceEquals(zone, _endsAtZone) && ReferenceEquals(formats, _endsAtFormats) && preferences == _endsAtPreferences)
         {
             return;
         }
         _endsAt = minute;
         _endsAtZone = zone;
         _endsAtFormats = formats;
+        _endsAtPreferences = preferences;
         string time = minute is { } at ? DateText.Time(TimeZoneInfo.ConvertTime(at, zone).DateTime) : "";
         EndsAtText = minute is null ? "" : AppText.Get("granary.player.endsAt", ("time", time));
         EndsAtSpoken = minute is null ? "" : AppText.Get("granary.player.endsAtSpoken", ("time", time));

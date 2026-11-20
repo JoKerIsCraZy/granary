@@ -3,8 +3,11 @@ using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
-/// <summary>A row of the web player's Chapters menu: the picture, the title and where it starts; the one that plays is marked.</summary>
-public sealed record ChapterOption(string Title, double StartSeconds, Uri? Thumbnail, bool IsCurrent)
+/// <summary>
+/// A row of the web player's Chapters menu: the picture over its blur (<paramref name="Thumbhash"/>), the title and where it
+/// starts; the one that plays is marked.
+/// </summary>
+public sealed record ChapterOption(string Title, double StartSeconds, Uri? Thumbnail, bool IsCurrent, string? Thumbhash = null)
 {
     /// <summary>The rows of <paramref name="chapters"/>, the one at <paramref name="current"/> marked.</summary>
     public static IReadOnlyList<ChapterOption> For(IReadOnlyList<PlaybackChapter> chapters, int current)
@@ -14,7 +17,7 @@ public sealed record ChapterOption(string Title, double StartSeconds, Uri? Thumb
         [
             .. chapters.Select((chapter, index) => new ChapterOption(
                 chapter.Title.Trim() is { Length: > 0 } title ? title : AppText.Get("granary.player.chapterNumber", ("number", index + 1)),
-                chapter.StartSeconds, chapter.ThumbnailUrl, index == current)),
+                chapter.StartSeconds, chapter.ThumbnailUrl, index == current, chapter.Thumbhash)),
         ];
     }
 

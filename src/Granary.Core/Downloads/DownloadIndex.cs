@@ -6,7 +6,8 @@ namespace Granary.Core.Downloads;
 
 /// <summary>
 /// <c>downloads.json</c> in the data folder: where each download's folder is, with enough of it to show its row while that
-/// folder is missing, the server deletes still to be sent, and the folders of removed downloads still to be deleted.
+/// folder is missing, the server deletes still to be sent, the folders of removed downloads still to be deleted, and the
+/// episodes waiting for the server's limit of downloads, in line.
 /// </summary>
 internal sealed record DownloadIndexFile
 {
@@ -17,6 +18,8 @@ internal sealed record DownloadIndexFile
     public IReadOnlyList<PendingDelete> PendingDeletes { get; init => field = value ?? []; } = [];
 
     public IReadOnlyList<FolderDelete> FolderDeletes { get; init => field = value ?? []; } = [];
+
+    public IReadOnlyList<WaitingEpisode> WaitingEpisodes { get; init => field = value ?? []; } = [];
 }
 
 /// <summary>One download in the index: its scope, id and folder, and the row's description for a folder that is missing.</summary>
@@ -73,6 +76,10 @@ internal static class DownloadRecords
         && !string.IsNullOrWhiteSpace(scope.ProfileId);
 
     public static bool IsUsable(PendingDelete? delete) => delete is not null && IsUsable(delete.Scope) && !string.IsNullOrWhiteSpace(delete.DownloadId);
+
+    public static bool IsUsable(WaitingEpisode? episode) =>
+        episode is not null && IsUsable(episode.Scope) && !string.IsNullOrWhiteSpace(episode.SeriesId) && episode.SeriesTitle is not null
+        && !string.IsNullOrWhiteSpace(episode.EpisodeId) && episode.Title is not null && !string.IsNullOrWhiteSpace(episode.Quality);
 
     private static bool IsUsable(DownloadStatusEvent? report) => report is { Status: { Length: > 0 }, Revision: >= 0 };
 

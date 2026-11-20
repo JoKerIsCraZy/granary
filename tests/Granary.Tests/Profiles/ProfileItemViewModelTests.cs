@@ -1,3 +1,4 @@
+using Granary.Core.Api.Profiles;
 using Granary.Core.ViewModels;
 
 namespace Granary.Tests.Profiles;
@@ -27,6 +28,33 @@ public sealed class ProfileItemViewModelTests
     public void ResolveAvatarUrl_IsNull_WhenAbsentOrNotHttp(string? avatarUrl)
     {
         Assert.Null(ProfileItemViewModel.ResolveAvatarUrl(avatarUrl, PrefixedBase));
+    }
+
+    // Only a preset the server offers may be drawn as SVG, from where Silo's clients draw it: the server's own drawings on its
+    // origin, or DiceBear's over https from api.dicebear.com, as the web and the Apple app show them. Not an upload, and not a
+    // preset from any other host.
+    [Theory]
+    [InlineData("preset", "/profile-avatars/avatar-1.svg", true)]
+    [InlineData("preset", "https://nas.example/silo/profile-avatars/avatar-2.svg", true)]
+    [InlineData("preset", "https://api.dicebear.com/9.x/thumbs/svg?seed=Elena&size=128", true)]
+    [InlineData("preset", "https://API.DiceBear.com/9.x/adventurer/svg?seed=elena", true)]
+    [InlineData("preset", "http://api.dicebear.com/9.x/thumbs/svg?seed=Elena", false)]
+    [InlineData("preset", "https://api.dicebear.com:8443/9.x/thumbs/svg?seed=Elena", false)]
+    [InlineData("preset", "https://api.dicebear.com.example/9.x/thumbs/svg?seed=Elena", false)]
+    [InlineData("preset", "https://dicebear.com/9.x/thumbs/svg?seed=Elena", false)]
+    [InlineData("preset", "https://cdn.example/avatar-1.svg", false)]
+    [InlineData("preset", "http://nas.example/silo/profile-avatars/avatar-1.svg", false)]
+    [InlineData("preset", "https://nas.example:8443/profile-avatars/avatar-1.svg", false)]
+    [InlineData("upload", "/api/v2/artwork/profile-avatars/1/7/w256.webp?exp=1&sig=a", false)]
+    [InlineData("upload", "https://api.dicebear.com/9.x/thumbs/svg?seed=Elena", false)]
+    [InlineData(null, "/profile-avatars/avatar-1.svg", false)]
+    public void OnlyThePresetsTheServerOffers_MayBeDrawnAsSvg(string? source, string avatarUrl, bool mayBeSvg)
+    {
+        var profile = new Profile("7", "Elena", true, false, false, "preset:avatar-1", source!, avatarUrl, "en", "en", "auto");
+
+        var item = ProfileItemViewModel.From(profile, PrefixedBase);
+
+        Assert.Equal(mayBeSvg, item.AvatarIsServerPreset);
     }
 
     [Theory]
