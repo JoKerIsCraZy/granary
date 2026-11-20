@@ -82,8 +82,8 @@ public sealed class AdminAccountBindingTests
         _silo.Map("api/v2/admin/users", request => request.Method == HttpMethod.Post
             ? BrowseFakeSilo.Json("""{ "id": "9" }""", HttpStatusCode.Created)
             : BrowseFakeSilo.Json("""{ "items": [], "page": { "has_more": false } }"""));
-        var form = new AdminNewUserViewModel(_session, new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
-        form.Start(Capabilities, [], groupsKnown: false, viewerIsOwner: true);
+        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
+        form.Start(AdminActors.Of(_session), Capabilities, [], groupsKnown: false, viewerIsOwner: true);
         (form.Username, form.Email, form.Password) = ("bo", "bo@example.com", "margin fossil");
         Assert.True(await form.SaveAsync(TestContext.Current.CancellationToken));
 
@@ -93,16 +93,16 @@ public sealed class AdminAccountBindingTests
         await detail.SaveSignInCommand.ExecuteAsync(null);
         await detail.DisableCommand.ExecuteAsync(null);
         await detail.MakeOwnerCommand.ExecuteAsync(null);
-        var reset = new AdminPasswordResetViewModel(_session, new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminPasswordResetViewModel>());
-        reset.Start(Ana, Capabilities, passwordOnly: false);
+        var reset = new AdminPasswordResetViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminPasswordResetViewModel>());
+        reset.Start(AdminActors.Of(_session), Ana, Capabilities, passwordOnly: false);
         await reset.RunAsync(TestContext.Current.CancellationToken);
-        var sessions = new AdminUserSessionsViewModel(_session, new AdminUsersApi(_silo.Http), _confirmation,
+        var sessions = new AdminUserSessionsViewModel(new AdminUsersApi(_silo.Http), _confirmation,
             new ManualTimeProvider(AdminUserPayloads.Now), _silo.Logs.For<AdminUserSessionsViewModel>());
-        await sessions.OpenAsync(Ana, manageable: true);
+        await sessions.OpenAsync(AdminActors.Of(_session), Ana, manageable: true);
         await sessions.SignOutCommand.ExecuteAsync(sessions.Sessions[0]);
         await sessions.SignOutEverywhereCommand.ExecuteAsync(null);
-        var delete = new AdminUserDeleteViewModel(_session, new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
-        Assert.True(await delete.StartAsync("3", TestContext.Current.CancellationToken));
+        var delete = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
+        Assert.True(await delete.StartAsync(AdminActors.Of(_session), "3", TestContext.Current.CancellationToken));
         delete.Typed = "ana";
         Assert.True(await delete.DeleteAsync(TestContext.Current.CancellationToken));
 
@@ -116,10 +116,11 @@ public sealed class AdminAccountBindingTests
         var tab = Invitations();
         await tab.OpenAsync(viewerIsOwner: true);
         Assert.True(await tab.ResendAsync(tab.Rows[0], InvitationDeliveries.Link));
+        await tab.RestartCommand.ExecuteAsync(null);
         await tab.RevokeCommand.ExecuteAsync(tab.Rows[0]);
-        var form = new AdminNewInvitationViewModel(_session, new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
+        var form = new AdminNewInvitationViewModel(new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
             _silo.Logs.For<AdminNewInvitationViewModel>());
-        await form.StartAsync(tab.Capabilities, [], viewerIsOwner: true);
+        await form.StartAsync(AdminActors.Of(_session), tab.Capabilities, [], viewerIsOwner: true);
         form.IsEmail = false;
         Assert.True(await form.SaveAsync(TestContext.Current.CancellationToken));
 
@@ -147,10 +148,10 @@ public sealed class AdminAccountBindingTests
     [Fact]
     public async Task AfterASwitch_DeleteAndReset_AreNotSent()
     {
-        var delete = new AdminUserDeleteViewModel(_session, new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
-        Assert.True(await delete.StartAsync("3", TestContext.Current.CancellationToken));
-        var reset = new AdminPasswordResetViewModel(_session, new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminPasswordResetViewModel>());
-        reset.Start(Ana, Capabilities, passwordOnly: false);
+        var delete = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
+        Assert.True(await delete.StartAsync(AdminActors.Of(_session), "3", TestContext.Current.CancellationToken));
+        var reset = new AdminPasswordResetViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminPasswordResetViewModel>());
+        reset.Start(AdminActors.Of(_session), Ana, Capabilities, passwordOnly: false);
         AnotherAccountSignsIn();
 
         delete.Typed = "ana";
@@ -168,9 +169,9 @@ public sealed class AdminAccountBindingTests
     {
         var tab = Invitations();
         await tab.OpenAsync(viewerIsOwner: true);
-        var form = new AdminNewInvitationViewModel(_session, new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
+        var form = new AdminNewInvitationViewModel(new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
             _silo.Logs.For<AdminNewInvitationViewModel>());
-        await form.StartAsync(tab.Capabilities, [], viewerIsOwner: true);
+        await form.StartAsync(AdminActors.Of(_session), tab.Capabilities, [], viewerIsOwner: true);
         form.IsEmail = false;
         AnotherAccountSignsIn();
 
@@ -184,5 +185,29 @@ public sealed class AdminAccountBindingTests
         Assert.Null(tab.Resent);
         Assert.Equal((false, LibraryErrors.Denied), (form.IsSaving, form.Error));
         Assert.Equal("", form.ClaimUrl);
+    }
+    [Fact]
+    public async Task ADialogOpenedAfterASwitch_StillActsAsItsPage()
+    {
+        var tab = Invitations();
+        await tab.OpenAsync(viewerIsOwner: true);
+        var list = new AdminUsersViewModel(_session, new AdminUsersApi(_silo.Http), new ManualTimeProvider(AdminUserPayloads.Now),
+            _silo.Logs.For<AdminUsersViewModel>());
+        await list.LoadAsync();
+        AnotherAccountSignsIn();
+
+        var invite = new AdminNewInvitationViewModel(new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
+            _silo.Logs.For<AdminNewInvitationViewModel>());
+        await invite.StartAsync(tab.Actor, tab.Capabilities, [], viewerIsOwner: true);
+        invite.IsEmail = false;
+        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
+        form.Start(list.Actor, Capabilities, [], groupsKnown: false, viewerIsOwner: true);
+        (form.Username, form.Email, form.Password) = ("bo", "bo@example.com", "margin fossil");
+
+        Assert.False(await invite.SaveAsync(TestContext.Current.CancellationToken));
+        Assert.False(await form.SaveAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(0, Writes());
+        Assert.Equal((LibraryErrors.Denied, LibraryErrors.Denied), (invite.Error, form.Error));
     }
 }

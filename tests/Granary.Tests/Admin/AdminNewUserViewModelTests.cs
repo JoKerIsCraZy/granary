@@ -16,8 +16,8 @@ public sealed class AdminNewUserViewModelTests
 
     private AdminNewUserViewModel Started(bool groupsKnown = true, bool owner = true, bool defaultProfile = true)
     {
-        var form = new AdminNewUserViewModel(_session, new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
-        form.Start(new AdminUserCapabilities { Available = true, DefaultProfile = defaultProfile }, groupsKnown ? Groups : [], groupsKnown, owner);
+        var form = new AdminNewUserViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminNewUserViewModel>());
+        form.Start(AdminActors.Of(_session), new AdminUserCapabilities { Available = true, DefaultProfile = defaultProfile }, groupsKnown ? Groups : [], groupsKnown, owner);
         form.Username = "ana";
         form.Email = "ana@example.com";
         form.Password = "margin fossil";

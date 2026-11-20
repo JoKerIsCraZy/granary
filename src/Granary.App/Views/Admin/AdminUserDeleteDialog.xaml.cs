@@ -1,3 +1,4 @@
+using Granary.Core.Api.Admin;
 using Granary.Core.Texts;
 using Granary.Core.ViewModels.Admin;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,11 +31,11 @@ public sealed partial class AdminUserDeleteDialog : ContentDialog
     /// Reads the account fresh and asks. Null when it could not be read (<see cref="AdminUserDeleteViewModel.Error"/> says
     /// why); otherwise what was done.
     /// </summary>
-    public async Task<AdminUserDeleteOutcome?> AskAsync(XamlRoot root, string id, bool offerDisable)
+    public async Task<AdminUserDeleteOutcome?> AskAsync(XamlRoot root, AdminActor? actor, string id, bool offerDisable)
     {
         Outcome = AdminUserDeleteOutcome.None;
         ViewModel.DisableOffered = offerDisable;
-        if (!await ViewModel.StartAsync(id))
+        if (!await ViewModel.StartAsync(actor, id))
         {
             return null;
         }

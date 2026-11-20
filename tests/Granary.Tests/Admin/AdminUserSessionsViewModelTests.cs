@@ -23,9 +23,9 @@ public sealed class AdminUserSessionsViewModelTests
 
     private async Task<AdminUserSessionsViewModel> OpenedAsync()
     {
-        var sessions = new AdminUserSessionsViewModel(AdminUserPayloads.OwnerSession(), new AdminUsersApi(_silo.Http), _confirmation,
+        var sessions = new AdminUserSessionsViewModel(new AdminUsersApi(_silo.Http), _confirmation,
             new ManualTimeProvider(AdminUserPayloads.Now), _silo.Logs.For<AdminUserSessionsViewModel>());
-        await sessions.OpenAsync(Ana, manageable: true);
+        await sessions.OpenAsync(AdminActors.Of(AdminUserPayloads.OwnerSession()), Ana, manageable: true);
         return sessions;
     }
 

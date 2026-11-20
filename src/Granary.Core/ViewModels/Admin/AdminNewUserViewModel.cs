@@ -12,7 +12,7 @@ namespace Granary.Core.ViewModels.Admin;
 /// two permissions and the first profile. Its limits are left to its group, as the dialog's Limits tab starts them. The
 /// password is sent once and kept nowhere else.
 /// </summary>
-public sealed partial class AdminNewUserViewModel(ISessionManager session, AdminUsersApi users, ILogger<AdminNewUserViewModel> logger) : ObservableObject
+public sealed partial class AdminNewUserViewModel(AdminUsersApi users, ILogger<AdminNewUserViewModel> logger) : ObservableObject
 {
     private bool _defaultProfileAvailable;
     // The account and profile this was opened as: everything it sends goes only as them.
@@ -89,10 +89,10 @@ public sealed partial class AdminNewUserViewModel(ISessionManager session, Admin
 
     private bool _groupsKnown;
 
-    /// <summary>Starts a new dialog with what the list read.</summary>
-    public void Start(AdminUserCapabilities capabilities, IReadOnlyList<AdminAccessGroup> groups, bool groupsKnown, bool viewerIsOwner)
+    /// <summary>Starts a new dialog with what the list read, as the account and profile the list was opened as.</summary>
+    public void Start(AdminActor? actor, AdminUserCapabilities capabilities, IReadOnlyList<AdminAccessGroup> groups, bool groupsKnown, bool viewerIsOwner)
     {
-        _actor = AdminActors.Of(session);
+        _actor = actor;
         Username = Email = Password = Error = "";
         RequirePasswordChange = IsAdminRole = MetadataCuration = false;
         MarkerEdit = CreateDefaultProfile = true;

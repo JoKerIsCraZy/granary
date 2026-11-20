@@ -12,7 +12,7 @@ namespace Granary.Core.ViewModels.Admin;
 /// at the version read when the dialog opened. Where the caller offers it, Disable instead keeps the account's history. A
 /// change by another administrator meanwhile (412) blocks both until the account is read again.
 /// </summary>
-public sealed partial class AdminUserDeleteViewModel(ISessionManager session, AdminUsersApi users, ILogger<AdminUserDeleteViewModel> logger)
+public sealed partial class AdminUserDeleteViewModel(AdminUsersApi users, ILogger<AdminUserDeleteViewModel> logger)
     : ObservableObject
 {
     private string _version = "";
@@ -56,12 +56,12 @@ public sealed partial class AdminUserDeleteViewModel(ISessionManager session, Ad
     public bool CanDisable => !IsBusy && !HasConflict;
 
     /// <summary>Reads the account fresh, so the delete carries its current version. False when it could not be read.</summary>
-    public async Task<bool> StartAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<bool> StartAsync(AdminActor? actor, string id, CancellationToken cancellationToken = default)
     {
         Account = null;
         Typed = Error = "";
         HasConflict = false;
-        _actor = AdminActors.Of(session);
+        _actor = actor;
         return await ReadAsync(id, "web.admin.users.list.userLoadFailed", cancellationToken);
     }
 

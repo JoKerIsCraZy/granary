@@ -60,6 +60,9 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     /// <summary>The signed-in account's id.</summary>
     public string? ViewerId => _session.Account?.Id;
 
+    /// <summary>The account and profile this was opened as; its dialogs act as them too.</summary>
+    public AdminActor? Actor => _actor;
+
     /// <summary>The viewer is the server's Owner, as the list says.</summary>
     public bool ViewerIsOwner { get; private set; }
 

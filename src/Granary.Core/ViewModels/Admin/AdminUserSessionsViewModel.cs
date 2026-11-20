@@ -16,7 +16,7 @@ namespace Granary.Core.ViewModels.Admin;
 /// signed in to it, a page of 50 at a time, each signed out on its own (asked first), or all of them with Sign out
 /// everywhere. Its password and saved device settings stay. Offered where the server says <c>login_sessions</c>.
 /// </summary>
-public sealed partial class AdminUserSessionsViewModel(ISessionManager session, AdminUsersApi users, IConfirmation confirmation, TimeProvider time,
+public sealed partial class AdminUserSessionsViewModel(AdminUsersApi users, IConfirmation confirmation, TimeProvider time,
     ILogger<AdminUserSessionsViewModel> logger) : ObservableObject
 {
     private AdminUser _account = new();
@@ -48,10 +48,10 @@ public sealed partial class AdminUserSessionsViewModel(ISessionManager session, 
     public bool IsEmpty => State == LibraryLoadState.Ready && Sessions.Count == 0;
 
     /// <summary>Reads the first page of the account's sign-ins.</summary>
-    public Task OpenAsync(AdminUser account, bool manageable)
+    public Task OpenAsync(AdminActor? actor, AdminUser account, bool manageable)
     {
         _account = account;
-        _actor = AdminActors.Of(session);
+        _actor = actor;
         Manageable = manageable;
         OnPropertyChanged(nameof(Description));
         return ReadFirstAsync();

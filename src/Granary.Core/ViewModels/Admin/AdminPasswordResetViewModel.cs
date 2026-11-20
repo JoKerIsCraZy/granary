@@ -21,7 +21,7 @@ public enum AdminResetMethod
 /// credential: it is shown once to the administrator who made it, copied on request, and kept nowhere else; so is the
 /// temporary password, which is sent once and then cleared.
 /// </summary>
-public sealed partial class AdminPasswordResetViewModel(ISessionManager session, AdminUsersApi users, ILogger<AdminPasswordResetViewModel> logger)
+public sealed partial class AdminPasswordResetViewModel(AdminUsersApi users, ILogger<AdminPasswordResetViewModel> logger)
     : ObservableObject
 {
     /// <summary>The web's MIN_PASSWORD_CHARS and MAX_PASSWORD_BYTES.</summary>
@@ -117,10 +117,10 @@ public sealed partial class AdminPasswordResetViewModel(ISessionManager session,
     /// Starts the dialog for <paramref name="account"/>. The server refuses reset links for a disabled account, and for one
     /// a sign-in provider manages (<paramref name="passwordOnly"/>, the header's Set password): a temporary password still works.
     /// </summary>
-    public void Start(AdminUser account, AdminUserCapabilities capabilities, bool passwordOnly)
+    public void Start(AdminActor? actor, AdminUser account, AdminUserCapabilities capabilities, bool passwordOnly)
     {
         _account = account;
-        _actor = AdminActors.Of(session);
+        _actor = actor;
         CanEmail = !passwordOnly && account.Enabled && capabilities.PasswordResetEmail && account.Email.Length > 0;
         CanLink = !passwordOnly && account.Enabled && capabilities.PasswordResetLink;
         EmailHint = CanEmail ? AppText.Get("web.admin.users.passwordResetDialog.emailHint", ("email", account.Email))

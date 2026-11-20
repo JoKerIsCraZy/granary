@@ -1079,8 +1079,9 @@ SiloHttp ─▶ ClientIdentityHandler ─▶ AuthenticationHandler ─▶ Socket
   sign-in themselves. A start that cannot reach the server opens the remembered profile's downloads instead of Home
   (Downloads, "Offline start").
 - Admin → Users and its Invitations tab act as the account and profile they were opened as (`AdminActor`, taken by
-  `AdminActors.Of` when a page, tab or dialog opens), as the web captures its admin authority. Every call of
-  `AdminUsersApi` and `AdminInvitationsApi` is bound to both (`SiloHttp.*AsAccountProfile*`), so once another account or
+  `AdminActors.Of` when the list, an account's page or the tab opens; their dialogs and the sessions panel are handed the
+  page's), as the web captures its admin authority. Every call of `AdminUsersApi` and `AdminInvitationsApi`, and the
+  library list they read (`AdminApi.ListLibrariesAsync(AdminActor)`), is bound to both (`SiloHttp.*AsAccountProfile*`), so once another account or
   profile acts the authentication handler sends none (`ProfileChangedException`); the pages catch it with
   `AdminFailures.IsExpected` and word it as a refusal. A reset or invitation link is shown only in its dialog, without text
   selection, leaves it only through `SecretClipboard` (off the clipboard's history and roaming) and is forgotten when the

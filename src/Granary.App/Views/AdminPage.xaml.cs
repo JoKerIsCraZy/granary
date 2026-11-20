@@ -77,7 +77,7 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
             if (tag == AdminPages.Users)
             {
                 DeactivateAll();
-                _ = ShowUsersAsync();
+                ShowUsersAgain();
             }
             return;
         }
@@ -139,6 +139,19 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
         _activity?.Deactivate();
         _users?.Deactivate();
         CloseDetail();
+    }
+
+    // Users picked again, as Open asks for another of its tabs: async void, so nothing may escape.
+    private async void ShowUsersAgain()
+    {
+        try
+        {
+            await ShowUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            App.Services.GetRequiredService<ILogger<AdminPage>>().LogError(ex, "Users could not be shown");
+        }
     }
 
     private Task ShowUsersAsync()

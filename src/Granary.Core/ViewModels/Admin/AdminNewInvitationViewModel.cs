@@ -13,7 +13,7 @@ namespace Granary.Core.ViewModels.Admin;
 /// the group and libraries, a note, the first profile and the tour. Once made, the dialog shows the claim link: the server
 /// discloses it this once. A failed create may still have made one, so the history is read again before another try.
 /// </summary>
-public sealed partial class AdminNewInvitationViewModel(ISessionManager session, AdminInvitationsApi invitations, AdminApi admin,
+public sealed partial class AdminNewInvitationViewModel(AdminInvitationsApi invitations, AdminApi admin,
     ILogger<AdminNewInvitationViewModel> logger) : ObservableObject
 {
     private bool _defaultProfile;
@@ -142,7 +142,7 @@ public sealed partial class AdminNewInvitationViewModel(ISessionManager session,
     public string ClaimUrl => Result?.ClaimUrl ?? "";
 
     /// <summary>Starts a new dialog with what the tabs read, and reads the libraries to choose from.</summary>
-    public async Task StartAsync(AdminInvitationCapabilities capabilities, IReadOnlyList<AdminAccessGroup> groups, bool viewerIsOwner)
+    public async Task StartAsync(AdminActor? actor, AdminInvitationCapabilities capabilities, IReadOnlyList<AdminAccessGroup> groups, bool viewerIsOwner)
     {
         _defaultProfile = capabilities.DefaultProfile;
         EmailDelivery = capabilities.EmailDelivery;
@@ -168,14 +168,14 @@ public sealed partial class AdminNewInvitationViewModel(ISessionManager session,
         OnPropertyChanged(nameof(EmailOptionBody));
         OnPropertyChanged(nameof(CanSubmit));
         Libraries.Clear();
-        _actor = AdminActors.Of(session);
-        if (_actor is not { } actor)
+        _actor = actor;
+        if (actor is null)
         {
             return;
         }
         try
         {
-            foreach (var library in (await admin.ListLibrariesAsync(actor.Server)).Items.OrderBy(library => library.SortOrder))
+            foreach (var library in (await admin.ListLibrariesAsync(actor)).Items.OrderBy(library => library.SortOrder))
             {
                 Libraries.Add(new AdminLibraryChoice(library.Id, library.Name) { IsChecked = true });
             }

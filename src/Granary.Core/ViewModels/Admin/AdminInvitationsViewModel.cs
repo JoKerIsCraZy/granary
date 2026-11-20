@@ -77,6 +77,9 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
     /// <summary>"Loading invitations...": the first page is on its way.</summary>
     public bool IsFirstPageLoading => IsHistoryLoading && Rows.Count == 0;
 
+    /// <summary>The account and profile this was opened as; its dialogs act as them too.</summary>
+    public AdminActor? Actor => _actor;
+
     public bool ViewerIsOwner => _viewerIsOwner;
 
     /// <summary>The web's notice without its link to General settings, a page Granary does not have.</summary>
@@ -114,6 +117,7 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
     public async Task RestartAsync()
     {
         _history.Cancel();
+        _history.Dispose();
         var history = _history = CancellationTokenSource.CreateLinkedTokenSource(_load.Token);
         Rows.Clear();
         OnPropertyChanged(nameof(HasRows));
@@ -132,7 +136,10 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
 
     private bool CanLoadMore() => HasMore && !IsHistoryLoading;
 
-    /// <summary>A new link for the invitation, emailed or not; its dialog shows the answer.</summary>
+    /// <summary>
+    /// A new link for the invitation, emailed or not, for its dialog to show at once. The rows stay held until the history is
+    /// read again (<see cref="RestartAsync"/>), which the dialog does when it closes.
+    /// </summary>
     public async Task<bool> ResendAsync(AdminInvitationRow row, string delivery)
     {
         if (_actor is not { } actor || IsBlocked || PublicUrlMissing)
@@ -151,8 +158,6 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
                 return false;
             }
             Resent = resent;
-            IsBlocked = false;
-            await RestartAsync();
             return true;
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex))

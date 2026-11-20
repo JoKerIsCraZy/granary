@@ -39,7 +39,7 @@ public sealed partial class AdminUserDetailView : UserControl
             if (capabilities.LoginSessions && ViewModel.Account is { } account && ViewModel.Header is { } header)
             {
                 SessionsCard.Visibility = Visibility.Visible;
-                await Sessions.OpenAsync(account, header.Manageable && capabilities.Available);
+                await Sessions.OpenAsync(ViewModel.Actor, account, header.Manageable && capabilities.Available);
             }
         }
         catch (Exception ex)
@@ -138,7 +138,7 @@ public sealed partial class AdminUserDetailView : UserControl
         try
         {
             var dialog = new AdminUserDeleteDialog();
-            var outcome = await dialog.AskAsync(XamlRoot, account.Id, offerDisable: true);
+            var outcome = await dialog.AskAsync(XamlRoot, ViewModel.Actor, account.Id, offerDisable: true);
             if (outcome is null)
             {
                 ViewModel.Say(dialog.ViewModel.Error, isError: true);
@@ -167,7 +167,7 @@ public sealed partial class AdminUserDetailView : UserControl
         try
         {
             var dialog = new AdminPasswordResetDialog();
-            await dialog.AskAsync(XamlRoot, account, ViewModel.Capabilities, passwordOnly);
+            await dialog.AskAsync(XamlRoot, ViewModel.Actor, account, ViewModel.Capabilities, passwordOnly);
             // A temporary password or a reset changes what the header says of it.
             await ViewModel.ReloadAsync();
         }

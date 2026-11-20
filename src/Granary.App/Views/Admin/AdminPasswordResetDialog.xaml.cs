@@ -25,9 +25,9 @@ public sealed partial class AdminPasswordResetDialog : ContentDialog
 
     public AdminPasswordResetViewModel ViewModel { get; }
 
-    public async Task AskAsync(XamlRoot root, AdminUser account, AdminUserCapabilities capabilities, bool passwordOnly)
+    public async Task AskAsync(XamlRoot root, AdminActor? actor, AdminUser account, AdminUserCapabilities capabilities, bool passwordOnly)
     {
-        ViewModel.Start(account, capabilities, passwordOnly);
+        ViewModel.Start(actor, account, capabilities, passwordOnly);
         XamlRoot = root;
         try
         {

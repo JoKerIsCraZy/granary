@@ -95,7 +95,7 @@ public sealed partial class AdminInvitationsView : UserControl
         }
         try
         {
-            await Form.StartAsync(ViewModel.Capabilities, _groups, ViewModel.ViewerIsOwner);
+            await Form.StartAsync(ViewModel.Actor, ViewModel.Capabilities, _groups, ViewModel.ViewerIsOwner);
             InviteCopyResult.Text = "";
             InviteDialog.XamlRoot = XamlRoot;
             await InviteDialog.ShowAsync();
@@ -176,12 +176,15 @@ public sealed partial class AdminInvitationsView : UserControl
         {
             return;
         }
+        bool made = false;
         try
         {
+            // A failed one says so with Reload history, which the viewer chooses, as on the web.
             if (!await ViewModel.ResendAsync(row, delivery))
             {
                 return;
             }
+            made = true;
             ResendCopyResult.Text = "";
             ResendDialog.XamlRoot = XamlRoot;
             await ResendDialog.ShowAsync();
@@ -192,7 +195,24 @@ public sealed partial class AdminInvitationsView : UserControl
         }
         finally
         {
+            // The link was shown once; then the history is read again, which frees the rows.
             ViewModel.ForgetResent();
+            if (made)
+            {
+                await ReadHistoryAgainAsync();
+            }
+        }
+    }
+
+    private async Task ReadHistoryAgainAsync()
+    {
+        try
+        {
+            await ViewModel.RestartAsync();
+        }
+        catch (Exception ex)
+        {
+            Log(ex, "The invitation history could not be read again");
         }
     }
 

@@ -178,13 +178,13 @@ public sealed partial class AdminUserDetailViewModel
 
     private async Task ReadLibrariesAsync()
     {
-        if (_session.ActiveServer is not { } server)
+        if (_actor is not { } actor)
         {
             return;
         }
         try
         {
-            _libraries = (await _admin.ListLibrariesAsync(server.BaseUri)).Items;
+            _libraries = (await _admin.ListLibrariesAsync(actor)).Items;
             _librariesRead = true;
             if (Account is { } account)
             {

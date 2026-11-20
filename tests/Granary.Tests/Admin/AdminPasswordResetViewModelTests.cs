@@ -18,8 +18,8 @@ public sealed class AdminPasswordResetViewModelTests
 
     private AdminPasswordResetViewModel Started(AdminUserCapabilities capabilities, AdminUser? account = null, bool passwordOnly = false)
     {
-        var dialog = new AdminPasswordResetViewModel(_session, new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminPasswordResetViewModel>());
-        dialog.Start(account ?? Ana, capabilities, passwordOnly);
+        var dialog = new AdminPasswordResetViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminPasswordResetViewModel>());
+        dialog.Start(AdminActors.Of(_session), account ?? Ana, capabilities, passwordOnly);
         return dialog;
     }
 

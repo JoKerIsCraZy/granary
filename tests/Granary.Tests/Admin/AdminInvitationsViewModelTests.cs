@@ -109,6 +109,9 @@ public sealed class AdminInvitationsViewModelTests
         Assert.Equal(Claim, tab.Resent?.ClaimUrl);
         Assert.Equal("New link created for ana@example.com. Nothing was emailed; share this link with them yourself.",
             AdminInvitationRow.DeliveryMessage(tab.Resent!));
+        Assert.True(tab.IsBlocked);
+        await tab.RestartCommand.ExecuteAsync(null);
+        Assert.False(tab.IsBlocked);
         Assert.Equal(2, _silo.To("api/v2/admin/invitations").Count(r => r.Method == HttpMethod.Get));
         Assert.DoesNotContain("tok3n", tab.Resent!.ToString(), StringComparison.Ordinal);
         tab.ForgetResent();
@@ -155,10 +158,10 @@ public sealed class AdminInvitationsViewModelTests
     [Fact]
     public async Task InviteSomeone_SendsALinkInvitation_AndShowsItsLinkOnce()
     {
-        var form = new AdminNewInvitationViewModel(_session, new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
+        var form = new AdminNewInvitationViewModel(new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
             _silo.Logs.For<AdminNewInvitationViewModel>());
         AdminAccessGroup[] groups = [new() { Id = "10", Name = "Family", IsDefault = true }, new() { Id = "11", Name = "Friends" }];
-        await form.StartAsync(new AdminInvitationCapabilities { State = "available", DefaultProfile = true }, groups, viewerIsOwner: true);
+        await form.StartAsync(AdminActors.Of(_session), new AdminInvitationCapabilities { State = "available", DefaultProfile = true }, groups, viewerIsOwner: true);
 
         Assert.False(form.IsEmail);
         Assert.Equal(["Family (default)", "Friends"], form.GroupChoices.Select(choice => choice.Name));
@@ -182,9 +185,9 @@ public sealed class AdminInvitationsViewModelTests
     public async Task AFailedInvite_WaitsForTheHistory_BeforeAnotherTry()
     {
         _silo.Map("api/v2/admin/invitations", _ => BrowseFakeSilo.Problem(409, "capability_not_configured"));
-        var form = new AdminNewInvitationViewModel(_session, new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
+        var form = new AdminNewInvitationViewModel(new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
             _silo.Logs.For<AdminNewInvitationViewModel>());
-        await form.StartAsync(new AdminInvitationCapabilities { State = "available", DefaultProfile = true }, [], viewerIsOwner: false);
+        await form.StartAsync(AdminActors.Of(_session), new AdminInvitationCapabilities { State = "available", DefaultProfile = true }, [], viewerIsOwner: false);
 
         Assert.False(await form.SaveAsync(TestContext.Current.CancellationToken));
         Assert.Equal("Set the Silo public URL to create invitation links.", form.Error);
@@ -320,9 +323,9 @@ public sealed class AdminInvitationsViewModelTests
     {
         string text = status == 403 ? LibraryErrors.Denied : LibraryErrors.Gone;
         _silo.Map("api/v2/admin/invitations", _ => BrowseFakeSilo.Problem(status, status == 403 ? "forbidden" : "not_found"));
-        var form = new AdminNewInvitationViewModel(_session, new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
+        var form = new AdminNewInvitationViewModel(new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
             _silo.Logs.For<AdminNewInvitationViewModel>());
-        await form.StartAsync(new AdminInvitationCapabilities { State = "available", DefaultProfile = true }, [], viewerIsOwner: true);
+        await form.StartAsync(AdminActors.Of(_session), new AdminInvitationCapabilities { State = "available", DefaultProfile = true }, [], viewerIsOwner: true);
 
         Assert.False(await form.SaveAsync(TestContext.Current.CancellationToken));
 

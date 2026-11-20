@@ -214,7 +214,7 @@ public sealed partial class AdminUsersView : UserControl
         {
             ShowActionError("");
             var dialog = new AdminUserDeleteDialog();
-            var outcome = await dialog.AskAsync(XamlRoot, id, offerDisable: false);
+            var outcome = await dialog.AskAsync(XamlRoot, ViewModel.Actor, id, offerDisable: false);
             if (outcome is null)
             {
                 ShowActionError(dialog.ViewModel.Error);
@@ -238,7 +238,7 @@ public sealed partial class AdminUsersView : UserControl
         }
         try
         {
-            NewUser.Start(ViewModel.Capabilities, ViewModel.Groups, !ViewModel.GroupsFailed && ViewModel.State == LibraryLoadState.Ready,
+            NewUser.Start(ViewModel.Actor, ViewModel.Capabilities, ViewModel.Groups, !ViewModel.GroupsFailed && ViewModel.State == LibraryLoadState.Ready,
                 ViewModel.ViewerIsOwner);
             CreateDialog.XamlRoot = XamlRoot;
             if (await CreateDialog.ShowAsync() == ContentDialogResult.Primary)

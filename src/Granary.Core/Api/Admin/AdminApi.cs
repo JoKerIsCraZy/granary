@@ -74,6 +74,11 @@ public sealed class AdminApi(SiloHttp http)
         http.GetAsync(server, $"api/v2/admin/users?limit={limit}", SiloAuth.Profile, AdminJsonContext.Default.AdminUserCollection, cancellationToken);
 
     /// <summary>Every library with its folders and scan state (the administrator's view of <c>GET /api/v2/libraries</c>).</summary>
+    /// <summary>As the other <c>ListLibrariesAsync</c>, only as <paramref name="actor"/>, for Users and its dialogs.</summary>
+    public Task<AdminLibraryCollection> ListLibrariesAsync(AdminActor actor, CancellationToken cancellationToken = default) =>
+        http.GetAsAccountProfileAsync(actor.Server, "api/v2/libraries", actor.AccountId, actor.ProfileId, AdminJsonContext.Default.AdminLibraryCollection,
+            cancellationToken);
+
     public Task<AdminLibraryCollection> ListLibrariesAsync(Uri server, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, "api/v2/libraries", SiloAuth.Profile, AdminJsonContext.Default.AdminLibraryCollection, cancellationToken);
 

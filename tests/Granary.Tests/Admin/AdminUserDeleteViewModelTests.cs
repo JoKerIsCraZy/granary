@@ -29,8 +29,8 @@ public sealed class AdminUserDeleteViewModelTests
 
     private async Task<AdminUserDeleteViewModel> StartedAsync()
     {
-        var dialog = new AdminUserDeleteViewModel(_session, new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
-        Assert.True(await dialog.StartAsync("3", TestContext.Current.CancellationToken));
+        var dialog = new AdminUserDeleteViewModel(new AdminUsersApi(_silo.Http), _silo.Logs.For<AdminUserDeleteViewModel>());
+        Assert.True(await dialog.StartAsync(AdminActors.Of(_session), "3", TestContext.Current.CancellationToken));
         return dialog;
     }
 

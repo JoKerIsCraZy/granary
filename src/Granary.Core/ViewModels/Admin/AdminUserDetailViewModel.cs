@@ -60,6 +60,9 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
 
     public IReadOnlyList<AdminAccessGroup> Groups { get; private set; } = [];
 
+    /// <summary>The account and profile this was opened as; its dialogs act as them too.</summary>
+    public AdminActor? Actor => _actor;
+
     public bool ViewerIsOwner { get; private set; }
 
     public string? ViewerId => _session.Account?.Id;
