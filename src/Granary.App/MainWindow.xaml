@@ -77,14 +77,16 @@
             PaneOpened="OnPaneSettled"
             PaneClosed="OnPaneSettled"
             ItemInvoked="OnItemInvoked">
-            <NavigationView.PaneHeader>
+            <NavigationView.PaneCustomContent>
                 <!--
                     The server's name or wordmark opens Home, as the web's sidebar logo links to it (components/AppSidebar.tsx,
                     "Go home", a little faded under the pointer): for the mouse. Keys, a remote and a controller have Home's entry,
-                    so the sidebar's stops stay as they were.
+                    so the sidebar's stops stay as they were. The pane's custom content, not its header: NavigationView hides the
+                    header in the rail, and the entries moved under it as the rail opened. Here the open pane's wordmark and the
+                    rail's mark cross-fade in one place, as the web's do (MainWindow.Wordmark.cs).
                 -->
-                <HyperlinkButton x:Name="BrandLink" Margin="20,4,12,12" Padding="0" MinHeight="0" HorizontalAlignment="Stretch"
-                                 HorizontalContentAlignment="Left" IsTabStop="False" Click="OnBrandClick"
+                <HyperlinkButton x:Name="BrandLink" Margin="0,4,0,12" Padding="0" MinHeight="0" HorizontalAlignment="Stretch"
+                                 HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False" Click="OnBrandClick"
                                  PointerEntered="OnBrandPointerEntered" PointerExited="OnBrandPointerExited" PointerCanceled="OnBrandPointerExited"
                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.shell.sidebar.goHome')}">
                     <HyperlinkButton.Resources>
@@ -92,15 +94,40 @@
                         <SolidColorBrush x:Key="HyperlinkButtonBackgroundPressed" Color="Transparent" />
                     </HyperlinkButton.Resources>
                     <Grid>
-                        <TextBlock x:Name="ServerNameText" Text="{x:Bind Sidebar.ServerName, Mode=OneWay}" TextTrimming="CharacterEllipsis"
-                                   FontFamily="{StaticResource SiloFontExtraBold}" FontWeight="ExtraBold" FontSize="22" CharacterSpacing="-30"
-                                   Foreground="{StaticResource SiloForegroundBrush}" />
-                        <!-- The server's wordmark in place of its name, at the web's size (components/AppSidebar.tsx). -->
-                        <Image x:Name="ServerWordmark" Width="112" Height="48" Stretch="Uniform" HorizontalAlignment="Left" Visibility="Collapsed"
-                               AutomationProperties.Name="{x:Bind Sidebar.ServerName, Mode=OneWay}" />
+                        <Grid x:Name="BrandWide" Margin="20,0,12,0" VerticalAlignment="Center">
+                            <Grid.OpacityTransition>
+                                <ScalarTransition Duration="0:0:0.15" />
+                            </Grid.OpacityTransition>
+                            <TextBlock x:Name="ServerNameText" Text="{x:Bind Sidebar.ServerName, Mode=OneWay}" TextTrimming="CharacterEllipsis"
+                                       FontFamily="{StaticResource SiloFontExtraBold}" FontWeight="ExtraBold" FontSize="22" CharacterSpacing="-30"
+                                       Foreground="{StaticResource SiloForegroundBrush}" />
+                            <!-- The server's wordmark in place of its name, at the web's size (components/AppSidebar.tsx). -->
+                            <Image x:Name="ServerWordmark" Width="112" Height="48" Stretch="Uniform" HorizontalAlignment="Left" Visibility="Collapsed"
+                                   AutomationProperties.Name="{x:Bind Sidebar.ServerName, Mode=OneWay}" />
+                        </Grid>
+                        <!--
+                            The server's square mark in the rail, at the web's 36 px with its rounded corners (components/SiloBrand.tsx),
+                            in the entries' icon column (its left margin is set from the rail's width).
+                        -->
+                        <Border x:Name="ServerMark" Width="36" Height="36" CornerRadius="8" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                Opacity="0" Visibility="Collapsed" IsHitTestVisible="False">
+                            <Border.OpacityTransition>
+                                <ScalarTransition Duration="0:0:0.15" />
+                            </Border.OpacityTransition>
+                            <Border.Background>
+                                <ImageBrush x:Name="ServerMarkBrush" Stretch="Uniform" />
+                            </Border.Background>
+                            <!--
+                                Silo's own mark while the server has none, as the web shows it (components/SiloBrand.tsx): it refers to the
+                                Silo server signed in to, unaltered, 26 px with the 20 % clear space Silo's brand page asks for
+                                (Assets/Brand/NOTICE.txt).
+                            -->
+                            <Image x:Name="SiloMarkFallback" Style="{StaticResource SiloAuthMarkStyle}" Width="26" Height="26" Margin="0"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+                        </Border>
                     </Grid>
                 </HyperlinkButton>
-            </NavigationView.PaneHeader>
+            </NavigationView.PaneCustomContent>
 
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.home')}" Tag="Home" Icon="Home" />
@@ -245,13 +272,13 @@
                     <NavigationViewItem.Resources>
                         <Thickness x:Key="NavigationViewCompactItemContentPresenterMargin">4,-1,8,-1</Thickness>
                     </NavigationViewItem.Resources>
-                    <Grid Margin="-6,0,0,0" ColumnSpacing="10">
+                    <Grid x:Name="ProfileItemContent" Margin="-6,0,0,0" ColumnSpacing="10">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="28" />
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <controls:ProfileAvatar Width="28" Height="28" FontSize="12" VerticalAlignment="Center"
+                        <controls:ProfileAvatar x:Name="ProfileItemAvatar" Width="28" Height="28" FontSize="12" VerticalAlignment="Center"
                                                 Image="{x:Bind Sidebar.Avatar, Mode=OneWay}" Initial="{x:Bind Sidebar.ProfileInitial, Mode=OneWay}" />
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="{x:Bind ProfileLabel(Sidebar.ProfileName, Sidebar.SignOutCommand.IsRunning), Mode=OneWay}"

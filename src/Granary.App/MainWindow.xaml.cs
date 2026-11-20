@@ -275,8 +275,8 @@ public sealed partial class MainWindow : Window
         }), handledEventsToo: true);
         pane.AddHandler(UIElement.PointerExitedEvent, new PointerEventHandler((_, e) =>
         {
-            // PointerExited bubbles: the entries move as the pane opens (the server's name appears on top), and the one
-            // the mouse was on reports it left. Only a mouse outside the pane as shown has left it, as the web's
+            // PointerExited bubbles: the parts of the pane change as it opens (the headers turn into fold buttons), and the
+            // one the mouse was on can report it left. Only a mouse outside the pane as shown has left it, as the web's
             // mouseleave; reacting to the rest closed the pane under the mouse and opened it again, on and off.
             if (!IsOverPane(pane, e))
             {
@@ -419,7 +419,8 @@ public sealed partial class MainWindow : Window
     }
 
     // Opening or closing the pane, by the window or by the rail's pointer or a click beside it, turns the headers between
-    // fold buttons and dividers, and the folded sections' entries between hidden and shown.
+    // fold buttons and dividers, the folded sections' entries between hidden and shown, and the top between the server's
+    // name or wordmark and its mark.
     private void OnPaneOpening(NavigationView sender, object args) => ShowPaneParts(open: true);
 
     private void OnPaneClosing(NavigationView sender, NavigationViewPaneClosingEventArgs args) => ShowPaneParts(open: false);
@@ -429,11 +430,24 @@ public sealed partial class MainWindow : Window
         ShowHeaders(open);
         ShowSections(open);
         PlaceDock(animate: true, open);
+        ShowBrand(open);
+        ShowProfileAvatar(open);
         // Over the rail's pane while it is open over the page, the disc would sit on the sidebar.
         PageBackButton.Visibility = _showsPageBack && !(_isRail && open) ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void OnPageBackClick(object sender, RoutedEventArgs e) => _navigation.GoBack();
+
+    // The rail's slot is narrower than the open pane's: there the 28 px avatar was cut off at its edge, so the rail shows it at
+    // 24 px, its middle on the other icons' line.
+    private void ShowProfileAvatar(bool open)
+    {
+        double size = open ? 28 : 24;
+        ProfileItemAvatar.Width = size;
+        ProfileItemAvatar.Height = size;
+        ProfileItemAvatar.FontSize = open ? 12 : 11;
+        ProfileItemContent.Margin = new Thickness(open ? -6 : -4, 0, 0, 0);
+    }
 
     // A folded section hides its entries, all but the page shown, so the sidebar still says where the viewer is. The
     // icon-only pane shows them all, as the web's rail does: it has no headers to open them by. Requests and

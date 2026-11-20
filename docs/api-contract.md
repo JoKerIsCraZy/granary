@@ -190,7 +190,7 @@ Documents the MVP reads: `GET /api/v2/playback/capabilities`, `GET /api/v2/home/
 | `GET /api/v2/system/info` (`getSystemInfo`) | public | `api_major` (2), `server_version` and `contract_digest` (diagnostics only), `links { openapi, capabilities, identity }` |
 | `GET /api/v2/system/identity` (`getServerIdentity`) | public | `server_id`: UUID, stable per deployment across restarts and URL changes. Self-asserted; authorizes nothing |
 | `GET /api/v2/system/setup` (`getSetupStatus`) | public | `needs_setup`, `wizard_completed` |
-| `GET /api/v2/theme/branding` | public | `server_name` (display name), `accent_color`, `wordmark_url` (the sidebar's picture; only one on the server itself is used) |
+| `GET /api/v2/theme/branding` | public | `server_name` (display name), `accent_color`, `wordmark_url` (the sidebar's picture), `mark_url` (the collapsed sidebar's square picture); only pictures on the server itself are used |
 | `GET /api/v2/auth/providers` (`listAuthProviders`) | public | `password_login` (bool), `items[]` |
 | `GET /api/v2/system/connections` (`getServerConnections`) | bearer, account only | `endpoints[]`, optional `local_route { spki_sha256, url? }` |
 
@@ -556,7 +556,7 @@ white when white contrasts more than the dark label `#141417`. Granary reads it 
   90 % over the page, as the web's `hover:bg-primary/90`, press at 80 %.
 - **Remembered per server.** As Android and Apple keep each server's last branding (`ServerBrandingCache`), Granary keeps
   what the server last answered with its entry in `servers.json`: `"branding": { "accent": "#rrggbb" or "none",
-  "wordmark": <its address on the server>? }`. When the server becomes active, that is painted at once, before the read
+  "wordmark": <its address on the server>?, "mark": <its address on the server>? }`. When the server becomes active, that is painted at once, before the read
   answers, and it stays while the read fails. A read that answers differently replaces it. Only a server never read, or
   one without an accent, shows the light default. A file from before has no `branding`; its servers are read as never
   read.
@@ -567,7 +567,8 @@ white when white contrasts more than the dark label `#141417`. Granary reads it 
   (`ILocalNetwork`), which starts the waits over. An answer ends the retries, also one without an accent, and so does
   another server becoming active, which starts afresh. A streak of failures is logged once, with the status or the kind
   of failure only.
-- **The wordmark** is shown only from the server itself, the remembered one too: anywhere else is not its wordmark.
+- **The wordmark and the mark** are shown only from the server itself, the remembered ones too: anywhere else is not
+  the server's. A file from before the mark was kept has none; it comes with the next read.
 
 ### 6.6 Settings the client reads
 

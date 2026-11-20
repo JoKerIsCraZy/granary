@@ -87,6 +87,44 @@ public sealed class JsonServerRegistryTests : IDisposable
     }
 
     [Fact]
+    public async Task TheMark_IsSavedWithTheBranding_AndReadBack()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var registry = await LoadedAsync();
+        var entry = await registry.AddOrUpdateAsync(new Uri("https://nas.example/silo"), "NAS", null, ct);
+        var branding = new SavedBranding("#1d4ed8", null, "https://nas.example/silo/api/v2/branding/assets/mark?v=1.webp");
+
+        await registry.UpdateAsync(entry.Id, e => e with { Branding = branding }, ct);
+
+        Assert.Equal(branding, (await LoadedAsync()).Find(entry.Id)?.Branding);
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(FilePath, ct));
+        var saved = Assert.Single(document.RootElement.GetProperty("servers").EnumerateArray()).GetProperty("branding");
+        Assert.Equal(branding.Mark, saved.GetProperty("mark").GetString());
+    }
+
+    [Fact]
+    public async Task ABrandingSavedBeforeTheMark_ReadsWithoutOne()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, """
+            {
+              "active_server_id": "a1",
+              "servers": [
+                { "id": "a1", "base_url": "https://a.example", "name": "A", "added_at": "2026-10-01T12:00:00Z", "last_used_at": "2026-10-01T12:00:00Z",
+                  "branding": { "accent": "#1d4ed8", "wordmark": "https://a.example/wordmark.webp" } }
+              ]
+            }
+            """, ct);
+
+        var registry = await LoadedAsync();
+
+        var branding = Assert.Single(registry.Servers).Branding;
+        Assert.Equal(new SavedBranding("#1d4ed8", "https://a.example/wordmark.webp"), branding);
+        Assert.Null(branding?.Mark);
+    }
+
+    [Fact]
     public async Task AddingTheAddressAgain_KeepsItsBranding_UnlessAnotherServerAnswersThere()
     {
         var ct = TestContext.Current.CancellationToken;

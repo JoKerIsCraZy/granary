@@ -17,7 +17,7 @@ namespace Granary.Core.Theme;
 /// (<see cref="AccentPalette.Default"/>) without a server, for a server without an accent, and while the read of a server
 /// never read fails. A failed read is tried again after
 /// 5 s, 15 s and a minute, then every 5 minutes, and at once when the session signs in or becomes ready, or the network
-/// changes, until the server answers. The branding's wordmark comes with it, for the sidebar.
+/// changes, until the server answers. The branding's wordmark and square mark come with it, for the sidebar.
 /// </summary>
 public sealed partial class ServerAccent : ObservableObject, IDisposable
 {
@@ -75,6 +75,14 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
     [ObservableProperty]
     public partial Uri? Wordmark { get; private set; }
 
+    /// <summary>
+    /// The square picture the server's admin set for the collapsed sidebar, as the web's rail shows it in place of the
+    /// wordmark (components/AppSidebar.tsx); null without one, where the web falls back on Silo's own mark and Granary shows
+    /// nothing. Another server's never stays while this one's is read.
+    /// </summary>
+    [ObservableProperty]
+    public partial Uri? Mark { get; private set; }
+
     /// <summary>The read in flight, for tests.</summary>
     internal Task Reading { get; private set; } = Task.CompletedTask;
 
@@ -131,16 +139,19 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         {
             Palette = AccentPalette.Default;
             Wordmark = null;
+            Mark = null;
             return Task.CompletedTask;
         }
         if (server.Branding is { } saved)
         {
             Palette = AccentPalette.From(saved.Accent);
-            Wordmark = Uri.TryCreate(saved.Wordmark, UriKind.Absolute, out var wordmark) ? OnTheServer(server.BaseUri, wordmark) : null;
+            Wordmark = Saved(server.BaseUri, saved.Wordmark);
+            Mark = Saved(server.BaseUri, saved.Mark);
         }
         else
         {
             Wordmark = null;
+            Mark = null;
         }
         return ReadAsync(server);
     }
@@ -163,13 +174,16 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         var cancellationToken = run.Token;
         AccentPalette palette;
         Uri? wordmark;
+        Uri? mark;
         SavedBranding answer;
         try
         {
             var branding = await _branding.GetAsync(server.BaseUri, cancellationToken);
             palette = AccentPalette.From(branding.AccentColor);
             wordmark = OnTheServer(server.BaseUri, ArtworkUrl.Resolve(server.BaseUri, branding.WordmarkUrl));
-            answer = new SavedBranding(AccentPalette.Parse(branding.AccentColor)?.ToString() ?? SavedBranding.NoAccent, wordmark?.AbsoluteUri);
+            mark = OnTheServer(server.BaseUri, ArtworkUrl.Resolve(server.BaseUri, branding.MarkUrl));
+            answer = new SavedBranding(AccentPalette.Parse(branding.AccentColor)?.ToString() ?? SavedBranding.NoAccent, wordmark?.AbsoluteUri,
+                mark?.AbsoluteUri);
         }
         catch (Exception ex)
         {
@@ -188,6 +202,7 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         _retries = 0;
         Palette = palette;
         Wordmark = wordmark;
+        Mark = mark;
         await RememberAsync(server, answer);
     }
 
@@ -256,8 +271,11 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
 
     private static bool IsSignedIn(SessionState state) => state is not (SessionState.NoServer or SessionState.SignedOut);
 
+    // A picture's address as saved, if it is still one on the server.
+    private static Uri? Saved(Uri server, string? url) => Uri.TryCreate(url, UriKind.Absolute, out var uri) ? OnTheServer(server, uri) : null;
+
     // The server names its own asset, always relative to itself (silo-server internal/branding/render.go). A picture from
-    // anywhere else is not its wordmark, and fetching it would tell that host about this PC.
+    // anywhere else is not its wordmark or mark, and fetching it would tell that host about this PC.
     private static Uri? OnTheServer(Uri server, Uri? url) =>
         url is not null && Uri.Compare(url, server, UriComponents.SchemeAndServer, UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) == 0
             ? url

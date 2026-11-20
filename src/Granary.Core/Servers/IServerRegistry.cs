@@ -22,9 +22,10 @@ public sealed record ServerEntry(
 /// The server's branding as it last answered (<c>GET /api/v2/theme/branding</c>), so Granary paints its accent at once
 /// the next time, before the server answers, and keeps it while a read fails, as Silo's apps keep the last branding of
 /// each server. <see cref="Accent"/> is the accent as "#rrggbb", or <see cref="NoAccent"/> for a server without one;
-/// <see cref="Wordmark"/> the wordmark's address on the server, or null.
+/// <see cref="Wordmark"/> the wordmark's address on the server, or null; <see cref="Mark"/> the square mark's, or null (and
+/// null in a file saved before Granary read it).
 /// </summary>
-public sealed record SavedBranding(string Accent, string? Wordmark)
+public sealed record SavedBranding(string Accent, string? Wordmark, string? Mark = null)
 {
     public const string NoAccent = "none";
 }

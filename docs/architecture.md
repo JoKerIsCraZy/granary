@@ -706,6 +706,25 @@ memory 1.6 to 1.05 GB, and single gen2 pauses that XAML starts (DisconnectUnused
 timer ticks, a minute of fast switches and scrolling, maximized on the ultrawide: UI thread silent over 0.7 s 8 times to
 4, the longest GC pause 2.8 to 1.9 s, GC pauses 20.8 to 13.3 s.
 
+## The server's branding
+
+`ServerAccent` (Core) reads the active server's branding (docs/api-contract.md, 6.5.1) and offers its accent (`Palette`),
+its wordmark (`Wordmark`) and its square mark (`Mark`). Both pictures are taken only from the server itself
+(`OnTheServer`), the remembered ones too, and remembered with the server (`SavedBranding`), so they show at once on the
+next start. Granary has its own name and logo; Silo's own wordmark and mark, which the web falls back on, are never shown
+for a server.
+
+- **The sidebar's top** (`MainWindow.Wordmark.cs`) is the NavigationView's `PaneCustomContent`, not its `PaneHeader`:
+  NavigationView collapses the header in the rail (`ListSizeCompact`), and the entries moved up and down under it as the
+  rail opened and closed. The custom content stays in both, and holds one link with both looks in one cell: the name or
+  wordmark for the open pane, the mark for the rail, in the entries' icon column. `ShowPaneParts` switches them with the
+  pane, by opacity only (a 150 ms cross-fade, as the web's), so the top keeps its height. A server without a mark, or one
+  whose picture failed, is shown by Silo's own mark (`SiloMarkFallback`, the brand file `silo-mark-flat.svg`, unaltered at
+  26 px with its clear space; Assets/Brand/NOTICE.txt). With Server logo off the rail shows nothing there, and the link is
+  then neither clickable nor read out.
+- Each picture decodes at its shown height only; a load failure logs a warning without the address and falls back (the
+  name for the wordmark, Silo's mark for the mark).
+
 ## Server playback
 
 A title plays through one `ServerPlayback` (Granary.Core) per start of the player page; the page's

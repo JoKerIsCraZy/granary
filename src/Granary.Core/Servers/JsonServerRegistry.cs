@@ -289,7 +289,7 @@ public sealed class JsonServerRegistry : IServerRegistry
         return new ServerEntry(id, address, name, stored.ServerId, stored.AddedAt, stored.LastUsedAt, stored.LastProfileId)
         {
             // A file from before branding was kept has none: the server is read as one never read.
-            Branding = stored.Branding is { Accent: { } accent } branding ? new SavedBranding(accent, branding.Wordmark) : null,
+            Branding = stored.Branding is { Accent: { } accent } branding ? new SavedBranding(accent, branding.Wordmark, branding.Mark) : null,
         };
     }
 
@@ -308,7 +308,7 @@ public sealed class JsonServerRegistry : IServerRegistry
 
     private static ServerRegistryFileEntry ToFileEntry(ServerEntry entry) =>
         new(entry.Id, entry.BaseUri.OriginalString, entry.Name, entry.ServerId, entry.AddedAt, entry.LastUsedAt, entry.LastProfileId,
-            entry.Branding is { } branding ? new ServerRegistryFileBranding(branding.Accent, branding.Wordmark) : null);
+            entry.Branding is { } branding ? new ServerRegistryFileBranding(branding.Accent, branding.Wordmark, branding.Mark) : null);
 
     private static Uri NormalizeAddress(Uri baseUri)
     {
