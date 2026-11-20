@@ -1060,6 +1060,20 @@ SiloHttp ─▶ ClientIdentityHandler ─▶ AuthenticationHandler ─▶ Socket
   and replays the request, signs out on `session_expired` or a rejected refresh, passes a refresh `503`
   (with `Retry-After`) to the caller instead of the `401`, and clears the profile on
   `profile_verification_required`.
+- A household write can go out as a profile that does not act (`ManagingProfile.Lent`, docs/api-contract.md 6.7): the
+  picker's Add profile creates as the primary profile without picking it. Such a request is `SiloAuth.Account` with the
+  lent profile in its options; the handler sends that profile's id and proof in place of the session's, and a refusal
+  of it leaves the selected profile alone. A lent profile carries its server and account: the handler sends nothing
+  (`ProfileChangedException`) when the request is for another server or URL, is not an account request, or another
+  account is signed in, and checks the account again before the replay after a refresh. The headers live only on that
+  request message, so a concurrent request, the refresh and later requests never see them, and the primary handler
+  follows no redirect. The proof lives in memory for that one Add. The acting profile's household writes
+  (`ManagingProfile.Acting`) are bound to the profile and its account as `SendAsAccountProfileAsync` binds any write.
+- The profile editor (`ViewModels/Profiles/ProfileEditorViewModel*.cs`, shown by `Controls/ProfileEditorView`) takes a
+  `ProfileEditorTarget`: the server, the `ManagingProfile` it writes as and the household as last read, whose flags decide
+  which limits it offers and sends. Settings → Profiles makes it with the acting profile; the picker's Add profile with a
+  lent one, made after the primary profile's PIN check from the server and account its list was read for, and dropped
+  with the editor. A picture is checked by `AvatarUpload.Check` before it is kept and again before it is sent.
 - `TokenRefresher` makes the refresh single-flight per server: a caller whose token was already replaced
   gets the new one without a network call, and a failed refresh answers everyone waiting until its
   `Retry-After` passes. The refresh runs on its own client (identity handler only); a caller can stop

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Granary.App.Controls;
 using Granary.Core.Settings.Search;
+using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -58,6 +59,17 @@ public sealed partial class SettingsPage
             list.AddHandler(KeyDownEvent, new KeyEventHandler(OnEntryKeyDown), handledEventsToo: true);
         }
         Search.PropertyChanged += OnSearchChanged;
+        // The sidebar's profile decides whether Profiles is offered: the results follow it while the page shows.
+        Loaded += (_, _) => Sidebar.PropertyChanged += OnSidebarChanged;
+        Unloaded += (_, _) => Sidebar.PropertyChanged -= OnSidebarChanged;
+    }
+
+    private void OnSidebarChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SidebarViewModel.Profile))
+        {
+            DispatcherQueue.TryEnqueue(ShowResults);
+        }
     }
 
     private void OnSearchChanged(object? sender, PropertyChangedEventArgs e)
@@ -85,7 +97,9 @@ public sealed partial class SettingsPage
         {
             foreach (var (heading, list, _) in Groups())
             {
-                var shown = _entries[list].Where(entry => listed is null || listed.Contains(entry.Tag as string ?? "")).ToList();
+                // A page held back for this profile (Profiles, for the household's primary profile only) is not offered either.
+                var shown = _entries[list].Where(entry => entry.Visibility == Visibility.Visible
+                    && (listed is null || listed.Contains(entry.Tag as string ?? ""))).ToList();
                 Keep(list.Items, shown);
                 heading.Visibility = list.Visibility = shown.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
                 if (shown.Count > 0)

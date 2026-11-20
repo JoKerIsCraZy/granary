@@ -47,6 +47,12 @@ public sealed class AuthenticationHandler(
             logger.LogInformation("A write made for another account's profile was not sent");
             throw new ProfileChangedException();
         }
+        if (request.GetLent() is { } lent && !MayLend(auth, server, session, lent))
+        {
+            // A lent profile's id and proof go only to its own server, as its own account, on an account request.
+            logger.LogInformation("A household write lent to another server or account was not sent");
+            throw new ProfileChangedException();
+        }
         if (server is null || session is null)
         {
             // Without credentials the server answers 401, and the caller gets exactly that.
@@ -86,6 +92,11 @@ public sealed class AuthenticationHandler(
                 // A 401 comes from the auth middleware before the handler ran, so replaying is safe. Once only,
                 // as the same login and profile: only the bearer token changes.
                 response.Dispose();
+                if (request.GetLent() is { } lentAgain && result.Credentials!.Account?.Id != lentAgain.AccountId)
+                {
+                    // The refresh renews the same login, so this does not happen; a lent proof still never goes as another.
+                    throw new ProfileChangedException();
+                }
                 var retry = Clone(request);
                 retry.Headers.Authorization = Bearer(result.Credentials!);
                 var retried = await base.SendAsync(retry, cancellationToken).ConfigureAwait(false);
@@ -98,6 +109,13 @@ public sealed class AuthenticationHandler(
                 return response;
         }
     }
+
+    // The server is only found for a URL beneath its base (SiloRequestOptions.GetServer).
+    private static bool MayLend(SiloAuth auth, ServerEntry? server, SessionCredentials? session, ManagingProfile lent) =>
+        auth == SiloAuth.Account
+        && server is not null
+        && lent.BelongsTo(server.BaseUri)
+        && session?.Account?.Id == lent.AccountId;
 
     private ServerEntry? FindServer(HttpRequestMessage request)
     {
@@ -161,11 +179,21 @@ public sealed class AuthenticationHandler(
         request.Headers.Remove(ProfileTokenHeader);
         if (auth == SiloAuth.Profile && session.ProfileId is { } profileId)
         {
-            request.Headers.TryAddWithoutValidation(ProfileIdHeader, profileId);
-            if (session.ProfileToken is { } profileToken)
-            {
-                request.Headers.TryAddWithoutValidation(ProfileTokenHeader, profileToken);
-            }
+            AddProfile(request, profileId, session.ProfileToken);
+        }
+        else if (auth == SiloAuth.Account && request.GetLent() is { } lent)
+        {
+            // A profile that does not act, for this request only (ManagingProfile.Lent): its own proof, never the session's.
+            AddProfile(request, lent.ProfileId, lent.Token);
+        }
+    }
+
+    private static void AddProfile(HttpRequestMessage request, string profileId, string? profileToken)
+    {
+        request.Headers.TryAddWithoutValidation(ProfileIdHeader, profileId);
+        if (profileToken is not null)
+        {
+            request.Headers.TryAddWithoutValidation(ProfileTokenHeader, profileToken);
         }
     }
 

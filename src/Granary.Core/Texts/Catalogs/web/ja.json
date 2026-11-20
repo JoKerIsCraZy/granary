@@ -9836,6 +9836,60 @@
       "value": "コレクションを削除しました"
     }
   ],
+  "web.common.toast.profiles.avatarRemoveFailed": [
+    {
+      "type": 0,
+      "value": "アバターを削除できませんでした"
+    }
+  ],
+  "web.common.toast.profiles.avatarRemoved": [
+    {
+      "type": 0,
+      "value": "アバターを削除しました"
+    }
+  ],
+  "web.common.toast.profiles.avatarUpdated": [
+    {
+      "type": 0,
+      "value": "アバターを更新しました"
+    }
+  ],
+  "web.common.toast.profiles.avatarUploadFailed": [
+    {
+      "type": 0,
+      "value": "アバターをアップロードできませんでした"
+    }
+  ],
+  "web.common.toast.profiles.created": [
+    {
+      "type": 0,
+      "value": "プロフィールを作成しました"
+    }
+  ],
+  "web.common.toast.profiles.deleteFailed": [
+    {
+      "type": 0,
+      "value": "削除できませんでした"
+    }
+  ],
+  "web.common.toast.profiles.deleted": [
+    {
+      "type": 0,
+      "value": "プロフィールを削除しました"
+    }
+  ],
+  "web.common.toast.profiles.saveFailed": [
+    {
+      "type": 0,
+      "value": "プロフィールを保存できませんでした"
+    }
+  ],
+  "web.common.toast.profiles.updated": [
+    {
+      "type": 0,
+      "value": "プロフィールを更新しました"
+    }
+  ],
   "web.common.toast.subtitles.resetPreferenceFailed": [
     {
       "type": 0,
@@ -9926,6 +9980,18 @@
     {
       "type": 0,
       "value": "右にスクロール"
+    }
+  ],
+  "web.common.ui.imageUpload.delete": [
+    {
+      "type": 0,
+      "value": "画像を削除"
+    }
+  ],
+  "web.common.ui.imageUpload.removeSelected": [
+    {
+      "type": 0,
+      "value": "選択したファイルを外す"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -14202,6 +14268,558 @@
       "value": "視聴者"
     }
   ],
+  "web.profiles.editor.accessSection": [
+    {
+      "type": 0,
+      "value": "アクセス"
+    }
+  ],
+  "web.profiles.editor.accessSectionHint": [
+    {
+      "type": 0,
+      "value": "このプロフィールのコンテンツ制限とライブラリの表示設定です。"
+    }
+  ],
+  "web.profiles.editor.advisoryAgeHelp": [
+    {
+      "type": 0,
+      "value": "Common Sense Mediaなどの評価サービスが、より年齢の高い視聴者向けとしているタイトルを非表示にします。"
+    }
+  ],
+  "web.profiles.editor.advisoryAgeHelpFallback": [
+    {
+      "type": 0,
+      "value": "Common Sense Mediaなどの評価サービスが、より年齢の高い視聴者向けとしているタイトルを非表示にします。推奨年齢のないタイトルは、年齢制限のレーティングのみで制限されます。"
+    }
+  ],
+  "web.profiles.editor.avatarAlt": [
+    {
+      "type": 0,
+      "value": "プロフィールのアバター"
+    }
+  ],
+  "web.profiles.editor.customUpload": [
+    {
+      "type": 0,
+      "value": "カスタムアップロード"
+    }
+  ],
+  "web.profiles.editor.customUploadSelected": [
+    {
+      "type": 0,
+      "value": "カスタムアップロードを選択済み"
+    }
+  ],
+  "web.profiles.editor.description": [
+    {
+      "type": 0,
+      "value": "このプロフィールのアバター、名前、PIN、アクセスルールを設定します。"
+    }
+  ],
+  "web.profiles.editor.hideWithoutAge": [
+    {
+      "type": 0,
+      "value": "推奨年齢のないタイトルを非表示"
+    }
+  ],
+  "web.profiles.editor.hideWithoutAgeHint": [
+    {
+      "type": 0,
+      "value": "この年齢以下と評価されたタイトルのみを表示します。推奨年齢は順次取得されるため、最初は表示されるタイトルが少ない場合があります。"
+    }
+  ],
+  "web.profiles.editor.initialsFallback": [
+    {
+      "type": 0,
+      "value": "イニシャルを表示"
+    }
+  ],
+  "web.profiles.editor.keepPin": [
+    {
+      "type": 0,
+      "value": "現在のPINを維持"
+    }
+  ],
+  "web.profiles.editor.kids": [
+    {
+      "type": 0,
+      "value": "キッズプロフィール"
+    }
+  ],
+  "web.profiles.editor.kidsHint": [
+    {
+      "type": 0,
+      "value": "より安全な年齢制限とライブラリを初期設定します。"
+    }
+  ],
+  "web.profiles.editor.librariesRequired": [
+    {
+      "type": 0,
+      "value": "ライブラリを1つ以上選択してください。"
+    }
+  ],
+  "web.profiles.editor.maxAdvisoryAge": [
+    {
+      "type": 0,
+      "value": "推奨年齢の上限"
+    }
+  ],
+  "web.profiles.editor.maxContentRating": [
+    {
+      "type": 0,
+      "value": "年齢制限の上限"
+    }
+  ],
+  "web.profiles.editor.maxPlaybackQuality": [
+    {
+      "type": 0,
+      "value": "再生画質の上限"
+    }
+  ],
+  "web.profiles.editor.moreOptions": [
+    {
+      "type": 0,
+      "value": "ほかの候補"
+    }
+  ],
+  "web.profiles.editor.name": [
+    {
+      "type": 0,
+      "value": "名前"
+    }
+  ],
+  "web.profiles.editor.nameRequired": [
+    {
+      "type": 0,
+      "value": "プロフィール名を入力してください。"
+    }
+  ],
+  "web.profiles.editor.newPin": [
+    {
+      "type": 0,
+      "value": "新しいPIN"
+    }
+  ],
+  "web.profiles.editor.pinInvalid": [
+    {
+      "type": 0,
+      "value": "PINは4桁の数字で入力してください。"
+    }
+  ],
+  "web.profiles.editor.pinOptional": [
+    {
+      "type": 0,
+      "value": "PIN（任意）"
+    }
+  ],
+  "web.profiles.editor.pinPlaceholder": [
+    {
+      "type": 0,
+      "value": "4桁"
+    }
+  ],
+  "web.profiles.editor.pinRemoved": [
+    {
+      "type": 0,
+      "value": "PINは削除されます"
+    }
+  ],
+  "web.profiles.editor.pinRemovedOnSave": [
+    {
+      "type": 0,
+      "value": "保存時にPINが削除されます"
+    }
+  ],
+  "web.profiles.editor.presets": [
+    {
+      "type": 0,
+      "value": "プリセットのアバター"
+    }
+  ],
+  "web.profiles.editor.presetsHint": [
+    {
+      "type": 0,
+      "value": "DiceBearのスタイルを選ぶか、楽しい候補をシャッフルするか、空欄のままにしてイニシャルを表示します。カスタムアップロードはプリセットより優先されます。"
+    }
+  ],
+  "web.profiles.editor.presetsShowing": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": "。現在"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件の候補を表示中です。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.editor.preview": [
+    {
+      "type": 0,
+      "value": "プレビュー"
+    }
+  ],
+  "web.profiles.editor.profileSection": [
+    {
+      "type": 0,
+      "value": "プロフィール"
+    }
+  ],
+  "web.profiles.editor.profileSectionHint": [
+    {
+      "type": 0,
+      "value": "アバターと基本情報を選択します。"
+    }
+  ],
+  "web.profiles.editor.removePin": [
+    {
+      "type": 0,
+      "value": "PINを削除"
+    }
+  ],
+  "web.profiles.editor.requestsAllowed": [
+    {
+      "type": 0,
+      "value": "リクエストを許可"
+    }
+  ],
+  "web.profiles.editor.requestsAllowedHint": [
+    {
+      "type": 0,
+      "value": "このプロフィールで、ライブラリにないタイトルを閲覧してリクエストできるようにします。これらのタイトルには、年齢制限の上限が米国のレーティングのみで適用され、推奨年齢の上限は適用されません。"
+    }
+  ],
+  "web.profiles.editor.restrictLibraries": [
+    {
+      "type": 0,
+      "value": "ライブラリを制限"
+    }
+  ],
+  "web.profiles.editor.restrictLibrariesHint": [
+    {
+      "type": 0,
+      "value": "このプロフィールで利用できるライブラリを限定します。"
+    }
+  ],
+  "web.profiles.editor.save": [
+    {
+      "type": 0,
+      "value": "プロフィールを保存"
+    }
+  ],
+  "web.profiles.editor.saving": [
+    {
+      "type": 0,
+      "value": "保存中…"
+    }
+  ],
+  "web.profiles.editor.titleEdit": [
+    {
+      "type": 0,
+      "value": "プロフィールを編集"
+    }
+  ],
+  "web.profiles.editor.titleNew": [
+    {
+      "type": 0,
+      "value": "新しいプロフィール"
+    }
+  ],
+  "web.profiles.editor.uploadsUnavailable": [
+    {
+      "type": 0,
+      "value": "カスタムアップロードは利用できません"
+    }
+  ],
+  "web.profiles.editor.uploadsUnavailableHint": [
+    {
+      "type": 0,
+      "value": "プロフィールのアバターをアップロードするには、非公開のS3アバターストレージを設定してください。"
+    }
+  ],
+  "web.profiles.helpers.access.advisoryAgeMax": [
+    {
+      "type": 0,
+      "value": "推奨年齢"
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": "歳まで"
+    }
+  ],
+  "web.profiles.helpers.access.advisoryAgeMaxRatedOnly": [
+    {
+      "type": 0,
+      "value": "推奨年齢"
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": "歳まで（年齢指定のある作品のみ）"
+    }
+  ],
+  "web.profiles.helpers.access.allLibraries": [
+    {
+      "type": 0,
+      "value": "すべてのライブラリ"
+    }
+  ],
+  "web.profiles.helpers.access.anyQuality": [
+    {
+      "type": 0,
+      "value": "画質制限なし"
+    }
+  ],
+  "web.profiles.helpers.access.libraries": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ライブラリ"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.helpers.access.noRequests": [
+    {
+      "type": 0,
+      "value": "リクエスト不可"
+    }
+  ],
+  "web.profiles.helpers.access.quality": [
+    {
+      "type": 0,
+      "value": "画質："
+    },
+    {
+      "type": 1,
+      "value": "quality"
+    }
+  ],
+  "web.profiles.helpers.advisoryAge.agesAndUnder": [
+    {
+      "type": 6,
+      "value": "age",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "age_text"
+            },
+            {
+              "type": 0,
+              "value": "歳以下"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.helpers.advisoryAge.noLimit": [
+    {
+      "type": 0,
+      "value": "制限なし"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.cometCat": [
+    {
+      "type": 0,
+      "value": "コメットキャット"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.neonPup": [
+    {
+      "type": 0,
+      "value": "ネオンパピー"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.novaGecko": [
+    {
+      "type": 0,
+      "value": "ノヴァゲッコー"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.orbitBunny": [
+    {
+      "type": 0,
+      "value": "オービットバニー"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.pixelPenguin": [
+    {
+      "type": 0,
+      "value": "ピクセルペンギン"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.skyFox": [
+    {
+      "type": 0,
+      "value": "スカイフォックス"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.solarOwl": [
+    {
+      "type": 0,
+      "value": "ソーラーアウル"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.starBear": [
+    {
+      "type": 0,
+      "value": "スターベア"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.botttsNeutral.label": [
+    {
+      "type": 0,
+      "value": "Bottts Neutral"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.botttsNeutral.summary": [
+    {
+      "type": 0,
+      "value": "かわいいモジュール式のロボット風アイコン"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.funEmoji.label": [
+    {
+      "type": 0,
+      "value": "Fun Emoji"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.funEmoji.summary": [
+    {
+      "type": 0,
+      "value": "大きくカラフルで、ひと目でわかる顔"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.identicon.label": [
+    {
+      "type": 0,
+      "value": "Identicon"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.identicon.summary": [
+    {
+      "type": 0,
+      "value": "幾何学的でメカニカルな高コントラストの模様"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.initials.label": [
+    {
+      "type": 0,
+      "value": "イニシャル"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.initials.summary": [
+    {
+      "type": 0,
+      "value": "くっきりした背景に文字を配したシンプルなアバター"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.pixelArtNeutral.label": [
+    {
+      "type": 0,
+      "value": "Pixel Art Neutral"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.pixelArtNeutral.summary": [
+    {
+      "type": 0,
+      "value": "バリエーション豊かなレトロなピクセルの顔"
+    }
+  ],
+  "web.profiles.helpers.contentRating.any": [
+    {
+      "type": 0,
+      "value": "すべてのコンテンツ"
+    }
+  ],
+  "web.profiles.helpers.contentRating.max": [
+    {
+      "type": 1,
+      "value": "rating"
+    },
+    {
+      "type": 0,
+      "value": "まで"
+    }
+  ],
+  "web.profiles.helpers.quality.any": [
+    {
+      "type": 0,
+      "value": "すべて"
+    }
+  ],
+  "web.profiles.helpers.quality.anyDescription": [
+    {
+      "type": 0,
+      "value": "すべての解像度を許可"
+    }
+  ],
+  "web.profiles.helpers.quality.fourKDescription": [
+    {
+      "type": 0,
+      "value": "4K以下のバージョンを許可"
+    }
+  ],
+  "web.profiles.helpers.quality.standard": [
+    {
+      "type": 0,
+      "value": "標準"
+    }
+  ],
+  "web.profiles.helpers.quality.standardDescription": [
+    {
+      "type": 0,
+      "value": "4K以上のバージョンを非表示"
+    }
+  ],
   "web.profiles.libraries.count": [
     {
       "type": 6,
@@ -14228,10 +14846,28 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.profiles.libraryAccess.allLibraries": [
+    {
+      "type": 0,
+      "value": "すべてのライブラリ"
+    }
+  ],
+  "web.profiles.libraryAccess.disabled": [
+    {
+      "type": 0,
+      "value": "無効"
+    }
+  ],
   "web.profiles.libraryAccess.label": [
     {
       "type": 0,
       "value": "ライブラリへのアクセス"
+    }
+  ],
+  "web.profiles.libraryAccess.primaryNote": [
+    {
+      "type": 0,
+      "value": "メインプロフィールには、アカウントがアクセスできるすべてのライブラリが表示されます。ライブラリは設定 → ライブラリで非表示にできます。"
     }
   ],
   "web.profiles.librarySelect.libraryFallback": [
@@ -14284,6 +14920,24 @@
       "value": "second"
     }
   ],
+  "web.profiles.picker.add": [
+    {
+      "type": 0,
+      "value": "プロフィールを追加"
+    }
+  ],
+  "web.profiles.picker.addFormFailed": [
+    {
+      "type": 0,
+      "value": "新しいプロフィールのフォームを開けませんでした。もう一度お試しください。"
+    }
+  ],
+  "web.profiles.picker.addNeedsPin": [
+    {
+      "type": 0,
+      "value": "プロフィールを追加するには、メインプロフィールのPINが必要です。"
+    }
+  ],
   "web.profiles.picker.documentTitle": [
     {
       "type": 0,
@@ -14298,6 +14952,12 @@
     {
       "type": 0,
       "value": "（PINで保護）"
+    }
+  ],
+  "web.profiles.picker.primaryMissing": [
+    {
+      "type": 0,
+      "value": "プロフィールの管理に必要なメインプロフィールが見つかりませんでした。"
     }
   ],
   "web.profiles.picker.title": [
@@ -17038,6 +17698,157 @@
     {
       "type": 0,
       "value": "Wi-Fi"
+    }
+  ],
+  "web.settings.profiles.badge.current": [
+    {
+      "type": 0,
+      "value": "使用中"
+    }
+  ],
+  "web.settings.profiles.badge.kids": [
+    {
+      "type": 0,
+      "value": "キッズ"
+    }
+  ],
+  "web.settings.profiles.badge.pin": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.settings.profiles.badge.primary": [
+    {
+      "type": 0,
+      "value": "メイン"
+    }
+  ],
+  "web.settings.profiles.delete": [
+    {
+      "type": 0,
+      "value": "削除"
+    }
+  ],
+  "web.settings.profiles.deleteDescription": [
+    {
+      "type": 0,
+      "value": "プロフィール「"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "」を削除しますか？この操作は元に戻せません。"
+    }
+  ],
+  "web.settings.profiles.deleteGuard.active": [
+    {
+      "type": 0,
+      "value": "このプロフィールを削除する前に、別のプロフィールに切り替えてください。"
+    }
+  ],
+  "web.settings.profiles.deleteGuard.lastProfile": [
+    {
+      "type": 0,
+      "value": "プロフィールが少なくとも1つ必要です。"
+    }
+  ],
+  "web.settings.profiles.deleteGuard.primary": [
+    {
+      "type": 0,
+      "value": "メインプロフィールは、アカウントを削除する場合にのみ削除できます。"
+    }
+  ],
+  "web.settings.profiles.deleteTitle": [
+    {
+      "type": 0,
+      "value": "プロフィールを削除"
+    }
+  ],
+  "web.settings.profiles.edit": [
+    {
+      "type": 0,
+      "value": "編集"
+    }
+  ],
+  "web.settings.profiles.empty.body": [
+    {
+      "type": 0,
+      "value": "プロフィールを作成して、アクセスと再生時の識別を管理します。"
+    }
+  ],
+  "web.settings.profiles.empty.title": [
+    {
+      "type": 0,
+      "value": "プロフィールがまだありません"
+    }
+  ],
+  "web.settings.profiles.limitReached": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "このアカウントで作成できるプロフィールは"
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "件までです。管理者は上限を引き上げることができます。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.profiles.newProfile": [
+    {
+      "type": 0,
+      "value": "新しいプロフィール"
+    }
+  ],
+  "web.settings.profiles.savedPinFailed": [
+    {
+      "type": 0,
+      "value": "プロフィールを保存しましたが、PINを確認できませんでした"
+    }
+  ],
+  "web.settings.profiles.savedWithLockout": [
+    {
+      "type": 0,
+      "value": "プロフィールを保存しました。"
+    },
+    {
+      "type": 1,
+      "value": "lockout"
+    }
+  ],
+  "web.settings.profiles.subtitle": [
+    {
+      "type": 0,
+      "value": "プロフィール名、PIN、アクセスルールを管理します。"
+    }
+  ],
+  "web.settings.profiles.title": [
+    {
+      "type": 0,
+      "value": "プロフィール"
+    }
+  ],
+  "web.settings.profiles.use": [
+    {
+      "type": 0,
+      "value": "使用"
     }
   ],
   "web.settings.resetButton.label": [

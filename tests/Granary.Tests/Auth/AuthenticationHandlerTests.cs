@@ -334,6 +334,239 @@ public sealed class AuthenticationHandlerTests
     }
 
     [Fact]
+    public async Task ALentProfile_GoesInsteadOfTheSessions_WithItsOwnProof()
+    {
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server, profileId: "7", profileToken: "pin-token");
+        _pipeline.Server.Intercept = r => r.Path == "/api/v2/profiles/9" ? FakeSiloServer.Json(204, "") : null;
+
+        await new ProfilesApi(_pipeline.Http).DeleteAsync(server.BaseUri, "9", ManagingProfile.Lent(server.BaseUri, "1", "1", "owner-token"),
+            TestContext.Current.CancellationToken);
+
+        var sent = Assert.Single(_pipeline.Server.Requests);
+        Assert.Equal("Bearer access-1", sent.Authorization);
+        Assert.Equal(("1", "owner-token"), (sent.Header("X-Profile-Id"), sent.Header("X-Profile-Token")));
+    }
+
+    [Fact]
+    public async Task ALentProfileWithoutAPin_GoesWithoutAProof_AlsoWhileNoProfileActs()
+    {
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server);
+        _pipeline.Server.Intercept = r => r.Path == "/api/v2/profiles/9" ? FakeSiloServer.Json(204, "") : null;
+
+        await new ProfilesApi(_pipeline.Http).DeleteAsync(server.BaseUri, "9", ManagingProfile.Lent(server.BaseUri, "1", "1", null), TestContext.Current.CancellationToken);
+
+        var sent = Assert.Single(_pipeline.Server.Requests);
+        Assert.Equal(("1", (string?)null), (sent.Header("X-Profile-Id"), sent.Header("X-Profile-Token")));
+    }
+
+    [Fact]
+    public async Task ALentProfileTheServerWantsVerified_LeavesTheSessionsProfileAlone()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server, profileId: "7", profileToken: "pin-token");
+        _pipeline.Server.Intercept = r => r.Path == "/api/v2/profiles/9" ? FakeSiloServer.Problem(403, ProblemCodes.ProfileVerificationRequired) : null;
+
+        var error = await Assert.ThrowsAsync<SiloApiException>(() =>
+            new ProfilesApi(_pipeline.Http).DeleteAsync(server.BaseUri, "9", ManagingProfile.Lent(server.BaseUri, "1", "1", "stale-token"), ct));
+
+        Assert.Equal(ProblemCodes.ProfileVerificationRequired, error.Code);
+        var stored = await _pipeline.Credentials.GetAsync(server.Id, ct);
+        Assert.Equal(("7", "pin-token"), (stored?.ProfileId, stored?.ProfileToken));
+    }
+
+    [Fact]
+    public async Task AHouseholdWriteAsTheActingProfile_IsNotSentOnceAnotherActs()
+    {
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server, profileId: "9");
+
+        await Assert.ThrowsAsync<ProfileChangedException>(() => new ProfilesApi(_pipeline.Http)
+            .DeleteAsync(server.BaseUri, "8", ManagingProfile.Acting("1", "7"), TestContext.Current.CancellationToken));
+
+        Assert.Empty(_pipeline.Server.Requests);
+    }
+
+    [Fact]
+    public async Task ALentProfile_GoesOnlyOnItsOwnRequest_NotOnOnesSentWhileItIsInFlight()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server, profileId: "7", profileToken: "pin-token");
+        var lentArrived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pipeline.Server.Hold = r =>
+        {
+            if (r.Path != "/api/v2/profiles/9")
+            {
+                return Task.CompletedTask;
+            }
+            lentArrived.TrySetResult();
+            return release.Task;
+        };
+        _pipeline.Server.Intercept = r => r.Path == "/api/v2/profiles/9" ? FakeSiloServer.Json(204, "") : null;
+
+        var lent = new ProfilesApi(_pipeline.Http).DeleteAsync(server.BaseUri, "9", ManagingProfile.Lent(server.BaseUri, "1", "1", "owner-token"), ct);
+        await lentArrived.Task.WaitAsync(ct);
+        await new AccountApi(_pipeline.Http).GetMeAsync(server.BaseUri, ct);
+        await _pipeline.Http.GetAsync(server.BaseUri, "api/v2/home", SiloAuth.Profile, Core.Api.SiloJsonContext.Default.DictionaryStringString, ct);
+        await new ProfilesApi(_pipeline.Http).ListAsync(server.BaseUri, ct);
+        release.SetResult();
+        await lent;
+
+        Assert.Equal(("1", "owner-token"), Headers(_pipeline.Server.RequestsTo("/api/v2/profiles/9").Single()));
+        Assert.Equal((null, null), Headers(_pipeline.Server.RequestsTo("/api/v2/account/me").Single()));
+        Assert.Equal(("7", "pin-token"), Headers(_pipeline.Server.RequestsTo("/api/v2/home").Single()));
+        Assert.Equal((null, null), Headers(_pipeline.Server.RequestsTo("/api/v2/profiles").Single()));
+    }
+
+    [Fact]
+    public async Task ALentProfile_DoesNotOutliveItsRequest()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server);
+        _pipeline.Server.Intercept = r => r.Path == "/api/v2/profiles/9" ? FakeSiloServer.Json(204, "") : null;
+
+        await new ProfilesApi(_pipeline.Http).DeleteAsync(server.BaseUri, "9", ManagingProfile.Lent(server.BaseUri, "1", "1", "owner-token"), ct);
+        await new ProfilesApi(_pipeline.Http).ListAsync(server.BaseUri, ct);
+        await new AccountApi(_pipeline.Http).GetMeAsync(server.BaseUri, ct);
+
+        Assert.All(_pipeline.Server.Requests.Where(r => r.Path != "/api/v2/profiles/9"), r => Assert.Equal((null, null), Headers(r)));
+        Assert.Null((await _pipeline.Credentials.GetAsync(server.Id, ct))!.ProfileId);
+    }
+
+    [Fact]
+    public async Task ALentProfile_IsReplayedAfterARefresh_ButNeverSentWithTheRefresh()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server, profileId: "7", profileToken: "pin-token");
+        _pipeline.Server.Intercept = r => r.Path == "/api/v2/profiles/9"
+            ? r.Authorization == "Bearer access-1" ? FakeSiloServer.Problem(401, ProblemCodes.InvalidToken) : FakeSiloServer.Json(204, "")
+            : null;
+
+        await new ProfilesApi(_pipeline.Http).DeleteAsync(server.BaseUri, "9", ManagingProfile.Lent(server.BaseUri, "1", "1", "owner-token"), ct);
+
+        Assert.Equal(["/api/v2/profiles/9", "/api/v2/auth/refresh", "/api/v2/profiles/9"], _pipeline.Server.Requests.Select(r => r.Path));
+        Assert.All(_pipeline.Server.RequestsTo("/api/v2/profiles/9"), r => Assert.Equal(("1", "owner-token"), Headers(r)));
+        var refresh = _pipeline.Server.RequestsTo("/api/v2/auth/refresh").Single();
+        Assert.Equal((null, null), Headers(refresh));
+        Assert.DoesNotContain("owner-token", refresh.Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ALentProfile_IsNotSentOnceAnotherAccountIsSignedIn()
+    {
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsSomeoneElseAsync(server);
+
+        await Assert.ThrowsAsync<ProfileChangedException>(() => new ProfilesApi(_pipeline.Http)
+            .DeleteAsync(server.BaseUri, "9", ManagingProfile.Lent(server.BaseUri, "1", "1", "owner-token"), TestContext.Current.CancellationToken));
+
+        Assert.Empty(_pipeline.Server.Requests);
+    }
+
+    [Fact]
+    public async Task ALentProfile_IsNotSentAfterSigningOut()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        var session = await _pipeline.SignInAsync(server);
+        await _pipeline.Credentials.RemoveAsync(server.Id, session.SessionId, ct);
+
+        await Assert.ThrowsAsync<ProfileChangedException>(() => new ProfilesApi(_pipeline.Http)
+            .DeleteAsync(server.BaseUri, "9", ManagingProfile.Lent(server.BaseUri, "1", "1", "owner-token"), ct));
+
+        Assert.Empty(_pipeline.Server.Requests);
+    }
+
+    [Fact]
+    public async Task ALentProfile_IsNotSentToAnotherServer_EvenOneTheSameAccountIsSignedInTo()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var home = await _pipeline.AddServerAsync("https://silo.test");
+        var other = await _pipeline.Registry.AddOrUpdateAsync(new Uri("https://other.test"), "Other server", "server-2", ct);
+        await _pipeline.SignInAsync(home);
+        await _pipeline.SignInAsync(other);
+        var lent = ManagingProfile.Lent(home.BaseUri, "1", "1", "owner-token");
+
+        await Assert.ThrowsAsync<ProfileChangedException>(() => new ProfilesApi(_pipeline.Http).DeleteAsync(other.BaseUri, "9", lent, ct));
+        await Assert.ThrowsAsync<ProfileChangedException>(() => new ProfilesApi(_pipeline.Http).DeleteAsync(new Uri("https://evil.test"), "9", lent, ct));
+        await Assert.ThrowsAsync<ProfileChangedException>(() => new ProfilesApi(_pipeline.Http).DeleteAsync(new Uri("https://silo.test/elsewhere"), "9",
+            ManagingProfile.Lent(new Uri("https://silo.test/elsewhere"), "1", "1", "owner-token"), ct));
+
+        Assert.Empty(_pipeline.Server.Requests);
+    }
+
+    [Fact]
+    public async Task ALentProfile_GoesOnlyOnAnAccountRequest()
+    {
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server, profileId: "7", profileToken: "pin-token");
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(server.BaseUri, "api/v2/home"));
+        request.SetAuth(SiloAuth.Profile);
+        request.SetServer(server.BaseUri);
+        request.Options.Set(SiloRequestOptions.Lent, ManagingProfile.Lent(server.BaseUri, "1", "1", "owner-token"));
+        using var client = new HttpClient(new Core.Http.AuthenticationHandler(_pipeline.Registry, _pipeline.Credentials, _pipeline.Refresher,
+            _pipeline.Clock, _pipeline.Logs.For<Core.Http.AuthenticationHandler>()) { InnerHandler = _pipeline.Server });
+
+        await Assert.ThrowsAsync<ProfileChangedException>(() => client.SendAsync(request, TestContext.Current.CancellationToken));
+
+        Assert.Empty(_pipeline.Server.Requests);
+    }
+
+    [Fact]
+    public async Task ALentProfile_DoesNotFollowARedirect()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server);
+        _pipeline.Server.Intercept = r =>
+        {
+            if (r.Path != "/api/v2/profiles/9")
+            {
+                return null;
+            }
+            var moved = new HttpResponseMessage(System.Net.HttpStatusCode.TemporaryRedirect);
+            moved.Headers.Location = new Uri("https://evil.test/collect");
+            return moved;
+        };
+
+        await Assert.ThrowsAsync<SiloApiException>(() =>
+            new ProfilesApi(_pipeline.Http).DeleteAsync(server.BaseUri, "9", ManagingProfile.Lent(server.BaseUri, "1", "1", "owner-token"), ct));
+
+        Assert.Equal(["/api/v2/profiles/9"], _pipeline.Server.Requests.Select(r => r.Path));
+        Assert.False(Core.CoreServiceCollectionExtensions.CreateSocketsHandler().AllowAutoRedirect);
+    }
+
+    [Fact]
+    public async Task ALentProfilesIdAndProof_NeverReachTheLog()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server, profileId: "7");
+        _pipeline.Server.Intercept = r => r.Path == "/api/v2/profiles/9" ? FakeSiloServer.Problem(403, ProblemCodes.ProfileVerificationRequired) : null;
+        var lent = ManagingProfile.Lent(server.BaseUri, "1", "p-lent-owner", "pvt-lent-secret");
+
+        await Assert.ThrowsAsync<SiloApiException>(() => new ProfilesApi(_pipeline.Http).DeleteAsync(server.BaseUri, "9", lent, ct));
+        await _pipeline.SignInAsSomeoneElseAsync(server);
+        var refused = await Assert.ThrowsAsync<ProfileChangedException>(() => new ProfilesApi(_pipeline.Http).DeleteAsync(server.BaseUri, "9", lent, ct));
+
+        Assert.NotEmpty(_pipeline.Logs.Lines);
+        foreach (string secret in new[] { "p-lent-owner", "pvt-lent-secret" })
+        {
+            Assert.DoesNotContain(secret, _pipeline.Logs.All, StringComparison.Ordinal);
+            Assert.DoesNotContain(secret, refused.ToString(), StringComparison.Ordinal);
+            Assert.DoesNotContain(secret, lent.ToString(), StringComparison.Ordinal);
+        }
+    }
+
+    private static (string? Id, string? Token) Headers(Fakes.RecordedRequest request) => (request.Header("X-Profile-Id"), request.Header("X-Profile-Token"));
+
+    [Fact]
     public async Task OtherForbidden_LeavesTheProfileAlone()
     {
         var ct = TestContext.Current.CancellationToken;

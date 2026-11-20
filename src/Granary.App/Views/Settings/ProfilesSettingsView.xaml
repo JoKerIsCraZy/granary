@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Settings → Profiles, as the web's ProfilesSettings: the household's profiles, each with its avatar, the Current, Primary,
+    Kids and PIN badges, the line of its limits, Edit and Delete (held back with the web's reason), and New profile while
+    the household has room. Only the household's primary profile sees the page. Lines between hairlines, as Settings →
+    Devices draws its lists.
+-->
+<UserControl
+    x:Class="Granary.App.Views.Settings.ProfilesSettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:views="using:Granary.App.Views.Settings"
+    xmlns:settings="using:Granary.Core.ViewModels.Settings"
+    xmlns:t="using:Granary.Core.Texts">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- Its own copy: the view is made before it joins the page, whose resources it cannot see then. -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- A badge beside a profile's name, as the web's outline Badge. -->
+            <Style x:Key="ProfileBadgeStyle" TargetType="Border">
+                <Setter Property="Padding" Value="8,1" />
+                <Setter Property="CornerRadius" Value="9" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="BorderBrush" Value="{StaticResource SiloSettingsHairlineBrush}" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+
+            <DataTemplate x:Key="ProfileTemplate" x:DataType="settings:ProfileSettingsRow">
+                <Grid Padding="4,16" ColumnSpacing="16" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,0,0,1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Width="40" Height="40" VerticalAlignment="Top">
+                        <controls:ProfileAvatar Width="40" Height="40" FontSize="16" Image="{x:Bind Avatar}" Initial="{x:Bind Initial}" />
+                    </Grid>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                                       Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
+                            <Border Style="{StaticResource ProfileBadgeStyle}" Visibility="{x:Bind IsCurrent}">
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.profiles.badge.current')}" FontSize="11" Foreground="{StaticResource SiloForegroundBrush}" />
+                            </Border>
+                            <Border Style="{StaticResource ProfileBadgeStyle}" Visibility="{x:Bind IsPrimary}">
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.profiles.badge.primary')}" FontSize="11" Foreground="{StaticResource SiloForegroundBrush}" />
+                            </Border>
+                            <Border Style="{StaticResource ProfileBadgeStyle}" Visibility="{x:Bind IsKids}">
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.profiles.badge.kids')}" FontSize="11" Foreground="{StaticResource SiloForegroundBrush}" />
+                            </Border>
+                            <Border Style="{StaticResource ProfileBadgeStyle}" Visibility="{x:Bind HasPin}">
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.profiles.badge.pin')}" FontSize="11" Foreground="{StaticResource SiloForegroundBrush}" />
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="{x:Bind AccessSummary}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="6" HorizontalAlignment="Right">
+                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}" Click="OnEditClick" AutomationProperties.Name="{x:Bind EditName}"
+                                    IsEnabled="{x:Bind IsIdle, Mode=OneWay}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE70F;" FontSize="12" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.profiles.edit')}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}" Click="OnDeleteClick" AutomationProperties.Name="{x:Bind DeleteName}"
+                                    IsEnabled="{x:Bind views:ProfilesSettingsView.CanPress(CanDelete, IsIdle), Mode=OneWay}"
+                                    AutomationProperties.HelpText="{x:Bind DeleteGuard}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE74D;" FontSize="12" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.profiles.delete')}" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <TextBlock Text="{x:Bind DeleteGuard}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Right"
+                                   MaxWidth="280" TextWrapping="Wrap" TextAlignment="Right" Visibility="{x:Bind controls:SettingsText.Shows(DeleteGuard)}" />
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <StackPanel HorizontalAlignment="Stretch" Spacing="0">
+        <Grid ColumnSpacing="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="8">
+                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.profiles.title')}" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14" TextWrapping="Wrap"
+                           Text="{x:Bind t:AppText.Get('web.settings.profiles.subtitle')}" />
+            </StackPanel>
+            <Button x:Name="NewProfileButton" Grid.Column="1" VerticalAlignment="Top" Margin="0,4,0,0" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                    Click="OnNewProfileClick" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.profiles.newProfile')}" Visibility="{x:Bind ViewModel.CanAdd, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.ShowsList, Mode=OneWay}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE710;" FontSize="12" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.profiles.newProfile')}" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <TextBlock Margin="0,16,0,0" Text="{x:Bind ViewModel.LimitText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}" TextWrapping="Wrap"
+                   Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.LimitText), Mode=OneWay}" />
+
+        <StackPanel Margin="0,16,0,0" Orientation="Horizontal" Spacing="16" Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.Status), Mode=OneWay}">
+            <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}" VerticalAlignment="Center"
+                       TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+            <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.RefreshCommand}"
+                    Visibility="{x:Bind ViewModel.HasLoadError, Mode=OneWay}" />
+        </StackPanel>
+
+        <ProgressRing Margin="0,24,0,0" HorizontalAlignment="Left" IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                      AutomationProperties.Name="{x:Bind t:AppText.Get('granary.profiles.loading')}" />
+
+        <StackPanel Margin="0,24,0,0" Spacing="4" Padding="16" CornerRadius="8" BorderThickness="1" BorderBrush="{StaticResource SiloSettingsHairlineBrush}"
+                    Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}">
+            <TextBlock Text="{x:Bind t:AppText.Get('web.settings.profiles.empty.title')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" />
+            <TextBlock Text="{x:Bind t:AppText.Get('web.settings.profiles.empty.body')}" Style="{StaticResource SiloSettingsMutedTextStyle}" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Border Margin="0,24,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,1,0,0" Visibility="{x:Bind ViewModel.ShowsList, Mode=OneWay}">
+            <ItemsControl ItemsSource="{x:Bind ViewModel.Profiles}" ItemTemplate="{StaticResource ProfileTemplate}" IsTabStop="False"
+                          HorizontalContentAlignment="Stretch" />
+        </Border>
+    </StackPanel>
+</UserControl>

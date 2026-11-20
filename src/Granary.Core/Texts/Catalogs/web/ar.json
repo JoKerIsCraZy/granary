@@ -12986,6 +12986,60 @@
       "value": "تم حذف المجموعة"
     }
   ],
+  "web.common.toast.profiles.avatarRemoveFailed": [
+    {
+      "type": 0,
+      "value": "فشلت إزالة الصورة الرمزية"
+    }
+  ],
+  "web.common.toast.profiles.avatarRemoved": [
+    {
+      "type": 0,
+      "value": "تمت إزالة الصورة الرمزية"
+    }
+  ],
+  "web.common.toast.profiles.avatarUpdated": [
+    {
+      "type": 0,
+      "value": "تم تحديث الصورة الرمزية"
+    }
+  ],
+  "web.common.toast.profiles.avatarUploadFailed": [
+    {
+      "type": 0,
+      "value": "فشل رفع الصورة الرمزية"
+    }
+  ],
+  "web.common.toast.profiles.created": [
+    {
+      "type": 0,
+      "value": "تم إنشاء الملف الشخصي"
+    }
+  ],
+  "web.common.toast.profiles.deleteFailed": [
+    {
+      "type": 0,
+      "value": "فشل الحذف"
+    }
+  ],
+  "web.common.toast.profiles.deleted": [
+    {
+      "type": 0,
+      "value": "تم حذف الملف الشخصي"
+    }
+  ],
+  "web.common.toast.profiles.saveFailed": [
+    {
+      "type": 0,
+      "value": "فشل حفظ الملف الشخصي"
+    }
+  ],
+  "web.common.toast.profiles.updated": [
+    {
+      "type": 0,
+      "value": "تم تحديث الملف الشخصي"
+    }
+  ],
   "web.common.toast.subtitles.resetPreferenceFailed": [
     {
       "type": 0,
@@ -13088,6 +13142,18 @@
     {
       "type": 0,
       "value": "التمرير لليمين"
+    }
+  ],
+  "web.common.ui.imageUpload.delete": [
+    {
+      "type": 0,
+      "value": "حذف الصورة"
+    }
+  ],
+  "web.common.ui.imageUpload.removeSelected": [
+    {
+      "type": 0,
+      "value": "إزالة الملف المحدد"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -18474,6 +18540,758 @@
       "value": "المشاهدون"
     }
   ],
+  "web.profiles.editor.accessSection": [
+    {
+      "type": 0,
+      "value": "الوصول"
+    }
+  ],
+  "web.profiles.editor.accessSectionHint": [
+    {
+      "type": 0,
+      "value": "حدود المحتوى وظهور المكتبات لهذا الملف الشخصي."
+    }
+  ],
+  "web.profiles.editor.advisoryAgeHelp": [
+    {
+      "type": 0,
+      "value": "يخفي العناوين التي توصي بها خدمة استشارية مثل Common Sense Media لمشاهدين أكبر سنًا."
+    }
+  ],
+  "web.profiles.editor.advisoryAgeHelpFallback": [
+    {
+      "type": 0,
+      "value": "يخفي العناوين التي توصي بها خدمة استشارية مثل Common Sense Media لمشاهدين أكبر سنًا. العناوين التي ليس لها عمر استشاري يحدّها التصنيف العمري للمحتوى وحده."
+    }
+  ],
+  "web.profiles.editor.avatarAlt": [
+    {
+      "type": 0,
+      "value": "الصورة الرمزية للملف الشخصي"
+    }
+  ],
+  "web.profiles.editor.customUpload": [
+    {
+      "type": 0,
+      "value": "صورة مرفوعة"
+    }
+  ],
+  "web.profiles.editor.customUploadSelected": [
+    {
+      "type": 0,
+      "value": "تم اختيار صورة مرفوعة"
+    }
+  ],
+  "web.profiles.editor.description": [
+    {
+      "type": 0,
+      "value": "حدّد الصورة الرمزية والاسم وPIN وقواعد الوصول لهذا الملف الشخصي."
+    }
+  ],
+  "web.profiles.editor.hideWithoutAge": [
+    {
+      "type": 0,
+      "value": "إخفاء العناوين التي ليس لها عمر استشاري"
+    }
+  ],
+  "web.profiles.editor.hideWithoutAgeHint": [
+    {
+      "type": 0,
+      "value": "يعرض فقط العناوين المصنّفة لهذا العمر أو أقل. يُبحث عن الأعمار تدريجيًا، لذا قد يرى هذا الملف الشخصي عناوين قليلة في البداية."
+    }
+  ],
+  "web.profiles.editor.initialsFallback": [
+    {
+      "type": 0,
+      "value": "الأحرف الأولى بديلًا"
+    }
+  ],
+  "web.profiles.editor.keepPin": [
+    {
+      "type": 0,
+      "value": "الإبقاء على PIN الحالي"
+    }
+  ],
+  "web.profiles.editor.kids": [
+    {
+      "type": 0,
+      "value": "ملف شخصي للأطفال"
+    }
+  ],
+  "web.profiles.editor.kidsHint": [
+    {
+      "type": 0,
+      "value": "يضبط تصنيفًا عمريًا وإعداد مكتبات افتراضيين أكثر أمانًا."
+    }
+  ],
+  "web.profiles.editor.librariesRequired": [
+    {
+      "type": 0,
+      "value": "اختر مكتبة واحدة على الأقل."
+    }
+  ],
+  "web.profiles.editor.maxAdvisoryAge": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى للعمر الاستشاري"
+    }
+  ],
+  "web.profiles.editor.maxContentRating": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى للتصنيف العمري"
+    }
+  ],
+  "web.profiles.editor.maxPlaybackQuality": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى لجودة التشغيل"
+    }
+  ],
+  "web.profiles.editor.moreOptions": [
+    {
+      "type": 0,
+      "value": "خيارات أخرى"
+    }
+  ],
+  "web.profiles.editor.name": [
+    {
+      "type": 0,
+      "value": "الاسم"
+    }
+  ],
+  "web.profiles.editor.nameRequired": [
+    {
+      "type": 0,
+      "value": "أدخل اسمًا للملف الشخصي."
+    }
+  ],
+  "web.profiles.editor.newPin": [
+    {
+      "type": 0,
+      "value": "PIN جديد"
+    }
+  ],
+  "web.profiles.editor.pinInvalid": [
+    {
+      "type": 0,
+      "value": "يجب أن يتكوّن PIN من 4 أرقام بالضبط."
+    }
+  ],
+  "web.profiles.editor.pinOptional": [
+    {
+      "type": 0,
+      "value": "PIN (اختياري)"
+    }
+  ],
+  "web.profiles.editor.pinPlaceholder": [
+    {
+      "type": 0,
+      "value": "4 أرقام"
+    }
+  ],
+  "web.profiles.editor.pinRemoved": [
+    {
+      "type": 0,
+      "value": "ستتم إزالة PIN"
+    }
+  ],
+  "web.profiles.editor.pinRemovedOnSave": [
+    {
+      "type": 0,
+      "value": "ستتم إزالة PIN عند الحفظ"
+    }
+  ],
+  "web.profiles.editor.presets": [
+    {
+      "type": 0,
+      "value": "صور رمزية جاهزة"
+    }
+  ],
+  "web.profiles.editor.presetsHint": [
+    {
+      "type": 0,
+      "value": "اختر نمطًا من DiceBear، أو اعرض خيارات طريفة بشكل عشوائي، أو اتركه فارغًا للإبقاء على الأحرف الأولى. الصورة المرفوعة تتقدّم على الصور الجاهزة."
+    }
+  ],
+  "web.profiles.editor.presetsShowing": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": ". يُعرض الآن "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " خيار."
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": ". يُعرض الآن "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " خيار."
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": ". يُعرض الآن خياران."
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": ". يُعرض الآن "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " خيارات."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": ". يُعرض الآن "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " خيارًا."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "summary"
+            },
+            {
+              "type": 0,
+              "value": ". يُعرض الآن "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " خيار."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.editor.preview": [
+    {
+      "type": 0,
+      "value": "معاينة"
+    }
+  ],
+  "web.profiles.editor.profileSection": [
+    {
+      "type": 0,
+      "value": "الملف الشخصي"
+    }
+  ],
+  "web.profiles.editor.profileSectionHint": [
+    {
+      "type": 0,
+      "value": "اختر صورة رمزية والتفاصيل الأساسية."
+    }
+  ],
+  "web.profiles.editor.removePin": [
+    {
+      "type": 0,
+      "value": "إزالة PIN"
+    }
+  ],
+  "web.profiles.editor.requestsAllowed": [
+    {
+      "type": 0,
+      "value": "السماح بالطلبات"
+    }
+  ],
+  "web.profiles.editor.requestsAllowedHint": [
+    {
+      "type": 0,
+      "value": "يتيح لهذا الملف الشخصي تصفّح العناوين غير الموجودة في المكتبة وطلبها. يحدّ التصنيف العمري للمحتوى هذه العناوين بحسب تصنيفها الأمريكي فقط، ولا ينطبق عليها حد العمر الاستشاري."
+    }
+  ],
+  "web.profiles.editor.restrictLibraries": [
+    {
+      "type": 0,
+      "value": "تقييد المكتبات"
+    }
+  ],
+  "web.profiles.editor.restrictLibrariesHint": [
+    {
+      "type": 0,
+      "value": "قصر هذا الملف الشخصي على مجموعة محددة من المكتبات."
+    }
+  ],
+  "web.profiles.editor.save": [
+    {
+      "type": 0,
+      "value": "حفظ الملف الشخصي"
+    }
+  ],
+  "web.profiles.editor.saving": [
+    {
+      "type": 0,
+      "value": "جارٍ الحفظ..."
+    }
+  ],
+  "web.profiles.editor.titleEdit": [
+    {
+      "type": 0,
+      "value": "تعديل الملف الشخصي"
+    }
+  ],
+  "web.profiles.editor.titleNew": [
+    {
+      "type": 0,
+      "value": "ملف شخصي جديد"
+    }
+  ],
+  "web.profiles.editor.uploadsUnavailable": [
+    {
+      "type": 0,
+      "value": "رفع الصور غير متاح"
+    }
+  ],
+  "web.profiles.editor.uploadsUnavailableHint": [
+    {
+      "type": 0,
+      "value": "اضبط تخزين S3 خاصًا للصور الرمزية لتفعيل رفع صور الملفات الشخصية."
+    }
+  ],
+  "web.profiles.helpers.access.advisoryAgeMax": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى للعمر الإرشادي "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    }
+  ],
+  "web.profiles.helpers.access.advisoryAgeMaxRatedOnly": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى للعمر الإرشادي "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": "، العناوين المصنّفة فقط"
+    }
+  ],
+  "web.profiles.helpers.access.allLibraries": [
+    {
+      "type": 0,
+      "value": "كل المكتبات"
+    }
+  ],
+  "web.profiles.helpers.access.anyQuality": [
+    {
+      "type": 0,
+      "value": "أي جودة"
+    }
+  ],
+  "web.profiles.helpers.access.libraries": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مكتبة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مكتبة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "مكتبتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مكتبات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مكتبةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مكتبة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.helpers.access.noRequests": [
+    {
+      "type": 0,
+      "value": "بلا طلبات"
+    }
+  ],
+  "web.profiles.helpers.access.quality": [
+    {
+      "type": 0,
+      "value": "جودة "
+    },
+    {
+      "type": 1,
+      "value": "quality"
+    }
+  ],
+  "web.profiles.helpers.advisoryAge.agesAndUnder": [
+    {
+      "type": 6,
+      "value": "age",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حتى عمر "
+            },
+            {
+              "type": 1,
+              "value": "age_text"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حتى عمر "
+            },
+            {
+              "type": 1,
+              "value": "age_text"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حتى عمر "
+            },
+            {
+              "type": 1,
+              "value": "age_text"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حتى عمر "
+            },
+            {
+              "type": 1,
+              "value": "age_text"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حتى عمر "
+            },
+            {
+              "type": 1,
+              "value": "age_text"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حتى عمر "
+            },
+            {
+              "type": 1,
+              "value": "age_text"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.helpers.advisoryAge.noLimit": [
+    {
+      "type": 0,
+      "value": "بلا حد"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.cometCat": [
+    {
+      "type": 0,
+      "value": "قطة المذنّب"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.neonPup": [
+    {
+      "type": 0,
+      "value": "جرو النيون"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.novaGecko": [
+    {
+      "type": 0,
+      "value": "وزغة نوفا"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.orbitBunny": [
+    {
+      "type": 0,
+      "value": "أرنب المدار"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.pixelPenguin": [
+    {
+      "type": 0,
+      "value": "بطريق البكسل"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.skyFox": [
+    {
+      "type": 0,
+      "value": "ثعلب السماء"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.solarOwl": [
+    {
+      "type": 0,
+      "value": "البومة الشمسية"
+    }
+  ],
+  "web.profiles.helpers.avatar.legacy.starBear": [
+    {
+      "type": 0,
+      "value": "دب النجوم"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.botttsNeutral.label": [
+    {
+      "type": 0,
+      "value": "Bottts Neutral"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.botttsNeutral.summary": [
+    {
+      "type": 0,
+      "value": "أيقونات لطيفة على شكل روبوتات قابلة للتركيب"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.funEmoji.label": [
+    {
+      "type": 0,
+      "value": "رموز تعبيرية مرحة"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.funEmoji.summary": [
+    {
+      "type": 0,
+      "value": "وجوه كبيرة وملوّنة وواضحة من النظرة الأولى"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.identicon.label": [
+    {
+      "type": 0,
+      "value": "Identicon"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.identicon.summary": [
+    {
+      "type": 0,
+      "value": "أنماط هندسية تقنية عالية التباين"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.initials.label": [
+    {
+      "type": 0,
+      "value": "الأحرف الأولى"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.initials.summary": [
+    {
+      "type": 0,
+      "value": "صور رمزية أنيقة من الحروف بخلفيات جريئة"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.pixelArtNeutral.label": [
+    {
+      "type": 0,
+      "value": "فن البكسل المحايد"
+    }
+  ],
+  "web.profiles.helpers.avatar.style.pixelArtNeutral.summary": [
+    {
+      "type": 0,
+      "value": "وجوه بكسل كلاسيكية بتنوّع كبير"
+    }
+  ],
+  "web.profiles.helpers.contentRating.any": [
+    {
+      "type": 0,
+      "value": "أي محتوى"
+    }
+  ],
+  "web.profiles.helpers.contentRating.max": [
+    {
+      "type": 1,
+      "value": "rating"
+    },
+    {
+      "type": 0,
+      "value": " كحد أقصى"
+    }
+  ],
+  "web.profiles.helpers.quality.any": [
+    {
+      "type": 0,
+      "value": "أي جودة"
+    }
+  ],
+  "web.profiles.helpers.quality.anyDescription": [
+    {
+      "type": 0,
+      "value": "السماح بكل الدقّات"
+    }
+  ],
+  "web.profiles.helpers.quality.fourKDescription": [
+    {
+      "type": 0,
+      "value": "السماح بإصدارات 4K والأقل"
+    }
+  ],
+  "web.profiles.helpers.quality.standard": [
+    {
+      "type": 0,
+      "value": "قياسية"
+    }
+  ],
+  "web.profiles.helpers.quality.standardDescription": [
+    {
+      "type": 0,
+      "value": "إخفاء إصدارات 4K والأعلى"
+    }
+  ],
   "web.profiles.libraries.count": [
     {
       "type": 6,
@@ -18552,10 +19370,28 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.profiles.libraryAccess.allLibraries": [
+    {
+      "type": 0,
+      "value": "كل المكتبات"
+    }
+  ],
+  "web.profiles.libraryAccess.disabled": [
+    {
+      "type": 0,
+      "value": "معطّلة"
+    }
+  ],
   "web.profiles.libraryAccess.label": [
     {
       "type": 0,
       "value": "الوصول إلى المكتبات"
+    }
+  ],
+  "web.profiles.libraryAccess.primaryNote": [
+    {
+      "type": 0,
+      "value": "يرى الملف الشخصي الأساسي كل مكتبة يمكن للحساب الوصول إليها. ويمكنه إخفاء المكتبات من الإعدادات ← المكتبات."
     }
   ],
   "web.profiles.librarySelect.libraryFallback": [
@@ -18708,6 +19544,24 @@
       "value": "second"
     }
   ],
+  "web.profiles.picker.add": [
+    {
+      "type": 0,
+      "value": "إضافة ملف شخصي"
+    }
+  ],
+  "web.profiles.picker.addFormFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر فتح نموذج الملف الشخصي الجديد. حاول مرة أخرى."
+    }
+  ],
+  "web.profiles.picker.addNeedsPin": [
+    {
+      "type": 0,
+      "value": "تتطلب إضافة ملف شخصي رمز PIN للملف الشخصي الأساسي."
+    }
+  ],
   "web.profiles.picker.documentTitle": [
     {
       "type": 0,
@@ -18722,6 +19576,12 @@
     {
       "type": 0,
       "value": " (محمي برمز PIN)"
+    }
+  ],
+  "web.profiles.picker.primaryMissing": [
+    {
+      "type": 0,
+      "value": "تعذّر العثور على الملف الشخصي الأساسي اللازم لإدارة الملفات الشخصية."
     }
   ],
   "web.profiles.picker.title": [
@@ -22702,6 +23562,211 @@
     {
       "type": 0,
       "value": "Wi-Fi"
+    }
+  ],
+  "web.settings.profiles.badge.current": [
+    {
+      "type": 0,
+      "value": "الحالي"
+    }
+  ],
+  "web.settings.profiles.badge.kids": [
+    {
+      "type": 0,
+      "value": "أطفال"
+    }
+  ],
+  "web.settings.profiles.badge.pin": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.settings.profiles.badge.primary": [
+    {
+      "type": 0,
+      "value": "الأساسي"
+    }
+  ],
+  "web.settings.profiles.delete": [
+    {
+      "type": 0,
+      "value": "حذف"
+    }
+  ],
+  "web.settings.profiles.deleteDescription": [
+    {
+      "type": 0,
+      "value": "هل تريد حذف الملف الشخصي «"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "»؟ لا يمكن التراجع عن هذا الإجراء."
+    }
+  ],
+  "web.settings.profiles.deleteGuard.active": [
+    {
+      "type": 0,
+      "value": "انتقل إلى ملف شخصي آخر قبل حذف هذا الملف."
+    }
+  ],
+  "web.settings.profiles.deleteGuard.lastProfile": [
+    {
+      "type": 0,
+      "value": "يلزم وجود ملف شخصي واحد على الأقل."
+    }
+  ],
+  "web.settings.profiles.deleteGuard.primary": [
+    {
+      "type": 0,
+      "value": "لا يمكن إزالة الملف الشخصي الأساسي إلا بحذف الحساب."
+    }
+  ],
+  "web.settings.profiles.deleteTitle": [
+    {
+      "type": 0,
+      "value": "حذف الملف الشخصي"
+    }
+  ],
+  "web.settings.profiles.edit": [
+    {
+      "type": 0,
+      "value": "تعديل"
+    }
+  ],
+  "web.settings.profiles.empty.body": [
+    {
+      "type": 0,
+      "value": "أنشئ ملفًا شخصيًا لإدارة الوصول وهوية التشغيل."
+    }
+  ],
+  "web.settings.profiles.empty.title": [
+    {
+      "type": 0,
+      "value": "لا توجد ملفات شخصية بعد"
+    }
+  ],
+  "web.settings.profiles.limitReached": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "لا يمكن أن يكون لهذا الحساب أي ملف شخصي. يمكن للمسؤول رفع الحد."
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يمكن أن يكون لهذا الحساب ملف شخصي واحد. يمكن للمسؤول رفع الحد."
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يمكن أن يكون لهذا الحساب ملفان شخصيان. يمكن للمسؤول رفع الحد."
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يمكن أن يكون لهذا الحساب "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ملفات شخصية. يمكن للمسؤول رفع الحد."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يمكن أن يكون لهذا الحساب "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ملفًا شخصيًا. يمكن للمسؤول رفع الحد."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يمكن أن يكون لهذا الحساب "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ملف شخصي. يمكن للمسؤول رفع الحد."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.profiles.newProfile": [
+    {
+      "type": 0,
+      "value": "ملف شخصي جديد"
+    }
+  ],
+  "web.settings.profiles.savedPinFailed": [
+    {
+      "type": 0,
+      "value": "تم حفظ الملف الشخصي، لكن تعذّر التحقق من رمز PIN"
+    }
+  ],
+  "web.settings.profiles.savedWithLockout": [
+    {
+      "type": 0,
+      "value": "تم حفظ الملف الشخصي. "
+    },
+    {
+      "type": 1,
+      "value": "lockout"
+    }
+  ],
+  "web.settings.profiles.subtitle": [
+    {
+      "type": 0,
+      "value": "إدارة أسماء الملفات الشخصية ورموز PIN وقواعد الوصول."
+    }
+  ],
+  "web.settings.profiles.title": [
+    {
+      "type": 0,
+      "value": "الملفات الشخصية"
+    }
+  ],
+  "web.settings.profiles.use": [
+    {
+      "type": 0,
+      "value": "استخدام"
     }
   ],
   "web.settings.resetButton.label": [

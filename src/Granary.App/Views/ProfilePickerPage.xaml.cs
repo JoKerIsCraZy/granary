@@ -21,6 +21,8 @@ public sealed partial class ProfilePickerPage : Page, IOwnFocus
     private bool _isPinDialogShown;
     private bool _hasFocusedFirstTile;
     private ProfileItemViewModel? _promptedProfile;
+    // Closes Add profile's open editor dialog.
+    private CancellationTokenSource? _editorClose;
 
     public ProfilePickerPage()
     {
@@ -45,6 +47,7 @@ public sealed partial class ProfilePickerPage : Page, IOwnFocus
         {
             PinDialog.Hide();
         }
+        _editorClose?.Cancel();
         ViewModel.Dispose();
     }
 
@@ -88,8 +91,54 @@ public sealed partial class ProfilePickerPage : Page, IOwnFocus
                 // Digits typed during the check would otherwise start the next attempt.
                 PinBox.IsEnabled = !ViewModel.IsVerifyingPin;
                 break;
+            case nameof(ProfilePickerViewModel.Editor) when ViewModel.Editor is { } editor:
+                // After the PIN dialog has gone: two dialogs cannot be open at once.
+                DispatcherQueue.TryEnqueue(() => ShowEditor(editor));
+                break;
+            case nameof(ProfilePickerViewModel.Editor):
+                // The editor went (another server): its dialog, and the proof it holds, go too.
+                _editorClose?.Cancel();
+                break;
         }
     }
+
+    // Add profile's editor; closing it lets the primary profile's proof go with it.
+    private async void ShowEditor(Granary.Core.ViewModels.Profiles.ProfileEditorViewModel editor)
+    {
+        using var close = new CancellationTokenSource();
+        _editorClose = close;
+        try
+        {
+            while (_isPinDialogShown)
+            {
+                await Task.Delay(50);
+            }
+            var saved = ReferenceEquals(ViewModel.Editor, editor) && XamlRoot is { } root
+                ? await Controls.ProfileEditorView.ShowAsync(editor, root, close.Token)
+                : null;
+            if (ReferenceEquals(ViewModel.Editor, editor))
+            {
+                await ViewModel.CloseEditorAsync(saved);
+            }
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape.
+            App.Services.GetRequiredService<ILogger<ProfilePickerPage>>().LogWarning("The profile editor failed: {Error}", ex.GetType().Name);
+            await ViewModel.CloseEditorAsync(null);
+        }
+        finally
+        {
+            if (ReferenceEquals(_editorClose, close))
+            {
+                _editorClose = null;
+            }
+        }
+    }
+
+    /// <summary>The PIN prompt's line: why the primary profile's PIN is asked for Add profile, else what a PIN is.</summary>
+    public static string PinDescription(string addLine) =>
+        string.IsNullOrEmpty(addLine) ? Granary.Core.Texts.AppText.Get("granary.profiles.pin.description") : addLine;
 
     private async void ShowPinDialog()
     {

@@ -12,10 +12,11 @@ namespace Granary.Tests.Profiles;
 /// <paramref name="SavedAddressOnly"/>: it may not take a local route. <paramref name="AsProfile"/>: the one profile it may be sent as.
 /// <paramref name="AsAccount"/>: the one account it may be sent as.
 /// <paramref name="Range"/>, <paramref name="IfRange"/> and <paramref name="IfNoneMatch"/>: a ranged or conditional read's headers.
+/// <paramref name="Lent"/>: the profile it goes out as without acting. <paramref name="ContentType"/>: the body's media type.
 /// </summary>
 internal sealed record SentRequest(HttpMethod Method, Uri Uri, string? Body, SiloAuth Auth, bool SavedAddressOnly = false, string? IfMatch = null,
     string? RoomToken = null, string? DeviceId = null, string? AsProfile = null, string? Range = null, string? IfRange = null,
-    string? IfNoneMatch = null, string? AsAccount = null);
+    string? IfNoneMatch = null, string? AsAccount = null, ManagingProfile? Lent = null, string? ContentType = null);
 
 /// <summary>
 /// A Silo server behind a reverse-proxy path prefix, scripted per method and URL. Each route answers
@@ -152,7 +153,8 @@ internal sealed class ScriptedSilo
         var headers = request.Headers;
         string? ifNoneMatch = headers.IfNoneMatch.Count == 0 ? null : headers.IfNoneMatch.ToString();
         var answer = Record(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly, ifMatch, roomToken, deviceId, request.GetProfile(),
-            headers.Range?.ToString(), headers.IfRange?.ToString(), ifNoneMatch, request.GetAccount()));
+            headers.Range?.ToString(), headers.IfRange?.ToString(), ifNoneMatch, request.GetAccount(), request.GetLent(),
+            request.Content?.Headers.ContentType?.MediaType));
         return await answer(cancellationToken);
     }
 

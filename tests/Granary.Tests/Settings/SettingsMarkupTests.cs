@@ -151,7 +151,7 @@ public sealed partial class SettingsMarkupTests
             [
                 ("Pages", "playback subtitles"),
                 ("AppearancePages", "interface title-pages accessibility"),
-                ("AccountPages", "devices"),
+                ("AccountPages", "profiles devices"),
                 ("AppPages", "servers downloads about"),
             ],
             lists.Select(list => (list.Key, string.Join(' ', list.Value.Select(page => page.Tag)))));

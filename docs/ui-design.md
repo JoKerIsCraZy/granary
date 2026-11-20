@@ -1392,11 +1392,17 @@ off the mark stands still.
   shows on "Show QR code" (at once when the server has no password sign-in), framed, with the address and the code
   below it; the page scrolls to it.
 
+Profile picker (`ProfilePickerPage`): "Who's watching?", a tile per profile, and below them Add profile (a button with the
+add-person icon) while the household has a primary profile and room, as the apps' picker offers it. It asks for the
+primary profile's PIN first when it has one, with the web's line "Adding a profile needs the primary profile's PIN." in
+the PIN dialog, then opens the profile editor (Settings, Profiles); the new profile shows in the list read again, and
+the person still picks who is watching.
+
 ## Settings
 
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
 darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), the
-search box (below), then the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages, Accessibility), ACCOUNT (Devices) and APP (Servers, Downloads, About). The page open is white 6 % with text and a
+search box (below), then the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages, Accessibility), ACCOUNT (Profiles, for the household's primary profile only; Devices) and APP (Servers, Downloads, About). The page open is white 6 % with text and a
 mark in the accent. As on the web, the head stays and the groups scroll below it in a window too short for them all, so
 Downloads and About stay reachable; an arrow key or a controller's D-pad or bumper moves the focus from page to page
 across the groups and scrolls the one it reaches into view. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
@@ -1703,6 +1709,35 @@ entry is chosen, and a controller's bumpers, which go from the chosen entry, do 
   formats are read, which the page reads again each time it shows; a read that fails says "Couldn’t load preferences."
   with Retry, in 13 px muted, and a server that knows neither setting offers no choice. A refused choice goes back to
   what the server has, without a message, as on the web.
+- **Profiles** (`ProfilesSettingsView` on `ProfilesSettingsViewModel`; the web's `ProfilesSettings`, without Use and the
+  household streams): in the sidebar only while the household's primary profile acts. The title "Profiles" and "Manage
+  profile names, PINs, and access rules." with New profile (outline, plus icon) on the right while the household has room;
+  once it is full, "This account can have 5 profiles. An administrator can raise the limit." in its place. Then a line
+  per profile between hairlines: a 40 px avatar (the picture, else the first letter on the accent), the name (15 px
+  semibold) with outline pills Current, Primary, Kids and PIN, and the line of its limits in 13 px muted ("PG max ·
+  Advisory age 9 max · 2 libraries · Standard quality · No requests"); on the right Edit and Delete (outline), Delete
+  held back with the web's reason under it in 12 px muted ("The primary profile can only be removed by deleting the
+  account.", "Switch to another profile before deleting this one.", "At least one profile is required."). Delete asks
+  first in the web's words ("Delete profile "Mila"? This action cannot be undone."). What the last action did shows
+  under the title in 13 px muted ("Profile created", "Profile updated", "Profile deleted", "Failed to delete"; a refusal
+  by the server, a busy server or the network in the libraries' words), "No profiles yet" in a box for an empty
+  household, and a list that could not be read says so with Retry.
+- **The profile editor** (`ProfileEditorView` on `ProfileEditorViewModel`, a dialog up to 860 px wide, scrolling past
+  640 px; the web's `ProfileEditorDialog`): "New profile" or "Edit profile", Cancel and Save profile ("Saving..."
+  while it saves; the dialog stays open until the save went through). **Profile** (a hairline box, 8 px corners): a
+  180 px preview card (96 px avatar, the name or "Preview", and "Initials fallback", the preset's name, "Custom upload"
+  or "Custom upload selected"), beside it Name (64 characters) and the PIN box ("PIN (optional)", "New PIN" for a
+  profile with one, "4 digits"; digits only) with Remove PIN / Keep existing PIN as a link for a profile with a PIN.
+  Preset avatars: a style box (Identicon, Initials, Bottts Neutral, Fun Emoji, Pixel Art Neutral), "Showing 18 options ·
+  …" and More options, then 56 px pictures; a press picks one or puts it back. Where the server keeps uploads, Custom
+  upload with Choose image (JPEG, PNG or WebP; a file over 10 MB or of another kind says why and is not kept), Remove
+  selected file and Delete image; elsewhere the web's "Custom uploads are unavailable" box. **Access**: Kids profile
+  (seeds PG, limited libraries and no requests, leaving what was set by hand; off takes every limit away), Maximum
+  content rating, Maximum advisory age with its help and Hide titles without an advisory age (only where the server
+  takes them), Maximum playback quality, Library Access (the primary profile's note, else Restrict libraries and a
+  check box per library, hidden ones included) and Allow requests (where the server takes it). Errors show under their
+  field in the critical colour ("Enter a profile name.", "A profile with this name already exists", "PIN must be exactly
+  4 digits.", "Choose at least one library."), a full household or a refused save at the bottom.
 - **Devices** (`DevicesSettingsView` on `DevicesViewModel`; the web's Signed-in sessions and Your Devices on one page,
   without the household view and the per-device settings editor): the title and its line with Refresh (outline) on the
   right, then what the last action did in 13 px muted text ("Session signed out", "Couldn't forget"). **Signed-in

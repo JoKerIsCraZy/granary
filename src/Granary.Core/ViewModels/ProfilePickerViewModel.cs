@@ -8,6 +8,7 @@ using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
 using Granary.Core.Texts;
+using Granary.Core.ViewModels.Profiles;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
@@ -44,8 +45,17 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     // The server the last load asked (null: none was active), and the server the shown list came from.
     private bool _hasLoaded;
     private string? _requestedServerId;
+    private string? _requestedAccountId;
     private string? _listServerId;
     private bool _disposed;
+
+    // The household the shown list came from and the account it was read for: Add profile writes as that account's primary
+    // profile on that server, never as whichever is signed in by then.
+    private ProfileCollection? _household;
+    private string? _listAccountId;
+
+    // The open PIN prompt is the primary profile's, for Add profile rather than for picking it.
+    private bool _pinForAdding;
 
     public ProfilePickerViewModel(ProfilesApi profiles, ISessionManager session, IUiDispatcher dispatcher, ILogger<ProfilePickerViewModel> logger)
     {
@@ -91,7 +101,86 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         ? AppText.Get("web.profiles.pin.title", ("name", profile.Name))
         : AppText.Get("granary.profiles.pin.titleNoName");
 
+    /// <summary>The line under the PIN prompt's title: why the primary profile's PIN is asked for Add profile, else nothing.</summary>
+    [ObservableProperty]
+    public partial string PinPromptDescription { get; private set; } = "";
+
+    /// <summary>Add profile shows: the household has a primary profile to manage it, and room, as the apps offer it.</summary>
+    [ObservableProperty]
+    public partial bool CanAddProfile { get; private set; }
+
+    /// <summary>The editor Add profile opened; the page shows it while it is set and closes it through <see cref="CloseEditorAsync"/>.</summary>
+    [ObservableProperty]
+    public partial ProfileEditorViewModel? Editor { get; private set; }
+
     public static bool IsCompletePin([NotNullWhen(true)] string? pin) => pin is { Length: PinLength } && pin.All(char.IsAsciiDigit);
+
+    /// <summary>
+    /// Add profile, as the apps' picker: the household's primary profile writes it without being picked, so the person still
+    /// picks who is watching. Its PIN is asked first when it has one (Android's <c>requestAddProfile</c>).
+    /// </summary>
+    [RelayCommand]
+    private void AddProfile()
+    {
+        if (IsSelecting || Editor is not null || !CanAddProfile)
+        {
+            return;
+        }
+        ClosePinPrompt();
+        if (!ListBelongsToActiveServer(out _) || _household is null)
+        {
+            LoadCommand.Execute(null);
+            return;
+        }
+        if (_household.Items.FirstOrDefault(p => p.IsPrimary) is not { } primary)
+        {
+            Status = AppText.Get("web.profiles.picker.primaryMissing");
+            return;
+        }
+        if (primary.HasPin)
+        {
+            PinProfile = Profiles.FirstOrDefault(p => p.Id == primary.Id);
+            _pinForAdding = PinProfile is not null;
+            PinPromptDescription = AppText.Get("web.profiles.picker.addNeedsPin");
+            IsPinPromptOpen = _pinForAdding;
+            return;
+        }
+        OpenEditor(primary.Id, null);
+    }
+
+    /// <summary>The editor closed: it and the primary profile's proof go; a saved profile shows in the list read again.</summary>
+    public async Task CloseEditorAsync(ProfileEditorSaved? saved)
+    {
+        Editor = null;
+        if (saved is not null)
+        {
+            await LoadProfilesAsync();
+        }
+    }
+
+    // The proof lives in the editor's target alone, for this one Add.
+    private void OpenEditor(string primaryId, string? token)
+    {
+        if (!ListBelongsToActiveServer(out var server) || _household is not { } household || _listAccountId is not { } accountId
+            || _session.Account?.Id != accountId)
+        {
+            Status = AppText.Get("web.profiles.picker.addFormFailed");
+            return;
+        }
+        ManagingProfile lent;
+        try
+        {
+            lent = ManagingProfile.Lent(server.BaseUri, accountId, primaryId, token);
+        }
+        catch (HttpRequestException)
+        {
+            // A proof the server sent that cannot go back as a header.
+            _logger.LogWarning("The primary profile's PIN check answered with a proof that cannot be sent");
+            Status = AppText.Get("web.profiles.picker.addFormFailed");
+            return;
+        }
+        Editor = new ProfileEditorViewModel(_profiles, new ProfileEditorTarget(server.BaseUri, lent, household), null, _logger);
+    }
 
     [RelayCommand]
     private Task LoadAsync() => LoadProfilesAsync();
@@ -117,6 +206,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         if (profile.HasPin)
         {
             PinProfile = profile;
+            PinPromptDescription = "";
             IsPinPromptOpen = true;
             return;
         }
@@ -175,7 +265,13 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
 
         if (outcome.ProfileToken is { } token)
         {
+            bool forAdding = _pinForAdding;
             ClosePinPrompt();
+            if (forAdding)
+            {
+                OpenEditor(profile.Id, token);
+                return;
+            }
             await CommitAsync(server.Id, profile.Id, token);
         }
         else if (outcome.ProfileChanged)
@@ -203,6 +299,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         var server = _session.ActiveServer;
         _hasLoaded = true;
         _requestedServerId = server?.Id;
+        _requestedAccountId = _session.Account?.Id;
         if (server is null)
         {
             IsLoading = false;
@@ -213,6 +310,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
 
         IsLoading = true;
         SetStatus("", isLoadError: false);
+        string? accountId = _session.Account?.Id;
         try
         {
             var collection = await _profiles.ListAsync(server.BaseUri);
@@ -220,7 +318,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             {
                 return;
             }
-            ShowList([.. collection.Items.Select(p => ProfileItemViewModel.From(p, server.BaseUri))], server.Id);
+            ShowList([.. collection.Items.Select(p => ProfileItemViewModel.From(p, server.BaseUri))], server.Id, collection, accountId);
             if (Profiles.Count == 0)
             {
                 SetStatus(AppText.Get("granary.profiles.empty"), isLoadError: false);
@@ -259,14 +357,14 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             }
             if (string.IsNullOrEmpty(verification.ProfileToken))
             {
-                _logger.LogWarning("PIN check for profile {ProfileId} was valid but carried no profile token", profileId);
+                _logger.LogWarning("A PIN check was valid but carried no profile token");
                 return new PinOutcome(null, AppText.Get("granary.profiles.pin.unconfirmed"), false);
             }
             return new PinOutcome(verification.ProfileToken, null, false);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
-            _logger.LogWarning("PIN check for profile {ProfileId} failed: {Failure}", profileId, ApiFailureText.Describe(ex));
+            _logger.LogWarning("A PIN check failed: {Failure}", ApiFailureText.Describe(ex));
             return ex is SiloApiException { Status: 404 }
                 ? new PinOutcome(null, null, true)
                 : new PinOutcome(null, DescribePinFailure(ex), false);
@@ -284,7 +382,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         }
         catch (ActiveServerChangedException)
         {
-            _logger.LogInformation("Another server became active while profile {ProfileId} was picked; the pick was dropped", profileId);
+            _logger.LogInformation("Another server became active while a profile was picked; the pick was dropped");
             // The session may have moved on before this list was shown: the new server's profiles come either way.
             if (!ListBelongsToActiveServer(out _))
             {
@@ -293,7 +391,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         }
         catch (Exception ex)
         {
-            _logger.LogWarning("Selecting profile {ProfileId} failed: {Failure}", profileId, ApiFailureText.Describe(ex));
+            _logger.LogWarning("Selecting a profile failed: {Failure}", ApiFailureText.Describe(ex));
             SetStatus(AppText.Get("granary.profiles.openFailed"), isLoadError: false);
         }
         finally
@@ -309,10 +407,13 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         return server is not null && server.Id == _listServerId;
     }
 
-    private void ShowList(IReadOnlyList<ProfileItemViewModel> profiles, string? serverId)
+    private void ShowList(IReadOnlyList<ProfileItemViewModel> profiles, string? serverId, ProfileCollection? household = null, string? accountId = null)
     {
         Profiles = profiles;
         _listServerId = serverId;
+        _household = household;
+        _listAccountId = accountId;
+        CanAddProfile = household is { HasRoom: true } && accountId is not null && household.Items.Any(p => p.IsPrimary);
     }
 
     private void SetStatus(string text, bool isLoadError)
@@ -328,22 +429,27 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         IsVerifyingPin = false;
         PinError = "";
         PinProfile = null;
+        _pinForAdding = false;
     }
 
     // Another server became active (or none): the shown list, a pending load and an open prompt belong
     // to the old one.
     private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() =>
     {
-        if (_disposed || !_hasLoaded || _session.ActiveServer?.Id == _requestedServerId)
+        // Another account on the same server counts as another server: its profiles, PINs and proofs are not the old ones.
+        if (_disposed || !_hasLoaded || (_session.ActiveServer?.Id == _requestedServerId && _session.Account?.Id == _requestedAccountId))
         {
             return;
         }
         _loadGeneration++;
         IsLoading = false;
         ClosePinPrompt();
+        // An open Add belongs to the old server, and so does its proof.
+        Editor = null;
         ShowList([], null);
         SetStatus("", isLoadError: false);
         _requestedServerId = _session.ActiveServer?.Id;
+        _requestedAccountId = _session.Account?.Id;
         if (_session.State == SessionState.ProfileRequired)
         {
             LoadCommand.Execute(null);
@@ -381,6 +487,10 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     {
         _disposed = true;
         _session.Changed -= OnSessionChanged;
+        // A PIN check still on its way opens nothing once its answer comes.
+        ClosePinPrompt();
+        // Add profile's editor holds the primary profile's proof: it goes with the picker, whatever its dialog still does.
+        Editor = null;
     }
 
     private readonly record struct PinOutcome(string? ProfileToken, string? Error, bool ProfileChanged);

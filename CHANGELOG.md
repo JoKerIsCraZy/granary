@@ -8,6 +8,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Profiles:** the household's primary profile manages the household's profiles in Settings → Profiles, as on Silo's
+  web: add, edit and delete them, with a name, a preset picture or an image of its own (where your Silo server keeps
+  uploads), a PIN to set, change or remove, Kids, and the content rating, advisory age, playback quality, libraries and
+  requests your server lets a profile have. The profile picker offers Add profile too, after the primary profile's PIN.
 - **Admin → Users:** a new page under MANAGE in the admin sidebar, as on Silo's web. It lists every account on your
   Silo server with its role, group, status, when it was created and when it was last active; search by name or email,
   filter by group, sort by any column and page through 25, 50 or 100 at a time. Add User creates an account with its

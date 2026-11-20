@@ -12,6 +12,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TextBlock
@@ -80,6 +81,18 @@
             </GridView.ItemTemplate>
         </GridView>
 
+        <!-- Add profile, as the apps' picker offers it: written as the household's primary profile, which is not picked. -->
+        <Button
+            Grid.Row="3"
+            HorizontalAlignment="Center"
+            Command="{x:Bind ViewModel.AddProfileCommand}"
+            Visibility="{x:Bind ViewModel.CanAddProfile, Mode=OneWay}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <FontIcon FontSize="14" Glyph="&#xE8FA;" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.profiles.picker.add')}" />
+            </StackPanel>
+        </Button>
+
         <!-- No Unlock button: like the Apple client, the fourth digit sends the PIN. -->
         <ContentDialog
             x:Name="PinDialog"
@@ -88,7 +101,7 @@
             Closed="OnPinDialogClosed"
             Opened="OnPinDialogOpened">
             <StackPanel MinWidth="320" Spacing="12">
-                <TextBlock Text="{x:Bind t:AppText.Get('granary.profiles.pin.description')}" TextWrapping="Wrap" />
+                <TextBlock Text="{x:Bind local:ProfilePickerPage.PinDescription(ViewModel.PinPromptDescription), Mode=OneWay}" TextWrapping="Wrap" />
                 <PasswordBox
                     x:Name="PinBox"
                     Header="{x:Bind t:AppText.Get('web.profiles.pin.label')}"

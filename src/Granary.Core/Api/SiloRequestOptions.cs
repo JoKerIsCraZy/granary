@@ -36,6 +36,27 @@ public static class SiloRequestOptions
     /// </summary>
     public static readonly HttpRequestOptionsKey<string> Account = new("granary.account");
 
+    /// <summary>
+    /// A profile a <see cref="SiloAuth.Account"/> request goes out as without acting (<see cref="ManagingProfile.Lent"/>): the
+    /// authentication handler sends its id and proof, never the session's, and leaves the session's profile alone when the
+    /// server refuses it.
+    /// </summary>
+    public static readonly HttpRequestOptionsKey<ManagingProfile> Lent = new("granary.lent-profile");
+
+    /// <summary>The profile lent to the request (<see cref="Lent"/>), or null.</summary>
+    public static ManagingProfile? GetLent(this HttpRequestMessage request) =>
+        request.Options.TryGetValue(Lent, out var lent) ? lent : null;
+
+    public static void SetLent(this HttpRequestMessage request, ManagingProfile lent)
+    {
+        ArgumentNullException.ThrowIfNull(lent);
+        if (!lent.IsLent)
+        {
+            throw new ArgumentException("Only a profile that does not act is lent to a request.", nameof(lent));
+        }
+        request.Options.Set(Lent, lent);
+    }
+
     /// <summary>The account the request is bound to (<see cref="Account"/>), or null when it is bound to a profile alone, or to none.</summary>
     public static string? GetAccount(this HttpRequestMessage request) =>
         request.Options.TryGetValue(Account, out var account) ? account : null;

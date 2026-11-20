@@ -16,7 +16,7 @@ namespace Granary.App.Views;
 /// <summary>
 /// The settings (docs/ui-design.md, Settings): the profile's, the account's devices, and the app's own servers, downloads and
 /// About. The parameter names the page to open first (<c>playback</c>, <c>subtitles</c>, <c>interface</c>, <c>title-pages</c>,
-/// <c>accessibility</c>, <c>devices</c>, <c>servers</c>, <c>downloads</c>, <c>about</c>). The mpv.conf editor opens in Playback's
+/// <c>accessibility</c>, <c>profiles</c>, <c>devices</c>, <c>servers</c>, <c>downloads</c>, <c>about</c>). The mpv.conf editor opens in Playback's
 /// place; leaving with unsaved edits in it asks first. The search at the top of the sidebar is in SettingsPage.Search.cs.
 /// </summary>
 public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSections
@@ -31,6 +31,7 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
         ["interface"] = (nameof(InterfaceSettingsView), () => new InterfaceSettingsView()),
         ["title-pages"] = (nameof(TitlePagesSettingsView), () => new TitlePagesSettingsView()),
         ["accessibility"] = (nameof(AccessibilitySettingsView), () => new AccessibilitySettingsView()),
+        ["profiles"] = (nameof(ProfilesSettingsView), () => new ProfilesSettingsView()),
         ["devices"] = (nameof(DevicesSettingsView), () => new DevicesSettingsView()),
         ["servers"] = (nameof(ServersSettingsView), () => new ServersSettingsView()),
         ["downloads"] = (nameof(DownloadsSettingsView), () => new DownloadsSettingsView()),
@@ -81,13 +82,16 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
     /// <summary>The profile the settings belong to, as the app's sidebar names it.</summary>
     public SidebarViewModel Sidebar { get; }
 
+    /// <summary>Settings → Profiles shows to the household's primary profile, the only one the server lets manage it.</summary>
+    public Visibility ShowsProfiles(ProfileItemViewModel? profile) => profile?.IsPrimary == true ? Visibility.Visible : Visibility.Collapsed;
+
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
         string page = e.Parameter as string ?? "playback";
         foreach (var list in Lists())
         {
-            if (list.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page) is { } item)
+            if (list.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page && i.Visibility == Visibility.Visible) is { } item)
             {
                 list.SelectedItem = item;
                 return;

@@ -245,7 +245,11 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         _readAgain = _time.CreateTimer(_ => _dispatcher.Post(ReadAgain), null, delay, Timeout.InfiniteTimeSpan);
     }
 
-    private void ReadAgain()
+    /// <summary>
+    /// Reads the profile and the libraries again now, as after a profile was changed, added or deleted in Settings →
+    /// Profiles: the server and profile are the same, so the session says nothing.
+    /// </summary>
+    public void ReadAgain()
     {
         _loaded = null;
         _ = RefreshSafelyAsync();
