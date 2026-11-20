@@ -192,7 +192,7 @@ public sealed partial class AdminUserDetailViewModel
             }
             NotifyAccess();
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             // The card shows the libraries it has; its other parts still work.
             _logger.LogWarning(ex, "Could not read the libraries for an account's access");

@@ -45,7 +45,7 @@ public sealed partial class AdminUserDetailViewModel
     /// </summary>
     private async Task<bool> SaveAsync(AdminEditCard card, AdminUserChange change, string? validation)
     {
-        if (_session.ActiveServer is not { } server || Account is not { } account || card.IsSaving || _version.Length == 0)
+        if (_actor is not { } actor || Account is not { } account || card.IsSaving || _version.Length == 0)
         {
             return false;
         }
@@ -58,12 +58,12 @@ public sealed partial class AdminUserDetailViewModel
         card.IsSaving = true;
         try
         {
-            await _users.UpdateAsync(server.BaseUri, account.Id, _version, change);
+            await _users.UpdateAsync(actor, account.Id, _version, change);
             await ReadAsync(keepDrafts: false);
             card.Saved = AppText.Get("web.admin.users.detail.access.card.saved");
             return true;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             _logger.LogWarning(ex, "Could not change an account");
             card.HasConflict = AdminFailures.IsChanged(ex);

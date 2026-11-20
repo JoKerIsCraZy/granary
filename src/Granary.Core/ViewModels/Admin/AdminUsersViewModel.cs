@@ -17,6 +17,8 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     private readonly ISessionManager _session;
     private readonly AdminUsersApi _users;
     private readonly TimeProvider _time;
+    // The account and profile this was opened as: everything it sends goes only as them.
+    private AdminActor? _actor;
     private readonly ILogger<AdminUsersViewModel> _logger;
     private IReadOnlyList<AdminUser> _accounts = [];
     private IReadOnlyDictionary<string, string> _groupNames = new Dictionary<string, string>();
@@ -65,10 +67,11 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     [RelayCommand]
     public async Task LoadAsync()
     {
-        if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
+        if (_session.State != SessionState.Ready || AdminActors.Of(_session) is not { } actor)
         {
             return;
         }
+        _actor = actor;
         _load?.Cancel();
         var load = _load = new CancellationTokenSource();
         var token = load.Token;
@@ -76,11 +79,11 @@ public sealed partial class AdminUsersViewModel : ObservableObject
         {
             State = LibraryLoadState.Loading;
         }
-        var capabilities = ReadCapabilitiesAsync(server.BaseUri, token);
-        var groups = ReadGroupsAsync(server.BaseUri, token);
+        var capabilities = ReadCapabilitiesAsync(actor, token);
+        var groups = ReadGroupsAsync(actor, token);
         try
         {
-            var accounts = await _users.ListAllAsync(server.BaseUri, token);
+            var accounts = await _users.ListAllAsync(actor, token);
             await Task.WhenAll(capabilities, groups);
             if (token.IsCancellationRequested)
             {
@@ -92,7 +95,7 @@ public sealed partial class AdminUsersViewModel : ObservableObject
             State = LibraryLoadState.Ready;
             Apply();
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex) && !token.IsCancellationRequested)
+        catch (Exception ex) when (AdminFailures.IsExpected(ex) && !token.IsCancellationRequested)
         {
             _logger.LogWarning(ex, "Could not read the accounts");
             await Task.WhenAll(capabilities, groups);
@@ -121,25 +124,25 @@ public sealed partial class AdminUsersViewModel : ObservableObject
     [RelayCommand]
     private async Task RetryGroupsAsync()
     {
-        if (_session.ActiveServer is { } server)
+        if (_actor is { } actor)
         {
-            await ReadGroupsAsync(server.BaseUri, _load?.Token ?? CancellationToken.None);
+            await ReadGroupsAsync(actor, _load?.Token ?? CancellationToken.None);
             Apply();
         }
     }
 
-    private async Task ReadCapabilitiesAsync(Uri server, CancellationToken token)
+    private async Task ReadCapabilitiesAsync(AdminActor actor, CancellationToken token)
     {
         try
         {
-            var capabilities = await _users.GetCapabilitiesAsync(server, token);
+            var capabilities = await _users.GetCapabilitiesAsync(actor, token);
             if (!token.IsCancellationRequested)
             {
                 Capabilities = capabilities;
                 IsAvailable = capabilities.Available;
             }
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             if (token.IsCancellationRequested)
             {
@@ -152,11 +155,11 @@ public sealed partial class AdminUsersViewModel : ObservableObject
         }
     }
 
-    private async Task ReadGroupsAsync(Uri server, CancellationToken token)
+    private async Task ReadGroupsAsync(AdminActor actor, CancellationToken token)
     {
         try
         {
-            var groups = await _users.ListAccessGroupsAsync(server, token);
+            var groups = await _users.ListAccessGroupsAsync(actor, token);
             if (!token.IsCancellationRequested)
             {
                 Groups = groups;
@@ -166,7 +169,7 @@ public sealed partial class AdminUsersViewModel : ObservableObject
                 SelectedGroup = GroupFilters.FirstOrDefault(filter => filter.Value == SelectedGroup.Value) ?? GroupFilters[0];
             }
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             if (token.IsCancellationRequested)
             {

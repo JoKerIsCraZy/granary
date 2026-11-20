@@ -15,6 +15,8 @@ namespace Granary.Core.ViewModels.Admin;
 public sealed partial class AdminNewUserViewModel(ISessionManager session, AdminUsersApi users, ILogger<AdminNewUserViewModel> logger) : ObservableObject
 {
     private bool _defaultProfileAvailable;
+    // The account and profile this was opened as: everything it sends goes only as them.
+    private AdminActor? _actor;
 
     [ObservableProperty]
     public partial string Username { get; set; } = "";
@@ -90,6 +92,7 @@ public sealed partial class AdminNewUserViewModel(ISessionManager session, Admin
     /// <summary>Starts a new dialog with what the list read.</summary>
     public void Start(AdminUserCapabilities capabilities, IReadOnlyList<AdminAccessGroup> groups, bool groupsKnown, bool viewerIsOwner)
     {
+        _actor = AdminActors.Of(session);
         Username = Email = Password = Error = "";
         RequirePasswordChange = IsAdminRole = MetadataCuration = false;
         MarkerEdit = CreateDefaultProfile = true;
@@ -119,7 +122,7 @@ public sealed partial class AdminNewUserViewModel(ISessionManager session, Admin
     /// <summary>Creates the account; true when it was made and the dialog may close.</summary>
     public async Task<bool> SaveAsync(CancellationToken cancellationToken = default)
     {
-        if (IsSaving || session.ActiveServer is not { } server || (CreateDefaultProfile && !_defaultProfileAvailable))
+        if (IsSaving || _actor is not { } actor || (CreateDefaultProfile && !_defaultProfileAvailable))
         {
             return false;
         }
@@ -132,11 +135,11 @@ public sealed partial class AdminNewUserViewModel(ISessionManager session, Admin
         Error = "";
         try
         {
-            await users.CreateAsync(server.BaseUri, Draft(), cancellationToken);
+            await users.CreateAsync(actor, Draft(), cancellationToken);
             Password = "";
             return true;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             logger.LogWarning(ex, "Could not create an account");
             Error = ex is SiloApiException { Status: 409 }

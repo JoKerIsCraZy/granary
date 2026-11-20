@@ -19,6 +19,8 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
     ILogger<AdminInvitationsViewModel> logger) : ObservableObject
 {
     private string? _cursor;
+    // The account and profile the tab was opened as: everything it sends goes only as them.
+    private AdminActor? _actor;
     // The cursors this history was read with: one named again would go round in a circle.
     private readonly HashSet<string> _cursors = new(StringComparer.Ordinal);
     private bool _viewerIsOwner;
@@ -89,6 +91,7 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
     public async Task OpenAsync(bool viewerIsOwner)
     {
         _viewerIsOwner = viewerIsOwner;
+        _actor = AdminActors.Of(session);
         _load.Cancel();
         _load = new CancellationTokenSource();
         await ReadCapabilitiesAsync(_load.Token);
@@ -132,7 +135,7 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
     /// <summary>A new link for the invitation, emailed or not; its dialog shows the answer.</summary>
     public async Task<bool> ResendAsync(AdminInvitationRow row, string delivery)
     {
-        if (session.ActiveServer is not { } server || IsBlocked || PublicUrlMissing)
+        if (_actor is not { } actor || IsBlocked || PublicUrlMissing)
         {
             return false;
         }
@@ -141,7 +144,7 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
         ActionError = "";
         try
         {
-            var resent = await invitations.ResendAsync(server.BaseUri, row.Id, delivery);
+            var resent = await invitations.ResendAsync(actor, row.Id, delivery);
             if (_load.IsCancellationRequested)
             {
                 // The tab left meanwhile: the link is not shown, and the next visit reads the history afresh.
@@ -152,7 +155,7 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
             await RestartAsync();
             return true;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             // It may still have made a new link: the history is read again before another.
             logger.LogWarning(ex, "Could not resend an invitation");
@@ -167,7 +170,7 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
     [RelayCommand]
     private async Task RevokeAsync(AdminInvitationRow? row)
     {
-        if (row is null || session.ActiveServer is not { } server || IsBlocked || !await confirmation.AskAsync(
+        if (row is null || _actor is not { } actor || IsBlocked || !await confirmation.AskAsync(
             AppText.Get("web.admin.settings.invitations.revoke.title"),
             row.Invitation.IsLink
                 ? AppText.Get("web.admin.settings.invitations.revoke.linkDescription")
@@ -180,11 +183,11 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
         ActionError = "";
         try
         {
-            await invitations.RevokeAsync(server.BaseUri, row.Id);
+            await invitations.RevokeAsync(actor, row.Id);
             IsBlocked = false;
             await RestartAsync();
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             logger.LogWarning(ex, "Could not revoke an invitation");
             ActionError = AdminFailures.Describe(ex, AppText.Get("web.admin.settings.invitations.revokeFailed"));
@@ -194,15 +197,15 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
 
     private async Task ReadCapabilitiesAsync(CancellationToken cancellationToken)
     {
-        if (session.ActiveServer is not { } server)
+        if (_actor is not { } actor)
         {
             return;
         }
         State = LibraryLoadState.Loading;
         try
         {
-            var capabilities = await invitations.GetCapabilitiesAsync(server.BaseUri, cancellationToken);
-            bool publicUrlMissing = capabilities.Available && await IsPublicUrlMissingAsync(server.BaseUri, cancellationToken);
+            var capabilities = await invitations.GetCapabilitiesAsync(actor, cancellationToken);
+            bool publicUrlMissing = capabilities.Available && await IsPublicUrlMissingAsync(actor, cancellationToken);
             if (cancellationToken.IsCancellationRequested)
             {
                 return;
@@ -212,7 +215,7 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
             PublicUrlMissing = publicUrlMissing;
             State = capabilities.Available ? LibraryLoadState.Ready : LibraryLoadState.Unavailable;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -229,13 +232,13 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
     }
 
     // The web blocks nothing on settings it could not read.
-    private async Task<bool> IsPublicUrlMissingAsync(Uri server, CancellationToken cancellationToken)
+    private async Task<bool> IsPublicUrlMissingAsync(AdminActor actor, CancellationToken cancellationToken)
     {
         try
         {
-            return await invitations.IsPublicUrlMissingAsync(server, cancellationToken);
+            return await invitations.IsPublicUrlMissingAsync(actor, cancellationToken);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex) && !cancellationToken.IsCancellationRequested)
+        catch (Exception ex) when (AdminFailures.IsExpected(ex) && !cancellationToken.IsCancellationRequested)
         {
             logger.LogInformation(ex, "Could not read whether the server has its public URL");
             return false;
@@ -245,7 +248,7 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
     // One page, appended unless the history was read again or the tab left meanwhile.
     private async Task<bool> ReadPageAsync(CancellationToken cancellationToken)
     {
-        if (session.ActiveServer is not { } server || cancellationToken.IsCancellationRequested)
+        if (_actor is not { } actor || cancellationToken.IsCancellationRequested)
         {
             return false;
         }
@@ -253,7 +256,7 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
         HistoryError = "";
         try
         {
-            var page = await invitations.ListPageAsync(server.BaseUri, _cursor, cancellationToken);
+            var page = await invitations.ListPageAsync(actor, _cursor, cancellationToken);
             if (cancellationToken.IsCancellationRequested)
             {
                 return false;
@@ -275,14 +278,14 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
             HasMore = _cursor is not null;
             return true;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             if (cancellationToken.IsCancellationRequested)
             {
                 return false;
             }
             logger.LogWarning(ex, "Could not read the invitation history");
-            HistoryError = AppText.Get("web.admin.settings.invitations.historyFailed", ("error", LibraryErrors.Describe(ex)));
+            HistoryError = AppText.Get("web.admin.settings.invitations.historyFailed", ("error", AdminFailures.DescribeLoad(ex)));
             HasMore = false;
             return false;
         }

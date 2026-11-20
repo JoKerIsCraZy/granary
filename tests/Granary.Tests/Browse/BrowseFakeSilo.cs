@@ -13,8 +13,11 @@ using Granary.Tests.Fakes;
 
 namespace Granary.Tests.Browse;
 
-/// <summary>What a browse view model sent; the body is read at send time because SiloHttp disposes the request.</summary>
-internal sealed record BrowseRequest(HttpMethod Method, Uri Uri, string? Body)
+/// <summary>
+/// What a browse view model sent; the body is read at send time because SiloHttp disposes the request. A request bound to
+/// an account's profile names them (<see cref="SiloRequestOptions.Account"/>, <see cref="SiloRequestOptions.Profile"/>).
+/// </summary>
+internal sealed record BrowseRequest(HttpMethod Method, Uri Uri, string? Body, string? AsAccount = null, string? AsProfile = null)
 {
     public string? Query(string name) => HttpUtility.ParseQueryString(Uri.Query)[name];
 }
@@ -50,6 +53,12 @@ internal sealed class BrowseFakeSilo
     public LogSink Logs { get; } = new();
 
     public ConcurrentQueue<BrowseRequest> Requests { get; } = new();
+
+    /// <summary>
+    /// The session whose account and profile act on the server: a request bound to others is refused unsent, as the
+    /// authentication handler refuses it (<see cref="ProfileChangedException"/>). Null checks nothing.
+    /// </summary>
+    public FakeSessionManager? Acting { get; set; }
 
     /// <summary>A session with a profile acting on <see cref="Server"/>.</summary>
     public static FakeSessionManager ReadySession(string profileId = "7") =>
@@ -91,9 +100,15 @@ internal sealed class BrowseFakeSilo
 
     private async Task<HttpResponseMessage> RespondAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        string? account = request.GetAccount();
+        string? profile = request.GetProfile();
+        if (Acting is { } acting && ((account is not null && account != acting.Account?.Id) || (profile is not null && profile != acting.ProfileId)))
+        {
+            throw new ProfileChangedException();
+        }
         string? body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
         var uri = request.RequestUri!;
-        Requests.Enqueue(new BrowseRequest(request.Method, uri, body));
+        Requests.Enqueue(new BrowseRequest(request.Method, uri, body, account, profile));
         string path = uri.AbsolutePath[(Base.AbsolutePath.TrimEnd('/').Length + 1)..];
         if (!_routes.TryGetValue(Uri.UnescapeDataString(path), out var respond))
         {

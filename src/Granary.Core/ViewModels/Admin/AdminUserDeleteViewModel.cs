@@ -16,6 +16,8 @@ public sealed partial class AdminUserDeleteViewModel(ISessionManager session, Ad
     : ObservableObject
 {
     private string _version = "";
+    // The account and profile this was opened as: everything it sends goes only as them.
+    private AdminActor? _actor;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Title), nameof(CanDelete), nameof(OffersDisable))]
@@ -59,17 +61,18 @@ public sealed partial class AdminUserDeleteViewModel(ISessionManager session, Ad
         Account = null;
         Typed = Error = "";
         HasConflict = false;
+        _actor = AdminActors.Of(session);
         return await ReadAsync(id, "web.admin.users.list.userLoadFailed", cancellationToken);
     }
 
     /// <summary>Deletes the account; true when it is gone.</summary>
     public Task<bool> DeleteAsync(CancellationToken cancellationToken = default) =>
-        RunAsync((server, account) => users.DeleteAsync(server, account.Id, _version, cancellationToken),
+        RunAsync((actor, account) => users.DeleteAsync(actor, account.Id, _version, cancellationToken),
             "web.admin.users.deleteDialog.deleteFailed", requireName: true);
 
     /// <summary>Disables the account instead; true when it is.</summary>
     public Task<bool> DisableAsync(CancellationToken cancellationToken = default) =>
-        RunAsync((server, account) => users.UpdateAsync(server, account.Id, _version, new AdminUserChange { Enabled = false }, cancellationToken),
+        RunAsync((actor, account) => users.UpdateAsync(actor, account.Id, _version, new AdminUserChange { Enabled = false }, cancellationToken),
             "web.admin.users.deleteDialog.disableFailed", requireName: false);
 
     /// <summary>After a conflict: reads the account again, so the next try carries its new version.</summary>
@@ -87,20 +90,20 @@ public sealed partial class AdminUserDeleteViewModel(ISessionManager session, Ad
 
     private async Task<bool> ReadAsync(string id, string failureKey, CancellationToken cancellationToken)
     {
-        if (session.ActiveServer is not { } server)
+        if (_actor is not { } actor)
         {
             return false;
         }
         IsBusy = true;
         try
         {
-            var read = await users.GetAsync(server.BaseUri, id, cancellationToken);
+            var read = await users.GetAsync(actor, id, cancellationToken);
             Account = read.Value;
             _version = read.Version;
             Error = "";
             return true;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex) && !cancellationToken.IsCancellationRequested)
+        catch (Exception ex) when (AdminFailures.IsExpected(ex) && !cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(ex, "Could not read the account to delete");
             Error = AdminFailures.Describe(ex, AppText.Get(failureKey));
@@ -112,9 +115,9 @@ public sealed partial class AdminUserDeleteViewModel(ISessionManager session, Ad
         }
     }
 
-    private async Task<bool> RunAsync(Func<Uri, AdminUser, Task> action, string fallbackKey, bool requireName)
+    private async Task<bool> RunAsync(Func<AdminActor, AdminUser, Task> action, string fallbackKey, bool requireName)
     {
-        if (session.ActiveServer is not { } server || Account is not { } account || IsBusy || HasConflict
+        if (_actor is not { } actor || Account is not { } account || IsBusy || HasConflict
             || (requireName && Typed != account.Username))
         {
             return false;
@@ -123,10 +126,10 @@ public sealed partial class AdminUserDeleteViewModel(ISessionManager session, Ad
         Error = "";
         try
         {
-            await action(server.BaseUri, account);
+            await action(actor, account);
             return true;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             logger.LogWarning(ex, "Could not delete or disable an account");
             HasConflict = AdminFailures.IsChanged(ex);

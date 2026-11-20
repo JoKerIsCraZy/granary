@@ -322,6 +322,29 @@ public sealed class SiloHttp(HttpClient http)
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// As the <c>SendIfMatchAsync</c> with a body that answers 204, bound to account <paramref name="accountId"/>'s profile
+    /// <paramref name="profileId"/>: an administrator's change of an account goes only as the account and profile it was
+    /// made as.
+    /// </summary>
+    public async Task SendIfMatchAsAccountProfileAsync<TRequest>(HttpMethod method, Uri server, string path, string accountId, string profileId,
+        string version, TRequest body, JsonTypeInfo<TRequest> requestType, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsAccountProfile(method, server, path, profileId, accountId);
+        IfMatch(request, version);
+        request.Content = JsonContent.Create(body, requestType);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As <see cref="GetVersionedAsync{TResponse}"/>, bound to account <paramref name="accountId"/>'s profile <paramref name="profileId"/>.</summary>
+    public async Task<Versioned<TResponse>> GetVersionedAsAccountProfileAsync<TResponse>(Uri server, string path, string accountId, string profileId,
+        JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsAccountProfile(HttpMethod.Get, server, path, profileId, accountId);
+        return await SendVersionedAsync(request, responseType, requireVersion: true, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>As the bodiless <c>SendIfMatchAsProfileAsync</c>, bound to account <paramref name="accountId"/> as well.</summary>
     public async Task SendIfMatchAsAccountProfileAsync(HttpMethod method, Uri server, string path, string accountId, string profileId, string version,
         CancellationToken cancellationToken)

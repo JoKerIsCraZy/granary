@@ -17,6 +17,8 @@ public sealed partial class AdminNewInvitationViewModel(ISessionManager session,
     ILogger<AdminNewInvitationViewModel> logger) : ObservableObject
 {
     private bool _defaultProfile;
+    // The account and profile this was opened as: everything it sends goes only as them.
+    private AdminActor? _actor;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsLink), nameof(NoteLabel), nameof(NoteHint), nameof(ProfileHint), nameof(SubmitText))]
@@ -166,18 +168,19 @@ public sealed partial class AdminNewInvitationViewModel(ISessionManager session,
         OnPropertyChanged(nameof(EmailOptionBody));
         OnPropertyChanged(nameof(CanSubmit));
         Libraries.Clear();
-        if (session.ActiveServer is not { } server)
+        _actor = AdminActors.Of(session);
+        if (_actor is not { } actor)
         {
             return;
         }
         try
         {
-            foreach (var library in (await admin.ListLibrariesAsync(server.BaseUri)).Items.OrderBy(library => library.SortOrder))
+            foreach (var library in (await admin.ListLibrariesAsync(actor.Server)).Items.OrderBy(library => library.SortOrder))
             {
                 Libraries.Add(new AdminLibraryChoice(library.Id, library.Name) { IsChecked = true });
             }
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             // Without them the invitation takes its group's libraries, which it does by default.
             logger.LogWarning(ex, "Could not read the libraries for an invitation");
@@ -187,7 +190,7 @@ public sealed partial class AdminNewInvitationViewModel(ISessionManager session,
     /// <summary>Makes the invitation; true when it was made and its link shows.</summary>
     public async Task<bool> SaveAsync(CancellationToken cancellationToken = default)
     {
-        if (!CanSubmit || session.ActiveServer is not { } server)
+        if (!CanSubmit || _actor is not { } actor)
         {
             return false;
         }
@@ -200,10 +203,10 @@ public sealed partial class AdminNewInvitationViewModel(ISessionManager session,
         IsSaving = true;
         try
         {
-            Result = await invitations.CreateAsync(server.BaseUri, Draft(), cancellationToken);
+            Result = await invitations.CreateAsync(actor, Draft(), cancellationToken);
             return true;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             logger.LogWarning(ex, "Could not create an invitation");
             // Links are built on the server's public URL, and a server without one refuses them.

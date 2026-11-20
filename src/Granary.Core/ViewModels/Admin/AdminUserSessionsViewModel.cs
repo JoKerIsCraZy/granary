@@ -21,6 +21,8 @@ public sealed partial class AdminUserSessionsViewModel(ISessionManager session, 
 {
     private AdminUser _account = new();
     private string? _cursor;
+    // The account and profile this was opened as: everything it sends goes only as them.
+    private AdminActor? _actor;
 
     public ObservableCollection<SignedInSessionRow> Sessions { get; } = [];
 
@@ -46,19 +48,26 @@ public sealed partial class AdminUserSessionsViewModel(ISessionManager session, 
     public bool IsEmpty => State == LibraryLoadState.Ready && Sessions.Count == 0;
 
     /// <summary>Reads the first page of the account's sign-ins.</summary>
-    public async Task OpenAsync(AdminUser account, bool manageable)
+    public Task OpenAsync(AdminUser account, bool manageable)
     {
         _account = account;
+        _actor = AdminActors.Of(session);
         Manageable = manageable;
         OnPropertyChanged(nameof(Description));
+        return ReadFirstAsync();
+    }
+
+    /// <summary>Retry, as the account and profile the panel was opened as.</summary>
+    [RelayCommand]
+    private Task RetryAsync() => ReadFirstAsync();
+
+    private async Task ReadFirstAsync()
+    {
         Sessions.Clear();
         _cursor = null;
         State = LibraryLoadState.Loading;
         await ReadAsync();
     }
-
-    [RelayCommand]
-    private Task RetryAsync() => OpenAsync(_account, Manageable);
 
     [RelayCommand(CanExecute = nameof(HasMore))]
     private Task LoadMoreAsync() => ReadAsync();
@@ -66,7 +75,7 @@ public sealed partial class AdminUserSessionsViewModel(ISessionManager session, 
     [RelayCommand]
     private async Task SignOutAsync(SignedInSessionRow? row)
     {
-        if (row is null || session.ActiveServer is not { } server || !Manageable || row.IsBusy || !await confirmation.AskAsync(
+        if (row is null || _actor is not { } actor || !Manageable || row.IsBusy || !await confirmation.AskAsync(
             row.Name.Length > 0 ? AppText.Get("web.settings.sessions.confirm.deviceTitle", ("device", row.Name))
                 : AppText.Get("web.settings.sessions.confirm.sessionTitle"),
             $"{AppText.Get("web.settings.sessions.confirm.adminClientDescription", ("username", _account.Username))} {AppText.Get("web.settings.sessions.confirm.note")}",
@@ -77,12 +86,12 @@ public sealed partial class AdminUserSessionsViewModel(ISessionManager session, 
         row.IsBusy = true;
         try
         {
-            await users.SignOutSessionAsync(server.BaseUri, _account.Id, row.Id);
+            await users.SignOutSessionAsync(actor, _account.Id, row.Id);
             Sessions.Remove(row);
             OnPropertyChanged(nameof(IsEmpty));
             Say(AppText.Get("web.settings.sessions.signedOut"), isError: false);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             logger.LogWarning(ex, "Could not sign an account's session out");
             Say(AdminFailures.Describe(ex, AppText.Get("web.settings.sessions.signOutFailed")), isError: true);
@@ -96,7 +105,7 @@ public sealed partial class AdminUserSessionsViewModel(ISessionManager session, 
     [RelayCommand]
     private async Task SignOutEverywhereAsync()
     {
-        if (session.ActiveServer is not { } server || !Manageable || !await confirmation.AskAsync(
+        if (_actor is not { } actor || !Manageable || !await confirmation.AskAsync(
             AppText.Get("web.settings.sessions.confirm.allTitle", ("username", _account.Username)),
             AppText.Get("web.settings.sessions.confirm.note"),
             AppText.Get("web.settings.sessions.signOutEverywhere")))
@@ -105,13 +114,13 @@ public sealed partial class AdminUserSessionsViewModel(ISessionManager session, 
         }
         try
         {
-            await users.SignOutEverywhereAsync(server.BaseUri, _account.Id);
+            await users.SignOutEverywhereAsync(actor, _account.Id);
             Sessions.Clear();
             HasMore = false;
             OnPropertyChanged(nameof(IsEmpty));
             Say(AppText.Get("web.settings.sessions.signedOutEverywhere", ("username", _account.Username)), isError: false);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             logger.LogWarning(ex, "Could not sign an account out everywhere");
             Say(AdminFailures.Describe(ex, AppText.Get("web.settings.sessions.signOutFailed")), isError: true);
@@ -120,13 +129,13 @@ public sealed partial class AdminUserSessionsViewModel(ISessionManager session, 
 
     private async Task ReadAsync()
     {
-        if (session.ActiveServer is not { } server)
+        if (_actor is not { } actor)
         {
             return;
         }
         try
         {
-            var page = await users.ListLoginSessionsAsync(server.BaseUri, _account.Id, _cursor);
+            var page = await users.ListLoginSessionsAsync(actor, _account.Id, _cursor);
             var now = time.GetUtcNow();
             var known = Sessions.Select(row => row.Id).ToHashSet(StringComparer.Ordinal);
             foreach (var item in page.Items.Where(item => known.Add(item.Id)))
@@ -138,7 +147,7 @@ public sealed partial class AdminUserSessionsViewModel(ISessionManager session, 
             HasMore = next is not null;
             State = LibraryLoadState.Ready;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             logger.LogWarning(ex, "Could not read an account's sessions");
             State = Sessions.Count > 0 ? LibraryLoadState.Ready : LibraryLoadState.Error;

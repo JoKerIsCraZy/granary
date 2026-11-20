@@ -22,6 +22,8 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
     private readonly TimeProvider _time;
     private readonly ILogger<AdminUserDetailViewModel> _logger;
     private string _id = "";
+    // The account and profile the page was opened as: everything it sends goes only as them.
+    private AdminActor? _actor;
     private string _version = "";
     private CancellationTokenSource? _load;
 
@@ -71,6 +73,7 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
     public async Task OpenAsync(string id, AdminUserCapabilities capabilities, IReadOnlyList<AdminAccessGroup> groups, bool viewerIsOwner)
     {
         _id = id;
+        _actor = AdminActors.Of(_session);
         Capabilities = capabilities;
         Groups = groups;
         ViewerIsOwner = viewerIsOwner;
@@ -91,7 +94,7 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
 
     internal async Task ReadAsync(bool keepDrafts)
     {
-        if (_session.ActiveServer is not { } server || _id.Length == 0)
+        if (_actor is not { } actor || _id.Length == 0)
         {
             return;
         }
@@ -99,7 +102,7 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
         var load = _load = new CancellationTokenSource();
         try
         {
-            var read = await _users.GetAsync(server.BaseUri, _id, load.Token);
+            var read = await _users.GetAsync(actor, _id, load.Token);
             if (load.Token.IsCancellationRequested)
             {
                 return;
@@ -110,7 +113,7 @@ public sealed partial class AdminUserDetailViewModel : ObservableObject
             ResetAccess(keepDrafts);
             State = LibraryLoadState.Ready;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex) && !load.Token.IsCancellationRequested)
+        catch (Exception ex) when (AdminFailures.IsExpected(ex) && !load.Token.IsCancellationRequested)
         {
             _logger.LogWarning(ex, "Could not read an account");
             // A 404 means it is gone (another administrator deleted it), and outranks a copy read before.

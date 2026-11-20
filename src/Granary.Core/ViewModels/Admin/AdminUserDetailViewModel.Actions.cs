@@ -32,7 +32,7 @@ public sealed partial class AdminUserDetailViewModel
     [RelayCommand]
     private async Task MakeOwnerAsync()
     {
-        if (_session.ActiveServer is not { } server || Account is not { } account || _acting || !await _confirmation.AskAsync(
+        if (_actor is not { } actor || Account is not { } account || _acting || !await _confirmation.AskAsync(
             AppText.Get("web.admin.users.page.transferTitle", ("username", account.Username)),
             AppText.Get("web.admin.users.page.transferDescription", ("username", account.Username)),
             AppText.Get("web.admin.users.page.transferConfirm")))
@@ -42,13 +42,13 @@ public sealed partial class AdminUserDetailViewModel
         _acting = true;
         try
         {
-            await _users.TransferOwnershipAsync(server.BaseUri, account.Id);
+            await _users.TransferOwnershipAsync(actor, account.Id);
             // The viewer stays an admin, no longer the Owner.
             ViewerIsOwner = false;
             await ReadAsync(keepDrafts: false);
             Say(AppText.Get("web.admin.users.page.ownerTransferred", ("username", account.Username)), isError: false);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             _logger.LogWarning(ex, "Could not transfer the server's ownership");
             Say(AdminFailures.Describe(ex, AppText.Get("web.admin.users.page.transferFailed")), isError: true);
@@ -75,7 +75,7 @@ public sealed partial class AdminUserDetailViewModel
     // Read fresh first, so the change carries the account's current version; 412 says another administrator changed it.
     private async Task SetEnabledAsync(bool enabled)
     {
-        if (_session.ActiveServer is not { } server || Account is not { } account || _acting || !Capabilities.Available)
+        if (_actor is not { } actor || Account is not { } account || _acting || !Capabilities.Available)
         {
             return;
         }
@@ -83,12 +83,12 @@ public sealed partial class AdminUserDetailViewModel
         Say("", isError: false);
         try
         {
-            var fresh = await _users.GetAsync(server.BaseUri, account.Id);
-            await _users.UpdateAsync(server.BaseUri, account.Id, fresh.Version, new AdminUserChange { Enabled = enabled });
+            var fresh = await _users.GetAsync(actor, account.Id);
+            await _users.UpdateAsync(actor, account.Id, fresh.Version, new AdminUserChange { Enabled = enabled });
             await ReadAsync(keepDrafts: true);
             Say(AppText.Get(enabled ? "web.admin.users.page.enabled" : "web.admin.users.page.disabled", ("username", account.Username)), isError: false);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             _logger.LogWarning(ex, "Could not enable or disable an account");
             Say(AdminFailures.IsChanged(ex) ? AppText.Get("web.admin.users.page.accountChanged")

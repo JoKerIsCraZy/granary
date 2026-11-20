@@ -28,6 +28,9 @@ public sealed partial class AdminPasswordResetViewModel(ISessionManager session,
     public const int MinPasswordChars = 8;
     public const int MaxPasswordBytes = 72;
 
+    // The account and profile this was opened as: everything it sends goes only as them.
+    private AdminActor? _actor;
+
     private AdminUser _account = new();
 
     [ObservableProperty]
@@ -117,6 +120,7 @@ public sealed partial class AdminPasswordResetViewModel(ISessionManager session,
     public void Start(AdminUser account, AdminUserCapabilities capabilities, bool passwordOnly)
     {
         _account = account;
+        _actor = AdminActors.Of(session);
         CanEmail = !passwordOnly && account.Enabled && capabilities.PasswordResetEmail && account.Email.Length > 0;
         CanLink = !passwordOnly && account.Enabled && capabilities.PasswordResetLink;
         EmailHint = CanEmail ? AppText.Get("web.admin.users.passwordResetDialog.emailHint", ("email", account.Email))
@@ -136,7 +140,7 @@ public sealed partial class AdminPasswordResetViewModel(ISessionManager session,
     /// <summary>Runs the chosen way; the dialog stays open to show what happened.</summary>
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
-        if (!CanRun || session.ActiveServer is not { } server)
+        if (!CanRun || _actor is not { } actor)
         {
             return;
         }
@@ -146,15 +150,15 @@ public sealed partial class AdminPasswordResetViewModel(ISessionManager session,
         {
             if (Method == AdminResetMethod.Password)
             {
-                await SetPasswordAsync(server.BaseUri, cancellationToken);
+                await SetPasswordAsync(actor, cancellationToken);
             }
             else
             {
-                Show(await users.IssuePasswordResetAsync(server.BaseUri, _account.Id,
+                Show(await users.IssuePasswordResetAsync(actor, _account.Id,
                     Method == AdminResetMethod.Email ? AdminResetDelivery.Email : AdminResetDelivery.Link, cancellationToken));
             }
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
             logger.LogWarning(ex, "Could not reset an account's password");
             Error = AdminFailures.IsChanged(ex) ? AppText.Get("web.admin.users.page.accountChanged")
@@ -187,10 +191,10 @@ public sealed partial class AdminPasswordResetViewModel(ISessionManager session,
     }
 
     // Read fresh, so the save carries the account's current version.
-    private async Task SetPasswordAsync(Uri server, CancellationToken cancellationToken)
+    private async Task SetPasswordAsync(AdminActor actor, CancellationToken cancellationToken)
     {
-        var fresh = await users.GetAsync(server, _account.Id, cancellationToken);
-        await users.UpdateAsync(server, _account.Id, fresh.Version,
+        var fresh = await users.GetAsync(actor, _account.Id, cancellationToken);
+        await users.UpdateAsync(actor, _account.Id, fresh.Version,
             new AdminUserChange { Password = Password, RequirePasswordChange = MustChange ? true : null }, cancellationToken);
         Password = "";
         Outcome = MustChange
