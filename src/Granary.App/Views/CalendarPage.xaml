@@ -107,12 +107,10 @@
                            Visibility="{x:Bind ViewModel.HasSummary, Mode=OneWay}" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Bottom">
-                <Border Padding="4" CornerRadius="{StaticResource SiloPillCornerRadius}" Background="#FF161619"
-                        BorderBrush="#FF242428" BorderThickness="1" VerticalAlignment="Center">
-                    <controls:PillChoices ItemsSource="{x:Bind ViewModel.Presets}" SelectedItem="{x:Bind ViewModel.SelectedPreset, Mode=TwoWay}"
-                                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.calendar.presetLabel')}" />
-                </Border>
-                <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="34" Padding="14,4,10,4"
+                <controls:PillChoices IsSegmented="True" ItemsSource="{x:Bind ViewModel.Presets}" SelectedItem="{x:Bind ViewModel.SelectedPreset, Mode=TwoWay}"
+                                      VerticalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.calendar.presetLabel')}" />
+                <!-- As high as the presets' track, in its colours. -->
+                <DropDownButton controls:Pill.IsEnabled="True" Height="40" Padding="16,0,12,0"
                                 FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"
                                 Background="#FF161619" BorderBrush="#FF242428"
                                 Content="{x:Bind ViewModel.SelectedLibrary.Label, Mode=OneWay}"
