@@ -17,6 +17,8 @@ public sealed partial class AdminNewInvitationViewModel(AdminInvitationsApi invi
     ILogger<AdminNewInvitationViewModel> logger) : ObservableObject
 {
     private bool _defaultProfile;
+    // Counts the starts: only the latest one's libraries are shown.
+    private int _starts;
     // The account and profile this was opened as: everything it sends goes only as them.
     private AdminActor? _actor;
 
@@ -167,6 +169,7 @@ public sealed partial class AdminNewInvitationViewModel(AdminInvitationsApi invi
         OnPropertyChanged(nameof(CanChangeProfile));
         OnPropertyChanged(nameof(EmailOptionBody));
         OnPropertyChanged(nameof(CanSubmit));
+        int start = ++_starts;
         Libraries.Clear();
         _actor = actor;
         if (actor is null)
@@ -175,9 +178,16 @@ public sealed partial class AdminNewInvitationViewModel(AdminInvitationsApi invi
         }
         try
         {
-            foreach (var library in (await admin.ListLibrariesAsync(actor)).Items.OrderBy(library => library.SortOrder))
+            var libraries = (await admin.ListLibrariesAsync(actor)).Items.OrderBy(library => library.SortOrder)
+                .Select(library => new AdminLibraryChoice(library.Id, library.Name) { IsChecked = true }).ToList();
+            if (start != _starts)
             {
-                Libraries.Add(new AdminLibraryChoice(library.Id, library.Name) { IsChecked = true });
+                return;
+            }
+            Libraries.Clear();
+            foreach (var library in libraries)
+            {
+                Libraries.Add(library);
             }
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex))

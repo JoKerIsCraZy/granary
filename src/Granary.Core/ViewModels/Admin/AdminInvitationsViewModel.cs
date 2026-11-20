@@ -172,9 +172,12 @@ public sealed partial class AdminInvitationsViewModel(ISessionManager session, A
         }
         catch (Exception ex) when (AdminFailures.IsExpected(ex))
         {
-            // It may still have made a new link: the history is read again before another.
             logger.LogWarning(ex, "Could not resend an invitation");
-            ActionError = $"{AdminFailures.Describe(ex, AppText.Get("web.admin.settings.invitations.resendFailed"))} {AppText.Get("web.admin.settings.invitations.resend.uncertain")}";
+            // Without an answer it may still have made a new link: the history is read again before another. A refusal is final.
+            bool uncertain = ex is not (SiloApiException or ProfileChangedException);
+            string failed = AdminFailures.Describe(ex, AppText.Get("web.admin.settings.invitations.resendFailed"));
+            ActionError = uncertain ? $"{failed} {AppText.Get("web.admin.settings.invitations.resend.uncertain")}" : failed;
+            IsBlocked = uncertain;
             return false;
         }
     }

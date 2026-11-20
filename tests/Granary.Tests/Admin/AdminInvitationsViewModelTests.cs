@@ -119,9 +119,9 @@ public sealed class AdminInvitationsViewModelTests
     }
 
     [Fact]
-    public async Task AFailedResend_BlocksTheRows_UntilTheHistoryIsReadAgain()
+    public async Task AResendWithoutAnAnswer_BlocksTheRows_UntilTheHistoryIsReadAgain()
     {
-        _silo.Map("api/v2/admin/invitations/1/resend", _ => BrowseFakeSilo.Problem(500, "internal_error"));
+        _silo.Map("api/v2/admin/invitations/1/resend", _ => throw new HttpRequestException("no answer"));
         var tab = await OpenedAsync();
 
         Assert.False(await tab.ResendAsync(tab.Rows[0], InvitationDeliveries.Email));
@@ -390,5 +390,36 @@ public sealed class AdminInvitationsViewModelTests
 
         Assert.Equal("", tab.ActionError);
         Assert.False(tab.IsBlocked);
+    }
+    [Fact]
+    public async Task AResendTheServerRefused_FreesTheRows_WithoutTheUncertainNote()
+    {
+        _silo.Map("api/v2/admin/invitations/1/resend", _ => BrowseFakeSilo.Problem(500, "internal_error"));
+        var tab = await OpenedAsync();
+
+        Assert.False(await tab.ResendAsync(tab.Rows[0], InvitationDeliveries.Email));
+
+        Assert.False(tab.IsBlocked);
+        Assert.DoesNotContain("Reload history before another deliberate resend.", tab.ActionError, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task InviteSomeoneStartedTwice_ListsTheLibrariesOnce()
+    {
+        var first = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        int reads = 0;
+        _silo.Map("api/v2/libraries", (_, _) => ++reads == 1
+            ? first.Task
+            : Task.FromResult(BrowseFakeSilo.Json("""{ "items": [ { "id": "5", "name": "Films" }, { "id": "6", "name": "Shows" } ] }""")));
+        var form = new AdminNewInvitationViewModel(new AdminInvitationsApi(_silo.Http), new AdminApi(_silo.Http),
+            _silo.Logs.For<AdminNewInvitationViewModel>());
+        var capabilities = new AdminInvitationCapabilities { State = "available", DefaultProfile = true };
+
+        var older = form.StartAsync(AdminActors.Of(_session), capabilities, [], viewerIsOwner: true);
+        await form.StartAsync(AdminActors.Of(_session), capabilities, [], viewerIsOwner: true);
+        first.SetResult(BrowseFakeSilo.Json("""{ "items": [ { "id": "5", "name": "Films" }, { "id": "6", "name": "Shows" } ] }"""));
+        await older;
+
+        Assert.Equal(["5", "6"], form.Libraries.Select(library => library.Id));
     }
 }

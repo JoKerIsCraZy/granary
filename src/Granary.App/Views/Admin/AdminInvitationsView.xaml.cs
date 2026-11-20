@@ -19,6 +19,8 @@ public sealed partial class AdminInvitationsView : UserControl
 {
     private IReadOnlyList<AdminAccessGroup> _groups = [];
     private bool _inviting;
+    // Invite someone is opening or open: a second click opens nothing.
+    private bool _opening;
     // Counts the tab's visits: Invite someone opens its dialog only while the visit it was asked in lasts.
     private int _visit;
 
@@ -89,10 +91,11 @@ public sealed partial class AdminInvitationsView : UserControl
 
     private async void OnInviteClick(object sender, RoutedEventArgs e)
     {
-        if (!ViewModel.CanInvite || XamlRoot is null)
+        if (!ViewModel.CanInvite || XamlRoot is null || _opening)
         {
             return;
         }
+        _opening = true;
         int visit = _visit;
         try
         {
@@ -119,6 +122,7 @@ public sealed partial class AdminInvitationsView : UserControl
         }
         finally
         {
+            _opening = false;
             // The link was shown once; it is not kept. A dialog of an earlier visit leaves the current one's alone.
             if (visit == _visit)
             {
