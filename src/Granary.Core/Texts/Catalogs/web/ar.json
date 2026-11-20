@@ -17554,6 +17554,12 @@
       "value": "إضافة ملف شخصي"
     }
   ],
+  "web.profiles.picker.addFormFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر فتح نموذج الملف الشخصي الجديد. حاول مرة أخرى."
+    }
+  ],
   "web.profiles.picker.addNeedsPin": [
     {
       "type": 0,

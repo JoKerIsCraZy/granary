@@ -2099,6 +2099,7 @@ web.profiles.librarySelect.libraryFallback
 web.profiles.librarySelect.more
 web.profiles.librarySelect.pair
 web.profiles.picker.add
+web.profiles.picker.addFormFailed
 web.profiles.picker.addNeedsPin
 
 # The profile picker and its PIN prompt, in the words of the web's Profiles page and ProfilePinDialog (a lockout as

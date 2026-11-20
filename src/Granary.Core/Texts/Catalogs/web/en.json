@@ -14107,6 +14107,12 @@
       "value": "Add profile"
     }
   ],
+  "web.profiles.picker.addFormFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't open the new profile form. Try again."
+    }
+  ],
   "web.profiles.picker.addNeedsPin": [
     {
       "type": 0,

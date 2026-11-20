@@ -13019,6 +13019,12 @@
       "value": "プロフィールを追加"
     }
   ],
+  "web.profiles.picker.addFormFailed": [
+    {
+      "type": 0,
+      "value": "新しいプロフィールのフォームを開けませんでした。もう一度お試しください。"
+    }
+  ],
   "web.profiles.picker.addNeedsPin": [
     {
       "type": 0,

@@ -15002,6 +15002,12 @@
       "value": "Añadir perfil"
     }
   ],
+  "web.profiles.picker.addFormFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo abrir el formulario del nuevo perfil. Vuelve a intentarlo."
+    }
+  ],
   "web.profiles.picker.addNeedsPin": [
     {
       "type": 0,

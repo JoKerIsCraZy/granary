@@ -13067,6 +13067,12 @@
       "value": "添加个人资料"
     }
   ],
+  "web.profiles.picker.addFormFailed": [
+    {
+      "type": 0,
+      "value": "无法打开新建个人资料表单。请重试。"
+    }
+  ],
   "web.profiles.picker.addNeedsPin": [
     {
       "type": 0,

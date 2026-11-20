@@ -14075,6 +14075,12 @@
       "value": "Profil hinzufügen"
     }
   ],
+  "web.profiles.picker.addFormFailed": [
+    {
+      "type": 0,
+      "value": "Das Formular für ein neues Profil konnte nicht geöffnet werden. Versuche es erneut."
+    }
+  ],
   "web.profiles.picker.addNeedsPin": [
     {
       "type": 0,
