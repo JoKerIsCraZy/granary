@@ -2278,8 +2278,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   than one chapter, the chapter that plays sits between the episode and the times ("S1 · E1 — EPISODE · THE MARKET ·
   31:55 / 48:41 · ENDS 22:41"), as the web's `TitleBlock` puts `chapterTitle` after the episode with its times line
   after that: the one whose start to end holds the position (`findActiveChapterIndex`), so nothing before the first, in
-  a gap or for an untitled one; it changes as playback or a seek crosses into another chapter. Cut with an ellipsis at
-  260 px, after the episode has given way; screen readers hear its title as written, and hovering the line shows
+  a gap or for an untitled one; it changes as playback or a seek crosses into another chapter. At most 260 px, cut with an
+  ellipsis; a narrow line cuts the chapter first, leaves it out below 48 px, and only then cuts the episode, never the
+  times or the end clock (`PlayerMetaRow` on Core's `MetaLineFit`); screen readers hear its title as written, and hovering the line shows
   episode, chapter and end clock whole, dot separated, as the web's tooltip. In the middle skip back, the white play/pause disc and skip forward (glass discs showing the
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
