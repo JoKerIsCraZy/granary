@@ -15,6 +15,23 @@ public static class MetaLineFit
     /// <param name="others">The parts that never give way: the times and the end clock.</param>
     /// <param name="room">The width the line has.</param>
     /// <returns>The widths the episode and the chapter get.</returns>
+    /// <summary>
+    /// The widths the times and the end clock get, in order: whole while they fit; past the line's end the later ones (the end
+    /// clock) are left out, and times wider than the whole line are cut to it, so nothing reaches outside the line.
+    /// </summary>
+    public static double[] FitOthers(IReadOnlyList<double> widths, double room)
+    {
+        ArgumentNullException.ThrowIfNull(widths);
+        var fitted = new double[widths.Count];
+        double left = Math.Max(0, room);
+        for (int i = 0; i < widths.Count; i++)
+        {
+            fitted[i] = widths[i] <= left ? widths[i] : i == 0 ? left : 0;
+            left -= fitted[i];
+        }
+        return fitted;
+    }
+
     public static (double Episode, double Chapter) Split(double episode, double chapter, double others, double room)
     {
         double left = Math.Max(0, room - others);

@@ -168,13 +168,14 @@
                                 <TextBlock Style="{StaticResource SiloPlayerMetaTextStyle}" Typography.NumeralAlignment="Tabular"
                                            Text="{x:Bind TimesText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ViewModel.ShowsTimeLeft), Mode=OneWay}" />
                             </Button>
-                            <TextBlock Text="·" Margin="5,0,3,0" Style="{StaticResource SiloPlayerMetaTextStyle}"
-                                       Foreground="{StaticResource SiloPlayerMetaBrush}" Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}"
-                                       AutomationProperties.AccessibilityView="Raw" />
-                            <TextBlock Text="{x:Bind MetaText(ViewModel.EndsAtText), Mode=OneWay}" Style="{StaticResource SiloPlayerMetaTextStyle}"
-                                       Foreground="{StaticResource SiloPlayerMetaBrush}" Typography.NumeralAlignment="Tabular"
-                                       Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}"
-                                       AutomationProperties.Name="{x:Bind ViewModel.EndsAtSpoken, Mode=OneWay}" />
+                            <!-- The end clock with its dot, one part: a line too narrow for it leaves both out. -->
+                            <StackPanel Orientation="Horizontal" Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}">
+                                <TextBlock Text="·" Margin="5,0,3,0" Style="{StaticResource SiloPlayerMetaTextStyle}"
+                                           Foreground="{StaticResource SiloPlayerMetaBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                <TextBlock Text="{x:Bind MetaText(ViewModel.EndsAtText), Mode=OneWay}" Style="{StaticResource SiloPlayerMetaTextStyle}"
+                                           Foreground="{StaticResource SiloPlayerMetaBrush}" Typography.NumeralAlignment="Tabular"
+                                           AutomationProperties.Name="{x:Bind ViewModel.EndsAtSpoken, Mode=OneWay}" />
+                            </StackPanel>
                         </controls:PlayerMetaRow>
                     </StackPanel>
 
