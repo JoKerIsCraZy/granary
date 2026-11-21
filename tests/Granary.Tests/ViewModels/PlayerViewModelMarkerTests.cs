@@ -66,6 +66,86 @@ public sealed class PlayerViewModelMarkerTests
         Assert.Equal([0], Playback.Seeks);
     }
 
+    // As the web's findActiveChapterIndex: from its start up to its end, nothing before the first or in a gap.
+    [Theory]
+    [InlineData(10, "")]
+    [InlineData(100, "Arrival")]
+    [InlineData(599.9, "Arrival")]
+    [InlineData(600, "The Market")]
+    [InlineData(1950, "")]
+    [InlineData(2100, "Elena's Letter")]
+    [InlineData(2700, "")]
+    public async Task TheMetaLine_NamesTheChapterThatPlays(double seconds, string expected)
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaiseChapters([new PlaybackChapter("Arrival", 60, 600, null), new PlaybackChapter(" The Market ", 600, 1900, null),
+            new PlaybackChapter("Elena's Letter", 2000, 2700, null)]);
+
+        At(seconds);
+
+        Assert.Equal(expected, viewModel.CurrentChapterTitle);
+    }
+
+    [Fact]
+    public async Task OneChapter_OrNone_NamesNothing_NorDoesAnUntitledOne()
+    {
+        var viewModel = await PlayingAsync();
+        At(100);
+        Assert.Equal("", viewModel.CurrentChapterTitle);
+
+        Playback.RaiseChapters([new PlaybackChapter("Arrival", 0, 2700, null)]);
+        At(101);
+        Assert.Equal("", viewModel.CurrentChapterTitle);
+
+        Playback.RaiseChapters([new PlaybackChapter("  ", 0, 600, null), new PlaybackChapter("The Market", 600, 2700, null)]);
+        At(102);
+        Assert.Equal("", viewModel.CurrentChapterTitle);
+        At(700);
+        Assert.Equal("The Market", viewModel.CurrentChapterTitle);
+    }
+
+    [Fact]
+    public async Task TheChapterName_ChangesOnlyWhenAnotherChapterPlays()
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaiseChapters([new PlaybackChapter("Arrival", 0, 600, null), new PlaybackChapter("The Market", 600, 2700, null)]);
+        At(30);
+        var changes = new List<string>();
+        viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(PlayerViewModel.CurrentChapterTitle))
+            {
+                changes.Add(viewModel.CurrentChapterTitle);
+            }
+        };
+
+        for (double seconds = 31; seconds < 700; seconds += 1)
+        {
+            At(seconds);
+        }
+
+        Assert.Equal(["The Market"], changes);
+    }
+
+    [Fact]
+    public async Task ASeek_NamesTheChapterItLandsIn_AndAnotherTitleStartsWithoutOne()
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaiseChapters([new PlaybackChapter("Arrival", 0, 600, null), new PlaybackChapter("The Market", 600, 2000, null),
+            new PlaybackChapter("Elena's Letter", 2000, 2700, null)]);
+        At(30);
+
+        viewModel.SeekToChapter(2000);
+        At(2000);
+        Assert.Equal("Elena's Letter", viewModel.CurrentChapterTitle);
+        viewModel.SeekTo(700);
+        At(700);
+        Assert.Equal("The Market", viewModel.CurrentChapterTitle);
+
+        await viewModel.StartAsync(PlayRequest.Resume("episode-2"));
+        Assert.Equal("", viewModel.CurrentChapterTitle);
+    }
+
     // Each from the position alone: no seek before it.
     [Theory]
     [InlineData(900, false, 600)]

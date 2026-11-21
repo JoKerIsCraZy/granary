@@ -20,6 +20,13 @@ public sealed partial class PlayerViewModel
     [ObservableProperty]
     public partial bool HasChapters { get; private set; }
 
+    /// <summary>
+    /// The title of the chapter that plays, for the meta line under the title, as the web's <c>PlayerControls.tsx</c>: only
+    /// with more than one chapter, and empty before the first, in a gap and for an untitled one.
+    /// </summary>
+    [ObservableProperty]
+    public partial string CurrentChapterTitle { get; private set; } = "";
+
     /// <summary>A row of the Chapters menu: to where the chapter starts.</summary>
     public void SeekToChapter(double startSeconds) => SeekTo(startSeconds);
 
@@ -42,6 +49,7 @@ public sealed partial class PlayerViewModel
         ChapterMarks = [];
         Chapters = [];
         HasChapters = false;
+        CurrentChapterTitle = "";
     }
 
     // A plan can play another file, with chapters of its own.
@@ -57,7 +65,8 @@ public sealed partial class PlayerViewModel
         ShowChapters(ChapterOption.IndexAt(chapters, PositionSeconds));
     }
 
-    // The rows change only when another chapter plays, so an open menu keeps its rows while the time runs.
+    // The rows and the meta line's chapter change only when another chapter plays, so an open menu keeps its rows while
+    // the time runs.
     private void FollowChapters()
     {
         int current = ChapterOption.IndexAt(ChapterMarks, PositionSeconds);
@@ -71,5 +80,6 @@ public sealed partial class PlayerViewModel
     {
         _currentChapter = current;
         Chapters = ChapterOption.For(ChapterMarks, current);
+        CurrentChapterTitle = ChapterMarks.Count > 1 && current >= 0 ? ChapterMarks[current].Title.Trim() : "";
     }
 }
