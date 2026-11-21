@@ -8,6 +8,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Player:** the line under the title names the chapter that plays, between the episode and the times, as on Silo's
+  web. It shows for titles with more than one chapter, follows playback and seeks, and works for downloads too.
 - **Profiles:** the household's primary profile manages the household's profiles in Settings → Profiles, as on Silo's
   web: add, edit and delete them, with a name, a preset picture or an image of its own (where your Silo server keeps
   uploads), a PIN to set, change or remove, Kids, and the content rating, advisory age, playback quality, libraries and

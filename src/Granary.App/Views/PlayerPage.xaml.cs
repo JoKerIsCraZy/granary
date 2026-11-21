@@ -699,6 +699,10 @@ public sealed partial class PlayerPage : Page
     // Upper case on screen only: screen readers get the line as written, so "S1 · E1" is not spelled out.
     public string MetaText(string subtitle) => AppText.Upper(subtitle);
 
+    // The meta line whole on hover, as the web's TitleBlock titles it: episode, chapter and end clock, dot separated.
+    public string? MetaLineTip(string subtitle, string chapter, string endsAt) =>
+        string.Join(" · ", new[] { subtitle, chapter, endsAt }.Where(part => part.Length > 0)) is { Length: > 0 } tip ? tip : null;
+
     // Named for what it does; screen readers hear the times from the seek bar ("4 minutes of 1 hour 30 minutes").
     public string EndTimeName(bool showsRemaining) =>
         showsRemaining ? AppText.Get("granary.player.showDuration") : AppText.Get("granary.player.showTimeLeft");
