@@ -70,6 +70,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- **Search:** typing on the empty search page keeps the focus in the search field when the results appear, so the
+  next key no longer goes to the sidebar or back to Home.
 - **Downloads:** the download dialog downloads only for the profile it was opened in; after a profile switch, Download
   starts nothing. Delete all episodes and Remove all downloads also take a download that arrived while you were asked.
 - **Server download limit:** waiting episodes start as soon as another download is ready on the server, also when that

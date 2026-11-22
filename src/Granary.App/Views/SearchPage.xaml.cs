@@ -17,6 +17,8 @@ public sealed partial class SearchPage : Page, IPadSections
     private bool _focusBoxWhenLoaded;
     private SearchView _shownView;
     private bool _isEmptySearch = true;
+    // The latest focus transfer between the two boxes; a newer one, or leaving the page, ends an older one's retries.
+    private int _focusTransfer;
     // A box had the keyboard when the layouts switched; a box that went out of sight keeps this.
     private bool _typingInBox;
 
@@ -70,6 +72,7 @@ public sealed partial class SearchPage : Page, IPadSections
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
+        _focusTransfer++;
         ViewModel.Deactivate();
         // The page stays cached: its backdrop lets go of its pictures until it shows again.
         Backdrop.Suspend();
@@ -138,12 +141,7 @@ public sealed partial class SearchPage : Page, IPadSections
                 // Where the caret was, and what was selected: a move made before the box switched is kept.
                 int start = from.SelectionStart;
                 int length = from.SelectionLength;
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    to.Focus(FocusState.Programmatic);
-                    int at = Math.Min(start, to.Text.Length);
-                    to.Select(at, Math.Min(length, to.Text.Length - at));
-                });
+                DispatcherQueue.TryEnqueue(() => FocusWhenReady(to, start, length));
             }
         }
         else if (e.PropertyName == nameof(SearchViewModel.ShownView) && _shownView != ViewModel.ShownView)
@@ -152,6 +150,49 @@ public sealed partial class SearchPage : Page, IPadSections
             _shownView = ViewModel.ShownView;
             Scroller.ChangeView(null, 0, null, disableAnimation: true);
         }
+    }
+
+    // The box that comes into sight has no template yet the moment it shows, so a first Focus can fail: it is tried again
+    // after each layout pass, so the next key never lands elsewhere (Space on a sidebar entry, Backspace going back). The
+    // transfer ends once it took, when another switch or leaving the page replaces it, or when the viewer put the focus on
+    // another control meanwhile; it never takes the focus back.
+    private void FocusWhenReady(TextBox box, int start, int length)
+    {
+        int transfer = ++_focusTransfer;
+        if (TryFocus(box, start, length))
+        {
+            return;
+        }
+        int tries = 0;
+        void OnLayoutUpdated(object? sender, object e)
+        {
+            bool done = transfer != _focusTransfer || ++tries > MaxFocusTries || FocusMovedAway(box) || TryFocus(box, start, length);
+            if (done)
+            {
+                box.LayoutUpdated -= OnLayoutUpdated;
+            }
+        }
+        box.LayoutUpdated += OnLayoutUpdated;
+    }
+
+    // A transfer gives up after this many layout passes: a box that never shows (the page went) takes no more.
+    private const int MaxFocusTries = 60;
+
+    // The viewer chose another control since the switch: neither box, nor nothing at all, has the focus.
+    private bool FocusMovedAway(TextBox box) =>
+        XamlRoot is { } root && FocusManager.GetFocusedElement(root) is DependencyObject focused
+            && !ReferenceEquals(focused, box) && !ReferenceEquals(focused, SearchBox) && !ReferenceEquals(focused, EmptySearchBox)
+            && focused is not ScrollViewer && focused is not Page;
+
+    private static bool TryFocus(TextBox box, int start, int length)
+    {
+        if (box.Visibility != Visibility.Visible || !box.Focus(FocusState.Programmatic))
+        {
+            return false;
+        }
+        int at = Math.Min(start, box.Text.Length);
+        box.Select(at, Math.Min(length, box.Text.Length - at));
+        return true;
     }
 
     private void PlacePeople()
