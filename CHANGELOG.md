@@ -6,76 +6,37 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-22
+
 ### Added
 
-- **Search:** results open on an overview, as on Silo's web: two rows of best matches, then the titles you can request
-  under "Not in your library", people and three more rows, so the titles to request no longer sit below the whole
-  library. "In your library" and "Request to add" show each list whole, with their counts. Search offers a sort,
-  Relevance first, and the library's Filters, Watch Status included; under another sort the rows read as one sorted
-  list, with "Back to relevance".
-- **Search** looks as on Silo's web: with nothing typed, a quiet page with "Search" and its box; once you search, the
-  text itself is the page's large heading on a hairline, with a round clear button. Movies & Series, Movies and Series
-  are a menu beside the sort and Filters. People show as portrait cards, results load under skeleton cards, and a
-  failed search or people search says so with its own retry.
-- **Player:** the line under the title names the chapter that plays, between the episode and the times, as on Silo's
-  web. It shows for titles with more than one chapter, follows playback and seeks, and works for downloads too.
-- **Profiles:** the household's primary profile manages the household's profiles in Settings → Profiles, as on Silo's
-  web: add, edit and delete them, with a name, a preset picture or an image of its own (where your Silo server keeps
-  uploads), a PIN to set, change or remove, Kids, and the content rating, advisory age, playback quality, libraries and
-  requests your server lets a profile have. The profile picker offers Add profile too, after the primary profile's PIN.
-- **Admin → Users:** a new page under MANAGE in the admin sidebar, as on Silo's web. It lists every account on your
-  Silo server with its role, group, status, when it was created and when it was last active; search by name or email,
-  filter by group, sort by any column and page through 25, 50 or 100 at a time. Add User creates an account with its
-  password (temporary if you like), role, group, marker editing and metadata curation, and a first profile. Delete asks
-  you to type the account's name first, and stops if another administrator changed the account meanwhile. An
-  account's own page shows what it is and offers what you may do: change its name, email, role and whether it can
-  sign in; its access group, libraries, marker editing and metadata curation; reset its password by email, with a link
-  to share or with a temporary password; disable or enable it, make another admin the server's owner, delete it, and
-  see where it is signed in and sign it out there or everywhere.
-- **Admin → Users → Invitations:** invite someone by email or with a link to share, with their role, access group,
-  libraries, a note, their first profile and the feature tour, as on Silo's web. The link shows once, with Copy link; the
-  history lists every invitation with its status and delivery, 50 at a time, and a pending or expired one gets a new
-  link, copied or emailed, and a pending one can be revoked. Without your Silo server's public URL nothing new can be
-  made, and the tab says so.
-- **Admin → Users → Invite Codes:** the third tab of Users, as on Silo's web: create a signup code with a label and a
-  number of uses, copy it, switch it off and on, add uses and delete it. A note says whether public signups are on, as
-  codes only work then.
-- **Admin → Users, as Silo's web lays it out:** the page's header shows whether public signups are on and links Access
-  Groups, both opening those pages of your Silo server's web app; Users, Invitations and Invite Codes are tabs across
-  the page. Add User is the web's dialog with its Account, Access and Limits tabs: besides the account and its group, set
-  its libraries, downloads, requests, stream and transcode limits, bitrate caps, playback quality and profile limit
-  right away, each showing what it inherits until you override it. Invite someone, Reset password and Delete look as
-  they do on the web, with its choice cards, compact menus and buttons.
-- **Previews offline:** downloads keep the seek bar's preview pictures, so they show while you scrub without a
-  connection too. Downloads you already have get them the next time Granary refreshes them with your Silo server.
-- **Read-ahead buffer:** Settings → Playback → This PC sets how much of a title streamed from your Silo server
-  Granary reads ahead, from 150 MB to 2 GB. The new default of 384 MB, up from 150 MB, helps on a slow or unsteady
-  network or NAS. Cache settings in your mpv.conf come first.
-- **Date and time formats:** dates and times follow your profile's date format (DD/MM/YYYY, MM/DD/YYYY or YYYY-MM-DD)
-  and time format (12-hour or 24-hour), as on Silo's web: with DD/MM/YYYY the day comes first in English dates too.
-  Choose them in Settings → Accessibility → Date & time; they apply at once.
-- **Server mark in the narrow sidebar:** on a title's, a person's or a box set's page, the narrow sidebar shows your
-  Silo server's square logo at the top, or Silo's mark when your server has none, as Silo's web does; click it to go
-  Home. It fades into the wordmark or name as the sidebar opens, and the entries below no longer move as it opens and
-  closes. Your profile picture at the bottom of the narrow sidebar is no longer cut off.
+- **Search, as on Silo's web:** a quiet page until you type, then an overview with your best matches, the titles you can
+  request right after them under "Not in your library", and people. "In your library" and "Request to add" list each
+  in full, and Search sorts by relevance and takes your library's filters.
+- **Admin → Users:** every account on your Silo server, with Add User (account, access and limits), an account's own
+  page to change it, reset its password, disable or delete it, and see where it is signed in.
+- **Invitations and Invite Codes:** invite someone by email or with a link, and create signup codes, under Admin →
+  Users.
+- **Profiles:** the household's primary profile adds, edits and deletes profiles in Settings → Profiles, with a
+  picture, a PIN, Kids and the limits your server allows. The profile picker offers Add profile too.
+- **Chapter in the player:** the line under the title names the chapter that plays.
+- **Previews offline:** downloads keep the seek bar's preview pictures.
+- **Read-ahead buffer:** Settings → Playback → This PC sets how much Granary reads ahead, now 384 MB by default.
+- **Date and time formats:** dates and times follow your profile's choice (Settings → Accessibility → Date & time).
+- **Server logo in the narrow sidebar:** your Silo server's square logo, or Silo's mark, at the top.
 
 ### Changed
 
-- The page beside the sidebar has a rounded top corner, and the line under the title bar no longer runs across the
-  sidebar.
-- **Calendar:** the week is now a grid of seven days side by side, each day a column of its airings with the show's
-  poster, air time, PREMIERE, NEW SEASON or FINALE and a check once watched; today's column is tinted with your Silo
-  server's accent and past days are dimmed. A line under the title counts the week's episodes, premieres and finales.
-  In a narrow window the days are listed one under another.
+- **Calendar:** the week is a grid of seven days with each show's picture, time and badges; today is tinted with your
+  Silo server's colour.
+- The page beside the sidebar has a rounded corner, and no line crosses the sidebar.
 
 ### Fixed
 
-- **Search:** typing on the empty search page keeps the focus in the search field when the results appear, so the
-  next key no longer goes to the sidebar or back to Home.
-- **Downloads:** the download dialog downloads only for the profile it was opened in; after a profile switch, Download
-  starts nothing. Delete all episodes and Remove all downloads also take a download that arrived while you were asked.
-- **Server download limit:** waiting episodes start as soon as another download is ready on the server, also when that
-  happens while the season is being refused.
+- Typing in Search no longer jumps to Home.
+- Downloads start only for the profile the dialog was opened in, and waiting episodes start as soon as the server
+  allows.
+- Your profile picture in the narrow sidebar is no longer cut off.
 
 ## [0.5.0] - 2026-11-17
 
