@@ -186,7 +186,17 @@ public sealed partial class SearchViewModel : ObservableObject
         {
             return;
         }
-        var people = await FindPeopleAsync(server, text, _searchRun?.Token ?? CancellationToken.None);
+        var cancellationToken = _searchRun?.Token ?? CancellationToken.None;
+        IReadOnlyList<SearchPerson>? people;
+        try
+        {
+            people = await FindPeopleAsync(server, text, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // A new text replaced the search meanwhile: its own run shows the people.
+            return;
+        }
         if (text != ResultsQuery)
         {
             return;

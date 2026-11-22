@@ -59,6 +59,26 @@ public sealed class SearchStatesTests
         Assert.Equal("Sample Person", Assert.Single(search.People).Name);
     }
 
+    // A people retry whose search is replaced meanwhile ends quietly: it neither throws nor touches the people shown.
+    [Fact]
+    public async Task APeopleRetryCancelledByANewText_EndsQuietly()
+    {
+        const string CapabilitiesPath = "api/v2/catalog/search/capabilities";
+        _silo.Map(CapabilitiesPath, _ => BrowseFakeSilo.Problem(500, "internal_error"));
+        var search = Create();
+        await search.ActivateAsync("heat");
+        Assert.True(search.HasPeopleError);
+        var held = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map(CapabilitiesPath, (_, _) => held.Task);
+
+        var retry = search.RetryPeopleCommand.ExecuteAsync(null);
+        search.Query = "heat wave";
+
+        await retry;
+        Assert.True(search.HasPeopleError);
+        held.SetResult(BrowseFakeSilo.Json(SearchCapabilities(people: true)));
+    }
+
     // A next page that fails shows the error card at once, with its Retry, as a first page's failure does.
     [Fact]
     public async Task AFailedNextPage_ShowsTheErrorCard()
