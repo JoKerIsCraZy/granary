@@ -594,7 +594,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   holds text). Once a text is searched the box becomes the hero field across the width: no box, the text itself in
   48 px extra bold (36 px under 1024 px, 30 under 640) after a 28 px magnifier, on a hairline that takes the accent
   while it has focus, with a 36 px round clear button on the surface at its end; "Results for …" is the page's name
-  for screen readers only. Under it the type menu (Movies & Series, Movies, Series), the sort, the order and Filters
+  for screen readers only. The two are one box to the viewer: typing moves the focus, the caret and the selection to
+  the other as it appears, retried until it can take them, unless the viewer chose another control meanwhile. Under it the type menu (Movies & Series, Movies, Series), the sort, the order and Filters
   as pills. The web's Media / Audiobooks / All track is left out: Granary has no audiobooks. While the first titles
   come, twelve skeleton cards; while a new search comes, the last one's rows dim to 60 %. A failed search shows the
   web's card (a 20 px rounded border, 64 px above and below, "Could not load search results.", "The search request
