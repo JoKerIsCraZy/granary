@@ -8259,6 +8259,12 @@
       "value": "Personnes"
     }
   ],
+  "web.catalog.page.peopleFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de charger les résultats des personnes."
+    }
+  ],
   "web.catalog.page.removeConfirm": [
     {
       "type": 0,
@@ -8365,10 +8371,34 @@
       "value": " »"
     }
   ],
+  "web.catalog.page.retryPeople": [
+    {
+      "type": 0,
+      "value": "Relancer la recherche de personnes"
+    }
+  ],
+  "web.catalog.page.retrySearch": [
+    {
+      "type": 0,
+      "value": "Relancer la recherche"
+    }
+  ],
   "web.catalog.page.searchFailed": [
     {
       "type": 0,
       "value": "Impossible de charger les résultats de recherche."
+    }
+  ],
+  "web.catalog.page.searchFailedBody": [
+    {
+      "type": 0,
+      "value": "La demande de recherche a échoué. Réessayez."
+    }
+  ],
+  "web.catalog.page.searchSubtitle": [
+    {
+      "type": 0,
+      "value": "Trouvez des films, des séries, des interprétations, et redécouvrez ce que vous aviez oublié avoir enregistré."
     }
   ],
   "web.catalog.page.searchTitle": [
@@ -8617,6 +8647,12 @@
     {
       "type": 0,
       "value": "Ordre de la liste"
+    }
+  ],
+  "web.catalog.sort.relevance": [
+    {
+      "type": 0,
+      "value": "Pertinence"
     }
   ],
   "web.catalog.sort.watchHistory": [
@@ -19156,6 +19192,12 @@
       "value": "Sagas"
     }
   ],
+  "web.search.clear": [
+    {
+      "type": 0,
+      "value": "Effacer la recherche"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -19168,16 +19210,90 @@
       "value": "Rechercher des films, des séries…"
     }
   ],
+  "web.search.results.allInLibrary": [
+    {
+      "type": 0,
+      "value": "Tous les résultats dans votre bibliothèque"
+    }
+  ],
+  "web.search.results.atLeastCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": "+"
+    }
+  ],
+  "web.search.results.backToRelevance": [
+    {
+      "type": 0,
+      "value": "Revenir à la pertinence"
+    }
+  ],
+  "web.search.results.bestMatches": [
+    {
+      "type": 0,
+      "value": "Meilleures correspondances"
+    }
+  ],
+  "web.search.results.inLibrary": [
+    {
+      "type": 0,
+      "value": "Dans votre bibliothèque"
+    }
+  ],
+  "web.search.results.moreResults": [
+    {
+      "type": 0,
+      "value": "Plus de résultats"
+    }
+  ],
+  "web.search.results.notInLibrary": [
+    {
+      "type": 0,
+      "value": "Pas dans votre bibliothèque"
+    }
+  ],
+  "web.search.results.overview": [
+    {
+      "type": 0,
+      "value": "Aperçu"
+    }
+  ],
+  "web.search.results.requestToAdd": [
+    {
+      "type": 0,
+      "value": "Demander un ajout"
+    }
+  ],
+  "web.search.results.showAll": [
+    {
+      "type": 0,
+      "value": "Afficher tous les résultats"
+    }
+  ],
+  "web.search.results.sortedBy": [
+    {
+      "type": 0,
+      "value": "Triés par "
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    }
+  ],
+  "web.search.results.viewsLabel": [
+    {
+      "type": 0,
+      "value": "Vues des résultats"
+    }
+  ],
   "web.search.searching": [
     {
       "type": 0,
       "value": "Recherche…"
-    }
-  ],
-  "web.search.titles": [
-    {
-      "type": 0,
-      "value": "Titres"
     }
   ],
   "web.settings.accessibility.appLanguage": [

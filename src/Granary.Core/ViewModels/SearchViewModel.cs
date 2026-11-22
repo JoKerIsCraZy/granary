@@ -22,11 +22,13 @@ public enum SearchScope
 }
 
 /// <summary>
-/// Search as on Silo's web client (docs/api-contract.md, 7.5): titles 300 ms after the last keystroke,
-/// in relevance order and cursor-paged, and the people whose names match in parallel when the server
-/// can search them, and under them the titles TMDB finds that the library does not have (<see cref="Requests"/>).
-/// The box sets the text finds lead, as on the web (<see cref="BoxSets"/>). A person opens their page, as the web's search does.
-/// A new search cancels the previous one, and an answer that arrives for an older text is dropped.
+/// Search as on Silo's web client (docs/api-contract.md, 7.5; the web's pages/SearchResults.tsx): titles 300 ms after the last
+/// keystroke, in relevance order unless another sort is picked, cursor-paged, and the people whose names match in parallel
+/// when the server can search them, and the titles TMDB finds that the library does not have (<see cref="Requests"/>). The
+/// overview shows two rows of the library's titles, the titles to request, people and three more rows; the whole library
+/// list and the whole request list are views of their own (<see cref="View"/>). The box sets the text finds lead, as on the
+/// web (<see cref="BoxSets"/>). A person opens their page, as the web's search does. A new search cancels the previous one,
+/// and an answer that arrives for an older text is dropped.
 /// </summary>
 /// <remarks>The commands take no cancellation token: a cancellable toolkit command cancels its running call when executed again.</remarks>
 public sealed partial class SearchViewModel : ObservableObject
@@ -91,12 +93,15 @@ public sealed partial class SearchViewModel : ObservableObject
         Requests = requests;
         Requests.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(RequestToAddViewModel.IsShown) or nameof(RequestToAddViewModel.IsSearching))
+            if (e.PropertyName is nameof(RequestToAddViewModel.IsShown) or nameof(RequestToAddViewModel.IsSearching)
+                or nameof(RequestToAddViewModel.CanLoadMore))
             {
                 OnPropertyChanged(nameof(ShowsRequests));
                 ShowResultsState();
             }
         };
+        Requests.Cards.CollectionChanged += (_, _) => ShowRequestRow();
+        Filters = new LibraryFiltersViewModel(SearchAgainAsync, logger);
     }
 
     /// <summary>"Request to add": what TMDB finds for the text that the library does not have.</summary>
@@ -122,17 +127,18 @@ public sealed partial class SearchViewModel : ObservableObject
 
     /// <summary>The box sets the text finds, best match first, as cards ahead of people and titles (the web's search).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowsBoxSets), nameof(ShowsTitlesHeading))]
+    [NotifyPropertyChangedFor(nameof(ShowsBoxSets))]
     public partial IReadOnlyList<MediaCard> BoxSets { get; private set; } = [];
 
-    public bool ShowsBoxSets => BoxSets.Count > 0;
+    /// <summary>The box sets lead the overview only, as on the web.</summary>
+    public bool ShowsBoxSets => BoxSets.Count > 0 && ShownView == SearchView.Overview;
 
-    /// <summary>The titles of the search.</summary>
+    /// <summary>Every title of the search, for the library view; it grows as that view scrolls.</summary>
     [ObservableProperty]
     public partial IReadOnlyList<MediaCard> Cards { get; private set; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowsPeople), nameof(ShowsTitlesHeading))]
+    [NotifyPropertyChangedFor(nameof(ShowsPeople), nameof(ShowsPeopleSection), nameof(ShowsPeopleAfterRequests), nameof(ShowsPeopleAfterMore))]
     public partial IReadOnlyList<SearchPerson> People { get; private set; } = [];
 
     /// <summary>
@@ -140,7 +146,6 @@ public sealed partial class SearchViewModel : ObservableObject
     /// found.", as the web hides its empty grid then.
     /// </summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowsTitlesHeading))]
     public partial bool IsLibraryRescued { get; private set; }
 
     /// <summary>Titles or people are being searched.</summary>
@@ -153,22 +158,65 @@ public sealed partial class SearchViewModel : ObservableObject
 
     /// <summary>"No items found.", the error, or what is loading; also for screen readers.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsStatus))]
     public partial string StatusText { get; private set; } = "";
 
-    /// <summary>"Search", or "Results for "heat"", as the web's catalog page.</summary>
+    /// <summary>"Search", or "Results for "heat"": the page's name for screen readers, as the web's hidden heading.</summary>
     public string Heading => ResultsQuery.Length > 0
         ? AppText.Get("web.catalog.page.resultsFor", ("query", ResultsQuery))
         : AppText.Get("web.catalog.page.searchTitle");
 
-    public bool ShowsPeople => People.Count > 0;
+    /// <summary>People show in the overview only, as on the web.</summary>
+    public bool ShowsPeople => People.Count > 0 && ShownView == SearchView.Overview;
 
-    /// <summary>
-    /// "Titles" between the box sets or people and the library's titles, so the films don't read as part of the group above,
-    /// unless "Request to add" stands in for none.
-    /// </summary>
-    public bool ShowsTitlesHeading => (ShowsPeople || ShowsBoxSets) && !IsLibraryRescued;
+    /// <summary>The people lookup failed: "Could not load people results." with Retry people search, as the web's.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsPeopleSection), nameof(ShowsPeopleAfterRequests), nameof(ShowsPeopleAfterMore))]
+    public partial bool HasPeopleError { get; private set; }
 
+    /// <summary>The People section: people found, or the lookup's failure; in the overview only.</summary>
+    public bool ShowsPeopleSection => (People.Count > 0 || HasPeopleError) && ShownView == SearchView.Overview;
+
+    /// <summary>Asks for the people of the shown text again, after a failure.</summary>
+    [RelayCommand]
+    private async Task RetryPeopleAsync()
+    {
+        string text = ResultsQuery;
+        if (text.Length == 0 || _session is not { State: SessionState.Ready, ActiveServer: { } server })
+        {
+            return;
+        }
+        var cancellationToken = _searchRun?.Token ?? CancellationToken.None;
+        IReadOnlyList<SearchPerson>? people;
+        try
+        {
+            people = await FindPeopleAsync(server, text, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // A new text replaced the search meanwhile: its own run shows the people.
+            return;
+        }
+        if (text != ResultsQuery)
+        {
+            return;
+        }
+        _peopleFound = people is null ? null : (text, people);
+        People = people ?? [];
+        HasPeopleError = people is null;
+        ShowResultsState();
+    }
+
+    /// <summary>TMDB found titles to add, or has more pages to look through: "Request to add" has a view.</summary>
     public bool ShowsRequests => Requests.IsShown;
+
+    /// <summary>The type menu's name for the type searched, as the web's media type menu.</summary>
+    public string ScopeLabel => AppText.Get(Scope switch
+    {
+        SearchScope.Movies => "web.catalog.mediaType.movies",
+        SearchScope.Series => "web.catalog.mediaType.series",
+        _ => "web.catalog.mediaType.moviesAndSeries",
+    });
 
     /// <summary>The display's scale (1.5 at 150 %), so artwork is asked for at the pixels it is drawn at.</summary>
     public double DisplayScale { get; set; } = 1;
@@ -189,6 +237,7 @@ public sealed partial class SearchViewModel : ObservableObject
         {
             StartOver();
         }
+        PrepareSortsAndFilters();
         string text = query?.Trim() ?? "";
         if (text.Length > 0 && (text != Query.Trim() || text != ResultsQuery))
         {
@@ -221,6 +270,9 @@ public sealed partial class SearchViewModel : ObservableObject
 
     partial void OnScopeChanged(SearchScope value)
     {
+        OnPropertyChanged(nameof(ScopeLabel));
+        OfferSorts();
+        PrepareSortsAndFilters();
         if (Query.Trim().Length > 0)
         {
             Schedule(TimeSpan.Zero);
@@ -281,13 +333,21 @@ public sealed partial class SearchViewModel : ObservableObject
         }
     }
 
-    /// <summary>Searches the box's text after <paramref name="delay"/>, cancelling whatever ran for an older text.</summary>
-    private void Schedule(TimeSpan delay)
+    /// <summary>
+    /// Searches the box's text after <paramref name="delay"/>, cancelling whatever ran for an older text. Another sort or
+    /// filters ask the library again, but TMDB knows neither: its titles to request stay (<paramref name="keepRequests"/>).
+    /// </summary>
+    private void Schedule(TimeSpan delay, bool keepRequests = false)
     {
         _searchRun?.Cancel();
         SetSearchingTitles(false);
         string text = Query.Trim();
         _scheduledText = text;
+        // A new text starts at the overview, as the web's new search has no view; a sort, filters or a scope keep the view.
+        if (text != ResultsQuery)
+        {
+            View = SearchView.Overview;
+        }
         if (text.Length == 0)
         {
             _searchRun = null;
@@ -297,10 +357,10 @@ public sealed partial class SearchViewModel : ObservableObject
         }
         var run = new CancellationTokenSource();
         _searchRun = run;
-        Searching = SearchAsync(text, Scope, delay, run);
+        Searching = SearchAsync(text, Scope, delay, run, keepRequests && text == ResultsQuery && text == Requests.Query);
     }
 
-    private async Task SearchAsync(string text, SearchScope scope, TimeSpan delay, CancellationTokenSource run)
+    private async Task SearchAsync(string text, SearchScope scope, TimeSpan delay, CancellationTokenSource run, bool keepRequests)
     {
         var cancellationToken = run.Token;
         try
@@ -320,13 +380,21 @@ public sealed partial class SearchViewModel : ObservableObject
             SetSearchingTitles(true);
             var people = FindPeopleAsync(server, text, cancellationToken);
             var boxSets = FindBoxSetsAsync(server, text, scope, cancellationToken);
-            var requests = Requests.SearchAsync(text, scope);
+            var requests = keepRequests ? Task.CompletedTask : Requests.SearchAsync(text, scope);
             BrowseCardPager? titles = null;
             Exception? failure = null;
             try
             {
                 var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken);
-                var query = new CatalogQuery { Q = text, Type = TypeOf(scope), Limit = PageSize, Images = images };
+                // No sort under Relevance: the server ranks a text by it, never by the library's Date Added default.
+                var query = Filters.ApplyTo(new CatalogQuery
+                {
+                    Q = text,
+                    Type = TypeOf(scope),
+                    Sort = Sort is { } sort ? new CatalogSort(sort.Field, IsDescending) : null,
+                    Limit = PageSize,
+                    Images = images,
+                });
                 titles = new BrowseCardPager(_catalog, server.BaseUri, query, item => CardFor(item, server.BaseUri, backdrops));
                 await titles.LoadFirstPageAsync(cancellationToken);
             }
@@ -493,6 +561,8 @@ public sealed partial class SearchViewModel : ObservableObject
         _peopleFound = people is null ? null : (text, people);
         ResultsQuery = text;
         People = people ?? [];
+        // Null is a lookup that failed; a server that cannot search people found none, and that is no failure.
+        HasPeopleError = people is null;
         if (failure is not null || titles is null)
         {
             _logger.LogWarning("Searching titles failed: {Failure}", failure is null ? "no answer" : ApiFailureText.Describe(failure));
@@ -507,8 +577,11 @@ public sealed partial class SearchViewModel : ObservableObject
         Requests.LibraryFoundNothing = _libraryEmpty;
         _isSearchingTitles = false;
         Cards = titles is null ? [] : titles.Cards;
+        // The overview cuts the first page; the library view reading on does not grow it.
+        _firstPage = titles is null ? ([], false) : ([.. titles.Cards], titles.HasMore);
         ForgetBackdrop();
         ShowResultsState();
+        ShowOverview();
     }
 
     /// <summary>The pointer or the keyboard came to a result (a title, or one to request): the backdrop follows it.</summary>
@@ -536,7 +609,10 @@ public sealed partial class SearchViewModel : ObservableObject
     {
         IsLibraryRescued = _libraryEmpty && (Requests.IsSearching || Requests.IsShown);
         IsSearching = _isSearchingTitles || (_libraryEmpty && Requests.IsSearching);
-        (StatusText, HasError) = IsLibraryRescued ? ("", false) : _resultsState;
+        // "No items found." only when nothing at all was found, as the web's: people or box sets are an answer too.
+        bool othersFound = _libraryEmpty && (People.Count > 0 || HasPeopleError || BoxSets.Count > 0);
+        (StatusText, HasError) = IsLibraryRescued || othersFound ? ("", false) : _resultsState;
+        ShowViews();
     }
 
     private void SetSearchingTitles(bool isSearching)
@@ -575,6 +651,8 @@ public sealed partial class SearchViewModel : ObservableObject
         if (IsShown())
         {
             _resultsState = (StatusText, HasError);
+            // The error card and its Retry follow a next page's failure and its retry, as a first page's do.
+            ShowViews();
         }
     }
 
@@ -587,8 +665,11 @@ public sealed partial class SearchViewModel : ObservableObject
         _resultsState = ("", false);
         ResultsQuery = "";
         People = [];
+        HasPeopleError = false;
         ShowBoxSets(null, []);
         Cards = [];
+        _firstPage = ([], false);
+        ShowOverview();
         ForgetBackdrop();
         IsSearching = false;
         HasError = false;
@@ -603,6 +684,7 @@ public sealed partial class SearchViewModel : ObservableObject
         _searchRun = null;
         _capabilities = null;
         _peopleFound = null;
+        ForgetSortsAndFilters();
         ShowNoSearch();
         if (Query.Trim().Length > 0)
         {
@@ -655,6 +737,8 @@ public sealed partial class SearchViewModel : ObservableObject
         if (_isActive && _sessionKey != SessionKey())
         {
             StartOver();
+            // The new session's rating sorts and filter options, as an activation asks for them.
+            PrepareSortsAndFilters();
         }
     }
 }

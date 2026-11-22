@@ -33,7 +33,7 @@ face of the file it names, so use the `SiloFont<Weight>` resources together with
 
 | Style | Font | Use |
 |---|---|---|
-| `SiloDisplayTextStyle` | 56 / ExtraBold / tight | Title fallback on detail pages (when there is no logo), "Results for …" |
+| `SiloDisplayTextStyle` | 56 / ExtraBold / tight | Title fallback on detail pages (when there is no logo), Search's empty page ("Search", 60 px) |
 | `SiloPageTitleTextStyle` | 32 / Bold | Page titles |
 | `SiloRowTitleTextStyle` | 20 / SemiBold | Row titles ("Continue Watching") |
 | `SiloBodyTextStyle` | 15 / Regular, line height 26 | Overviews |
@@ -588,17 +588,45 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   "Not aired yet"), Cast and More Like This. A series asks "Request seasons" first: a switch
   per season, the aired missing ones on, the others greyed; Latest season, Upcoming seasons and All seasons; an
   untouched pick leaves the seasons to the server. Discover cards and More Like This open it, or the library's title.
-- Search's box sets (`SearchViewModel.BoxSets`, the web's `BoxSetSearchResults` as its catalog search shows it): under
-  the type switch, ahead of People and the titles, "Box sets" as People's heading over the box set cards (`MediaCardView`)
-  in the titles' own columns, up to five, best match first; each opens its box set's page. Below box sets or people the
-  library's titles get their own heading, "Titles", so the films don't read as part of the group above them (Request to
-  add standing in for no titles takes it away). Only while the server has box
+- Search's page (`SearchPage`, the web's `pages/Catalog.tsx` and `components/SearchBar.tsx`): with nothing searched, the
+  web's empty search page in the middle: a 40 px magnifier, "Search" (60 px, extra bold), its line in 16 px, and the
+  prominent box (576 px at most, 56 high, 22.4 px corners, 16 px text after a 20 px magnifier, a clear button while it
+  holds text). Once a text is searched the box becomes the hero field across the width: no box, the text itself in
+  48 px extra bold (36 px under 1024 px, 30 under 640) after a 28 px magnifier, on a hairline that takes the accent
+  while it has focus, with a 36 px round clear button on the surface at its end; "Results for …" is the page's name
+  for screen readers only. Under it the type menu (Movies & Series, Movies, Series), the sort, the order and Filters
+  as pills. The web's Media / Audiobooks / All track is left out: Granary has no audiobooks. While the first titles
+  come, twelve skeleton cards; while a new search comes, the last one's rows dim to 60 %. A failed search shows the
+  web's card (a 20 px rounded border, 64 px above and below, "Could not load search results.", "The search request
+  failed. Please retry." or why it failed, and Retry search); "No items found." is centred, 16 px, 48 px above and
+  below. People are the web's CastCarousel cards: 110 px wide, a 2:3 photo with 12 px corners (initials on the surface
+  without one), the name 10 px under it in 13 px medium, 12 px apart; a failed lookup says "Could not load people
+  results." over Retry people search. Box sets and Request to add have 18 px headings; Request to add's note is 14 px.
+- Search's overview and views (`SearchPage`, `SearchViewModel`, the web's `pages/SearchResults.tsx`): under the type
+  menu the sort (Relevance first, the default for a search and without an order of its own; then the library's sorts,
+  the personal ones too, with Ascending / Descending), and Filters with the library's facets and Watch Status, their
+  badges under them. Then the views as pills, "Overview", "In your library" with its count ("60+" while the server has
+  more) and "Request to add" with its count ("20+") while TMDB has titles to add; a new text returns to Overview, another
+  sort, filters or type keep the view, and a view opens at its top. The overview: the box sets, "Best matches" over two
+  rows of the library's titles, "Not in your library" (a row of up to 20 titles to request in a 20 px rounded band with
+  a 60 % surface and border, Explore all opening the request view), People, "More results" over up to three more rows
+  with "Show all results →", and a "Show all results" pill with the count under them; the rows follow the grid's
+  columns. Under another sort the first rows say "In your library" with "Sorted by Year" and an underlined "Back to
+  relevance" under it, "Show all results →" moves to that heading, the more rows go on without a heading, and People
+  follow them. "In your library" shows "All results in your library" over every title, read on as the grid scrolls; the
+  request view shows Request to add below. With no library titles, or a failed search, Request to add stands in on the
+  overview, and paging it keeps the overview. A request view falls back to the overview once TMDB has nothing for the
+  text (one character, no requests). "No items found." shows only when nothing at all was found: no titles, people,
+  box sets or titles to request.
+- Search's box sets (`SearchViewModel.BoxSets`, the web's `BoxSetSearchResults` as its catalog search shows it): at the
+  top of the overview, "Box sets" as People's heading over the box set cards (`MediaCardView`) in the titles' own
+  columns, up to five, best match first; each opens its box set's page. Only while the server has box
   sets, and for Movies & Series and Movies, not Series. A search that fails or takes over 1.5 s shows none and never
   holds the titles; a new text, another type or an empty box clears them.
 - Request to add (`SearchPage`, `RequestToAddViewModel`, the web's `RequestToAddSection` as its catalog search shows it):
-  under Search's titles while the server takes requests, the movies and series TMDB finds for a text of two characters
-  or more that the library does not have, following the type switch. A heading like People's, "Nothing in your library
-  matches “text”." under it when the library found nothing (its empty grid and "Titles" then go, and the web's "No items
+  Search's request view, and the overview's answer while the library found nothing, while the server takes requests: the movies and series TMDB finds for a text of two characters
+  or more that the library does not have, following the type menu. A heading like People's, "Nothing in your library
+  matches “text”." under it when the library found nothing (the web's "No items
   found." shows only once TMDB found nothing to add either; the ring turns until it knows), then TMDB's posters in one grid. The
   web pages TMDB's twenty a page with Previous, "Page 1 of 2" and Next, even when the library's titles leave six of them;
   here the pages gather: a read takes TMDB's next pages until 20 titles came or 3 pages were read, and the grid's end
@@ -607,7 +635,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   pages of only library titles with more to come say "Every title found so far is already in your library." over Load
   more; a later read that fails keeps what shows and says "Couldn’t load more titles." over Try again. The cards open
   the title's page, or the library's title.
-- Search's backdrop (`FocusBackdrop`, `SearchViewModel.Backdrop`), a departure from the web, which has none: behind "Results for …" and the box, the backdrop of the result the pointer or the keyboard is on,
+- Search's backdrop (`FocusBackdrop`, `SearchViewModel.Backdrop`), a departure from the web, which has none: behind the search field, the backdrop of the result the pointer or the keyboard is on,
   a library title or one to request (TMDB's, without a blur). It covers the right 75 % and the top 70 % of the page,
   stays put while the results scroll and moves nothing: dark throughout (a quarter of the picture at most, at the top
   right) and gone into the page toward the text on the left and toward the bottom. A new picture fades in over the last

@@ -316,15 +316,29 @@ public sealed class SearchViewModelTests
     }
 
     [Fact]
-    public async Task NoTitles_SaysSo()
+    public async Task NoTitlesAndNoPeople_SaysSo()
     {
         _silo.Map(CatalogPath, Page(null));
+        _silo.Map(PeoplePath, People());
         var search = Create();
 
         await search.ActivateAsync("zzz");
 
         Assert.Equal("No items found.", search.StatusText);
         Assert.False(search.HasError);
+    }
+
+    [Fact]
+    public async Task NoTitlesButPeople_SaysNothingIsFound_OnlyWhenNothingIs()
+    {
+        // The web's "No items found." waits for nothing at all: no titles, people, box sets or titles to request.
+        _silo.Map(CatalogPath, Page(null));
+        var search = Create();
+
+        await search.ActivateAsync("zzz");
+
+        Assert.True(search.ShowsPeople);
+        Assert.Equal("", search.StatusText);
     }
 
     [Fact]

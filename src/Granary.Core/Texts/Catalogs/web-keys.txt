@@ -1136,13 +1136,29 @@ web.catalog.page.historySubtitle
 # More of Search's words, as above under web.catalog.mediaType.movies.
 web.catalog.page.people
 
+# Search's states, as the web's pages/SearchResults.tsx and its empty search page (pages/Catalog.tsx):
+# src/Granary.App/Views/SearchPage.xaml.
+web.catalog.page.peopleFailed
+
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.page.removeConfirm
 web.catalog.page.removeSelected
 web.catalog.page.resultCount
 web.catalog.page.resultNoun
 web.catalog.page.resultsFor
+
+# Search's states, as above under web.catalog.page.peopleFailed.
+web.catalog.page.retryPeople
+web.catalog.page.retrySearch
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.page.searchFailed
+
+# Search's states, as above under web.catalog.page.peopleFailed.
+web.catalog.page.searchFailedBody
+web.catalog.page.searchSubtitle
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.page.searchTitle
 
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
@@ -1193,6 +1209,11 @@ web.catalog.sort.descending
 
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.sort.listOrder
+
+# Search's sort menu leads with Relevance, as the web's search (pages/SearchResults.tsx): src/Granary.Core/ViewModels/SearchSort.cs.
+web.catalog.sort.relevance
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.sort.watchHistory
 web.collections.actions.delete
 web.collections.actions.moreActions
@@ -2699,14 +2720,30 @@ web.requests.toAdd.series
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.search.boxSets
 
+# The search field's clear button, as the web's SearchBar.tsx: src/Granary.App/Views/SearchPage.xaml.
+web.search.clear
+
 # The search box's hint and name, as the web's search page (components/SearchBar.tsx, prominent) and search box:
 # src/Granary.App/Views/SearchPage.xaml.
 web.search.label
 web.search.placeholderProminent
 
+# Search's overview and views, as the web's pages/SearchResults.tsx: src/Granary.App/Views/SearchPage.xaml.
+web.search.results.allInLibrary
+web.search.results.atLeastCount
+web.search.results.backToRelevance
+web.search.results.bestMatches
+web.search.results.inLibrary
+web.search.results.moreResults
+web.search.results.notInLibrary
+web.search.results.overview
+web.search.results.requestToAdd
+web.search.results.showAll
+web.search.results.sortedBy
+web.search.results.viewsLabel
+
 # More of Search's words, as above under web.catalog.mediaType.movies.
 web.search.searching
-web.search.titles
 
 # Settings → Accessibility, in the words of the web's AccessibilitySettings.tsx, its Language and Date & time groups and
 # the sidebar's entry for it: src/Granary.App/Views/Settings/AccessibilitySettingsView.xaml,

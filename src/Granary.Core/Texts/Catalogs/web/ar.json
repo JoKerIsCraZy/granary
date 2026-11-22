@@ -6526,7 +6526,7 @@
   "web.admin.tasks.task.backfill_hdr10_plus.name": [
     {
       "type": 0,
-      "value": "اكتشاف فيديو HDR10+"
+      "value": "اكتشاف فيديو HDR10+\u200E"
     }
   ],
   "web.admin.tasks.task.backfill_matroska_track_numbers.name": [
@@ -9416,6 +9416,12 @@
       "value": "الأشخاص"
     }
   ],
+  "web.catalog.page.peopleFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل نتائج الأشخاص."
+    }
+  ],
   "web.catalog.page.removeConfirm": [
     {
       "type": 0,
@@ -9582,10 +9588,34 @@
       "value": "»"
     }
   ],
+  "web.catalog.page.retryPeople": [
+    {
+      "type": 0,
+      "value": "إعادة البحث عن الأشخاص"
+    }
+  ],
+  "web.catalog.page.retrySearch": [
+    {
+      "type": 0,
+      "value": "إعادة البحث"
+    }
+  ],
   "web.catalog.page.searchFailed": [
     {
       "type": 0,
       "value": "تعذّر تحميل نتائج البحث."
+    }
+  ],
+  "web.catalog.page.searchFailedBody": [
+    {
+      "type": 0,
+      "value": "فشل طلب البحث. حاول مرة أخرى."
+    }
+  ],
+  "web.catalog.page.searchSubtitle": [
+    {
+      "type": 0,
+      "value": "ابحث عن الأفلام والمسلسلات والعروض، وأعد اكتشاف ما نسيت أنك حفظته."
     }
   ],
   "web.catalog.page.searchTitle": [
@@ -9858,6 +9888,12 @@
     {
       "type": 0,
       "value": "ترتيب القائمة"
+    }
+  ],
+  "web.catalog.sort.relevance": [
+    {
+      "type": 0,
+      "value": "الصلة"
     }
   ],
   "web.catalog.sort.watchHistory": [
@@ -21904,6 +21940,12 @@
       "value": "سلاسل أفلام"
     }
   ],
+  "web.search.clear": [
+    {
+      "type": 0,
+      "value": "مسح البحث"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -21916,16 +21958,90 @@
       "value": "البحث عن أفلام ومسلسلات..."
     }
   ],
+  "web.search.results.allInLibrary": [
+    {
+      "type": 0,
+      "value": "كل النتائج في مكتبتك"
+    }
+  ],
+  "web.search.results.atLeastCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": "+"
+    }
+  ],
+  "web.search.results.backToRelevance": [
+    {
+      "type": 0,
+      "value": "العودة إلى الترتيب حسب الصلة"
+    }
+  ],
+  "web.search.results.bestMatches": [
+    {
+      "type": 0,
+      "value": "أفضل التطابقات"
+    }
+  ],
+  "web.search.results.inLibrary": [
+    {
+      "type": 0,
+      "value": "في مكتبتك"
+    }
+  ],
+  "web.search.results.moreResults": [
+    {
+      "type": 0,
+      "value": "المزيد من النتائج"
+    }
+  ],
+  "web.search.results.notInLibrary": [
+    {
+      "type": 0,
+      "value": "غير موجود في مكتبتك"
+    }
+  ],
+  "web.search.results.overview": [
+    {
+      "type": 0,
+      "value": "نظرة عامة"
+    }
+  ],
+  "web.search.results.requestToAdd": [
+    {
+      "type": 0,
+      "value": "طلب إضافة"
+    }
+  ],
+  "web.search.results.showAll": [
+    {
+      "type": 0,
+      "value": "عرض كل النتائج"
+    }
+  ],
+  "web.search.results.sortedBy": [
+    {
+      "type": 0,
+      "value": "مرتّب حسب "
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    }
+  ],
+  "web.search.results.viewsLabel": [
+    {
+      "type": 0,
+      "value": "طرق عرض النتائج"
+    }
+  ],
   "web.search.searching": [
     {
       "type": 0,
       "value": "جارٍ البحث..."
-    }
-  ],
-  "web.search.titles": [
-    {
-      "type": 0,
-      "value": "العناوين"
     }
   ],
   "web.settings.accessibility.appLanguage": [

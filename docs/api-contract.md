@@ -999,7 +999,11 @@ sort `-added_at` (phone) / `title` (TV) (`silo-android/shared/.../apiv2/CatalogV
 
 ### 7.5 Search
 
-- Titles: `GET /api/v2/catalog?q=<text>[&type=...][&limit=...]`; relevance order by default.
+- Titles: `GET /api/v2/catalog?q=<text>[&type=...][&limit=...]`; relevance order by default. Search sends no `sort`
+  under Relevance (never the library's Date Added default), and `sort=<field>` / `-<field>` once another sort is
+  picked; the library's filters (`year_min`, `year_max`, `content_rating`, `rules`, 7.4) go with the text as on a
+  library page. The Filters' options come from `GET /api/v2/catalog/filters?type=...` and the rating sorts from
+  `GET /api/v2/capabilities/ratings`, as for a library.
   `GET /api/v2/catalog/search/capabilities` reports the provider (`postgres` | `meilisearch`) and
   flags such as `people_media_scope` and `video_with_episodes_scope` (send
   `type=video_with_episodes` only when that flag is true). A search deadline (3 s) answers `503`

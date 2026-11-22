@@ -79,10 +79,9 @@ public sealed class SearchRequestToAddTests
         Assert.Equal(["Movie 10", "Movie 12"], Titles(search));
         Assert.True(search.ShowsRequests);
         Assert.Equal("Nothing in your library matches “zzz”.", search.Requests.Note);
-        // The section says it instead of "No items found.", and the empty library's "Titles" heading goes.
+        // The section says it instead of "No items found.".
         Assert.True(search.IsLibraryRescued);
         Assert.Equal("", search.StatusText);
-        Assert.False(search.ShowsTitlesHeading);
         Assert.False(search.Requests.CanLoadMore);
         Assert.False(search.Requests.ShowsLoadMore);
     }

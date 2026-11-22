@@ -7282,6 +7282,12 @@
       "value": "人物"
     }
   ],
+  "web.catalog.page.peopleFailed": [
+    {
+      "type": 0,
+      "value": "人物の結果を読み込めませんでした。"
+    }
+  ],
   "web.catalog.page.removeConfirm": [
     {
       "type": 0,
@@ -7348,10 +7354,34 @@
       "value": "」の検索結果"
     }
   ],
+  "web.catalog.page.retryPeople": [
+    {
+      "type": 0,
+      "value": "人物検索を再試行"
+    }
+  ],
+  "web.catalog.page.retrySearch": [
+    {
+      "type": 0,
+      "value": "検索を再試行"
+    }
+  ],
   "web.catalog.page.searchFailed": [
     {
       "type": 0,
       "value": "検索結果を読み込めませんでした。"
+    }
+  ],
+  "web.catalog.page.searchFailedBody": [
+    {
+      "type": 0,
+      "value": "検索リクエストに失敗しました。もう一度お試しください。"
+    }
+  ],
+  "web.catalog.page.searchSubtitle": [
+    {
+      "type": 0,
+      "value": "映画、シリーズ、出演者を探して、保存したまま忘れていた作品を再発見しましょう。"
     }
   ],
   "web.catalog.page.searchTitle": [
@@ -7576,6 +7606,12 @@
     {
       "type": 0,
       "value": "リストの順序"
+    }
+  ],
+  "web.catalog.sort.relevance": [
+    {
+      "type": 0,
+      "value": "関連度"
     }
   ],
   "web.catalog.sort.watchHistory": [
@@ -16819,6 +16855,12 @@
       "value": "ボックスセット"
     }
   ],
+  "web.search.clear": [
+    {
+      "type": 0,
+      "value": "検索をクリア"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -16831,16 +16873,90 @@
       "value": "映画、シリーズを検索…"
     }
   ],
+  "web.search.results.allInLibrary": [
+    {
+      "type": 0,
+      "value": "ライブラリ内のすべての結果"
+    }
+  ],
+  "web.search.results.atLeastCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": "+"
+    }
+  ],
+  "web.search.results.backToRelevance": [
+    {
+      "type": 0,
+      "value": "関連度順に戻す"
+    }
+  ],
+  "web.search.results.bestMatches": [
+    {
+      "type": 0,
+      "value": "最も一致する結果"
+    }
+  ],
+  "web.search.results.inLibrary": [
+    {
+      "type": 0,
+      "value": "ライブラリ内"
+    }
+  ],
+  "web.search.results.moreResults": [
+    {
+      "type": 0,
+      "value": "その他の結果"
+    }
+  ],
+  "web.search.results.notInLibrary": [
+    {
+      "type": 0,
+      "value": "ライブラリにないタイトル"
+    }
+  ],
+  "web.search.results.overview": [
+    {
+      "type": 0,
+      "value": "概要"
+    }
+  ],
+  "web.search.results.requestToAdd": [
+    {
+      "type": 0,
+      "value": "追加をリクエスト"
+    }
+  ],
+  "web.search.results.showAll": [
+    {
+      "type": 0,
+      "value": "すべての結果を表示"
+    }
+  ],
+  "web.search.results.sortedBy": [
+    {
+      "type": 0,
+      "value": "並べ替え："
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    }
+  ],
+  "web.search.results.viewsLabel": [
+    {
+      "type": 0,
+      "value": "結果の表示"
+    }
+  ],
   "web.search.searching": [
     {
       "type": 0,
       "value": "検索中…"
-    }
-  ],
-  "web.search.titles": [
-    {
-      "type": 0,
-      "value": "タイトル"
     }
   ],
   "web.settings.accessibility.appLanguage": [

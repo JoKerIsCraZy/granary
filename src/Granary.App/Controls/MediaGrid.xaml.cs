@@ -41,6 +41,9 @@ public sealed partial class MediaGrid : UserControl, ICardMenuHost
     public static readonly DependencyProperty ViewportCommandProperty =
         DependencyProperty.Register(nameof(ViewportCommand), typeof(ICommand), typeof(MediaGrid), new PropertyMetadata(null));
 
+    public static readonly DependencyProperty ColumnsCommandProperty =
+        DependencyProperty.Register(nameof(ColumnsCommand), typeof(ICommand), typeof(MediaGrid), new PropertyMetadata(null));
+
     public static readonly DependencyProperty SelectionProperty =
         DependencyProperty.Register(nameof(Selection), typeof(CardSelection), typeof(MediaGrid), new PropertyMetadata(null, OnSelectionChanged));
 
@@ -65,6 +68,7 @@ public sealed partial class MediaGrid : UserControl, ICardMenuHost
     private INotifyCollectionChanged? _followed;
     private bool _reservesEpisodeLine;
     private double _width;
+    private int _toldColumns;
 
     public MediaGrid()
     {
@@ -147,6 +151,16 @@ public sealed partial class MediaGrid : UserControl, ICardMenuHost
         set => SetValue(SelectionProperty, value);
     }
 
+    /// <summary>
+    /// Gets the columns a row has at the grid's width whenever they change, whatever the list: Search cuts its overview's rows
+    /// by them, as the web measures its grid's columns.
+    /// </summary>
+    public ICommand? ColumnsCommand
+    {
+        get => (ICommand?)GetValue(ColumnsCommandProperty);
+        set => SetValue(ColumnsCommandProperty, value);
+    }
+
     /// <summary>Gets a <see cref="GridViewport"/> whenever what the grid shows of its list changes.</summary>
     public ICommand? ViewportCommand
     {
@@ -186,7 +200,32 @@ public sealed partial class MediaGrid : UserControl, ICardMenuHost
         {
             FitColumns();
         }
+        TellColumns();
         return base.MeasureOverride(availableSize);
+    }
+
+    // The columns at the width measured, as Columns() counts them from the laid-out width; told after the layout pass, since
+    // the list the owner cuts by them is this grid's own.
+    private void TellColumns()
+    {
+        if (ColumnsCommand is null || !double.IsFinite(_width) || _width <= 0)
+        {
+            return;
+        }
+        int fit = Math.Max(1, (int)(_width / (GridLayout.MinItemWidth + GridLayout.MinColumnSpacing)));
+        int most = GridLayout.MaximumRowsOrColumns;
+        int columns = most > 0 ? Math.Min(most, fit) : fit;
+        if (columns != _toldColumns)
+        {
+            _toldColumns = columns;
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (ColumnsCommand is { } command && command.CanExecute(columns))
+                {
+                    command.Execute(columns);
+                }
+            });
+        }
     }
 
     // The web's columns and gap (cardGridClasses) for posters; a wide card keeps its least width. And the cards' captions.

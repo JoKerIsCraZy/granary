@@ -7310,6 +7310,12 @@
       "value": "人物"
     }
   ],
+  "web.catalog.page.peopleFailed": [
+    {
+      "type": 0,
+      "value": "无法加载人物结果。"
+    }
+  ],
   "web.catalog.page.removeConfirm": [
     {
       "type": 0,
@@ -7376,10 +7382,34 @@
       "value": "”的结果"
     }
   ],
+  "web.catalog.page.retryPeople": [
+    {
+      "type": 0,
+      "value": "重新搜索人物"
+    }
+  ],
+  "web.catalog.page.retrySearch": [
+    {
+      "type": 0,
+      "value": "重新搜索"
+    }
+  ],
   "web.catalog.page.searchFailed": [
     {
       "type": 0,
       "value": "无法加载搜索结果。"
+    }
+  ],
+  "web.catalog.page.searchFailedBody": [
+    {
+      "type": 0,
+      "value": "搜索请求失败。请重试。"
+    }
+  ],
+  "web.catalog.page.searchSubtitle": [
+    {
+      "type": 0,
+      "value": "查找电影、剧集、演出，重新发现你已遗忘的收藏。"
     }
   ],
   "web.catalog.page.searchTitle": [
@@ -7608,6 +7638,12 @@
     {
       "type": 0,
       "value": "列表顺序"
+    }
+  ],
+  "web.catalog.sort.relevance": [
+    {
+      "type": 0,
+      "value": "相关性"
     }
   ],
   "web.catalog.sort.watchHistory": [
@@ -16959,6 +16995,12 @@
       "value": "系列电影"
     }
   ],
+  "web.search.clear": [
+    {
+      "type": 0,
+      "value": "清除搜索"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -16971,16 +17013,94 @@
       "value": "搜索电影、剧集……"
     }
   ],
+  "web.search.results.allInLibrary": [
+    {
+      "type": 0,
+      "value": "你的媒体库中的所有结果"
+    }
+  ],
+  "web.search.results.atLeastCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": "+"
+    }
+  ],
+  "web.search.results.backToRelevance": [
+    {
+      "type": 0,
+      "value": "恢复按相关性排序"
+    }
+  ],
+  "web.search.results.bestMatches": [
+    {
+      "type": 0,
+      "value": "最佳匹配"
+    }
+  ],
+  "web.search.results.inLibrary": [
+    {
+      "type": 0,
+      "value": "在你的媒体库中"
+    }
+  ],
+  "web.search.results.moreResults": [
+    {
+      "type": 0,
+      "value": "更多结果"
+    }
+  ],
+  "web.search.results.notInLibrary": [
+    {
+      "type": 0,
+      "value": "不在你的媒体库中"
+    }
+  ],
+  "web.search.results.overview": [
+    {
+      "type": 0,
+      "value": "概览"
+    }
+  ],
+  "web.search.results.requestToAdd": [
+    {
+      "type": 0,
+      "value": "请求添加"
+    }
+  ],
+  "web.search.results.showAll": [
+    {
+      "type": 0,
+      "value": "显示所有结果"
+    }
+  ],
+  "web.search.results.sortedBy": [
+    {
+      "type": 0,
+      "value": "按"
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    },
+    {
+      "type": 0,
+      "value": "排序"
+    }
+  ],
+  "web.search.results.viewsLabel": [
+    {
+      "type": 0,
+      "value": "结果视图"
+    }
+  ],
   "web.search.searching": [
     {
       "type": 0,
       "value": "正在搜索……"
-    }
-  ],
-  "web.search.titles": [
-    {
-      "type": 0,
-      "value": "作品"
     }
   ],
   "web.settings.accessibility.appLanguage": [
