@@ -59,6 +59,25 @@ public sealed class SearchStatesTests
         Assert.Equal("Sample Person", Assert.Single(search.People).Name);
     }
 
+    // A next page that fails shows the error card at once, with its Retry, as a first page's failure does.
+    [Fact]
+    public async Task AFailedNextPage_ShowsTheErrorCard()
+    {
+        _silo.Map(CatalogPath, request => request.RequestUri!.Query.Contains("cursor=", StringComparison.Ordinal)
+            ? BrowseFakeSilo.Problem(500, "internal_error")
+            : BrowseFakeSilo.Json(Page("c2", Item("t1"))));
+        var search = Create();
+        await search.ActivateAsync("heat");
+        var changed = new List<string?>();
+        search.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        await search.LoadMoreCommand.ExecuteAsync(null);
+
+        Assert.True(search.ShowsErrorCard);
+        Assert.Contains(nameof(SearchViewModel.ShowsErrorCard), changed);
+        Assert.Contains(nameof(SearchViewModel.ErrorBody), changed);
+    }
+
     [Fact]
     public async Task AFailedSearch_SaysWhatTheWebSays()
     {

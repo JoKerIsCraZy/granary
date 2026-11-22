@@ -163,7 +163,7 @@
                        TextAlignment="Center" Margin="0,0,0,16" AutomationProperties.HeadingLevel="Level1" />
             <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.page.searchSubtitle')}" FontSize="16" LineHeight="27" TextWrapping="Wrap" TextAlignment="Center"
                        HorizontalAlignment="Center" Foreground="{StaticResource SearchSubtitleBrush}" Margin="0,0,0,32" />
-            <Grid Width="576" MaxWidth="576">
+            <Grid MaxWidth="576" HorizontalAlignment="Stretch">
                 <controls:SearchField x:Name="EmptySearchBox" Style="{StaticResource SearchProminentBoxStyle}"
                                       Text="{x:Bind ViewModel.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       PlaceholderText="{x:Bind t:AppText.Get('web.search.placeholderProminent')}"

@@ -641,7 +641,8 @@ public sealed partial class SearchViewModel : ObservableObject
         if (IsShown())
         {
             _resultsState = (StatusText, HasError);
-            OnPropertyChanged(nameof(LibraryCountText));
+            // The error card and its Retry follow a next page's failure and its retry, as a first page's do.
+            ShowViews();
         }
     }
 

@@ -132,12 +132,17 @@ public sealed partial class SearchPage : Page, IPadSections
             // The empty page's box and the results' field are one box to the user: the focus and the caret move along.
             _isEmptySearch = ViewModel.IsEmptySearch;
             var to = _isEmptySearch ? EmptySearchBox : SearchBox;
+            var from = _isEmptySearch ? SearchBox : EmptySearchBox;
             if (_typingInBox)
             {
+                // Where the caret was, and what was selected: a move made before the box switched is kept.
+                int start = from.SelectionStart;
+                int length = from.SelectionLength;
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     to.Focus(FocusState.Programmatic);
-                    to.Select(to.Text.Length, 0);
+                    int at = Math.Min(start, to.Text.Length);
+                    to.Select(at, Math.Min(length, to.Text.Length - at));
                 });
             }
         }
