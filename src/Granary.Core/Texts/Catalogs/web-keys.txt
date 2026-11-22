@@ -1136,13 +1136,29 @@ web.catalog.page.historySubtitle
 # More of Search's words, as above under web.catalog.mediaType.movies.
 web.catalog.page.people
 
+# Search's states, as the web's pages/SearchResults.tsx and its empty search page (pages/Catalog.tsx):
+# src/Granary.App/Views/SearchPage.xaml.
+web.catalog.page.peopleFailed
+
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.page.removeConfirm
 web.catalog.page.removeSelected
 web.catalog.page.resultCount
 web.catalog.page.resultNoun
 web.catalog.page.resultsFor
+
+# Search's states, as above under web.catalog.page.peopleFailed.
+web.catalog.page.retryPeople
+web.catalog.page.retrySearch
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.page.searchFailed
+
+# Search's states, as above under web.catalog.page.peopleFailed.
+web.catalog.page.searchFailedBody
+web.catalog.page.searchSubtitle
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.page.searchTitle
 
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
@@ -2704,6 +2720,9 @@ web.requests.toAdd.series
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.search.boxSets
 
+# The search field's clear button, as the web's SearchBar.tsx: src/Granary.App/Views/SearchPage.xaml.
+web.search.clear
+
 # The search box's hint and name, as the web's search page (components/SearchBar.tsx, prominent) and search box:
 # src/Granary.App/Views/SearchPage.xaml.
 web.search.label
@@ -2725,7 +2744,6 @@ web.search.results.viewsLabel
 
 # More of Search's words, as above under web.catalog.mediaType.movies.
 web.search.searching
-web.search.titles
 
 # Settings → Accessibility, in the words of the web's AccessibilitySettings.tsx, its Language and Date & time groups and
 # the sidebar's entry for it: src/Granary.App/Views/Settings/AccessibilitySettingsView.xaml,

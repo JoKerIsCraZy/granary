@@ -7752,6 +7752,12 @@
       "value": "Personen"
     }
   ],
+  "web.catalog.page.peopleFailed": [
+    {
+      "type": 0,
+      "value": "Personenergebnisse konnten nicht geladen werden."
+    }
+  ],
   "web.catalog.page.removeConfirm": [
     {
       "type": 0,
@@ -7838,10 +7844,34 @@
       "value": "“"
     }
   ],
+  "web.catalog.page.retryPeople": [
+    {
+      "type": 0,
+      "value": "Personensuche wiederholen"
+    }
+  ],
+  "web.catalog.page.retrySearch": [
+    {
+      "type": 0,
+      "value": "Suche wiederholen"
+    }
+  ],
   "web.catalog.page.searchFailed": [
     {
       "type": 0,
       "value": "Suchergebnisse konnten nicht geladen werden."
+    }
+  ],
+  "web.catalog.page.searchFailedBody": [
+    {
+      "type": 0,
+      "value": "Die Such-Anfrage ist fehlgeschlagen. Versuche es erneut."
+    }
+  ],
+  "web.catalog.page.searchSubtitle": [
+    {
+      "type": 0,
+      "value": "Finde Filme, Serien und Auftritte – und entdecke wieder, was du gespeichert und vergessen hast."
     }
   ],
   "web.catalog.page.searchTitle": [
@@ -18055,6 +18085,12 @@
       "value": "Filmreihen"
     }
   ],
+  "web.search.clear": [
+    {
+      "type": 0,
+      "value": "Suche leeren"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -18151,12 +18187,6 @@
     {
       "type": 0,
       "value": "Wird gesucht …"
-    }
-  ],
-  "web.search.titles": [
-    {
-      "type": 0,
-      "value": "Titel"
     }
   ],
   "web.settings.accessibility.appLanguage": [

@@ -9416,6 +9416,12 @@
       "value": "الأشخاص"
     }
   ],
+  "web.catalog.page.peopleFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل نتائج الأشخاص."
+    }
+  ],
   "web.catalog.page.removeConfirm": [
     {
       "type": 0,
@@ -9582,10 +9588,34 @@
       "value": "»"
     }
   ],
+  "web.catalog.page.retryPeople": [
+    {
+      "type": 0,
+      "value": "إعادة البحث عن الأشخاص"
+    }
+  ],
+  "web.catalog.page.retrySearch": [
+    {
+      "type": 0,
+      "value": "إعادة البحث"
+    }
+  ],
   "web.catalog.page.searchFailed": [
     {
       "type": 0,
       "value": "تعذّر تحميل نتائج البحث."
+    }
+  ],
+  "web.catalog.page.searchFailedBody": [
+    {
+      "type": 0,
+      "value": "فشل طلب البحث. حاول مرة أخرى."
+    }
+  ],
+  "web.catalog.page.searchSubtitle": [
+    {
+      "type": 0,
+      "value": "ابحث عن الأفلام والمسلسلات والعروض، وأعد اكتشاف ما نسيت أنك حفظته."
     }
   ],
   "web.catalog.page.searchTitle": [
@@ -21910,6 +21940,12 @@
       "value": "سلاسل أفلام"
     }
   ],
+  "web.search.clear": [
+    {
+      "type": 0,
+      "value": "مسح البحث"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -22006,12 +22042,6 @@
     {
       "type": 0,
       "value": "جارٍ البحث..."
-    }
-  ],
-  "web.search.titles": [
-    {
-      "type": 0,
-      "value": "العناوين"
     }
   ],
   "web.settings.accessibility.appLanguage": [

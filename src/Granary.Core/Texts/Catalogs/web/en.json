@@ -7790,6 +7790,12 @@
       "value": "People"
     }
   ],
+  "web.catalog.page.peopleFailed": [
+    {
+      "type": 0,
+      "value": "Could not load people results."
+    }
+  ],
   "web.catalog.page.removeConfirm": [
     {
       "type": 0,
@@ -7876,10 +7882,34 @@
       "value": "\""
     }
   ],
+  "web.catalog.page.retryPeople": [
+    {
+      "type": 0,
+      "value": "Retry people search"
+    }
+  ],
+  "web.catalog.page.retrySearch": [
+    {
+      "type": 0,
+      "value": "Retry search"
+    }
+  ],
   "web.catalog.page.searchFailed": [
     {
       "type": 0,
       "value": "Could not load search results."
+    }
+  ],
+  "web.catalog.page.searchFailedBody": [
+    {
+      "type": 0,
+      "value": "The search request failed. Please retry."
+    }
+  ],
+  "web.catalog.page.searchSubtitle": [
+    {
+      "type": 0,
+      "value": "Find films, series, performances, and rediscover things you forgot you saved."
     }
   ],
   "web.catalog.page.searchTitle": [
@@ -18083,6 +18113,12 @@
       "value": "Box sets"
     }
   ],
+  "web.search.clear": [
+    {
+      "type": 0,
+      "value": "Clear search"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -18179,12 +18215,6 @@
     {
       "type": 0,
       "value": "Searching..."
-    }
-  ],
-  "web.search.titles": [
-    {
-      "type": 0,
-      "value": "Titles"
     }
   ],
   "web.settings.accessibility.appLanguage": [

@@ -10,8 +10,8 @@ public sealed partial class PersonCard : UserControl
     public static readonly DependencyProperty PersonProperty =
         DependencyProperty.Register(nameof(Person), typeof(SearchPerson), typeof(PersonCard), new PropertyMetadata(null, OnPersonChanged));
 
-    // Decoded at twice the shown size (112), so photos stay sharp at 200 % scaling.
-    private const int PhotoDecodeWidth = 224;
+    // Decoded at twice the shown width (110), so photos stay sharp at 200 % scaling.
+    private const int PhotoDecodeWidth = 220;
 
     public PersonCard()
     {
@@ -36,14 +36,14 @@ public sealed partial class PersonCard : UserControl
             // A missing or expired photo URL leaves the initials in place.
             photo.ImageFailed += OnPhotoFailed;
         }
-        Picture.ProfilePicture = photo;
+        Photo.Source = photo;
     }
 
     private void OnPhotoFailed(object sender, ExceptionRoutedEventArgs e)
     {
-        if (ReferenceEquals(Picture.ProfilePicture, sender))
+        if (ReferenceEquals(Photo.Source, sender))
         {
-            Picture.ProfilePicture = null;
+            Photo.Source = null;
         }
         ((BitmapImage)sender).ImageFailed -= OnPhotoFailed;
     }

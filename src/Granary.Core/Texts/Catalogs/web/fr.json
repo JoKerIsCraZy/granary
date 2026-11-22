@@ -8259,6 +8259,12 @@
       "value": "Personnes"
     }
   ],
+  "web.catalog.page.peopleFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de charger les résultats des personnes."
+    }
+  ],
   "web.catalog.page.removeConfirm": [
     {
       "type": 0,
@@ -8365,10 +8371,34 @@
       "value": " »"
     }
   ],
+  "web.catalog.page.retryPeople": [
+    {
+      "type": 0,
+      "value": "Relancer la recherche de personnes"
+    }
+  ],
+  "web.catalog.page.retrySearch": [
+    {
+      "type": 0,
+      "value": "Relancer la recherche"
+    }
+  ],
   "web.catalog.page.searchFailed": [
     {
       "type": 0,
       "value": "Impossible de charger les résultats de recherche."
+    }
+  ],
+  "web.catalog.page.searchFailedBody": [
+    {
+      "type": 0,
+      "value": "La demande de recherche a échoué. Réessayez."
+    }
+  ],
+  "web.catalog.page.searchSubtitle": [
+    {
+      "type": 0,
+      "value": "Trouvez des films, des séries, des interprétations, et redécouvrez ce que vous aviez oublié avoir enregistré."
     }
   ],
   "web.catalog.page.searchTitle": [
@@ -19162,6 +19192,12 @@
       "value": "Sagas"
     }
   ],
+  "web.search.clear": [
+    {
+      "type": 0,
+      "value": "Effacer la recherche"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -19258,12 +19294,6 @@
     {
       "type": 0,
       "value": "Recherche…"
-    }
-  ],
-  "web.search.titles": [
-    {
-      "type": 0,
-      "value": "Titres"
     }
   ],
   "web.settings.accessibility.appLanguage": [

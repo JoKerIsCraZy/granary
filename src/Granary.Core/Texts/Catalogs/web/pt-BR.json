@@ -8185,6 +8185,12 @@
       "value": "Pessoas"
     }
   ],
+  "web.catalog.page.peopleFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar os resultados de pessoas."
+    }
+  ],
   "web.catalog.page.removeConfirm": [
     {
       "type": 0,
@@ -8291,10 +8297,34 @@
       "value": "”"
     }
   ],
+  "web.catalog.page.retryPeople": [
+    {
+      "type": 0,
+      "value": "Repetir busca de pessoas"
+    }
+  ],
+  "web.catalog.page.retrySearch": [
+    {
+      "type": 0,
+      "value": "Repetir busca"
+    }
+  ],
   "web.catalog.page.searchFailed": [
     {
       "type": 0,
       "value": "Não foi possível carregar os resultados da busca."
+    }
+  ],
+  "web.catalog.page.searchFailedBody": [
+    {
+      "type": 0,
+      "value": "A solicitação de busca falhou. Tente novamente."
+    }
+  ],
+  "web.catalog.page.searchSubtitle": [
+    {
+      "type": 0,
+      "value": "Encontre filmes, séries, apresentações e redescubra o que você esqueceu que tinha salvado."
     }
   ],
   "web.catalog.page.searchTitle": [
@@ -19092,6 +19122,12 @@
       "value": "Coletâneas"
     }
   ],
+  "web.search.clear": [
+    {
+      "type": 0,
+      "value": "Limpar pesquisa"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -19188,12 +19224,6 @@
     {
       "type": 0,
       "value": "Pesquisando…"
-    }
-  ],
-  "web.search.titles": [
-    {
-      "type": 0,
-      "value": "Títulos"
     }
   ],
   "web.settings.accessibility.appLanguage": [

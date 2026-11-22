@@ -7310,6 +7310,12 @@
       "value": "人物"
     }
   ],
+  "web.catalog.page.peopleFailed": [
+    {
+      "type": 0,
+      "value": "无法加载人物结果。"
+    }
+  ],
   "web.catalog.page.removeConfirm": [
     {
       "type": 0,
@@ -7376,10 +7382,34 @@
       "value": "”的结果"
     }
   ],
+  "web.catalog.page.retryPeople": [
+    {
+      "type": 0,
+      "value": "重新搜索人物"
+    }
+  ],
+  "web.catalog.page.retrySearch": [
+    {
+      "type": 0,
+      "value": "重新搜索"
+    }
+  ],
   "web.catalog.page.searchFailed": [
     {
       "type": 0,
       "value": "无法加载搜索结果。"
+    }
+  ],
+  "web.catalog.page.searchFailedBody": [
+    {
+      "type": 0,
+      "value": "搜索请求失败。请重试。"
+    }
+  ],
+  "web.catalog.page.searchSubtitle": [
+    {
+      "type": 0,
+      "value": "查找电影、剧集、演出，重新发现你已遗忘的收藏。"
     }
   ],
   "web.catalog.page.searchTitle": [
@@ -16965,6 +16995,12 @@
       "value": "系列电影"
     }
   ],
+  "web.search.clear": [
+    {
+      "type": 0,
+      "value": "清除搜索"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -17065,12 +17101,6 @@
     {
       "type": 0,
       "value": "正在搜索……"
-    }
-  ],
-  "web.search.titles": [
-    {
-      "type": 0,
-      "value": "作品"
     }
   ],
   "web.settings.accessibility.appLanguage": [
