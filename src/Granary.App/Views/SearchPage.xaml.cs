@@ -159,6 +159,9 @@ public sealed partial class SearchPage : Page, IPadSections
     private void FocusWhenReady(TextBox box, int start, int length)
     {
         int transfer = ++_focusTransfer;
+        // Hiding the old box already moved the focus on by itself (WinUI hands it to the sidebar's first entry, Home): that
+        // is where it lands, not a choice of the viewer's, so only a move away from it ends the transfer.
+        var landed = FocusedNow();
         if (TryFocus(box, start, length))
         {
             return;
@@ -166,7 +169,7 @@ public sealed partial class SearchPage : Page, IPadSections
         int tries = 0;
         void OnLayoutUpdated(object? sender, object e)
         {
-            bool done = transfer != _focusTransfer || ++tries > MaxFocusTries || FocusMovedAway(box) || TryFocus(box, start, length);
+            bool done = transfer != _focusTransfer || ++tries > MaxFocusTries || FocusMovedAway(box, landed) || TryFocus(box, start, length);
             if (done)
             {
                 box.LayoutUpdated -= OnLayoutUpdated;
@@ -179,10 +182,12 @@ public sealed partial class SearchPage : Page, IPadSections
     private const int MaxFocusTries = 60;
 
     // The viewer chose another control since the switch: neither box, nor nothing at all, has the focus.
-    private bool FocusMovedAway(TextBox box) =>
-        XamlRoot is { } root && FocusManager.GetFocusedElement(root) is DependencyObject focused
+    private bool FocusMovedAway(TextBox box, object? landed) =>
+        FocusedNow() is DependencyObject focused && !ReferenceEquals(focused, landed)
             && !ReferenceEquals(focused, box) && !ReferenceEquals(focused, SearchBox) && !ReferenceEquals(focused, EmptySearchBox)
             && focused is not ScrollViewer && focused is not Page;
+
+    private object? FocusedNow() => XamlRoot is { } root ? FocusManager.GetFocusedElement(root) : null;
 
     private static bool TryFocus(TextBox box, int start, int length)
     {
