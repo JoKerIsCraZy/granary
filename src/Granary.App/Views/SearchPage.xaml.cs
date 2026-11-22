@@ -138,12 +138,7 @@ public sealed partial class SearchPage : Page, IPadSections
                 // Where the caret was, and what was selected: a move made before the box switched is kept.
                 int start = from.SelectionStart;
                 int length = from.SelectionLength;
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    to.Focus(FocusState.Programmatic);
-                    int at = Math.Min(start, to.Text.Length);
-                    to.Select(at, Math.Min(length, to.Text.Length - at));
-                });
+                DispatcherQueue.TryEnqueue(() => FocusWhenReady(to, start, length));
             }
         }
         else if (e.PropertyName == nameof(SearchViewModel.ShownView) && _shownView != ViewModel.ShownView)
@@ -152,6 +147,36 @@ public sealed partial class SearchPage : Page, IPadSections
             _shownView = ViewModel.ShownView;
             Scroller.ChangeView(null, 0, null, disableAnimation: true);
         }
+    }
+
+    // The box that comes into sight has no template yet the moment it shows, so a first Focus can fail: it is tried again
+    // once layout has run, so the next key never lands elsewhere (Space on a sidebar entry, Backspace going back).
+    private void FocusWhenReady(TextBox box, int start, int length)
+    {
+        if (TryFocus(box, start, length))
+        {
+            return;
+        }
+        int tries = 0;
+        void OnLayoutUpdated(object? sender, object e)
+        {
+            if (TryFocus(box, start, length) || ++tries >= 10)
+            {
+                box.LayoutUpdated -= OnLayoutUpdated;
+            }
+        }
+        box.LayoutUpdated += OnLayoutUpdated;
+    }
+
+    private static bool TryFocus(TextBox box, int start, int length)
+    {
+        if (box.Visibility != Visibility.Visible || !box.Focus(FocusState.Programmatic))
+        {
+            return false;
+        }
+        int at = Math.Min(start, box.Text.Length);
+        box.Select(at, Math.Min(length, box.Text.Length - at));
+        return true;
     }
 
     private void PlacePeople()
