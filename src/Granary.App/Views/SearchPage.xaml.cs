@@ -141,7 +141,7 @@ public sealed partial class SearchPage : Page, IPadSections
                 // Where the caret was, and what was selected: a move made before the box switched is kept.
                 int start = from.SelectionStart;
                 int length = from.SelectionLength;
-                DispatcherQueue.TryEnqueue(() => FocusWhenReady(to, start, length));
+                FocusWhenReady(to, start, length);
             }
         }
         else if (e.PropertyName == nameof(SearchViewModel.ShownView) && _shownView != ViewModel.ShownView)
@@ -153,36 +153,46 @@ public sealed partial class SearchPage : Page, IPadSections
     }
 
     // The box that comes into sight has no template yet the moment it shows, so a first Focus can fail: it is tried again
-    // after each layout pass, so the next key never lands elsewhere (Space on a sidebar entry, Backspace going back). The
-    // transfer ends once it took, when another switch or leaving the page replaces it, or when the viewer put the focus on
-    // another control meanwhile; it never takes the focus back.
+    // after each layout pass, so the next key never lands elsewhere (Space on a sidebar entry, Backspace going back). Hiding
+    // the old box moves the focus on by itself (WinUI hands it to the sidebar's Home entry, programmatically): that is no
+    // choice of the viewer's. The transfer ends once it took, when another switch or leaving the page replaces it, or as soon
+    // as the viewer moves the focus themselves, by pointer or keys, from the switch on; it never takes the focus back.
     private void FocusWhenReady(TextBox box, int start, int length)
     {
         int transfer = ++_focusTransfer;
-        if (TryFocus(box, start, length))
-        {
-            return;
-        }
+        bool viewerMoved = false;
         int tries = 0;
-        void OnLayoutUpdated(object? sender, object e)
+        void OnGettingFocus(object? sender, GettingFocusEventArgs e)
         {
-            bool done = transfer != _focusTransfer || ++tries > MaxFocusTries || FocusMovedAway(box) || TryFocus(box, start, length);
-            if (done)
+            if (e.FocusState is FocusState.Pointer or FocusState.Keyboard && !IsSearchBox(e.NewFocusedElement))
             {
+                viewerMoved = true;
+            }
+        }
+        void OnLayoutUpdated(object? sender, object e) => Attempt();
+        bool finished = false;
+        void Attempt()
+        {
+            if (finished)
+            {
+                return;
+            }
+            finished = transfer != _focusTransfer || viewerMoved || ++tries > MaxFocusTries || TryFocus(box, start, length);
+            if (finished)
+            {
+                FocusManager.GettingFocus -= OnGettingFocus;
                 box.LayoutUpdated -= OnLayoutUpdated;
             }
         }
+        FocusManager.GettingFocus += OnGettingFocus;
         box.LayoutUpdated += OnLayoutUpdated;
+        DispatcherQueue.TryEnqueue(Attempt);
     }
 
     // A transfer gives up after this many layout passes: a box that never shows (the page went) takes no more.
     private const int MaxFocusTries = 60;
 
-    // The viewer chose another control since the switch: neither box, nor nothing at all, has the focus.
-    private bool FocusMovedAway(TextBox box) =>
-        XamlRoot is { } root && FocusManager.GetFocusedElement(root) is DependencyObject focused
-            && !ReferenceEquals(focused, box) && !ReferenceEquals(focused, SearchBox) && !ReferenceEquals(focused, EmptySearchBox)
-            && focused is not ScrollViewer && focused is not Page;
+    private bool IsSearchBox(DependencyObject? element) => ReferenceEquals(element, SearchBox) || ReferenceEquals(element, EmptySearchBox);
 
     private static bool TryFocus(TextBox box, int start, int length)
     {
