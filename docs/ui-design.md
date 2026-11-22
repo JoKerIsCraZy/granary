@@ -588,17 +588,31 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   "Not aired yet"), Cast and More Like This. A series asks "Request seasons" first: a switch
   per season, the aired missing ones on, the others greyed; Latest season, Upcoming seasons and All seasons; an
   untouched pick leaves the seasons to the server. Discover cards and More Like This open it, or the library's title.
-- Search's box sets (`SearchViewModel.BoxSets`, the web's `BoxSetSearchResults` as its catalog search shows it): under
-  the type switch, ahead of People and the titles, "Box sets" as People's heading over the box set cards (`MediaCardView`)
-  in the titles' own columns, up to five, best match first; each opens its box set's page. Below box sets or people the
-  library's titles get their own heading, "Titles", so the films don't read as part of the group above them (Request to
-  add standing in for no titles takes it away). Only while the server has box
+- Search's overview and views (`SearchPage`, `SearchViewModel`, the web's `pages/SearchResults.tsx`): under the type
+  switch the sort (Relevance first, the default for a search and without an order of its own; then the library's sorts,
+  the personal ones too, with Ascending / Descending), and Filters with the library's facets and Watch Status, their
+  badges under them. Then the views as pills, "Overview", "In your library" with its count ("60+" while the server has
+  more) and "Request to add" with its count ("20+") while TMDB has titles to add; a new text returns to Overview, another
+  sort, filters or type keep the view, and a view opens at its top. The overview: the box sets, "Best matches" over two
+  rows of the library's titles, "Not in your library" (a row of up to 20 titles to request in a 20 px rounded band with
+  a 60 % surface and border, Explore all opening the request view), People, "More results" over up to three more rows
+  with "Show all results →", and a "Show all results" pill with the count under them; the rows follow the grid's
+  columns. Under another sort the first rows say "In your library" with "Sorted by Year" and an underlined "Back to
+  relevance" under it, "Show all results →" moves to that heading, the more rows go on without a heading, and People
+  follow them. "In your library" shows "All results in your library" over every title, read on as the grid scrolls; the
+  request view shows Request to add below. With no library titles, or a failed search, Request to add stands in on the
+  overview, and paging it keeps the overview. A request view falls back to the overview once TMDB has nothing for the
+  text (one character, no requests). "No items found." shows only when nothing at all was found: no titles, people,
+  box sets or titles to request.
+- Search's box sets (`SearchViewModel.BoxSets`, the web's `BoxSetSearchResults` as its catalog search shows it): at the
+  top of the overview, "Box sets" as People's heading over the box set cards (`MediaCardView`) in the titles' own
+  columns, up to five, best match first; each opens its box set's page. Only while the server has box
   sets, and for Movies & Series and Movies, not Series. A search that fails or takes over 1.5 s shows none and never
   holds the titles; a new text, another type or an empty box clears them.
 - Request to add (`SearchPage`, `RequestToAddViewModel`, the web's `RequestToAddSection` as its catalog search shows it):
-  under Search's titles while the server takes requests, the movies and series TMDB finds for a text of two characters
+  Search's request view, and the overview's answer while the library found nothing, while the server takes requests: the movies and series TMDB finds for a text of two characters
   or more that the library does not have, following the type switch. A heading like People's, "Nothing in your library
-  matches “text”." under it when the library found nothing (its empty grid and "Titles" then go, and the web's "No items
+  matches “text”." under it when the library found nothing (the web's "No items
   found." shows only once TMDB found nothing to add either; the ring turns until it knows), then TMDB's posters in one grid. The
   web pages TMDB's twenty a page with Previous, "Page 1 of 2" and Next, even when the library's titles leave six of them;
   here the pages gather: a read takes TMDB's next pages until 20 titles came or 3 pages were read, and the grid's end

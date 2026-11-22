@@ -1193,6 +1193,11 @@ web.catalog.sort.descending
 
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.sort.listOrder
+
+# Search's sort menu leads with Relevance, as the web's search (pages/SearchResults.tsx): src/Granary.Core/ViewModels/SearchSort.cs.
+web.catalog.sort.relevance
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.sort.watchHistory
 web.collections.actions.delete
 web.collections.actions.moreActions
@@ -2703,6 +2708,20 @@ web.search.boxSets
 # src/Granary.App/Views/SearchPage.xaml.
 web.search.label
 web.search.placeholderProminent
+
+# Search's overview and views, as the web's pages/SearchResults.tsx: src/Granary.App/Views/SearchPage.xaml.
+web.search.results.allInLibrary
+web.search.results.atLeastCount
+web.search.results.backToRelevance
+web.search.results.bestMatches
+web.search.results.inLibrary
+web.search.results.moreResults
+web.search.results.notInLibrary
+web.search.results.overview
+web.search.results.requestToAdd
+web.search.results.showAll
+web.search.results.sortedBy
+web.search.results.viewsLabel
 
 # More of Search's words, as above under web.catalog.mediaType.movies.
 web.search.searching

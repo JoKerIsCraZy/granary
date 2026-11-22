@@ -83,11 +83,20 @@ public sealed record LibrarySortOption(string Field, bool StartsDescending)
     /// sorts only for <paramref name="shownRatingSources"/>. The sort <paramref name="keep"/> stays offered with a hidden
     /// rating, as the web keeps a chosen sort, so a remembered order does not change under the viewer.
     /// </summary>
-    public static IReadOnlyList<LibrarySortOption> For(string? type, IReadOnlySet<string> shownRatingSources, string? keep = null)
+    public static IReadOnlyList<LibrarySortOption> For(string? type, IReadOnlySet<string> shownRatingSources, string? keep = null) =>
+        Offered(seriesSorts: type == MediaScopes.Series, shownRatingSources, keep);
+
+    /// <summary>
+    /// The sorts Search offers under Relevance, the personal ones too, as the web's search toolbar: the series sorts while
+    /// the search takes in shows (<paramref name="type"/> <c>video</c> or <c>series</c>).
+    /// </summary>
+    public static IReadOnlyList<LibrarySortOption> ForSearch(string type, IReadOnlySet<string> shownRatingSources, string? keep = null) =>
+        Offered(seriesSorts: type != MediaScopes.Movie, shownRatingSources, keep);
+
+    private static IReadOnlyList<LibrarySortOption> Offered(bool seriesSorts, IReadOnlySet<string> shownRatingSources, string? keep)
     {
         ArgumentNullException.ThrowIfNull(shownRatingSources);
-        bool isSeries = type == MediaScopes.Series;
-        return [.. All.Where(o => (isSeries || !o.IsSeriesOnly)
+        return [.. All.Where(o => (seriesSorts || !o.IsSeriesOnly)
             && (o.RatingSource is not { } source || shownRatingSources.Contains(source) || o.Field == keep))];
     }
 }

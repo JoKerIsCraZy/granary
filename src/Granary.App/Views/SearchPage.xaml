@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Search as on Silo's web client: a large title, a large rounded search box, the type switch, the box sets found,
-    people as round photo cards, the titles, then Request to add. A person opens their page. Cached, so Back keeps the
-    results and the Request to add page.
+    Search as on Silo's web client (pages/SearchResults.tsx): a large title, a large rounded search box, the type switch with
+    the sort, order and Filters beside it, and the views: Overview, In your library and Request to add. The overview shows
+    the box sets found, two rows of the library's titles, the titles to request in a band of their own, people and three
+    more rows; under another sort than Relevance people follow the rows instead. A person opens their page. Cached, so Back
+    keeps the results and the view.
 -->
 <Page
     x:Class="Granary.App.Views.SearchPage"
@@ -25,6 +27,75 @@
             <Setter Property="Background" Value="{StaticResource SiloSurfaceBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource SiloBorderBrush}" />
         </Style>
+
+        <!--
+            A view's pill, as the web's result views: rounded-full px-4 py-2 text-sm font-semibold, muted until picked, then on
+            the accent's light fill.
+        -->
+        <Style x:Key="SearchViewTabStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid x:Name="Root" Background="Transparent" CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="Shade.Foreground" Value="{StaticResource SiloForegroundBrush}" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="Shade.Foreground" Value="{StaticResource SiloForegroundBrush}" />
+                                            <Setter Target="Root.Opacity" Value="0.8" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled" />
+                                </VisualStateGroup>
+                                <VisualStateGroup x:Name="CheckStates">
+                                    <VisualState x:Name="Checked">
+                                        <VisualState.Setters>
+                                            <Setter Target="Root.Background" Value="#1FE8E8EC" />
+                                            <Setter Target="Shade.Foreground" Value="{StaticResource SiloForegroundBrush}" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Unchecked" />
+                                    <VisualState x:Name="Indeterminate" />
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter x:Name="Shade" Padding="{TemplateBinding Padding}" Content="{TemplateBinding Content}"
+                                              Foreground="{TemplateBinding Foreground}" FontFamily="{TemplateBinding FontFamily}"
+                                              FontWeight="{TemplateBinding FontWeight}" FontSize="{TemplateBinding FontSize}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- A view's count beside its name: text-xs font-medium, muted, tabular. -->
+        <Style x:Key="SearchViewCountTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="Margin" Value="0,0,0,1" />
+        </Style>
+
+        <!-- "Show all results →" beside a heading: text-sm font-semibold, muted until pointed at. -->
+        <Style x:Key="SearchShowAllLinkStyle" TargetType="HyperlinkButton" BasedOn="{StaticResource SiloLinkButtonStyle}">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="CharacterSpacing" Value="0" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+        </Style>
     </Page.Resources>
 
     <Page.KeyboardAccelerators>
@@ -37,38 +108,136 @@
     <!-- Behind the header: the dimmed backdrop of the result the pointer or the keyboard is on. -->
     <controls:FocusBackdrop x:Name="Backdrop" Title="{x:Bind ViewModel.Backdrop.Shown, Mode=OneWay}" />
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
-        <StackPanel Padding="48,32,48,48" Spacing="24">
-            <TextBlock Text="{x:Bind ViewModel.Heading, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}" MaxLines="2"
-                       TextTrimming="CharacterEllipsis" AutomationProperties.HeadingLevel="Level1" />
+        <StackPanel x:Name="Body" Padding="48,32,48,48" Spacing="32">
+            <StackPanel Spacing="16">
+                <TextBlock Text="{x:Bind ViewModel.Heading, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}" MaxLines="2"
+                           TextTrimming="CharacterEllipsis" AutomationProperties.HeadingLevel="Level1" />
 
-            <Grid MaxWidth="760" HorizontalAlignment="Stretch">
-                <TextBox x:Name="SearchBox" Style="{StaticResource SearchBoxStyle}"
-                         Text="{x:Bind ViewModel.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         PlaceholderText="{x:Bind t:AppText.Get('web.search.placeholderProminent')}" IsSpellCheckEnabled="False"
-                         InputScope="Search" AutomationProperties.Name="{x:Bind t:AppText.Get('web.search.label')}" KeyDown="OnSearchBoxKeyDown" />
-                <FontIcon Glyph="&#xE721;" FontSize="18" Margin="22,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
-                          Foreground="{StaticResource SiloMutedBrush}" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw" />
-                <ProgressRing Width="20" Height="20" Margin="0,0,22,0" HorizontalAlignment="Right" VerticalAlignment="Center"
-                              IsActive="{x:Bind ViewModel.IsSearching, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsSearching, Mode=OneWay}"
-                              AutomationProperties.Name="{x:Bind t:AppText.Get('web.search.searching')}" />
-            </Grid>
+                <Grid MaxWidth="760" HorizontalAlignment="Stretch">
+                    <TextBox x:Name="SearchBox" Style="{StaticResource SearchBoxStyle}"
+                             Text="{x:Bind ViewModel.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="{x:Bind t:AppText.Get('web.search.placeholderProminent')}" IsSpellCheckEnabled="False"
+                             InputScope="Search" AutomationProperties.Name="{x:Bind t:AppText.Get('web.search.label')}" KeyDown="OnSearchBoxKeyDown" />
+                    <FontIcon Glyph="&#xE721;" FontSize="18" Margin="22,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                              Foreground="{StaticResource SiloMutedBrush}" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw" />
+                    <ProgressRing Width="20" Height="20" Margin="0,0,22,0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                  IsActive="{x:Bind ViewModel.IsSearching, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsSearching, Mode=OneWay}"
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.search.searching')}" />
+                </Grid>
 
-            <SelectorBar x:Name="ScopeBar" SelectionChanged="OnScopeSelectionChanged" AutomationProperties.Name="{x:Bind t:AppText.Get('web.catalog.search.scopeLabel')}">
-                <SelectorBarItem Text="{x:Bind t:AppText.Get('web.catalog.mediaType.moviesAndSeries')}" />
-                <SelectorBarItem Text="{x:Bind t:AppText.Get('web.catalog.mediaType.movies')}" />
-                <SelectorBarItem Text="{x:Bind t:AppText.Get('web.catalog.mediaType.series')}" />
-            </SelectorBar>
+                <!-- The type switch, and beside it the sort, the order and Filters, as the web's search toolbar. -->
+                <controls:WrapPanel HorizontalAlignment="Left" HorizontalSpacing="12" VerticalSpacing="8">
+                    <SelectorBar x:Name="ScopeBar" SelectionChanged="OnScopeSelectionChanged" AutomationProperties.Name="{x:Bind t:AppText.Get('web.catalog.search.scopeLabel')}">
+                        <SelectorBarItem Text="{x:Bind t:AppText.Get('web.catalog.mediaType.moviesAndSeries')}" />
+                        <SelectorBarItem Text="{x:Bind t:AppText.Get('web.catalog.mediaType.movies')}" />
+                        <SelectorBarItem Text="{x:Bind t:AppText.Get('web.catalog.mediaType.series')}" />
+                    </SelectorBar>
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <!-- Relevance leads the sorts; it has no order of its own. -->
+                        <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
+                                        FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13" Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.SortLabel, Mode=OneWay}"
+                                        AutomationProperties.AutomationId="SearchSort" AutomationProperties.Name="{x:Bind SortName(ViewModel.SortLabel), Mode=OneWay}">
+                            <DropDownButton.Flyout>
+                                <MenuFlyout x:Name="SortMenu" Placement="BottomEdgeAlignedLeft" Opening="OnSortMenuOpening" />
+                            </DropDownButton.Flyout>
+                        </DropDownButton>
+                        <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
+                                        FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13" Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.OrderLabel, Mode=OneWay}"
+                                        Visibility="{x:Bind ViewModel.IsOrderShown, Mode=OneWay}"
+                                        AutomationProperties.Name="{x:Bind OrderName(ViewModel.OrderLabel), Mode=OneWay}">
+                            <DropDownButton.Flyout>
+                                <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                                    <RadioMenuFlyoutItem Text="{x:Bind t:AppText.Get('web.catalog.sort.ascending')}" GroupName="SearchOrder" Command="{x:Bind ViewModel.SortAscendingCommand}"
+                                                         IsChecked="{x:Bind Negate(ViewModel.IsDescending), Mode=OneWay}" />
+                                    <RadioMenuFlyoutItem Text="{x:Bind t:AppText.Get('web.catalog.sort.descending')}" GroupName="SearchOrder" Command="{x:Bind ViewModel.SortDescendingCommand}"
+                                                         IsChecked="{x:Bind ViewModel.IsDescending, Mode=OneWay}" />
+                                </MenuFlyout>
+                            </DropDownButton.Flyout>
+                        </DropDownButton>
+                        <controls:CatalogFiltersButton x:Name="FiltersButton" Filters="{x:Bind ViewModel.Filters}" />
+                    </StackPanel>
+                </controls:WrapPanel>
+                <controls:ActiveFilterBadges Filters="{x:Bind ViewModel.Filters}" FiltersButton="{x:Bind FiltersButton}"
+                                             Visibility="{x:Bind ViewModel.Filters.HasBadges, Mode=OneWay}" />
+
+                <!-- The result views, as the web's: Overview, In your library with its count, Request to add while TMDB has titles. -->
+                <StackPanel Orientation="Horizontal" Spacing="4" XYFocusKeyboardNavigation="Enabled"
+                            Visibility="{x:Bind HasText(ViewModel.ResultsQuery), Mode=OneWay}"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.search.results.viewsLabel')}">
+                    <RadioButton GroupName="SearchViews" Tag="Overview" Style="{StaticResource SearchViewTabStyle}" Click="OnViewTabClick"
+                                 IsChecked="{x:Bind ViewModel.IsOverviewShown, Mode=OneWay}" AutomationProperties.AutomationId="SearchViewOverview"
+                                 Content="{x:Bind t:AppText.Get('web.search.results.overview')}" />
+                    <RadioButton GroupName="SearchViews" Tag="Library" Style="{StaticResource SearchViewTabStyle}" Click="OnViewTabClick"
+                                 IsChecked="{x:Bind ViewModel.IsLibraryViewShown, Mode=OneWay}" AutomationProperties.AutomationId="SearchViewLibrary"
+                                 AutomationProperties.Name="{x:Bind t:AppText.Get('web.search.results.inLibrary')}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.search.results.inLibrary')}" />
+                            <TextBlock Text="{x:Bind ViewModel.LibraryCountText, Mode=OneWay}" Style="{StaticResource SearchViewCountTextStyle}"
+                                       Visibility="{x:Bind HasText(ViewModel.LibraryCountText), Mode=OneWay}" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton GroupName="SearchViews" Tag="Requests" Style="{StaticResource SearchViewTabStyle}" Click="OnViewTabClick"
+                                 IsChecked="{x:Bind ViewModel.IsRequestsViewShown, Mode=OneWay}" AutomationProperties.AutomationId="SearchViewRequests"
+                                 Visibility="{x:Bind ViewModel.ShowsRequestsTab, Mode=OneWay}"
+                                 AutomationProperties.Name="{x:Bind t:AppText.Get('web.search.results.requestToAdd')}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.search.results.requestToAdd')}" />
+                            <TextBlock Text="{x:Bind ViewModel.RequestCountText, Mode=OneWay}" Style="{StaticResource SearchViewCountTextStyle}"
+                                       Visibility="{x:Bind HasText(ViewModel.RequestCountText), Mode=OneWay}" />
+                        </StackPanel>
+                    </RadioButton>
+                </StackPanel>
+            </StackPanel>
 
             <!--
-                The box sets the text finds, as the web's search lists them (BoxSetSearchResults.tsx) ahead of people and titles,
-                in the titles' own columns.
+                The box sets the text finds, as the web's search lists them (BoxSetSearchResults.tsx) ahead of the titles, in the
+                titles' own columns. The overview only.
             -->
-            <StackPanel Spacing="14" Visibility="{x:Bind ViewModel.ShowsBoxSets, Mode=OneWay}">
+            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.ShowsBoxSets, Mode=OneWay}">
                 <TextBlock Text="{x:Bind t:AppText.Get('web.search.boxSets')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                 <controls:MediaGrid ItemsSource="{x:Bind ViewModel.BoxSets, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.OpenBoxSetCommand}" />
             </StackPanel>
 
-            <StackPanel Spacing="14" Visibility="{x:Bind ViewModel.ShowsPeople, Mode=OneWay}">
+            <!-- The first two rows: "Best matches", or under another sort "In your library" with what it is sorted by. -->
+            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.ShowsBestCards, Mode=OneWay}">
+                <Grid>
+                    <TextBlock Text="{x:Bind ViewModel.FirstRowsHeading, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                    <HyperlinkButton HorizontalAlignment="Right" Style="{StaticResource SearchShowAllLinkStyle}" Command="{x:Bind ViewModel.ShowLibraryCommand}"
+                                     Visibility="{x:Bind ViewModel.ShowsAllLinkAtFirstRows, Mode=OneWay}" AutomationProperties.AutomationId="SearchShowAllFirst">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.search.results.showAll')}" />
+                            <FontIcon Glyph="&#xE72A;" FontSize="14" AutomationProperties.AccessibilityView="Raw" />
+                        </StackPanel>
+                    </HyperlinkButton>
+                </Grid>
+                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,-6,0,0" Visibility="{x:Bind ViewModel.IsSortedOtherwise, Mode=OneWay}">
+                    <TextBlock Text="{x:Bind ViewModel.SortedByText, Mode=OneWay}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" VerticalAlignment="Center" />
+                    <HyperlinkButton Padding="0" Foreground="{StaticResource SiloMutedBrush}" FontSize="14" Command="{x:Bind ViewModel.BackToRelevanceCommand}">
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.search.results.backToRelevance')}" TextDecorations="Underline" />
+                    </HyperlinkButton>
+                </StackPanel>
+                <controls:MediaGrid ItemsSource="{x:Bind ViewModel.BestCards, Mode=OneWay}" ColumnsCommand="{x:Bind ViewModel.SetColumnsCommand}"
+                                    CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" CardPointedCommand="{x:Bind ViewModel.PointCardCommand}" />
+            </StackPanel>
+
+            <!--
+                The titles to request, two rows in, as the web's "Not in your library" band (bg-card/60, border-border/60,
+                rounded-2xl, px-5 py-5): a row with Explore all, which opens the request view.
+            -->
+            <Border x:Name="RequestRowBand" Padding="20" CornerRadius="20" BorderThickness="1" Visibility="{x:Bind ViewModel.ShowsRequestRow, Mode=OneWay}">
+                <Border.Background>
+                    <SolidColorBrush Color="{StaticResource SiloSurfaceColor}" Opacity="0.6" />
+                </Border.Background>
+                <Border.BorderBrush>
+                    <SolidColorBrush Color="{StaticResource SiloBorderColor}" Opacity="0.6" />
+                </Border.BorderBrush>
+                <controls:MediaRow Bleed="0" Title="{x:Bind t:AppText.Get('web.search.results.notInLibrary')}" ItemsSource="{x:Bind ViewModel.RequestRow, Mode=OneWay}"
+                                   ExploreAllCommand="{x:Bind ViewModel.ShowRequestsCommand}" CardInvokedCommand="{x:Bind ViewModel.Requests.OpenCardCommand}"
+                                   CardPointedCommand="{x:Bind ViewModel.PointCardCommand}" />
+            </Border>
+
+            <!-- People: after the titles to request under Relevance, after the more rows under another sort (SearchPage.PlacePeople). -->
+            <StackPanel x:Name="PeopleSection" Spacing="12" Visibility="{x:Bind ViewModel.ShowsPeople, Mode=OneWay}">
                 <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.page.people')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                 <ScrollView ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Auto"
                             VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden"
@@ -89,17 +258,42 @@
                 </ScrollView>
             </StackPanel>
 
-            <!-- Out of the way while Request to add stands in for a library that found nothing, as the web hides its grid. -->
-            <StackPanel Spacing="14" Visibility="{x:Bind Not(ViewModel.IsLibraryRescued), Mode=OneWay}">
-                <TextBlock Text="{x:Bind t:AppText.Get('web.search.titles')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2"
-                           Visibility="{x:Bind ViewModel.ShowsTitlesHeading, Mode=OneWay}" />
+            <!-- Up to three more rows: "More results" under Relevance; under another sort they go on with the list above. -->
+            <StackPanel x:Name="MoreSection" Spacing="12" Visibility="{x:Bind ViewModel.ShowsMoreCards, Mode=OneWay}">
+                <Grid Visibility="{x:Bind ViewModel.ShowsMoreHeading, Mode=OneWay}">
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.search.results.moreResults')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                    <HyperlinkButton HorizontalAlignment="Right" Style="{StaticResource SearchShowAllLinkStyle}" Command="{x:Bind ViewModel.ShowLibraryCommand}"
+                                     Visibility="{x:Bind ViewModel.ShowsAllLinkAtMoreRows, Mode=OneWay}" AutomationProperties.AutomationId="SearchShowAllMore">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.search.results.showAll')}" />
+                            <FontIcon Glyph="&#xE72A;" FontSize="14" AutomationProperties.AccessibilityView="Raw" />
+                        </StackPanel>
+                    </HyperlinkButton>
+                </Grid>
+                <controls:MediaGrid ItemsSource="{x:Bind ViewModel.MoreCards, Mode=OneWay}"
+                                    CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" CardPointedCommand="{x:Bind ViewModel.PointCardCommand}" />
+            </StackPanel>
+
+            <!-- "Show all results" with the library's count, under the rows: the library view. -->
+            <Button x:Name="ShowAllButton" HorizontalAlignment="Center" Style="{StaticResource SiloSecondaryButtonStyle}" CornerRadius="{StaticResource SiloPillCornerRadius}"
+                    controls:Pill.IsEnabled="True" Padding="24,8" Command="{x:Bind ViewModel.ShowLibraryCommand}"
+                    Visibility="{x:Bind ViewModel.ShowsAllButton, Mode=OneWay}" AutomationProperties.AutomationId="SearchShowAllButton">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.search.results.showAll')}" />
+                    <TextBlock Text="{x:Bind ViewModel.LibraryCountText, Mode=OneWay}" Foreground="{StaticResource SiloMutedBrush}" />
+                </StackPanel>
+            </Button>
+
+            <!-- In your library: every title, read on as the grid scrolls. -->
+            <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.IsLibraryViewShown, Mode=OneWay}">
+                <TextBlock Text="{x:Bind t:AppText.Get('web.search.results.allInLibrary')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                 <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Cards, Mode=OneWay}"
                                     CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" LoadMoreCommand="{x:Bind ViewModel.LoadMoreCommand}"
                                     CardPointedCommand="{x:Bind ViewModel.PointCardCommand}" />
             </StackPanel>
 
             <!-- No titles, a failure, or what is loading; also announced. -->
-            <StackPanel MaxWidth="480" HorizontalAlignment="Left" Spacing="14" Visibility="{x:Bind HasText(ViewModel.StatusText), Mode=OneWay}">
+            <StackPanel MaxWidth="480" HorizontalAlignment="Left" Spacing="14" Visibility="{x:Bind ViewModel.ShowsStatus, Mode=OneWay}">
                 <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.LiveSetting="Polite" />
                 <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}"
@@ -107,11 +301,11 @@
             </StackPanel>
 
             <!--
-                Request to add, as the web's RequestToAddSection: what TMDB finds that the library does not have. Laid out
-                like People above: a plain heading over the titles. Unlike the web's pager, TMDB's pages gather in one grid
-                that reads on as its end comes into view, as Explore all does.
+                Request to add, as the web's RequestToAddSection: what TMDB finds that the library does not have. The request
+                view, and the overview's answer while the library found nothing. Unlike the web's pager, TMDB's pages gather in
+                one grid that reads on as its end comes into view, as Explore all does.
             -->
-            <StackPanel x:Name="RequestSection" Spacing="14" Visibility="{x:Bind ViewModel.ShowsRequests, Mode=OneWay}">
+            <StackPanel x:Name="RequestSection" Spacing="14" Visibility="{x:Bind ViewModel.ShowsRequestGrid, Mode=OneWay}">
                 <StackPanel Spacing="4">
                     <TextBlock Text="{x:Bind t:AppText.Get('web.requests.toAdd.heading')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                     <TextBlock Text="{x:Bind ViewModel.Requests.Note, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource SiloBodyTextStyle}"

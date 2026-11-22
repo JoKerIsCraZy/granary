@@ -1,17 +1,17 @@
 {
   "web": {
     "repository": "Silo-Server/silo-server",
-    "commit": "17d5376cea9a8d2e6c69a276a5a37fd3b88f92a8",
+    "commit": "c90e406db71ee468bffdfa5733cd97d1d50b4019",
     "path": "web/src/locales",
     "sha256": {
-      "ar": "aa19db493bd8e2fe611734f662733bb6df52dbeb59721232d6a65a66dcd455e9",
-      "de": "294d35615598f3c69dea81235f9d109d6a9609097dfe133a51b3122a0895c84d",
-      "en": "df7e4dcd5c7a11500da247505fd6aa7f53c7e0686214a9d7ae0c1a7dedbc419f",
-      "es": "715703becb1255f3e524837d6ad55efde2928f30af7ff36f27dddf186c8a1b6d",
-      "fr": "cd23f10a1f07c12622b6af80d025f3120fcfc50fb68fa913a87268acfcdd7fe5",
-      "ja": "419c13fcb4ac67193df60473c8d4c2aeed35d4210dd99e228a3bb382f213a10b",
-      "pt-BR": "7e1504ce19df43ae9b62221b68114a9f54ea6ae02ea7bb653d14913c98a9902b",
-      "zh-Hans": "0252e3d64fcaae5e834711a9fefbe280a879735c9192eb361df791f84926cb42"
+      "ar": "74a493f5166a1b661e579811058fa964bdf6c2a50140bd0682d6b2f437918f3f",
+      "de": "159cb8db46938118e9cfdcd6829001c495d1155010338e4f97df41b9bac8ef7e",
+      "en": "630b5e1e99f66a2f1b12395ce588e4826da86404bfabe90a4108a768efcfb225",
+      "es": "db64c583f60b66dec7a6b0573466e4565ec7ea74752179a8875c8d5b891409b5",
+      "fr": "fb1080c7c31a8eda2302fd55220cbdee2c32aab726c2ba027d6dd2190d4fa66f",
+      "ja": "1dde9ef3f468196d3eeadf8f9f0c52ac47dab180877be05ebba67b1006f8ed49",
+      "pt-BR": "749826b0672283e471db114a2450b35a1d7e7e89c2d9b8d2a30205fefde7f95b",
+      "zh-Hans": "0daffc14b1328e9c51502a2c5600dd76b28ef878c42d9c17b38692158d4bd5a6"
     },
     "note": "Silo's web client translations: <path>/<tag>.json of the repository at the commit, one file per language, each pinned by the SHA-256 of the whole file. scripts/sync-web-texts.ps1 checks them and keeps the keys src/Granary.Core/Texts/Catalogs/web-keys.txt lists, in src/Granary.Core/Texts/Catalogs/web/<tag>.json. Move the pin with the script's -Commit, not by hand (docs/release.md, \"Translations\")."
   }

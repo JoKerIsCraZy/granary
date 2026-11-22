@@ -50,39 +50,24 @@ public sealed class SearchBoxSetsTests
     }
 
     [Fact]
-    public async Task BoxSetsWithoutPeople_GiveTheTitlesTheirOwnHeading()
+    public async Task BoxSets_LeadTheOverview_AndTheTitlesKeepTheirHeading()
     {
-        // Without it the films under the box sets read as part of the Box sets group.
+        // The web's search shows the box sets above the first rows, which say "Best matches" either way.
         var search = await SearchAsync("masterplan");
 
-        Assert.Empty(search.People);
         Assert.True(search.ShowsBoxSets);
-        Assert.True(search.ShowsTitlesHeading);
+        Assert.Equal("Best matches", search.FirstRowsHeading);
+        Assert.Equal(["movie-tmdb-1001"], search.BestCards.Select(c => c.Id));
     }
 
     [Fact]
-    public async Task BoxSetsThatCome_ShowTheTitlesHeading_AndThoseThatGoHideIt()
+    public async Task BoxSets_ShowOnlyInTheOverview()
     {
-        _silo.Map(BoxSetsPath, request => new BrowseRequest(request.Method, request.RequestUri!, null).Query("q") == "masterplan"
-            ? BrowseFakeSilo.Json(BoxSetPayloads.SearchList)
-            : BrowseFakeSilo.Json("""{ "items": [] }"""));
-        var search = await SearchAsync("lantern");
-        Assert.False(search.ShowsTitlesHeading);
-        var changed = new List<string?>();
-        search.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        var search = await SearchAsync("masterplan");
 
-        search.Query = "masterplan";
-        await search.SearchNowCommand.ExecuteAsync(null);
+        search.ShowViewCommand.Execute(SearchView.Library);
 
-        Assert.True(search.ShowsTitlesHeading);
-        Assert.Contains(nameof(SearchViewModel.ShowsTitlesHeading), changed);
-        changed.Clear();
-
-        search.Query = "lantern";
-        await search.SearchNowCommand.ExecuteAsync(null);
-
-        Assert.False(search.ShowsTitlesHeading);
-        Assert.Contains(nameof(SearchViewModel.ShowsTitlesHeading), changed);
+        Assert.False(search.ShowsBoxSets);
     }
 
     [Fact]

@@ -8,6 +8,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Search:** results open on an overview, as on Silo's web: two rows of best matches, then the titles you can request
+  under "Not in your library", people and three more rows, so the titles to request no longer sit below the whole
+  library. "In your library" and "Request to add" show each list whole, with their counts. Search offers a sort,
+  Relevance first, and the library's Filters, Watch Status included; under another sort the rows read as one sorted
+  list, with "Back to relevance".
 - **Player:** the line under the title names the chapter that plays, between the episode and the times, as on Silo's
   web. It shows for titles with more than one chapter, follows playback and seeks, and works for downloads too.
 - **Profiles:** the household's primary profile manages the household's profiles in Settings → Profiles, as on Silo's

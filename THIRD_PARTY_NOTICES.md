@@ -139,7 +139,7 @@ translations, as Silo publishes them for its web client. They are not translatio
 | | |
 |---|---|
 | Source | `web/src/locales/<tag>.json` of <https://github.com/Silo-Server/silo-server> |
-| Commit | `17d5376cea9a8d2e6c69a276a5a37fd3b88f92a8` (2026-11-16), with each file's SHA-256 pinned in `texts.lock.json` |
+| Commit | `c90e406db71ee468bffdfa5733cd97d1d50b4019` (2026-11-22), with each file's SHA-256 pinned in `texts.lock.json` |
 | Languages | `en`, `de`, `es`, `fr`, `pt-BR`, `ja`, `zh-Hans`, `ar` |
 | Changes | Trimmed to the keys Granary uses (`src/Granary.Core/Texts/Catalogs/web-keys.txt`); each message is unchanged |
 | Copyright | Copyright (C) 2026 Silo Media L.L.C. and contributors |
