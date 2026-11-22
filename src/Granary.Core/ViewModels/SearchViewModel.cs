@@ -686,6 +686,8 @@ public sealed partial class SearchViewModel : ObservableObject
         if (_isActive && _sessionKey != SessionKey())
         {
             StartOver();
+            // The new session's rating sorts and filter options, as an activation asks for them.
+            PrepareSortsAndFilters();
         }
     }
 }

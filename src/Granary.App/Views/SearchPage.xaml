@@ -231,9 +231,15 @@
                 <Border.BorderBrush>
                     <SolidColorBrush Color="{StaticResource SiloBorderColor}" Opacity="0.6" />
                 </Border.BorderBrush>
-                <controls:MediaRow Bleed="0" Title="{x:Bind t:AppText.Get('web.search.results.notInLibrary')}" ItemsSource="{x:Bind ViewModel.RequestRow, Mode=OneWay}"
-                                   ExploreAllCommand="{x:Bind ViewModel.ShowRequestsCommand}" CardInvokedCommand="{x:Bind ViewModel.Requests.OpenCardCommand}"
-                                   CardPointedCommand="{x:Bind ViewModel.PointCardCommand}" />
+                <StackPanel Spacing="12">
+                    <controls:MediaRow Bleed="0" Title="{x:Bind t:AppText.Get('web.search.results.notInLibrary')}" ItemsSource="{x:Bind ViewModel.RequestRow, Mode=OneWay}"
+                                       ExploreAllCommand="{x:Bind ViewModel.ShowRequestsCommand}" CardInvokedCommand="{x:Bind ViewModel.Requests.OpenCardCommand}"
+                                       CardPointedCommand="{x:Bind ViewModel.PointCardCommand}" />
+                    <!-- A row card's Request that failed, in the web's toast words: the grid below is not shown with the row. -->
+                    <TextBlock Text="{x:Bind ViewModel.Requests.RequestNotice.Text, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
+                               Foreground="{StaticResource SiloDestructiveBrush}" Visibility="{x:Bind ViewModel.Requests.RequestNotice.HasText, Mode=OneWay}"
+                               AutomationProperties.LiveSetting="Assertive" />
+                </StackPanel>
             </Border>
 
             <!-- People: after the titles to request under Relevance, after the more rows under another sort (SearchPage.PlacePeople). -->

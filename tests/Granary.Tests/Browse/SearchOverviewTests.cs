@@ -141,6 +141,43 @@ public sealed class SearchOverviewTests
     }
 
     [Fact]
+    public async Task TheServersRatingSorts_AreOffered_WhileTheFilterOptionsLoadBeside()
+    {
+        _silo.Map("api/v2/capabilities/ratings", """{ "state": "available", "sources": [{ "source": "rt_critic", "name": "Rotten Tomatoes" }] }""");
+        var search = Create();
+
+        await search.ActivateAsync("heat");
+        await WaitUntilAsync(() => search.SortOptions.Any(o => o.Field == CatalogSortFields.RatingRtCritic));
+
+        Assert.Contains(search.SortOptions, o => o.Field == CatalogSortFields.RatingRtCritic);
+    }
+
+    [Fact]
+    public async Task AnotherServerWhileShown_AsksForItsFilterOptions()
+    {
+        var search = Create();
+        await search.ActivateAsync("heat");
+        await WaitUntilAsync(() => _silo.To("api/v2/catalog/filters").Count > 0);
+        int asked = _silo.To("api/v2/catalog/filters").Count;
+
+        _session.ActiveServer = BrowseFakeSilo.Server with { Id = "srv2" };
+        _session.RaiseChanged();
+        await search.Searching;
+        await WaitUntilAsync(() => _silo.To("api/v2/catalog/filters").Count > asked);
+
+        Assert.True(_silo.To("api/v2/catalog/filters").Count > asked);
+    }
+
+    // The reads beside the search are not awaited by it; they end within a moment.
+    private static async Task WaitUntilAsync(Func<bool> done)
+    {
+        for (int i = 0; i < 100 && !done(); i++)
+        {
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
+    }
+
+    [Fact]
     public async Task UnderAnotherSort_TheRowsReadAsOneList_WithTheRequestRowTwoRowsIn()
     {
         var search = Create();

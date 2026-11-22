@@ -18,6 +18,8 @@ public sealed partial class SearchViewModel
     private IReadOnlySet<string> _shownRatings = NoRatingSources;
     // The session the rating sources were asked for.
     private (string? ServerId, string? ProfileId)? _ratingsFor;
+    // The session's reads: the rating sources live as long as the session, the filter options as long as the type.
+    private CancellationTokenSource _ratingsRead = new();
     private CancellationTokenSource _filterOptions = new();
     // The session and type the filter options were last asked for.
     private (string? ServerId, string? ProfileId, SearchScope Scope)? _optionsFor;
@@ -120,7 +122,7 @@ public sealed partial class SearchViewModel
         if (_ratingsFor != (server.Id, _session.ProfileId))
         {
             _ratingsFor = (server.Id, _session.ProfileId);
-            _ = LoadRatingSourcesAsync(server.BaseUri, _filterOptions.Token);
+            _ = LoadRatingSourcesAsync(server.BaseUri, _ratingsRead.Token);
         }
         var key = (server.Id, _session.ProfileId, Scope);
         if (_optionsFor == key && !Filters.HasOptionsError)
@@ -169,6 +171,9 @@ public sealed partial class SearchViewModel
         _filterOptions.Cancel();
         _filterOptions.Dispose();
         _filterOptions = new CancellationTokenSource();
+        _ratingsRead.Cancel();
+        _ratingsRead.Dispose();
+        _ratingsRead = new CancellationTokenSource();
         _ratingsFor = null;
         _optionsFor = null;
         _shownRatings = NoRatingSources;
