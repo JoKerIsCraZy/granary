@@ -682,6 +682,7 @@ public sealed partial class MainWindow : Window
         {
             Navigation.IsPaneVisible = visible;
         }
+        TitleBarEdge.Visibility = visible ? Visibility.Collapsed : Visibility.Visible;
     }
 
     // A title's page, a person's and a box set's, the web's detail pages: the sidebar narrows to its rail beside them.

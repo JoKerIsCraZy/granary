@@ -90,11 +90,11 @@
     -->
     <Thickness x:Key="NavigationViewMinimalContentGridBorderThickness">0</Thickness>
     <!--
-        Beside the sidebar only the content's left edge, square at the top: the line under the title bar runs the whole
-        width instead (MainWindow), where WinUI drew the top edge from the sidebar on with a rounded corner.
+        Beside the sidebar the content's edge runs along its top and left with a rounded corner between them, the sidebar
+        filling the space around it; the title bar draws no line of its own then (MainWindow.SetPaneVisible).
     -->
-    <Thickness x:Key="NavigationViewContentGridBorderThickness">1,0,0,0</Thickness>
-    <CornerRadius x:Key="NavigationViewContentGridCornerRadius">0</CornerRadius>
+    <Thickness x:Key="NavigationViewContentGridBorderThickness">1,1,0,0</Thickness>
+    <CornerRadius x:Key="NavigationViewContentGridCornerRadius">12,0,0,0</CornerRadius>
 
     <!-- Palette -->
     <Color x:Key="SiloBackgroundColor">#FF0E0E10</Color>

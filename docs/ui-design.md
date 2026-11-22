@@ -226,6 +226,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 ## Layout
 
+- Beside the sidebar the page's edge runs along its top and left with a 12 px rounded corner, the sidebar's colour filling
+  around it; the title bar draws its own line across only where no sidebar shows.
 - Sidebar (260 px): the server's wordmark at 112 x 48 px (`wordmark_url`, as the web's `SiloBrand`), else or with Server logo off its name,
   which opens Home on a click and fades a little under the mouse, as the web's sidebar logo links home (for the mouse only:
   keys, a remote and a controller have Home's entry). The rail (a title's, a person's or a box set's page) shows the

@@ -54,8 +54,11 @@
             </Button>
         </StackPanel>
 
-        <!-- The title bar's lower edge, across the whole window; the player, which reaches under the title bar, covers it. -->
-        <Border Height="1" VerticalAlignment="Bottom" IsHitTestVisible="False"
+        <!--
+            The title bar's lower edge, across the whole window, where no sidebar shows; beside the sidebar the content's own
+            rounded edge takes its place. The player, which reaches under the title bar, covers it.
+        -->
+        <Border x:Name="TitleBarEdge" Height="1" VerticalAlignment="Bottom" IsHitTestVisible="False"
                 Background="{ThemeResource NavigationViewContentGridBorderBrush}" />
 
         <!--
