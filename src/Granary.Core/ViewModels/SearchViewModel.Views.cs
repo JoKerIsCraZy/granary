@@ -78,16 +78,34 @@ public sealed partial class SearchViewModel
         && (ShownView == SearchView.Requests || (IsOverviewShown && (_libraryEmpty || (HasError && _firstPage.Cards.Count == 0))));
 
     /// <summary>People after the titles to request under Relevance, as the web's.</summary>
-    public bool ShowsPeopleAfterRequests => ShowsPeople && !IsSortedOtherwise;
+    public bool ShowsPeopleAfterRequests => ShowsPeopleSection && !IsSortedOtherwise;
 
     /// <summary>People after the more rows under another sort, so the sorted list reads on unbroken.</summary>
-    public bool ShowsPeopleAfterMore => ShowsPeople && IsSortedOtherwise;
+    public bool ShowsPeopleAfterMore => ShowsPeopleSection && IsSortedOtherwise;
 
     /// <summary>"Request to add" among the views: TMDB found titles to add, or has more pages to look through.</summary>
     public bool ShowsRequestsTab => Requests.IsShown;
 
     /// <summary>"No items found.", a failure or what is loading, except in the request view, which has its own.</summary>
     public bool ShowsStatus => StatusText.Length > 0 && ShownView != SearchView.Requests;
+
+    /// <summary>Nothing searched yet: the web's empty search page, the box under "Search" and its line.</summary>
+    public bool IsEmptySearch => ResultsQuery.Length == 0 && !_isSearchingTitles;
+
+    /// <summary>"No items found.", centred under the overview, as the web's.</summary>
+    public bool ShowsNothingFound => ShowsStatus && !HasError;
+
+    /// <summary>A failed search's card: the web's title, and its body or why it failed.</summary>
+    public bool ShowsErrorCard => ShowsStatus && HasError;
+
+    /// <summary>"The search request failed. Please retry.", or what Granary knows more (busy, offline).</summary>
+    public string ErrorBody => HasError && StatusText.Length > 0 && StatusText != AppText.Get("web.catalog.page.searchFailed") ? StatusText : AppText.Get("web.catalog.page.searchFailedBody");
+
+    /// <summary>The first titles are on their way and none show yet: skeleton cards, as the web's.</summary>
+    public bool ShowsSkeleton => _isSearchingTitles && _firstPage.Cards.Count == 0 && ShownView != SearchView.Requests;
+
+    /// <summary>The shown titles are the last search's while the next one loads: dimmed, as the web's.</summary>
+    public bool IsStale => _isSearchingTitles && _firstPage.Cards.Count > 0;
 
     /// <summary>The library view's count: the titles read so far, "60+" while the server has more, as the web's.</summary>
     public string LibraryCountText => ResultsQuery.Length == 0 || _isSearchingTitles || HasError
@@ -167,6 +185,8 @@ public sealed partial class SearchViewModel
         nameof(ShowsAllLinkAtMoreRows), nameof(ShowsAllButton), nameof(ShowsRequestRow), nameof(ShowsRequestGrid),
         nameof(ShowsPeopleAfterRequests), nameof(ShowsPeopleAfterMore), nameof(ShowsRequestsTab), nameof(ShowsStatus),
         nameof(LibraryCountText), nameof(RequestCountText), nameof(FirstRowsHeading), nameof(SortedByText),
+        nameof(ShowsPeopleSection), nameof(IsEmptySearch), nameof(ShowsNothingFound), nameof(ShowsErrorCard), nameof(ErrorBody),
+        nameof(ShowsSkeleton), nameof(IsStale),
     ];
 
     // Meilisearch counts no exact total: past what was read it is "60+".

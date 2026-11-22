@@ -13,6 +13,10 @@ release's section is what its update says it changes (docs/release.md).
   library. "In your library" and "Request to add" show each list whole, with their counts. Search offers a sort,
   Relevance first, and the library's Filters, Watch Status included; under another sort the rows read as one sorted
   list, with "Back to relevance".
+- **Search** looks as on Silo's web: with nothing typed, a quiet page with "Search" and its box; once you search, the
+  text itself is the page's large heading on a hairline, with a round clear button. Movies & Series, Movies and Series
+  are a menu beside the sort and Filters. People show as portrait cards, results load under skeleton cards, and a
+  failed search or people search says so with its own retry.
 - **Player:** the line under the title names the chapter that plays, between the episode and the times, as on Silo's
   web. It shows for titles with more than one chapter, follows playback and seeks, and works for downloads too.
 - **Profiles:** the household's primary profile manages the household's profiles in Settings → Profiles, as on Silo's

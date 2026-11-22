@@ -7282,6 +7282,12 @@
       "value": "人物"
     }
   ],
+  "web.catalog.page.peopleFailed": [
+    {
+      "type": 0,
+      "value": "人物の結果を読み込めませんでした。"
+    }
+  ],
   "web.catalog.page.removeConfirm": [
     {
       "type": 0,
@@ -7348,10 +7354,34 @@
       "value": "」の検索結果"
     }
   ],
+  "web.catalog.page.retryPeople": [
+    {
+      "type": 0,
+      "value": "人物検索を再試行"
+    }
+  ],
+  "web.catalog.page.retrySearch": [
+    {
+      "type": 0,
+      "value": "検索を再試行"
+    }
+  ],
   "web.catalog.page.searchFailed": [
     {
       "type": 0,
       "value": "検索結果を読み込めませんでした。"
+    }
+  ],
+  "web.catalog.page.searchFailedBody": [
+    {
+      "type": 0,
+      "value": "検索リクエストに失敗しました。もう一度お試しください。"
+    }
+  ],
+  "web.catalog.page.searchSubtitle": [
+    {
+      "type": 0,
+      "value": "映画、シリーズ、出演者を探して、保存したまま忘れていた作品を再発見しましょう。"
     }
   ],
   "web.catalog.page.searchTitle": [
@@ -16825,6 +16855,12 @@
       "value": "ボックスセット"
     }
   ],
+  "web.search.clear": [
+    {
+      "type": 0,
+      "value": "検索をクリア"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -16921,12 +16957,6 @@
     {
       "type": 0,
       "value": "検索中…"
-    }
-  ],
-  "web.search.titles": [
-    {
-      "type": 0,
-      "value": "タイトル"
     }
   ],
   "web.settings.accessibility.appLanguage": [

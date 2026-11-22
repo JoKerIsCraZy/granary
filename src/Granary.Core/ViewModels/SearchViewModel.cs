@@ -138,7 +138,7 @@ public sealed partial class SearchViewModel : ObservableObject
     public partial IReadOnlyList<MediaCard> Cards { get; private set; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowsPeople), nameof(ShowsPeopleAfterRequests), nameof(ShowsPeopleAfterMore))]
+    [NotifyPropertyChangedFor(nameof(ShowsPeople), nameof(ShowsPeopleSection), nameof(ShowsPeopleAfterRequests), nameof(ShowsPeopleAfterMore))]
     public partial IReadOnlyList<SearchPerson> People { get; private set; } = [];
 
     /// <summary>
@@ -161,7 +161,7 @@ public sealed partial class SearchViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(ShowsStatus))]
     public partial string StatusText { get; private set; } = "";
 
-    /// <summary>"Search", or "Results for "heat"", as the web's catalog page.</summary>
+    /// <summary>"Search", or "Results for "heat"": the page's name for screen readers, as the web's hidden heading.</summary>
     public string Heading => ResultsQuery.Length > 0
         ? AppText.Get("web.catalog.page.resultsFor", ("query", ResultsQuery))
         : AppText.Get("web.catalog.page.searchTitle");
@@ -169,8 +169,44 @@ public sealed partial class SearchViewModel : ObservableObject
     /// <summary>People show in the overview only, as on the web.</summary>
     public bool ShowsPeople => People.Count > 0 && ShownView == SearchView.Overview;
 
+    /// <summary>The people lookup failed: "Could not load people results." with Retry people search, as the web's.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsPeopleSection), nameof(ShowsPeopleAfterRequests), nameof(ShowsPeopleAfterMore))]
+    public partial bool HasPeopleError { get; private set; }
+
+    /// <summary>The People section: people found, or the lookup's failure; in the overview only.</summary>
+    public bool ShowsPeopleSection => (People.Count > 0 || HasPeopleError) && ShownView == SearchView.Overview;
+
+    /// <summary>Asks for the people of the shown text again, after a failure.</summary>
+    [RelayCommand]
+    private async Task RetryPeopleAsync()
+    {
+        string text = ResultsQuery;
+        if (text.Length == 0 || _session is not { State: SessionState.Ready, ActiveServer: { } server })
+        {
+            return;
+        }
+        var people = await FindPeopleAsync(server, text, _searchRun?.Token ?? CancellationToken.None);
+        if (text != ResultsQuery)
+        {
+            return;
+        }
+        _peopleFound = people is null ? null : (text, people);
+        People = people ?? [];
+        HasPeopleError = people is null;
+        ShowResultsState();
+    }
+
     /// <summary>TMDB found titles to add, or has more pages to look through: "Request to add" has a view.</summary>
     public bool ShowsRequests => Requests.IsShown;
+
+    /// <summary>The type menu's name for the type searched, as the web's media type menu.</summary>
+    public string ScopeLabel => AppText.Get(Scope switch
+    {
+        SearchScope.Movies => "web.catalog.mediaType.movies",
+        SearchScope.Series => "web.catalog.mediaType.series",
+        _ => "web.catalog.mediaType.moviesAndSeries",
+    });
 
     /// <summary>The display's scale (1.5 at 150 %), so artwork is asked for at the pixels it is drawn at.</summary>
     public double DisplayScale { get; set; } = 1;
@@ -224,6 +260,7 @@ public sealed partial class SearchViewModel : ObservableObject
 
     partial void OnScopeChanged(SearchScope value)
     {
+        OnPropertyChanged(nameof(ScopeLabel));
         OfferSorts();
         PrepareSortsAndFilters();
         if (Query.Trim().Length > 0)
@@ -514,6 +551,8 @@ public sealed partial class SearchViewModel : ObservableObject
         _peopleFound = people is null ? null : (text, people);
         ResultsQuery = text;
         People = people ?? [];
+        // Null is a lookup that failed; a server that cannot search people found none, and that is no failure.
+        HasPeopleError = people is null;
         if (failure is not null || titles is null)
         {
             _logger.LogWarning("Searching titles failed: {Failure}", failure is null ? "no answer" : ApiFailureText.Describe(failure));
@@ -561,7 +600,7 @@ public sealed partial class SearchViewModel : ObservableObject
         IsLibraryRescued = _libraryEmpty && (Requests.IsSearching || Requests.IsShown);
         IsSearching = _isSearchingTitles || (_libraryEmpty && Requests.IsSearching);
         // "No items found." only when nothing at all was found, as the web's: people or box sets are an answer too.
-        bool othersFound = _libraryEmpty && (People.Count > 0 || BoxSets.Count > 0);
+        bool othersFound = _libraryEmpty && (People.Count > 0 || HasPeopleError || BoxSets.Count > 0);
         (StatusText, HasError) = IsLibraryRescued || othersFound ? ("", false) : _resultsState;
         ShowViews();
     }
@@ -615,6 +654,7 @@ public sealed partial class SearchViewModel : ObservableObject
         _resultsState = ("", false);
         ResultsQuery = "";
         People = [];
+        HasPeopleError = false;
         ShowBoxSets(null, []);
         Cards = [];
         _firstPage = ([], false);
