@@ -62,8 +62,13 @@ public static class PlaybackFeatures
     /// <summary>A server-side feature: the server keeps speed test readings per connection and advertises its probe.</summary>
     public const string ConnectionSpeedV1 = "connection_speed_v1";
 
-    // Features with client-side duties the client does not take on; named so code can say what it leaves out.
+    /// <summary>
+    /// CPU (<c>hardware: false</c>) decoders count at <c>exact</c> and <c>platform_attested</c> evidence. Sent with the attested
+    /// decoders, where the server's capabilities list it. Sticky for the attempt.
+    /// </summary>
     public const string SoftwareVideoDecodeV1 = "software_video_decode_v1";
+
+    // Features with client-side duties the client does not take on; named so code can say what it leaves out.
     public const string PlanInvalidatedV1 = "plan_invalidated_v1";
     public const string BufferingQualityV1 = "buffering_quality_v1";
     public const string SubripSidecarV1 = "subrip_sidecar_v1";

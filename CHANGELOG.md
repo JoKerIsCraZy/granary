@@ -6,6 +6,12 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Changed
+
+- **MKV plays directly again** on servers that ask players to report their video decoders in detail before they send a
+  Matroska file as it is: Granary now names its graphics card's decoders, with the bit depths they take, and its own
+  software decoders, instead of a plain list of codecs.
+
 ## [0.6.0] - 2026-11-22
 
 ### Added

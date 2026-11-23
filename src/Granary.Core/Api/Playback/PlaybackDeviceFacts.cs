@@ -16,8 +16,8 @@ public sealed record PlaybackDeviceFacts
     public IReadOnlyList<string> HardwareTenBitVideoCodecs { get; init => field = value ?? []; } = [];
 
     /// <summary>
-    /// Codecs the software decoder plays smoothly on this machine. At <c>declared</c> evidence the server bounds
-    /// neither size nor bit depth, so leave out a codec the CPU cannot keep up with (HEVC on a weak CPU).
+    /// Codecs the software decoder plays smoothly on this machine. The report sends no size bound for them, and no bit depth
+    /// either, so leave out a codec the CPU cannot keep up with (HEVC on a weak CPU).
     /// </summary>
     public IReadOnlyList<string> SoftwareVideoCodecs { get; init => field = value ?? []; } = [];
 

@@ -1816,7 +1816,9 @@ chunked fMP4:
 | `declared` | Flat membership in `codecs_video` / `codecs_video_hardware` | Decode/copy only |
 
 At `exact`/`platform_attested`, a codec listed flat without a `video_decode` entry is refused
-(warning `evidence_insufficient_for_direct`).
+(warning `evidence_insufficient_for_direct`). An omitted bound (empty list, `0`) is unconstrained
+(`videoDecodeTakesSourceV3`). Servers may trust only probed evidence with Matroska: a `declared`
+claim then earns no direct play for an `mkv` source, which they remux or transcode instead.
 
 **Claims and features that change server behaviour**: `validated_claims` on `original_http`:
 `client_selected_audio_track_v1` (without it, a non-default audio track forces a remux) and
@@ -2133,14 +2135,14 @@ Golden vectors: `silo-server/internal/playback/testdata/protocol_v3/conformance_
   `progressive` class, and does **not** send `software_video_decode_v1`
   (`silo-android/android-shared/src/androidMain/kotlin/org/siloserver/silo/common/player/PlaybackCapabilityDetector.kt`,
   `MediaCodecCapabilitiesProbe.kt`, `AudioCapabilityManager.kt`).
-- **Apple's FFmpeg-based engine** is the closest analogue to mpv: `declared` evidence, no
-  passthrough, `client_managed_dynamic_range_v1`, `client_selected_audio_track_v1`,
+- **Apple's FFmpeg-based engine** is the closest analogue to mpv: `platform_attested` video
+  (VideoToolbox entries plus bounded FFmpeg software entries, `AppleDecodeCapabilities.swift`; iPhone and
+  iPad send `declared` online), `declared` audio, no passthrough, `client_managed_dynamic_range_v1`, `client_selected_audio_track_v1`,
   `software_video_decode_v1`, and `native_embedded` for mkv (`subrip, ass, ssa, webvtt,
   hdmv_pgs_subtitle, dvd_subtitle, dvb_subtitle`) and mp4 (`mov_text`) with `ffmpeg_stream_index`
   (`silo-apple/iosApp/iosApp/Screens/Player/ProtocolV3/ApplePlaybackV3Capabilities.swift:40-237`).
 
-The Windows capability report (which tier, which decoders, how to probe D3D11VA, which subtitle
-claims) is a Phase 1/4 design item; section 13 lists the starting point.
+Granary's report is in [13.2](#132-capability-report-for-mpv-starting-point-to-validate-in-phase-14).
 
 ## 9. Media delivery and stream authentication
 
@@ -3058,19 +3060,26 @@ shown and waits for the next news, and the window after it is twice as long with
 mpv decodes with FFmpeg, in software or through D3D11VA/DXVA2 hardware acceleration, and renders
 HDR with libplacebo. An honest, conservative first report:
 
-- `video_evidence: "declared"` with `codecs_video` = codecs FFmpeg decodes and that the machine can
-  play smoothly, and `codecs_video_hardware` = codecs with a D3D11VA decoder profile on this GPU.
-  Moving to `platform_attested` with real `video_decode` entries is the next step and gives the
-  server real bounds: profiles from `ID3D11VideoDevice::GetVideoDecoderProfile`, bit depths from
-  `CheckVideoDecoderFormat` (NV12/P010), and `max_width`/`max_height`/`max_frame_rate` by probing
-  candidate sizes with `ID3D11VideoDevice1::GetVideoDecoderCaps` or `GetVideoDecoderConfigCount`.
-- At `declared` the server only checks codec membership (both lists count the same); it does not
-  bound bit depth, frame rate or (apart from `max_resolution`) size. So list only codecs this
-  machine plays smoothly at whatever the library contains, and leave `hevc` out of both lists on a
-  weak CPU. `software_video_decode_v1` has no effect at `declared`; it matters only at
-  `platform_attested`, where it lets `hardware: false` `video_decode` entries count. Send it then
-  only if those entries carry honest bounds (`bit_depths`, `max_width`, `max_height`,
-  `max_frame_rate`).
+- `codecs_video` = codecs FFmpeg decodes and that the machine can play smoothly, and
+  `codecs_video_hardware` = codecs with a D3D11VA decoder profile on this GPU. List only codecs this
+  machine plays smoothly at whatever the library contains, and leave `hevc` out on a weak CPU.
+- `video_evidence: "platform_attested"` where the server's capabilities list `software_video_decode_v1`,
+  with that feature in `client_features` and one `video_decode` entry per decoder. Silo Server describes the
+  tier as "platform-level decoder-stack attestation … (for example Apple's VideoToolbox plus a pinned software
+  stack)"; Granary's stack is D3D11VA as probed plus the hash-pinned libmpv build with FFmpeg compiled in
+  (`native.lock.json`). A GPU entry per hardware codec carries `bit_depths: [8]`, or `[8, 10]` where
+  `CheckVideoDecoderFormat` confirms P010 for its 10-bit profile; the server skips its profiles and levels at this
+  tier. An FFmpeg entry (`hardware: false`) per codec of the CPU's list, and for `hevc`, `vp9` and `av1` when the
+  viewer chose software decoding, carries no bound: FFmpeg decodes every bit depth of its codecs (H.264 High 10
+  among them). No entry has a size, frame-rate or bitrate bound, since none is measured, so the server bounds
+  only bit depth: a 10-bit (or 12-bit) original in a codec the GPU decodes at 8 bits only and the CPU's list lacks
+  goes to the server, as its HDR already did. Every listed codec has an entry, else the server would refuse it.
+  Example: `{"codec": "hevc", "hardware": true, "bit_depths": [8, 10]}`, `{"codec": "h264", "hardware": false}`.
+  The attested decoders and the feature are kept for the attempt, a file switched to included.
+- Without `software_video_decode_v1` on the server, `video_evidence: "declared"` and no `video_decode`: the
+  server only checks codec membership (both lists count the same) and bounds neither bit depth, frame rate
+  nor (apart from `max_resolution`) size. Granary's downloads send `caps` with the flat lists only, which
+  the server resolves as before (`silo-server/docs/downloads-api.md`, 4.1).
 - `audio_evidence: "declared"`, `codecs_audio` = everything FFmpeg decodes; no passthrough in the
   MVP.
 - `containers`: `mkv` (covers WebM), `mp4` (covers mov/m4v), `avi`, `ts`, `m2ts`, `ogg`, `flv`,
@@ -3099,8 +3108,8 @@ HDR with libplacebo. An honest, conservative first report:
   decode a 4K original. A file switched to in the player, a switch the server turns down (back to the file
   that plays) and a start after `installation_changed` get the report for their files; replans repeat their
   attempt's. Two gaps stay: HDR in H.264 High 10, which D3D11VA does not decode,
-  and 12-bit HEVC, which no common decoder takes; both are rare, and the second already direct-plays as
-  SDR, which only `platform_attested` evidence with `bit_depths` can bound. Like the web's decode engine,
+  and 12-bit HEVC, which no common decoder takes; both are rare, and the second direct-plays as SDR only at
+  `declared` evidence, as `platform_attested` bounds the GPU's `bit_depths`. Like the web's decode engine,
   which claims it only with a hardware WebGPU adapter and an SDR display. Without the claim the server
   tone-maps an HDR original itself, in a transcode to H.264 (in software unless the server has hardware
   tone mapping), which is heavy at 2160p. HLS stays without the claim, so a server-made stream still has
