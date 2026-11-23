@@ -14,6 +14,13 @@ public sealed class AttestedDecodersStartTests
 
     private static string Evidence(JsonElement start) => start.GetProperty("client_capabilities").GetProperty("video_evidence").GetString()!;
 
+    // The decoders of the fixture's PC: H.264 and HEVC in the GPU, HEVC at 10 bits too; FFmpeg's H.264 and MPEG-2.
+    private const string FixtureDecoders =
+        """[{"codec":"h264","hardware":true,"bit_depths":[8]},{"codec":"hevc","hardware":true,"bit_depths":[8,10]},{"codec":"h264","hardware":false},{"codec":"mpeg2video","hardware":false}]""";
+
+    private static string Decoders(JsonElement start) =>
+        JsonSerializer.Serialize(start.GetProperty("client_capabilities").GetProperty("video_decode"));
+
     private static IEnumerable<string?> Features(JsonElement start) => start.GetProperty("client_features").EnumerateArray().Select(f => f.GetString());
 
     [Fact]
@@ -24,7 +31,7 @@ public sealed class AttestedDecodersStartTests
         var start = Start(0);
         Assert.Equal(CapabilityEvidence.PlatformAttested, Evidence(start));
         Assert.Contains(PlaybackFeatures.SoftwareVideoDecodeV1, Features(start));
-        Assert.NotEmpty(start.GetProperty("client_capabilities").GetProperty("video_decode").EnumerateArray());
+        Assert.Equal(FixtureDecoders, Decoders(start));
     }
 
     [Fact]
@@ -60,5 +67,6 @@ public sealed class AttestedDecodersStartTests
         Assert.Equal("43", start.GetProperty("file_id").GetString());
         Assert.Equal(CapabilityEvidence.PlatformAttested, Evidence(start));
         Assert.Contains(PlaybackFeatures.SoftwareVideoDecodeV1, Features(start));
+        Assert.Equal(FixtureDecoders, Decoders(start));
     }
 }

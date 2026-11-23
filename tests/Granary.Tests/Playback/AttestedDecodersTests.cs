@@ -286,7 +286,10 @@ public sealed class AttestedDecodersTests
         Assert.Equal("platform_attested", (string)capabilities["video_evidence"]!);
         Assert.Equal("declared", (string)capabilities["audio_evidence"]!);
         var decoders = capabilities["video_decode"]!.AsArray().Select(d => d!.AsObject()).ToList();
+        // Every entry names its codec and whether it is the GPU's; bit_depths only where it bounds the decoder.
+        Assert.All(decoders, d => Assert.True(d.ContainsKey("codec") && d.ContainsKey("hardware")));
         Assert.All(decoders, d => Assert.Subset(new HashSet<string>(["codec", "hardware", "bit_depths"]), d.Select(m => m.Key).ToHashSet()));
+        Assert.All(decoders, d => Assert.Equal((bool)d["hardware"]!, d.ContainsKey("bit_depths")));
         Assert.Equal("""{"codec":"hevc","hardware":true,"bit_depths":[8,10]}""", decoders.Single(d => (string)d["codec"]! == "hevc").ToJsonString());
         Assert.Equal("""{"codec":"h264","hardware":false}""", decoders.Last(d => (string)d["codec"]! == "h264").ToJsonString());
         Assert.Contains("software_video_decode_v1", body["client_features"]!.AsArray().Select(f => (string)f!));
