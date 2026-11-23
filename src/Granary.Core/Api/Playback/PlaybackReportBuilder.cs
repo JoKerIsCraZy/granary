@@ -9,8 +9,9 @@ public sealed record PlaybackClientReport(
 /// <summary>
 /// The capability report of the mpv engine (docs/api-contract.md, 13.2): FFmpeg decodes, in software or through
 /// D3D11VA, every audio codec and the video codecs the device facts name, from the containers mpv demuxes. It is
-/// an honest, conservative first report: <c>declared</c> evidence, SDR output (HDR originals tone-mapped by mpv on
-/// direct play where the GPU decodes them), no passthrough, direct play and HLS.
+/// an honest, conservative report: video at <c>platform_attested</c> evidence where the server takes software decoders
+/// (else <c>declared</c>), audio <c>declared</c>, SDR output (HDR originals tone-mapped by mpv on direct play where the
+/// GPU decodes them), no passthrough, direct play and HLS.
 /// </summary>
 public static class PlaybackReportBuilder
 {
@@ -26,8 +27,8 @@ public static class PlaybackReportBuilder
     /// </list>
     /// The server needs no other client feature for a valid start. <see cref="Build"/> adds
     /// <c>authorized_media_origins_v1</c> where the server offers it: the stream may then come from a proxy node,
-    /// whose absolute URL <see cref="PlaybackUrl.ResolveStream"/> checks. Left out on purpose:
-    /// <c>software_video_decode_v1</c> (no effect at <c>declared</c> evidence), <c>plan_invalidated_v1</c> (needs the
+    /// whose absolute URL <see cref="PlaybackUrl.ResolveStream"/> checks, and <c>software_video_decode_v1</c> with the attested
+    /// decoders (<see cref="Decoders"/>). Left out on purpose: <c>plan_invalidated_v1</c> (needs the
     /// control socket), <c>buffering_quality_v1</c>, <c>subrip_sidecar_v1</c>, <c>hls_subtitle_renditions_v1</c>,
     /// <c>client_video_transformations_v1</c> and <c>device_quirks_v1</c>.
     /// </summary>
@@ -87,8 +88,13 @@ public static class PlaybackReportBuilder
     /// empty when none is HDR. HDR then counts only in those codecs, instead of in every codec the report lists. Null, or
     /// with a blank among them, when that is not known.
     /// </param>
+    /// <param name="attestsDecoders">
+    /// The server offers <c>software_video_decode_v1</c> (its capabilities list it): the video evidence is then
+    /// <c>platform_attested</c>, with the decoders of <see cref="Decoders"/>. Without it the server would count the GPU's
+    /// decoders only, so the report stays <c>declared</c>.
+    /// </param>
     public static PlaybackClientReport Build(PlaybackDeviceFacts device, string appVersion, string? appChannel = null, bool mediaOrigins = false,
-        bool softwareDecoding = false, IReadOnlyCollection<string>? hdrFileCodecs = null)
+        bool softwareDecoding = false, IReadOnlyCollection<string>? hdrFileCodecs = null, bool attestsDecoders = false)
     {
         ArgumentNullException.ThrowIfNull(device);
         ArgumentException.ThrowIfNullOrWhiteSpace(appVersion);
@@ -99,7 +105,9 @@ public static class PlaybackReportBuilder
 
         var capabilities = new ClientCapabilities
         {
-            VideoEvidence = CapabilityEvidence.Declared,
+            VideoEvidence = attestsDecoders ? CapabilityEvidence.PlatformAttested : CapabilityEvidence.Declared,
+            // FFmpeg decodes every listed audio codec; only exact evidence would earn passthrough, which Granary does not
+            // do. Silo's Apple app keeps audio declared beside its attested video too.
             AudioEvidence = CapabilityEvidence.Declared,
             CodecsVideo = video,
             CodecsVideoHardware = hardware,
@@ -107,6 +115,7 @@ public static class PlaybackReportBuilder
             Containers = Containers,
             // SDR output only for now; no max_resolution, which the server would read as a delivery ceiling.
             Hdr = false,
+            VideoDecode = attestsDecoders ? Decoders(device, softwareDecoding) : null,
         };
         var context = new ClientPlaybackContext
         {
@@ -126,8 +135,51 @@ public static class PlaybackReportBuilder
                 [DeliveryClasses.Hls] = Hls(smooth),
             },
         };
-        IReadOnlyList<string> features = mediaOrigins ? [.. ClientFeatures, PlaybackFeatures.AuthorizedMediaOriginsV1] : ClientFeatures;
+        IReadOnlyList<string> features =
+        [
+            .. ClientFeatures,
+            .. attestsDecoders ? [PlaybackFeatures.SoftwareVideoDecodeV1] : Array.Empty<string>(),
+            .. mediaOrigins ? [PlaybackFeatures.AuthorizedMediaOriginsV1] : Array.Empty<string>(),
+        ];
         return new PlaybackClientReport(features, capabilities, context);
+    }
+
+    /// <summary>
+    /// The <c>video_decode</c> entries of a <c>platform_attested</c> report: Silo Server's tier for "platform-level
+    /// decoder-stack attestation … (for example Apple's VideoToolbox plus a pinned software stack)" (internal/playback/
+    /// protocol_v3.go). Granary's stack is that: D3D11VA as the probe reads it, and the libmpv build, with FFmpeg compiled in,
+    /// that native.lock.json pins by its hash. The server then walks these entries instead of the flat lists
+    /// (<c>videoEligibleV3</c>, capabilities_v3.go): a listed codec no entry names is refused, so every one has an entry.
+    /// <list type="bullet">
+    /// <item>A GPU decoder per hardware codec, at 8 bits, and at 10 too where the probe found its 10-bit profile. The server
+    /// skips profile and level for it at this tier and matches bit depth exactly, so a 10-bit original goes to a CPU entry
+    /// or to the server, as <see cref="DecodesHdr"/> already has it for HDR.</item>
+    /// <item>An FFmpeg decoder per codec the CPU plays smoothly, and for HEVC, VP9 and AV1 when the viewer chose software
+    /// decoding. These count only with <c>software_video_decode_v1</c>, which the report then sends. They carry no bit
+    /// depth: FFmpeg's decoder takes every depth its codec has, H.264 High 10 among them.</item>
+    /// </list>
+    /// No size, frame rate or bitrate bound: none is measured, and an omitted bound is unconstrained, as the flat lists
+    /// were (playback-protocol-v3.md, "An omitted bound means unconstrained").
+    /// </summary>
+    private static IReadOnlyList<VideoDecodeCapability> Decoders(PlaybackDeviceFacts device, bool softwareDecoding)
+    {
+        var tenBit = CodecList(device.HardwareTenBitVideoCodecs);
+        VideoDecodeCapability[] decoders =
+        [
+            .. CodecList(device.HardwareVideoCodecs).Select(codec => new VideoDecodeCapability
+            {
+                Codec = codec,
+                Hardware = true,
+                BitDepths = tenBit.Contains(codec) ? [8, 10] : [8],
+            }),
+            .. CodecList([.. device.SoftwareVideoCodecs, .. softwareDecoding ? HdrCodecs : []])
+                .Select(codec => new VideoDecodeCapability { Codec = codec, Hardware = false }),
+        ];
+        if (decoders.Length > MaxListLength)
+        {
+            throw new ArgumentException($"The server accepts at most {MaxListLength} video decoders; {decoders.Length} were given.", nameof(device));
+        }
+        return decoders;
     }
 
     /// <summary>
@@ -155,7 +207,7 @@ public static class PlaybackReportBuilder
     /// The GPU decodes some HDR video at 10 bits, and every codec HDR may come in for this start plays without stutter:
     /// decoded at 10 bits by the GPU, or on the CPU's list. Those are the codecs of the HDR files the server may send, or
     /// every HDR codec the report lists where one of theirs is not known, since at <c>declared</c> evidence the server
-    /// checks codec names, not bit depth. So an 8-bit-only decoder, such as VP9 without Profile 2, leaves HDR in that codec
+    /// checks codec names, not bit depth (at <c>platform_attested</c> the <see cref="Decoders"/> carry it). So an 8-bit-only decoder, such as VP9 without Profile 2, leaves HDR in that codec
     /// to the server; SDR files need no 10-bit decoder. A codec the report does not list never plays directly. H.264 High
     /// 10 is left out: no D3D11 decoder takes it and HDR in it is rare (docs/api-contract.md, 13.2).
     /// </summary>

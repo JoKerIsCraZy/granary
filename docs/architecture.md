@@ -81,7 +81,10 @@ the display refresh rate itself (Phase 3). Until it does, the output is SDR, and
 Dolby Vision originals onto it. Where the GPU decodes the codec of the title's HDR files at 10 bits, Granary claims
 that on direct play (`client_managed_dynamic_range_v1`, docs/api-contract.md 13.2), so the server sends HDR files
 as they are instead of tone-mapping them in a transcode. `PlaybackStarter` builds the report for the files a start
-may get, again when the viewer switches files in the player and after the server was reinstalled.
+may get, again when the viewer switches files in the player and after the server was reinstalled. Where the server
+takes software decoders (`software_video_decode_v1`), the report attests the decoders at `platform_attested`: the GPU's
+D3D11VA codecs with their probed bit depths and FFmpeg's from the pinned libmpv build (`PlaybackReportBuilder.Decoders`),
+so servers that trust only probed evidence with Matroska still play MKV files directly.
 
 ## Your own mpv.conf
 

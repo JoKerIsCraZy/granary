@@ -126,7 +126,8 @@ public sealed class PlaybackStarter(
         bool pinned = pinnedFileId is not null;
         bool versionPicked = picked?.IsVersionPicked == true;
         bool software = devicePreferences.DecodesInSoftware;
-        var report = Report(OffersMediaOrigins(capabilities), software, HdrFileCodecs(detail, version, keepsVersion: pinned || versionPicked));
+        var report = Report(OffersMediaOrigins(capabilities), TakesSoftwareDecoders(capabilities), software,
+            HdrFileCodecs(detail, version, keepsVersion: pinned || versionPicked));
         var read = await settings.ConfigureAwait(false);
         // Again after the reads: the profile or the server may have changed while they were on their way, and the start
         // goes out with the profile read before them.
@@ -195,30 +196,37 @@ public sealed class PlaybackStarter(
     {
         ArgumentNullException.ThrowIfNull(context);
         var capabilities = await CapabilitiesAsync(context.Server, cancellationToken).ConfigureAwait(false);
-        var report = Report(OffersMediaOrigins(capabilities), context.DecodesInSoftware, HdrFileCodecs(context.Watch, context.Version, context.KeepsVersion));
+        var report = Report(OffersMediaOrigins(capabilities), TakesSoftwareDecoders(capabilities), context.DecodesInSoftware,
+            HdrFileCodecs(context.Watch, context.Version, context.KeepsVersion));
         return context with { InstallationId = capabilities.InstallationId!, Report = report };
     }
 
     /// <summary>
     /// The same context starting <paramref name="version"/>, another file of the title, with the report for the files that
-    /// start may get. Media origins and software decoding stay as the title's report has them.
+    /// start may get. Media origins, attested decoders and software decoding stay as the title's report has them.
     /// </summary>
     public PlaybackContext WithVersion(PlaybackContext context, WatchFileVersion version)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(version);
         bool mediaOrigins = context.Report.ClientFeatures.Contains(PlaybackFeatures.AuthorizedMediaOriginsV1);
-        var report = Report(mediaOrigins, context.DecodesInSoftware, HdrFileCodecs(context.Watch, version, context.KeepsVersion));
+        bool attestsDecoders = context.Report.ClientFeatures.Contains(PlaybackFeatures.SoftwareVideoDecodeV1);
+        var report = Report(mediaOrigins, attestsDecoders, context.DecodesInSoftware, HdrFileCodecs(context.Watch, version, context.KeepsVersion));
         return context with { Version = version, Report = report };
     }
 
     // Proxy-node media only where the server offers it, as Apple's client asks (docs/api-contract.md, 9.1).
     private static bool OffersMediaOrigins(PlaybackCapabilities capabilities) => capabilities.HasFeature(PlaybackFeatures.AuthorizedMediaOriginsV1);
 
+    // The decoders attested at platform_attested only where the server counts FFmpeg's, as Silo's Apple app sends them
+    // (docs/api-contract.md, 13.2); a server without software_video_decode_v1 keeps the declared report.
+    private static bool TakesSoftwareDecoders(PlaybackCapabilities capabilities) => capabilities.HasFeature(PlaybackFeatures.SoftwareVideoDecodeV1);
+
     // A start's report. This PC's software decoding choice is the one read when the title started, so a change in the
     // settings counts from the next title on; the HDR claim follows the codecs of the HDR files the start may get.
-    private PlaybackClientReport Report(bool mediaOrigins, bool softwareDecoding, IReadOnlyList<string> hdrFileCodecs) =>
-        PlaybackReportBuilder.Build(device.Facts, identity.ClientVersion, identity.ClientChannel, mediaOrigins, softwareDecoding, hdrFileCodecs);
+    private PlaybackClientReport Report(bool mediaOrigins, bool attestsDecoders, bool softwareDecoding, IReadOnlyList<string> hdrFileCodecs) =>
+        PlaybackReportBuilder.Build(device.Facts, identity.ClientVersion, identity.ClientChannel, mediaOrigins, softwareDecoding, hdrFileCodecs,
+            attestsDecoders);
 
     // The video codecs of the HDR files the server may send for a start of that version: among its own and, unless the start
     // keeps to it, the title's other files, which the server may fall back to or resume in. A file that does not say whether

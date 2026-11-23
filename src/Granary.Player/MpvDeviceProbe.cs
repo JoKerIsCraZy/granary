@@ -10,7 +10,7 @@ namespace Granary.Player;
 /// <summary>
 /// What mpv on this machine decodes (docs/api-contract.md, 13.2), probed once: the GPU's D3D11VA codecs, plus the
 /// codecs FFmpeg decodes in software at any size a desktop CPU keeps up with. HEVC, VP9 and AV1 count only with a
-/// hardware decoder: at <c>declared</c> evidence the server bounds neither size nor bit depth, and 4K HEVC in
+/// hardware decoder: the report bounds neither the size nor the CPU's bit depth, and 4K HEVC in
 /// software would stutter on many machines. For the same reason HDR originals come only where those decoders take 10-bit video too.
 /// The result is logged once, so a log shows why a title was transcoded on this PC.
 /// </summary>

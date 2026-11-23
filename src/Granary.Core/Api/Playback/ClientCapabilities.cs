@@ -2,9 +2,8 @@ namespace Granary.Core.Api.Playback;
 
 // What the client reports at start and on every replan (docs/api-contract.md, 8.4). These bodies are strict:
 // only documented members are modelled, required ones are always written (lists as [], objects as {}), and
-// optional ones are left out when null. HDR details, audio passthrough and per-decoder video_decode entries
-// are not modelled yet: the client declares SDR output (mpv tone-maps HDR originals on direct play) and decodes
-// all audio itself.
+// optional ones are left out when null. HDR details and audio passthrough are not modelled yet: the client declares
+// SDR output (mpv tone-maps HDR originals on direct play) and decodes all audio itself.
 
 /// <summary><c>client_capabilities</c>: what the device decodes, at an honest <see cref="CapabilityEvidence"/> tier.</summary>
 public sealed record ClientCapabilities
@@ -31,6 +30,28 @@ public sealed record ClientCapabilities
     public string? MaxResolution { get; init; }
 
     public bool Hdr { get; init; }
+
+    /// <summary>
+    /// The decoders behind <see cref="CodecsVideo"/>, only at <c>exact</c> or <c>platform_attested</c> evidence, where the
+    /// server checks a source against them and refuses a listed codec none names. Left out when null.
+    /// </summary>
+    public IReadOnlyList<VideoDecodeCapability>? VideoDecode { get; init; }
+}
+
+/// <summary>
+/// One <c>video_decode</c> entry (silo-server <c>VideoDecodeCapabilityV3</c>). A bound left out is unconstrained, so only
+/// what the probe backs is sent; the server's profiles, levels and <c>max_*</c> bounds are not modelled.
+/// </summary>
+public sealed record VideoDecodeCapability
+{
+    /// <summary>The ffprobe name, lower-case.</summary>
+    public required string Codec { get; init; }
+
+    /// <summary>A GPU decoder; a CPU one counts only with <c>software_video_decode_v1</c>.</summary>
+    public required bool Hardware { get; init; }
+
+    /// <summary>The bit depths the decoder takes, matched exactly; null for every depth.</summary>
+    public IReadOnlyList<int>? BitDepths { get; init; }
 }
 
 /// <summary><c>client_playback_context</c>: the app, device, output and the delivery classes it can execute.</summary>
