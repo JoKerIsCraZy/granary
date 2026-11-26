@@ -12,6 +12,11 @@ release's section is what its update says it changes (docs/release.md).
   Matroska file as it is: Granary now names its graphics card's decoders, with the bit depths they take, and its own
   software decoders, instead of a plain list of codecs.
 
+### Fixed
+
+- **Search:** deleting the last letter with Backspace no longer leaves Search for the page before it, and when the
+  search field changes between the start page and the results, the cursor no longer shows at the left for a moment.
+
 ## [0.6.0] - 2026-11-22
 
 ### Added
