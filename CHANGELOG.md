@@ -6,6 +6,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-26
+
 ### Added
 
 - **The collections a title is in** show on a movie's or series' page, before More Like This: when one collection holds
