@@ -1,3 +1,4 @@
+using Granary.Core.Playback;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Downloads;
@@ -14,7 +15,8 @@ public sealed partial class LocalPlayback
 
     // Left past this much of its length, a title starts over next time, as one the server counts as watched does (the Apple
     // app's defaultWatchedFraction, and the server's default threshold). Whether it is watched is the server's to say: an
-    // admin can set another threshold (playback.watched_threshold).
+    // admin can set another threshold (playback.watched_threshold). Left in its end credits, it is watched before that
+    // (EndCredits).
     private const double StartsOverFraction = 0.9;
 
     private readonly DownloadStore? _store;
@@ -33,6 +35,9 @@ public sealed partial class LocalPlayback
 
     // It was recorded as a title left near its end: the next play starts over.
     private bool _recordedStartsOver;
+
+    // It was recorded as a title left in its end credits: it went to the server as watched.
+    private bool _recordedInEndCredits;
     private double? _engineDuration;
 
     // The record's writes, in the order the positions were recorded.
@@ -76,9 +81,17 @@ public sealed partial class LocalPlayback
             return;
         }
         double position = _position;
-        // Nothing new while the position stands, but for the title's end, and for a file that breaks off where its position
-        // was just recorded as one left near the end: that record would have the next play start over.
-        bool stands = _recorded is { } last && Math.Abs(position - last) < 1 && !playedToTheEnd && !(brokeOff && _recordedStartsOver);
+        double duration = DurationSeconds ?? _engineDuration ?? 0;
+        // Reached the end credits: the server marks a stream stopped there watched (silo-server 47a85e4), so this PC
+        // counts the title as watched too. A file that breaks off there still has credits to show: Retry goes on from there.
+        bool inEndCredits = !brokeOff && !playedToTheEnd && EndCreditsStart(duration) is { } credits && position >= credits;
+        bool startsOver = playedToTheEnd || inEndCredits || (!brokeOff && duration > 0 && position / duration > StartsOverFraction);
+        // Nothing new while the position stands, but for the title's end, and for a position that is now on the other side of
+        // the end credits or of nine tenths than the last record, by however little it moved: a stop just past the credits'
+        // start is watched, and a file that breaks off where its position was just recorded as one left near the end would
+        // otherwise have the next play start over.
+        bool stands = _recorded is { } last && Math.Abs(position - last) < 1 && !playedToTheEnd
+            && startsOver == _recordedStartsOver && inEndCredits == _recordedInEndCredits;
         // 0 is a position too once a frame showed, as the Apple app records it: the viewer went back to the start and left there.
         if (!double.IsFinite(position) || position < 0 || stands)
         {
@@ -86,28 +99,34 @@ public sealed partial class LocalPlayback
         }
         _recorded = position;
         var record = _download.Record;
-        double duration = DurationSeconds ?? _engineDuration ?? 0;
         long positionMs = (long)Math.Round(position * 1000);
-        bool startsOver = playedToTheEnd || (!brokeOff && duration > 0 && position / duration > StartsOverFraction);
+        long queuedDurationMs = (long)Math.Round(Math.Max(0, duration) * 1000);
         _recordedStartsOver = startsOver;
+        _recordedInEndCredits = inEndCredits;
         // Later than what this PC last recorded for the title or read of it from the server, also on a clock that was set
-        // back meanwhile: the viewer is here now.
+        // back meanwhile: the viewer is here now. /sync/progress names no file, so the server can judge a position only by
+        // its threshold: one in the end credits goes up as the whole length, which it stores as watched, as Silo's apps send
+        // it (silo-apple 82b9bfab, silo-android 137fca310). Below the credits the real position goes up.
         var known = _store?.Find(record.Scope, record.DownloadId)?.Record.ResumeAt;
-        var entry = queue.Record(record.Scope, record.MediaItemId, positionMs, (long)Math.Round(Math.Max(0, duration) * 1000),
+        var entry = queue.Record(record.Scope, record.MediaItemId, inEndCredits ? queuedDurationMs : positionMs, queuedDurationMs,
             after: _recordedAt > known ? _recordedAt : known ?? _recordedAt);
         _recordedAt = entry.UpdatedAt;
         // As the server sets a watched title's position back to 0.
         long resumeMs = startsOver ? 0 : positionMs;
-        // Watched for sure only at the title's end. Any other position is a watch under way, also of a title watched
-        // before: it is not offered for deletion in the middle of it. The server's word follows with the next read.
+        // Watched for sure only at the title's end or in its end credits. Any other position is a watch under way, also of a
+        // title watched before: it is not offered for deletion in the middle of it. The server's word follows with the next read.
         // A write that comes late, behind a slow disk, never lowers a newer position the server's read stored meanwhile.
         // The length goes with it, for the Downloads page's time left, also for a download whose record has none yet.
         long? durationMs = double.IsFinite(duration) && duration > 0 && duration < long.MaxValue / 1000.0 ? (long)Math.Round(duration * 1000) : null;
         _records = KeepAsync(_records, r => r.ResumeAt is { } kept && kept > entry.UpdatedAt
             ? (r.DurationMs is null && durationMs is not null ? r with { DurationMs = durationMs } : r)
-            : r with { ResumeMs = resumeMs, ResumeAt = entry.UpdatedAt, IsWatched = playedToTheEnd, DurationMs = durationMs ?? r.DurationMs });
+            : r with { ResumeMs = resumeMs, ResumeAt = entry.UpdatedAt, IsWatched = playedToTheEnd || inEndCredits, DurationMs = durationMs ?? r.DurationMs });
         _sync?.FlushSoon(readBack: isFinal);
     }
+
+    // Where the file's end credits start, from the manifest's markers, for a title of duration seconds; null without them.
+    private double? EndCreditsStart(double duration) =>
+        EndCredits.Start(_manifest.MarkerSegments.Select(m => (m.Kind, m.StartSeconds)), duration, IsEpisode);
 
     // Once the play ends (nothing is recorded after that): the download's record and the queue's file as written, waited for
     // within StopWriteBudget, once for the stop and the let-go after it. The record goes to the download's folder, which can lie

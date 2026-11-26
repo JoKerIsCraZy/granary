@@ -310,7 +310,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   yes ("Reclaim"). The size is
   the media files', as both apps count it. A yes deletes the downloads the question counted that are still watched, as
   Delete deletes one. Watched is the server's word, as its progress was last read, or a play that reached the title's end
-  on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
+  or its end credits on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
   being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
   one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
   hides the button. Beside it, or in its place when it does not show, "Download settings" with the settings gear before

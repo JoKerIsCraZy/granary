@@ -14,6 +14,9 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- **Downloads:** a film or episode played from its download and left in its end credits now counts as watched, on this
+  PC and on your Silo server once its progress goes up, as your server counts a stream stopped there. Before, it stayed
+  in Continue Watching until nine tenths of it had played.
 - **Search:** deleting the last letter with Backspace no longer leaves Search for the page before it, and when the
   search field changes between the start page and the results, the cursor no longer shows at the left for a moment.
 

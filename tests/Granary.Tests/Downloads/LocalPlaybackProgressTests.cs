@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Net;
+using System.Text.RegularExpressions;
 using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Tests.Fakes;
@@ -169,6 +171,138 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
         // The server's threshold is an admin's setting: nine tenths here is a guess, good for where to start, not for
         // suggesting the download's deletion.
         Assert.Equal((6_600_000L, 0L, false), (Entry.PositionMs, Record.ResumeMs, Record.IsWatched));
+    }
+
+    [Fact]
+    public async Task AStopInTheEndCredits_BeforeNineTenths_IsWatched_AndGoesToTheServerAsTheWholeLength()
+    {
+        _fixture.GoOffline();
+        // A 40 min episode whose credits start at 33:20, inside its last 450 s; nine tenths would be 36:00.
+        var playback = await PlayingEpisodeAsync(2_400, ("intro", 60, 90), ("credits", 2_000, 2_400));
+        Frame(2_050);
+        await playback.StopAsync();
+
+        // As the server marks a stream stopped there (silo-server 47a85e4): /sync/progress names no file, so the whole
+        // length goes up, which the server stores as watched (silo-apple 82b9bfab).
+        Assert.Equal((2_400_000L, 2_400_000L), (Entry.PositionMs, Entry.DurationMs));
+        await Until(() => Record.IsWatched, "the download is marked watched");
+        Assert.Equal(0, Record.ResumeMs);
+    }
+
+    [Fact]
+    public async Task AStopInTheEndCredits_SyncsAsFinished()
+    {
+        var playback = await PlayingEpisodeAsync(2_400, ("credits", 2_000, 2_400));
+        Frame(2_050);
+        await playback.StopAsync();
+        await _fixture.FlushedAsync();
+
+        var sent = Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, LocalPlaybackFixture.SyncPath));
+        Assert.Contains("\"media_item_id\":\"ep_5\",\"position_ms\":2400000,\"duration_ms\":2400000", sent.Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AStopJustPastTheCreditsStart_IsWatched_ThoughItCameWithinASecondOfTheLastRecord()
+    {
+        _fixture.GoOffline();
+        var playback = await PlayingEpisodeAsync(2_400, ("credits", 2_000, 2_400));
+        Frame(1_999.5);
+        _fixture.Harness.Time.Advance(LocalPlayback.ProgressInterval);
+        await Until(() => Record.ResumeMs == 1_999_500, "the download kept the position on the way");
+
+        Frame(2_000.1);
+        await playback.StopAsync();
+
+        Assert.Equal(2_400_000L, Entry.PositionMs);
+        await Until(() => Record.IsWatched, "the download is marked watched");
+        Assert.Equal(0, Record.ResumeMs);
+    }
+
+    [Fact]
+    public async Task AStopBeforeTheEndCredits_KeepsItsPosition()
+    {
+        _fixture.GoOffline();
+        var playback = await PlayingEpisodeAsync(2_400, ("credits", 2_000, 2_400));
+        Frame(1_990);
+        await playback.StopAsync();
+
+        Assert.Equal(1_990_000L, Entry.PositionMs);
+        await Until(() => Record.ResumeMs == 1_990_000, "the download kept the position");
+        Assert.False(Record.IsWatched);
+    }
+
+    [Fact]
+    public async Task CreditsOutsideTheTailWindow_FinishNothing()
+    {
+        _fixture.GoOffline();
+        // 1900 s lies before the episode's last 450 s: a misplaced marker, which the server passes over too.
+        var playback = await PlayingEpisodeAsync(2_400, ("credits", 1_900, 2_100));
+        Frame(2_050);
+        await playback.StopAsync();
+
+        Assert.Equal(2_050_000L, Entry.PositionMs);
+        await Until(() => Record.ResumeMs == 2_050_000, "the download kept the position");
+        Assert.False(Record.IsWatched);
+    }
+
+    [Fact]
+    public async Task TheLastCreditsInTheTailWindow_AreTheEndCredits()
+    {
+        _fixture.GoOffline();
+        // A file of two episodes ends with the second one's credits.
+        var playback = await PlayingEpisodeAsync(2_400, ("credits", 1_960, 2_000), ("credits", 2_100, 2_400));
+        Frame(2_050);
+        await playback.StopAsync();
+
+        Assert.Equal(2_050_000L, Entry.PositionMs);
+        await Until(() => Record.ResumeMs == 2_050_000, "the download kept the position");
+        Assert.False(Record.IsWatched);
+    }
+
+    [Fact]
+    public async Task WithoutCredits_AStopPastNineTenths_KeepsItsPositionForTheServer()
+    {
+        _fixture.GoOffline();
+        var playback = await PlayingEpisodeAsync(2_400, ("intro", 60, 90));
+        Frame(2_200);
+        await playback.StopAsync();
+
+        // Past nine tenths the next play starts over, but the server's own threshold decides whether it is watched.
+        Assert.Equal(2_200_000L, Entry.PositionMs);
+        await Until(() => Record.ResumeMs == 0, "the download starts over next time");
+        Assert.False(Record.IsWatched);
+    }
+
+    [Fact]
+    public async Task AFileThatBreaksOffInTheEndCredits_KeepsWhereTheViewerWas()
+    {
+        _fixture.GoOffline();
+        await PlayingEpisodeAsync(2_400, ("credits", 2_000, 2_400));
+        Frame(2_050);
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "read error"));
+
+        // The rest of the credits are still to watch: Retry goes on from there.
+        Assert.Equal(2_050_000L, Entry.PositionMs);
+        await Until(() => Record.ResumeMs == 2_050_000, "the download kept the position");
+        Assert.False(Record.IsWatched);
+    }
+
+    // The episode's download, its manifest giving the title's length and marker ranges, started, with its first frame out.
+    private async Task<LocalPlayback> PlayingEpisodeAsync(double duration, params (string Kind, double Start, double End)[] markers)
+    {
+        var download = await _fixture.Harness.AddPlayableAsync();
+        string path = Path.Combine(download.Folder, DownloadPaths.Manifest);
+        string segments = string.Join(", ", markers.Select(m => string.Create(CultureInfo.InvariantCulture,
+            $$"""{ "kind": "{{m.Kind}}", "start_seconds": {{m.Start}}, "end_seconds": {{m.End}} }""")));
+        string manifest = File.ReadAllText(path)
+            .Replace("\"duration_seconds\": 7200", string.Create(CultureInfo.InvariantCulture, $"\"duration_seconds\": {duration}"), StringComparison.Ordinal);
+        manifest = Regex.Replace(manifest, @"""marker_segments"": \[[^\]]*\]", $"\"marker_segments\": [{segments}]");
+        File.WriteAllText(path, manifest);
+        var playback = await _fixture.StartAsync(PlayRequest.FromStart("ep_5"));
+        Assert.NotNull(playback);
+        Frame(0);
+        return playback;
     }
 
     [Fact]
