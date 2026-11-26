@@ -35,6 +35,9 @@ public sealed partial class LocalPlayback
 
     // It was recorded as a title left near its end: the next play starts over.
     private bool _recordedStartsOver;
+
+    // It was recorded as a title left in its end credits: it went to the server as watched.
+    private bool _recordedInEndCredits;
     private double? _engineDuration;
 
     // The record's writes, in the order the positions were recorded.
@@ -78,9 +81,17 @@ public sealed partial class LocalPlayback
             return;
         }
         double position = _position;
-        // Nothing new while the position stands, but for the title's end, and for a file that breaks off where its position
-        // was just recorded as one left near the end: that record would have the next play start over.
-        bool stands = _recorded is { } last && Math.Abs(position - last) < 1 && !playedToTheEnd && !(brokeOff && _recordedStartsOver);
+        double duration = DurationSeconds ?? _engineDuration ?? 0;
+        // Reached the end credits: the server marks a stream stopped there watched (silo-server 47a85e4), so this PC
+        // counts the title as watched too. A file that breaks off there still has credits to show: Retry goes on from there.
+        bool inEndCredits = !brokeOff && !playedToTheEnd && EndCreditsStart(duration) is { } credits && position >= credits;
+        bool startsOver = playedToTheEnd || inEndCredits || (!brokeOff && duration > 0 && position / duration > StartsOverFraction);
+        // Nothing new while the position stands, but for the title's end, and for a position that is now on the other side of
+        // the end credits or of nine tenths than the last record, by however little it moved: a stop just past the credits'
+        // start is watched, and a file that breaks off where its position was just recorded as one left near the end would
+        // otherwise have the next play start over.
+        bool stands = _recorded is { } last && Math.Abs(position - last) < 1 && !playedToTheEnd
+            && startsOver == _recordedStartsOver && inEndCredits == _recordedInEndCredits;
         // 0 is a position too once a frame showed, as the Apple app records it: the viewer went back to the start and left there.
         if (!double.IsFinite(position) || position < 0 || stands)
         {
@@ -88,14 +99,10 @@ public sealed partial class LocalPlayback
         }
         _recorded = position;
         var record = _download.Record;
-        double duration = DurationSeconds ?? _engineDuration ?? 0;
         long positionMs = (long)Math.Round(position * 1000);
         long queuedDurationMs = (long)Math.Round(Math.Max(0, duration) * 1000);
-        // Reached the end credits: the server marks a stream stopped there watched (silo-server 47a85e4), so this PC
-        // counts the title as watched too. A file that breaks off there still has credits to show: Retry goes on from there.
-        bool inEndCredits = !brokeOff && !playedToTheEnd && EndCreditsStart(duration) is { } credits && position >= credits;
-        bool startsOver = playedToTheEnd || inEndCredits || (!brokeOff && duration > 0 && position / duration > StartsOverFraction);
         _recordedStartsOver = startsOver;
+        _recordedInEndCredits = inEndCredits;
         // Later than what this PC last recorded for the title or read of it from the server, also on a clock that was set
         // back meanwhile: the viewer is here now. /sync/progress names no file, so the server can judge a position only by
         // its threshold: one in the end credits goes up as the whole length, which it stores as watched, as Silo's apps send

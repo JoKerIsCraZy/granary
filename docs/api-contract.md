@@ -3368,7 +3368,8 @@ progress of a download.
   a write the server's store failed on.
   - `media_item_id` is the film's or the episode's own id. Positions and lengths are whole milliseconds; `duration_ms` is
     0 when unknown. A position in the download's end credits goes as `duration_ms` itself, since the server cannot apply
-    its end-credits rule to an item without its file (10.6). `updated_at` is when the PC recorded the position (RFC 3339; Granary sends whole milliseconds with the
+    its end-credits rule to an item without its file (10.6); one where the file broke off goes as it is, so Retry goes on
+    from there (docs/architecture.md, "Offline progress", Watched). `updated_at` is when the PC recorded the position (RFC 3339; Granary sends whole milliseconds with the
     offset, `2026-10-01T12:00:00+00:00`). The server replaces one more than 2 minutes ahead of its clock with its own
     time, and answers `422` for one it cannot read.
   - The server keeps the later of an item's `updated_at` and what it has (last write wins), so a position recorded

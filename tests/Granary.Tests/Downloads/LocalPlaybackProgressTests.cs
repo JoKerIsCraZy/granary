@@ -202,6 +202,23 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AStopJustPastTheCreditsStart_IsWatched_ThoughItCameWithinASecondOfTheLastRecord()
+    {
+        _fixture.GoOffline();
+        var playback = await PlayingEpisodeAsync(2_400, ("credits", 2_000, 2_400));
+        Frame(1_999.5);
+        _fixture.Harness.Time.Advance(LocalPlayback.ProgressInterval);
+        await Until(() => Record.ResumeMs == 1_999_500, "the download kept the position on the way");
+
+        Frame(2_000.1);
+        await playback.StopAsync();
+
+        Assert.Equal(2_400_000L, Entry.PositionMs);
+        await Until(() => Record.IsWatched, "the download is marked watched");
+        Assert.Equal(0, Record.ResumeMs);
+    }
+
+    [Fact]
     public async Task AStopBeforeTheEndCredits_KeepsItsPosition()
     {
         _fixture.GoOffline();
