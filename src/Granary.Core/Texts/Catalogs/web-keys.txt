@@ -1520,6 +1520,10 @@ web.collections.pageActions.edit
 web.collections.personalOwnership.anotherProfile
 web.collections.posterCard.byOwner
 
+# The collections row of a movie's or series' page, as the web's components/collections/ItemCollectionsRow.tsx and
+# CollectionPosterCard.tsx word it (ItemDetailViewModel.Collections.cs).
+web.collections.posterCard.userCollection
+
 # More of the collection editor's words, as above under catalog.sort.author.
 web.collections.preview.matchingTitles
 web.collections.preview.showing
@@ -1858,6 +1862,9 @@ web.detail.seasons.totalCount
 
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.seasons.watchedProgress
+
+# The collections row of a title's page, as above under web.collections.posterCard.userCollection.
+web.detail.sections.alsoIn
 
 # More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.sections.cast

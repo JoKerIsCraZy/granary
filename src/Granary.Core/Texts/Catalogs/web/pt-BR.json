@@ -10949,6 +10949,12 @@
       "value": "owner"
     }
   ],
+  "web.collections.posterCard.userCollection": [
+    {
+      "type": 0,
+      "value": "Coleção do usuário"
+    }
+  ],
   "web.collections.preview.matchingTitles": [
     {
       "type": 0,
@@ -12878,6 +12884,12 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.sections.alsoIn": [
+    {
+      "type": 0,
+      "value": "Também em"
     }
   ],
   "web.detail.sections.cast": [

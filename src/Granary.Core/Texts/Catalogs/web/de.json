@@ -10384,6 +10384,12 @@
       "value": "owner"
     }
   ],
+  "web.collections.posterCard.userCollection": [
+    {
+      "type": 0,
+      "value": "Benutzersammlung"
+    }
+  ],
   "web.collections.preview.matchingTitles": [
     {
       "type": 0,
@@ -12170,6 +12176,12 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.sections.alsoIn": [
+    {
+      "type": 0,
+      "value": "Auch enthalten in"
     }
   ],
   "web.detail.sections.cast": [

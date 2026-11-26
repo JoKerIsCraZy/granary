@@ -68,6 +68,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly BoxSetLibraries? _boxSetLibraries;
     private readonly DownloadActions? _downloads;
     private readonly DownloadOfferReader? _downloadOffers;
+    private readonly ItemCollectionsApi? _itemCollections;
+    private readonly Api.Profiles.ProfilesApi? _profiles;
 
     // A newer load makes the answers of older calls stale.
     private int _generation;
@@ -109,7 +111,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         BoxSetsApi? boxSets = null,
         BoxSetLibraries? boxSetLibraries = null,
         DownloadActions? downloads = null,
-        DownloadOfferReader? downloadOffers = null)
+        DownloadOfferReader? downloadOffers = null,
+        ItemCollectionsApi? itemCollections = null,
+        Api.Profiles.ProfilesApi? profiles = null)
     {
         _session = session;
         _catalog = catalog;
@@ -132,6 +136,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _boxSetLibraries = boxSetLibraries;
         _downloads = downloads;
         _downloadOffers = downloadOffers;
+        _itemCollections = itemCollections;
+        _profiles = profiles;
     }
 
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set it before loading.</summary>
@@ -539,6 +545,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Credits = [];
         Similar = [];
         ResetBoxSet();
+        // A read of the last title's collections that answers now is not this one's.
+        _collectionReads++;
+        ResetCollections();
         ShowDownloads();
     }
 
@@ -587,10 +596,12 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         {
             CatalogItemTypes.Series => Task.WhenAll(
                 LoadSeasonsAsync(item, server, images, generation, cancellationToken),
-                LoadSimilarAsync(item, server, images, generation, cancellationToken)),
+                LoadSimilarAsync(item, server, images, generation, cancellationToken),
+                LoadCollectionsAsync(server, profileId, images, generation, cancellationToken)),
             CatalogItemTypes.Movie => Task.WhenAll(
                 LoadSimilarAsync(item, server, images, generation, cancellationToken),
-                LoadBoxSetAsync(server, profileId, images, generation, cancellationToken)),
+                LoadBoxSetAsync(server, profileId, images, generation, cancellationToken),
+                LoadCollectionsAsync(server, profileId, images, generation, cancellationToken)),
             CatalogItemTypes.Season => LoadSeasonEpisodesAsync(item, server, images, generation, cancellationToken),
             CatalogItemTypes.Episode => LoadEpisodeContextAsync(item, server, images, generation, cancellationToken),
             _ => Task.CompletedTask,

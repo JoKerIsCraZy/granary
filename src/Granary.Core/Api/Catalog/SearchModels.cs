@@ -29,6 +29,9 @@ public sealed record CatalogSearchCapabilities
     /// <summary>The server has movie box sets (<see cref="BoxSetsApi"/>); absent on one without.</summary>
     public bool BoxSets { get; init; }
 
+    /// <summary>The server lists the collections a title is in (<see cref="ItemCollectionsApi"/>); absent on one without.</summary>
+    public bool ItemCollections { get; init; }
+
     /// <summary>Maximum candidates in a Meilisearch ranked window.</summary>
     public int? ResultWindowLimit { get; init; }
 

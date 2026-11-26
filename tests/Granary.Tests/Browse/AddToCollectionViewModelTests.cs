@@ -68,6 +68,39 @@ public sealed class AddToCollectionViewModelTests
     }
 
     [Fact]
+    public async Task WritesSettled_WaitsForATickOnItsWay()
+    {
+        var gate = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Silo.On(HttpMethod.Put, "api/v2/collections/c2/items/series%3Adark", () => gate.Task);
+        var dialog = await OpenAsync();
+        Assert.True(dialog.WritesSettled.IsCompleted);
+
+        var tick = dialog.ToggleCommand.ExecuteAsync(dialog.Shown[1]);
+        var settled = dialog.WritesSettled;
+
+        Assert.False(settled.IsCompleted);
+        gate.SetResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+        await tick;
+        await settled.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.True(dialog.WritesSettled.IsCompleted);
+    }
+
+    [Fact]
+    public async Task WritesSettled_AlsoAfterATickThatFails()
+    {
+        var gate = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Silo.On(HttpMethod.Put, "api/v2/collections/c2/items/series%3Adark", () => gate.Task);
+        var dialog = await OpenAsync();
+
+        var tick = dialog.ToggleCommand.ExecuteAsync(dialog.Shown[1]);
+        var settled = dialog.WritesSettled;
+        gate.SetException(new HttpRequestException("gone"));
+        await tick;
+
+        await settled.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task ATickThatFails_GoesBack_AndSaysSo()
     {
         _harness.Silo.On(HttpMethod.Put, "api/v2/collections/c2/items/series%3Adark", ScriptedSilo.Problem(503, "unavailable"));

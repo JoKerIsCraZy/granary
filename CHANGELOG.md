@@ -6,6 +6,12 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- **The collections a title is in** show on a movie's or series' page, before More Like This: when one collection holds
+  it, some of that collection's other titles under its name with Explore all; when several do, an "Also in" row with a
+  card for each. It needs a Silo server that lists them.
+
 ### Changed
 
 - **MKV plays directly again** on servers that ask players to report their video decoders in detail before they send a

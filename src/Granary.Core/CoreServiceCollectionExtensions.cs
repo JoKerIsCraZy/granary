@@ -100,6 +100,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<LibraryPageApi>();
         services.AddTransient<CollectionsApi>();
         services.AddTransient<BoxSetsApi>();
+        services.AddTransient<ItemCollectionsApi>();
         // Which libraries have box sets on, kept a few minutes across movie pages.
         services.AddSingleton<ViewModels.Detail.BoxSetLibraries>();
         services.AddTransient<RecommendationsApi>();

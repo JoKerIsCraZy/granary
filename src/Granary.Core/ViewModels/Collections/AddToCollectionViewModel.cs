@@ -25,6 +25,9 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
     private readonly ILogger<AddToCollectionViewModel> _logger;
     private readonly List<CollectionChoiceRow> _all = [];
     private string _contentId = "";
+    // Ticks and new collections still on their way to the server: closing the dialog does not stop them.
+    private int _pendingWrites;
+    private TaskCompletionSource? _settled;
 
     public AddToCollectionViewModel(ISessionManager session, CollectionsApi collections, TimeProvider time, ILogger<AddToCollectionViewModel> logger)
     {
@@ -81,6 +84,14 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
 
     public bool HasNotice => Notice.Length > 0;
 
+    /// <summary>
+    /// Done once every tick and new collection on its way is answered, for the title's page to read its collections again
+    /// after the dialog closes. Used on the UI thread.
+    /// </summary>
+    public Task WritesSettled => _pendingWrites == 0
+        ? Task.CompletedTask
+        : (_settled ??= new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).Task;
+
     /// <summary>"No collections match "x"." when the search keeps none.</summary>
     public string NoMatchText => AppText.Get("web.collections.addToCollection.noMatches", ("query", Search.Trim()));
 
@@ -136,6 +147,7 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
             return;
         }
         bool add = !row.IsIn;
+        _pendingWrites++;
         row.IsBusy = true;
         row.IsIn = add;
         Count();
@@ -162,6 +174,7 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
         finally
         {
             row.IsBusy = false;
+            EndWrite();
         }
     }
 
@@ -174,6 +187,7 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
         {
             return;
         }
+        _pendingWrites++;
         IsCreating = true;
         Notice = "";
         try
@@ -216,6 +230,16 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
         finally
         {
             IsCreating = false;
+            EndWrite();
+        }
+    }
+
+    private void EndWrite()
+    {
+        if (--_pendingWrites == 0 && _settled is { } settled)
+        {
+            _settled = null;
+            settled.TrySetResult();
         }
     }
 
