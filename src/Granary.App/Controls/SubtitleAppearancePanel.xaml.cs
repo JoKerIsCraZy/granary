@@ -87,7 +87,7 @@ public sealed partial class SubtitleAppearancePanel : UserControl
 
     private void OnPanelKeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (BackKeys.IsBack(e.Key, XamlRoot) && !e.KeyStatus.WasKeyDown)
+        if (BackKeys.IsBack(e.Key, XamlRoot, e.OriginalSource) && !e.KeyStatus.WasKeyDown)
         {
             e.Handled = true;
             // A typed opacity counts: the box hands its text over when it loses the keyboard, as the web's blurs first.

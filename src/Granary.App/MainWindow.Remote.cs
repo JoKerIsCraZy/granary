@@ -226,7 +226,7 @@ public sealed partial class MainWindow
         e.Handled = e.Key switch
         {
             VirtualKey.Escape when !repeat => Back(BackKey.Escape),
-            VirtualKey.Back when !repeat => Back(BackKey.Backspace),
+            VirtualKey.Back when !repeat => Back(BackKey.Backspace, e.OriginalSource),
             VirtualKey.GoBack when !repeat => Back(BackKey.BrowserBack),
             VirtualKey.Left or VirtualKey.Right or VirtualKey.Up or VirtualKey.Down => TakesArrowLast(ArrowOf(e.Key), repeat),
             VirtualKey.Enter => ChecksRadio(repeat),
@@ -239,10 +239,10 @@ public sealed partial class MainWindow
     // The Menu key on a card opens the card's menu, as its ⋮ does.
     private bool ShowsCardMenu() => FocusedElement() is Button { Content: MediaCardView card } && card.ShowMenuFromKey();
 
-    private bool Back(BackKey key)
+    private bool Back(BackKey key, object? source = null)
     {
         // The full player's Back keys are its own: one it lets pass (a panel or menu of its own is open) closes nothing more.
-        if (!BackLadder.IsBack(key, IsTyping()) || IsPlayerFull)
+        if (!BackLadder.IsBack(key, BackKeys.IsTyping(Root.XamlRoot, source)) || IsPlayerFull)
         {
             return false;
         }
@@ -783,7 +783,7 @@ public sealed partial class MainWindow
     private void OnPopupKeyDown(object sender, KeyRoutedEventArgs e)
     {
         // Esc they take themselves.
-        if (e.Key == VirtualKey.Escape || !BackKeys.IsBack(e.Key, Root.XamlRoot) || e.KeyStatus.WasKeyDown
+        if (e.Key == VirtualKey.Escape || !BackKeys.IsBack(e.Key, Root.XamlRoot, e.OriginalSource) || e.KeyStatus.WasKeyDown
             || sender is not UIElement child || !_followedPopups.TryGetValue(child, out var popup))
         {
             return;
@@ -807,8 +807,6 @@ public sealed partial class MainWindow
 
     private DependencyObject? FocusedElement() =>
         Root.XamlRoot is { } root ? FocusManager.GetFocusedElement(root) as DependencyObject : null;
-
-    private bool IsTyping() => BackKeys.IsTyping(Root.XamlRoot);
 
     private static bool HasModifier() =>
         IsDown(VirtualKey.Control) || IsDown(VirtualKey.Menu) || IsDown(VirtualKey.Shift)

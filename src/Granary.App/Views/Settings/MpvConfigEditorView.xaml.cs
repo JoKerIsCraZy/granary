@@ -85,7 +85,7 @@ public sealed partial class MpvConfigEditorView : UserControl
     // Esc and a remote's Back close the editor from anywhere in it; Backspace only outside the text.
     private async void OnBackKeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (e.KeyStatus.WasKeyDown || !BackKeys.IsBack(e.Key, XamlRoot))
+        if (e.KeyStatus.WasKeyDown || !BackKeys.IsBack(e.Key, XamlRoot, e.OriginalSource))
         {
             return;
         }

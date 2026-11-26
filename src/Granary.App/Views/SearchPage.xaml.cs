@@ -141,6 +141,9 @@ public sealed partial class SearchPage : Page, IPadSections
                 // Where the caret was, and what was selected: a move made before the box switched is kept.
                 int start = from.SelectionStart;
                 int length = from.SelectionLength;
+                // The box's text came through its binding, which leaves the caret at the start: it is placed before
+                // the box shows, so its first frame does not have the caret at the left.
+                PlaceCaret(to, start, length);
                 FocusWhenReady(to, start, length);
             }
         }
@@ -200,9 +203,14 @@ public sealed partial class SearchPage : Page, IPadSections
         {
             return false;
         }
+        PlaceCaret(box, start, length);
+        return true;
+    }
+
+    private static void PlaceCaret(TextBox box, int start, int length)
+    {
         int at = Math.Min(start, box.Text.Length);
         box.Select(at, Math.Min(length, box.Text.Length - at));
-        return true;
     }
 
     private void PlacePeople()
