@@ -2580,10 +2580,16 @@ Sources: `silo-server/internal/apiv2/playback.go:206-212,413-426`,
 ### 10.6 Completion and "next up"
 
 - The **server** decides completion: `position / file_duration > playback.watched_threshold`
-  (admin setting, default 90 %), checked on every applied sample and at stop. Credits markers play
-  no part. On completion the resume position resets to 0
-  (`silo-server/internal/userstore/threshold.go:4-51`,
-  `silo-server/internal/userstore/pgstore/progress.go:63-94`).
+  (admin setting, default 90 %), or a position at or past the played file's end credits, whichever comes
+  first, checked on every applied sample and at stop, and before the min-resume floor. The end credits are
+  the last `credits` marker that starts in the file's tail window (the last 450 s or 40 % of an episode,
+  the last 900 s or 25 % of anything else) and before its end; they count only for the file the session
+  streams (`markers.CreditsLimits.EndCreditsStart`, `userstore.ProgressThresholds.Watched`, silo-server
+  47a85e4). On completion the resume position resets to 0
+  (`silo-server/internal/userstore/threshold.go`,
+  `silo-server/internal/userstore/pgstore/progress.go:63-94`). `/sync/progress` names no file, so there
+  only the percentage applies: a download's position in its end credits is sent as its whole length
+  (`Playback/EndCredits`, as silo-apple 82b9bfab and silo-android 137fca310 do).
 - The client only has to send a final sample near the end; explicit marking is not required.
 - `POST /api/v2/watched/{id}` / `DELETE /api/v2/watched/{id}` (`markWatched` / `unmarkWatched`,
   `204`) are for manual UI actions. Unmark also clears the resume position. `markWatched`,
@@ -3361,7 +3367,8 @@ progress of a download.
   (`{ "type", "title", "status", "detail" }`): status `404` for a title the profile cannot see or that is gone, `500` for
   a write the server's store failed on.
   - `media_item_id` is the film's or the episode's own id. Positions and lengths are whole milliseconds; `duration_ms` is
-    0 when unknown. `updated_at` is when the PC recorded the position (RFC 3339; Granary sends whole milliseconds with the
+    0 when unknown. A position in the download's end credits goes as `duration_ms` itself, since the server cannot apply
+    its end-credits rule to an item without its file (10.6). `updated_at` is when the PC recorded the position (RFC 3339; Granary sends whole milliseconds with the
     offset, `2026-10-01T12:00:00+00:00`). The server replaces one more than 2 minutes ahead of its clock with its own
     time, and answers `422` for one it cannot read.
   - The server keeps the later of an item's `updated_at` and what it has (last write wins), so a position recorded

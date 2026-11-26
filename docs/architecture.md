@@ -2449,7 +2449,7 @@ device.
   at the stop, at the title's end and when the file breaks off, but only when the position moved by a second or more
   since the last record: a title left paused does not grow newer by itself and so cannot beat a position made on another
   device meanwhile. One record is made though the position stands: a file that breaks off where its position was just
-  recorded as one left past nine tenths (Watched), since that record would have Retry start over. Nothing is recorded
+  recorded as one left past nine tenths or in its end credits (Watched), since that record would have Retry start over. Nothing is recorded
   before the first frame; after it, 0 is a position too, as the Apple app records it: a viewer who goes back to the start
   and leaves there is left at 0, and the server takes a 0 (only a position above 0 and under its
   `playback.min_resume_threshold` is passed over, `userstore.ResolveProgressState`). A title's times never go backwards: a position is
@@ -2464,11 +2464,19 @@ device.
   order; a play records one every 10 s, so the clock is past them again with the next. Each record goes to two places. The download's own record
   takes `ResumeMs` and `ResumeAt`, which the next play from this PC starts from. `OfflineProgressQueue.Record` takes the
   position, the length and the time, in whole milliseconds, for the server.
-- **Watched.** A title that played to its end (within 30 s of its length, or of unknown length), or was left past nine
-  tenths of it, resumes from 0 next time, as the server sets a watched title's position back (the Apple app's latch).
-  Whether it is watched (`DownloadRecord.IsWatched`) is another matter, since that mark is what gets a download
-  suggested for deletion: it is set only by a play that reached the title's end, or by the server, whose threshold an
-  admin sets (`playback.watched_threshold`), when its progress is read back: `completed` with the position at 0. A
+- **Watched.** A title that played to its end (within 30 s of its length, or of unknown length), was left in its end
+  credits, or was left past nine tenths of it, resumes from 0 next time, as the server sets a watched title's position
+  back (the Apple app's latch). The end credits are found as the server finds them (`EndCredits.Start`, after
+  `markers.CreditsLimits.EndCreditsStart`, silo-server 47a85e4): the last credits range of the manifest's
+  `marker_segments` that starts in the file's tail window (the last 450 s or 40 % of an episode, the last 900 s or 25 % of
+  a film) and before its end; one earlier in the file finishes nothing. The server marks a stream stopped there watched,
+  but `/sync/progress` names no file, so a position in the credits goes to the queue as the title's whole length, which
+  the server stores as watched, while the download keeps 0 (silo-apple 82b9bfab, silo-android 137fca310); below the
+  credits the real position goes. A file that breaks off in the credits keeps its real position, in the queue too, so
+  Retry goes on from there. Whether it is watched (`DownloadRecord.IsWatched`) is another matter, since that mark is what
+  gets a download suggested for deletion: it is set only by a play that reached the title's end or its end credits, or
+  by the server, whose threshold an admin sets (`playback.watched_threshold`), when its progress is read back:
+  `completed` with the position at 0. A
   play left past nine tenths is a guess and sets no mark; a server set to 95 % answers such a title with its position
   and no `completed`, and the download then resumes there. A title that is watched again loses the mark with the first
   position of the new watch, and the server's `completed`, which stays through a rewatch, does not bring it back while
