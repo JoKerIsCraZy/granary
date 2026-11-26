@@ -244,6 +244,15 @@
                                        CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" ExploreAllCommand="{x:Bind ViewModel.OpenBoxSetCommand}"
                                        Visibility="{x:Bind ViewModel.HasBoxSet, Mode=OneWay}" />
 
+                    <!--
+                        The collections the movie or series is in, where the web's MovieContent.tsx and SeriesContent.tsx put
+                        components/collections/ItemCollectionsRow.tsx: one collection's other titles under its name with Explore all,
+                        or "Also in" with a card for each collection, which has no Explore all.
+                    -->
+                    <controls:MediaRow Title="{x:Bind ViewModel.CollectionsRowTitle, Mode=OneWay}" ItemsSource="{x:Bind ViewModel.CollectionsRow, Mode=OneWay}"
+                                       CardInvokedCommand="{x:Bind ViewModel.OpenCollectionsRowCardCommand}" ExploreAllCommand="{x:Bind ViewModel.CollectionsExploreAll, Mode=OneWay}"
+                                       Visibility="{x:Bind ViewModel.HasCollectionsRow, Mode=OneWay}" />
+
                     <controls:MediaRow Title="{x:Bind t:AppText.Get('web.recommendations.moreLikeThis')}" ItemsSource="{x:Bind ViewModel.Similar, Mode=OneWay}"
                                        CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
                                        Visibility="{x:Bind ViewModel.HasSimilar, Mode=OneWay}" />

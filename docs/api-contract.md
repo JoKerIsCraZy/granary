@@ -1011,6 +1011,8 @@ sort `-added_at` (phone) / `title` (TV) (`silo-android/shared/.../apiv2/CatalogV
 - People: `GET /api/v2/catalog/people?q=&limit=1..100&media_scope=video` → `{ "items": Person[] }`
   (only when `people_media_scope` is true). A person found opens their page (7.6a).
 - Box sets: `GET /api/v2/catalog/box-sets?q=` (7.18), only when `box_sets` is true.
+- `item_collections: true` says the server lists the collections a title is in (7.18a); absent on an older server, which
+  is never asked.
 - Android: 300 ms debounce, `limit=60` (phone) / 40 (TV), people search in parallel with
   `limit=20` (`silo-android/.../SearchViewModel.kt:142-333`).
 
@@ -1596,6 +1598,29 @@ groups them (`silo-server/docs/catalog-api.md`, "Movie box sets"; `internal/apiv
   `GET /api/v2/catalog/search/capabilities` says `box_sets: true` (as the Apple app checks; the web checks the libraries'
   `box_sets_enabled` instead) and not for Series, beside the people and titles; a failure, or an answer slower than
   1.5 s (Android's grace), shows none rather than holding the titles.
+
+### 7.18a Collections on a title's page
+
+`GET /api/v2/catalog/items/{id}/collections[?library_id=]` (`listCatalogItemCollections`, image params) →
+`{ "items": SectionCollectionCard[], "preview_items": CatalogItem[] }`, both never null (`silo-server/docs/catalog-api.md`,
+"Collections on a title's page"; `internal/apiv2/catalog_item_collections.go`): the visible manual and synced collections,
+server and personal, that store the title and that the viewer may see, server collections first, then personal ones,
+each group by title. Smart collections are not listed, nor the synced copy of the box set the page shows (`library_id`
+picks that box set as 7.18 does; Granary sends none, its title route carries no library). When `items` holds exactly
+one collection, `preview_items` has up to six of its other titles in the collection's order; else it is empty. 404 for
+an id that is missing, hidden or not a catalog title.
+
+A `SectionCollectionCard`: `id`, `source` (`library` for a server collection, `user` for a personal one), `title`,
+`poster_url` (presigned, empty when none), `poster_thumbhash?`, `poster_is_collage`, `item_count` (the titles the
+acting profile sees), `library_id?` (a server collection's: a library the viewer can open that holds it), and
+`creator_profile_id?` (a personal collection's maker). A card with an empty `id` is left out.
+
+Granary asks, as Silo's apps do (silo-android cb2c32d8a, silo-apple fd83eb46), only on a movie's or series' page and
+only when `GET /api/v2/catalog/search/capabilities` says `item_collections: true`, read on each load. A server
+collection opens as `library_collection` in its `library_id`, a personal one as `user_collection`; another profile's
+shared collection is named by its owner from `GET /api/v2/profiles`, read only when the row has one. A failure of the
+capabilities or of the list leaves the row out on the first read; a reread (after Add to a collection) that fails keeps
+it.
 
 ### 7.19 Theme music
 

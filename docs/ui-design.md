@@ -1164,6 +1164,19 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     on, as the web asks. The row shows nothing while it loads, for a movie in no box set, and on a server without box sets
     or when the read fails; a box set of one film shows that one (the server keeps sets of
     fewer than its minimum out).
+  - The collections a movie or series is in (the web's `components/collections/ItemCollectionsRow.tsx`, after the box
+    set and before More Like This, where `MovieContent.tsx` and `SeriesContent.tsx` put it). When one collection holds
+    the title, the row is titled with the collection's name and has EXPLORE ALL, which opens the collection (a server
+    collection in the library it names); it shows up to six of the collection's other titles as the row's usual
+    posters, each opening its page without a library, as the apps open them. Otherwise, or when the one collection has no
+    other title to show, the row is "Also in" without EXPLORE ALL and has a poster card for each collection, server
+    collections first: the collection's poster, its name, and under it "24 titles", or for a personal collection "User
+    collection · 7 titles", or "by Mara · 2 titles" for another profile's shared one ("by Another profile" when the
+    profiles cannot be read), as the web's `CollectionPosterCard` names them; Granary's collection cards carry the count
+    in that line rather than a badge on the poster, as on the Collections page. A card opens the collection's titles. As
+    Silo's apps, only a movie or series asks, and only a server whose search capabilities say `item_collections`. The row
+    shows nothing while it loads, when no collection holds the title, or when the first read fails; after Add to a
+    collection the row is read again, and a failed reread keeps the row as it was.
   - Below a 1400 px window everything steps down (hero 84 from the top and 12 apart, logo 116, meta 15, overview 14/22,
     buttons 44, rows 44 apart), so a 1280×800 window keeps it whole. The step sets sizes, not styles, so a focused
     button keeps its focus when the window crosses it.

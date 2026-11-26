@@ -134,6 +134,12 @@ internal sealed class ItemDetailFixture
     /// <summary>Whether a library has box sets on, which a movie's page asks before its box set; none unless a test sets it.</summary>
     public BoxSetLibraries? BoxSetLibraries { get; set; }
 
+    /// <summary>The read of the collections a movie or series is in; none unless a test sets it, so the row stays out.</summary>
+    public ItemCollectionsApi? ItemCollections { get; set; }
+
+    /// <summary>The profiles' names the collections row names other profiles' collections by; none unless a test sets them.</summary>
+    public Core.Api.Profiles.ProfilesApi? Profiles { get; set; }
+
     /// <summary>The clock of the ratings' remembered ends.</summary>
     public ManualTimeProvider Time { get; } = new();
 
@@ -165,7 +171,9 @@ internal sealed class ItemDetailFixture
         boxSets: BoxSets,
         boxSetLibraries: BoxSetLibraries,
         downloads: Downloads,
-        downloadOffers: DownloadOffers);
+        downloadOffers: DownloadOffers,
+        itemCollections: ItemCollections,
+        profiles: Profiles);
 
     /// <summary>
     /// The page once loaded, the places of a season's missing and upcoming episodes and the series' next airing included,

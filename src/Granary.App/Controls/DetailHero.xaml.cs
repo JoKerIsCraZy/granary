@@ -335,6 +335,9 @@ public sealed partial class DetailHero : UserControl
                 throw;
             }
             await shown;
+            // The title may be in other collections now: the page's collections row reads them again, as the web's and the
+            // apps' rows follow a change of the title's collections.
+            await item.RefreshCollectionsAsync();
         }
         catch (Exception ex)
         {

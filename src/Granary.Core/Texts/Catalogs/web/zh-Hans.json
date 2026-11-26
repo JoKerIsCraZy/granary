@@ -9830,6 +9830,12 @@
       "value": "创建"
     }
   ],
+  "web.collections.posterCard.userCollection": [
+    {
+      "type": 0,
+      "value": "用户合集"
+    }
+  ],
   "web.collections.preview.matchingTitles": [
     {
       "type": 0,
@@ -11465,6 +11471,12 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.sections.alsoIn": [
+    {
+      "type": 0,
+      "value": "同样收录于"
     }
   ],
   "web.detail.sections.cast": [
