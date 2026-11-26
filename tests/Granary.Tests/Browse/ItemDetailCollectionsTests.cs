@@ -110,6 +110,7 @@ public sealed class ItemDetailCollectionsTests
         Assert.Equal(["Crime classics", "Favorites", "Sunday nights"], detail.CollectionsRow.Select(c => c.Title));
         // The web's CollectionPosterCard: a personal collection says so, another profile's names its owner; each its count.
         Assert.Equal(["24 titles", "User collection · 7 titles", "by Mara · 2 titles"], detail.CollectionsRow.Select(c => c.Subtitle));
+        Assert.All(detail.CollectionsRow, c => Assert.True(c.PlainSubtitle));
     }
 
     [Fact]
@@ -140,6 +141,20 @@ public sealed class ItemDetailCollectionsTests
         detail.OpenCollectionsRowCardCommand.Execute(detail.CollectionsRow[0] with { Title = "Another" });
 
         Assert.Empty(_fixture.Navigation.Navigations);
+    }
+
+    [Fact]
+    public async Task TwoEqualCards_EachOpenTheirOwnLibrary()
+    {
+        // The same collection listed for two libraries: the cards look the same, but each opens where it was listed.
+        _fixture.Movie().Get(CollectionsPath(MovieId), Ok(Answer($"{ServerCard},{ServerCard.Replace("\"3\"", "\"4\"", StringComparison.Ordinal)}")));
+        var detail = await _fixture.LoadAsync(MovieId);
+        Assert.Equal(detail.CollectionsRow[0], detail.CollectionsRow[1]);
+
+        detail.OpenCollectionsRowCardCommand.Execute(detail.CollectionsRow[1]);
+        detail.OpenCollectionsRowCardCommand.Execute(detail.CollectionsRow[0]);
+
+        Assert.Equal(["4", "3"], _fixture.Navigation.Navigations.Select(n => ((CollectionRouteParameter)n.Parameter!).LibraryId));
     }
 
     [Fact]
@@ -282,6 +297,9 @@ public sealed class ItemDetailCollectionsTests
         await detail.RefreshCollectionsAsync();
 
         Assert.True(detail.HasCollectionsRow);
+        // The refresh asked for the capabilities again and stopped there.
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, CapabilitiesPath).Count);
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, CollectionsPath(MovieId)));
     }
 
     [Fact]

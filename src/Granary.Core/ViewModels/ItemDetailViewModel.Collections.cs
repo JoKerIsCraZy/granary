@@ -22,8 +22,8 @@ public sealed partial class ItemDetailViewModel
     /// <summary>The most of a single collection's other titles the row shows, as the web and the apps.</summary>
     public const int CollectionPreviewLimit = 6;
 
-    // The collection cards of an "Also in" row and the collection each opens, found by the whole card: a server collection
-    // and a personal one may share an id.
+    // The collection cards of an "Also in" row and the collection each opens, found by the card itself, the instance the row
+    // shows: two cards can be equal (a collection listed for two libraries) yet open different places.
     private List<(MediaCard Card, CollectionRouteParameter Route)> _collectionRoutes = [];
     private CollectionRouteParameter? _previewCollection;
     // Counts the row's reads: an older one that answers late does not put its answer over a newer one's.
@@ -66,7 +66,7 @@ public sealed partial class ItemDetailViewModel
         // A collection card never opens a title page: one the row does not know opens nothing.
         foreach (var (shown, route) in _collectionRoutes)
         {
-            if (shown.Equals(card))
+            if (ReferenceEquals(shown, card))
             {
                 _navigation.NavigateTo(AppRoute.Collection, route);
                 return;
@@ -191,7 +191,7 @@ public sealed partial class ItemDetailViewModel
     }
 
     // The web's CollectionPosterCard: the name, and under it whose a personal collection is; Granary's collection cards carry
-    // the count in that line too ("by Mara · 4 titles"), as the Collections page's.
+    // the count in that line too ("by Mara · 4 titles"), as the Collections page's carry it in theirs.
     private static MediaCard CardOf(SectionCollectionCard card, Uri server, string? profileId, IReadOnlyDictionary<string, string> owners)
     {
         string titles = CollectionCards.Titles(card.ItemCount);
@@ -208,6 +208,8 @@ public sealed partial class ItemDetailViewModel
         {
             Shape = MediaCardShape.Poster,
             Subtitle = subtitle,
+            // The web's line under the name is plain small text (text-xs, muted), not an overline.
+            PlainSubtitle = true,
             ImageUrl = ArtworkUrl.Resolve(server, card.PosterUrl),
             ImageThumbhash = card.PosterThumbhash,
         };
