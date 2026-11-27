@@ -19,11 +19,11 @@
       every part referenced ships with it (docs/architecture.md, "Windows App SDK"). The versions are the ones
       Microsoft.WindowsAppSDK 2.5.1 pins in its .nuspec; update them together, to one release's set.
     -->
-    <PackageVersion Include="Microsoft.WindowsAppSDK.Base" Version="2.6.5" />
-    <PackageVersion Include="Microsoft.WindowsAppSDK.Foundation" Version="2.6.5" />
-    <PackageVersion Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.6.5" />
-    <PackageVersion Include="Microsoft.WindowsAppSDK.WinUI" Version="2.6.5" />
-    <PackageVersion Include="QRCoder" Version="1.8.1" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK.Base" Version="2.7.0" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK.Foundation" Version="2.7.0" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.7.0" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK.WinUI" Version="2.7.0" />
+    <PackageVersion Include="QRCoder" Version="1.9.0" />
     <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="11.0.0" />
     <!-- Installer and updates; keep in step with the vpk tool in dotnet-tools.json. -->
     <PackageVersion Include="Velopack" Version="1.2.161" />
